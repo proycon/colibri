@@ -5,7 +5,7 @@ bin_PROGRAMS = classdecode
 lib_LTLIBRARIES = libcppnlp.la
 
 libcppnlp_la_CXXFLAGS = -Wall -std=c++0x
-libcppnlp_la_SOURCES = classdecoder.cpp #ngram.cpp
+libcppnlp_la_SOURCES = classdecoder.cpp ngram.cpp
 
 classdecode_CXXFLAGS = -Wall -std=c++0x
 classdecode_LDADD = libcppnlp.la

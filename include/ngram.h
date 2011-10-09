@@ -18,18 +18,17 @@ class EncNGram {
      
      std::string decode(ClassDecoder& classdecoder) {
         std::string result = ""; 
+        unsigned char* begin = data;
         for (int i = 0; i < _size; i++) {
-            if (c == 0) {
+            if (data[i] == 0) {
                 //cout << "N: " << n << endl;
-                const unsigned int cls = bytestoint(data, i - 1);  
+                const unsigned int cls = bytestoint(begin, i - 1);  
                 if (cls == 1) {
-                    return line;
+                    return result;
                 } else {
                     result += classdecoder[cls];
                 }
-                n = 0;
-            } else {
-                n++;  
+                begin = data + i;
             }
         }
     }
@@ -37,14 +36,15 @@ class EncNGram {
     EncNGram slice(const int begin,const int length);
 };
 
+namespace std {
 
 template <>
-struct std::hash<EncNGram> {
+struct hash<EncNGram> {
  public: 
         size_t operator()(EncNGram ngram) const throw() {            
             //jenkins hash: http://en.wikipedia.org/wiki/Jenkins_hash_function
             unsigned long h, i;
-            for(h = i = 0; i < ngram.size; ++i)
+            for(h = i = 0; i < ngram.size(); ++i)
             {
                 h += ngram.data[i];
                 h += (h << 10);
@@ -56,5 +56,7 @@ struct std::hash<EncNGram> {
             return h;
         }
 };
+
+}
 
 EncNGram getencngram(const int index, const int n, unsigned char *line, const int size);
