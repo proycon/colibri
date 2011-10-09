@@ -5,7 +5,7 @@
 
 class ClassDecoder {
     private:
-     unordered_map<unsigned int,std::string> classes;
+     std::unordered_map<unsigned int,std::string> classes;
     public:
     
     ClassDecoder(const std::string filename);

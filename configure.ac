@@ -3,8 +3,8 @@
 # $Id: configure.ac 13188 2011-09-15 13:46:53Z sloot $
 # $URL: https://ilk.uvt.nl/svn/sources/ucto/trunk/configure.ac $
 
-AC_PREREQ(2.59)
-AC_INIT([c++nlpl], [0.1], [proycon@anaproy.nl])
+AC_PREREQ([2.67])
+AC_INIT([c++nlpl],[0.1],[proycon@anaproy.nl])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_MACRO_DIR([m4])
@@ -28,7 +28,7 @@ fi
 
 AC_PROG_RANLIB
 # use libtool
-AC_PROG_LIBTOOL
+LT_INIT
 AC_SUBST([LIBTOOL_DEPS])
 
 # when running tests, use CXX
@@ -62,8 +62,9 @@ fi
 
 # Checks for library functions.
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
   Makefile
   src/Makefile
   include/Makefile
 ])
+AC_OUTPUT

@@ -1,4 +1,7 @@
-#include <ifstream>
+#include "classdecoder.h"
+#include <fstream>
+#include <cmath>
+#include <iostream>
 
 using namespace std;
 
@@ -87,7 +90,7 @@ int readline(istream* IN, unsigned char* buffer) {
             if (eolsequence == 1) {
                 eolsequence++;
             } else {
-                eolsequence = 0
+                eolsequence = 0;
             }
         } else {
             eolsequence = 0;
