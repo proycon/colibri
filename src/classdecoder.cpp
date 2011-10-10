@@ -5,9 +5,9 @@
 
 using namespace std;
 
-unsigned int bytestoint(unsigned char* a, const int l) {
+unsigned int bytestoint(const unsigned char* a, const int l) {
     int result = 0;
-    for (int i = 0; i < l+1; i++) {
+    for (int i = 0; i < l; i++) {
         result += *(a + i) * pow(256,i);
     }
     return result;
@@ -38,7 +38,7 @@ ClassDecoder::ClassDecoder(const string filename) {
 vector<string> ClassDecoder::decodeseq(vector<int> seq) {
     vector<string> result;
     const int l = seq.size();
-    for (int i; i < l; i++) 
+    for (int i = 0; i < l; i++) 
         result.push_back( classes[seq[i]] ); 
     return result;
 }
@@ -58,7 +58,7 @@ void ClassDecoder::decodefile(const string filename) {
         //cout << "READ: " << ((int) c) << endl;
         if (c == 0) {
             //cout << "N: " << n << endl;
-            const unsigned int cls = bytestoint(buffer, n - 1);  
+            const unsigned int cls = bytestoint(buffer, n);  
             if (cls == 1) {
                 cout << endl;
             } else {
@@ -85,7 +85,7 @@ int readline(istream* IN, unsigned char* buffer) {
         buffer[n] = c;        
         if (c == 0) {
             eolsequence++;
-            if (eolsequence == 3) return n - 3; //minus last three 0 1 0 bytes            
+            if (eolsequence == 3) return n - 2; //minus last two bytes of the 0 1 0 bytes (retaining final \0)
         } else if (c == 1) {
             if (eolsequence == 1) {
                 eolsequence++;
@@ -95,6 +95,15 @@ int readline(istream* IN, unsigned char* buffer) {
         } else {
             eolsequence = 0;
         }
+        n++;
     }    
     return 0;
+}
+
+const int countwords(const unsigned char* data, const int l) {    
+    int words = 1;
+    for (int i = 0; i < l; i++) {
+        if ( (data[i] == 0) && (i > 0) && (i < l - 1) ) words++;
+    }
+    return words;
 }

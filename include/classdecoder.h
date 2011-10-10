@@ -14,7 +14,7 @@ class ClassDecoder {
     
     void decodefile(const std::string filename);
     
-    int size() {
+    int size() const {
         return classes.size();
     }
     
@@ -23,5 +23,7 @@ class ClassDecoder {
     }
 };
 
-unsigned int bytestoint(unsigned char* a, const int l);
+unsigned int bytestoint(const unsigned char* a, const int l);
 int readline(std::istream* IN, unsigned char* buffer);
+
+const int countwords(const unsigned char* data, const int l);

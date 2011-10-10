@@ -1,4 +1,5 @@
 #include <string>
+#include <iostream>
 #include "classdecoder.h"
 
 class EncNGram {
@@ -7,20 +8,23 @@ class EncNGram {
     public:
      unsigned char* data;
     
-     EncNGram(unsigned char* dataref, char size);
+     EncNGram(const unsigned char* dataref, char size);
      
-     ~EncNGram() {
-         free(data);
-     }
+     EncNGram(const EncNGram& ref);
+     
+     ~EncNGram();
      
      const int n() const;
      const char size() const;
      
-    std::string decode(ClassDecoder& classdecoder);
+    std::string decode(ClassDecoder& classdecoder) const;
             
-    EncNGram slice(const int begin,const int length);
+    
     bool operator==(const EncNGram &other) const;
     bool operator!=(const EncNGram &other) const;
+    EncNGram & operator =(EncNGram other);    
+    
+    EncNGram slice(const int begin,const int length) const;
 };
 
 namespace std {
@@ -47,4 +51,4 @@ struct hash<EncNGram> {
 
 }
 
-EncNGram getencngram(const int index, const int n, unsigned char *line, const int size);
+EncNGram getencngram(const int index, const int n, const unsigned char *line, const int size);
