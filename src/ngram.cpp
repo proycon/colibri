@@ -9,11 +9,11 @@ EncNGram::EncNGram(unsigned char* dataref, char size) {
        }
 }
 
-const char EncNGram::size() {
+const char EncNGram::size() const {
     return _size;
 }
 
-const int EncNGram::n() {
+const int EncNGram::n() const {
     int count = 1; 
     for (int i = 0; i < _size; i++) {
         if (data[i] == 0) count++;
@@ -46,3 +46,37 @@ EncNGram getencngram(const int index, const int n, unsigned char *line, const in
     const char bytesize = (char) (endpos - beginpos + 1);
     return EncNGram(line + beginpos, bytesize); 
 }
+
+std::string EncNGram::decode(ClassDecoder& classdecoder) {
+    std::string result = ""; 
+    unsigned char* begin = data;
+    for (int i = 0; i < _size; i++) {
+        if (data[i] == 0) {
+            //cout << "N: " << n << endl;
+            const unsigned int cls = bytestoint(begin, i - 1);  
+            if (cls == 1) {
+                return result;
+            } else {
+                result += classdecoder[cls];
+            }
+            begin = data + i;
+        }
+    }
+    return result;
+}
+
+bool EncNGram::operator==(const EncNGram &other) const {
+        const char othersize = other.size();
+        if (_size == othersize) {
+            for (int i = 0; i < _size; i++) {
+                if (data[i] != other.data[i]) return false;
+            }
+            return true;
+        } else {
+            return false;
+        }        
+}
+bool EncNGram::operator!=(const EncNGram &other) const {
+    return !(*this == other);
+}
+

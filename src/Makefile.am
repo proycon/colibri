@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -I@top_srcdir@/include
 
-bin_PROGRAMS = classdecode
+bin_PROGRAMS = classdecode patternfinder
 
 lib_LTLIBRARIES = libcppnlp.la
 
@@ -9,8 +9,13 @@ libcppnlp_la_SOURCES = classdecoder.cpp ngram.cpp
 
 classdecode_CXXFLAGS = -Wall -std=c++0x
 classdecode_LDADD = libcppnlp.la
-classdecode_SOURCES = classdecoder.cpp classdecode.cpp
+classdecode_SOURCES = classdecode.cpp
 classdecode_LDFLAGS = -static
+
+patternfinder_CXXFLAGS = -Wall -std=c++0x
+patternfinder_LDADD = libcppnlp.la
+patternfinder_SOURCES = patternfinder.cpp
+patternfinder_LDFLAGS = -static
 #LDADD = libcppnlp.la
 
 #lib_LTLIBRARIES = libcppnlp.la

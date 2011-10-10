@@ -13,27 +13,14 @@ class EncNGram {
          free(data);
      }
      
-     const int n();
-     const char size();
+     const int n() const;
+     const char size() const;
      
-     std::string decode(ClassDecoder& classdecoder) {
-        std::string result = ""; 
-        unsigned char* begin = data;
-        for (int i = 0; i < _size; i++) {
-            if (data[i] == 0) {
-                //cout << "N: " << n << endl;
-                const unsigned int cls = bytestoint(begin, i - 1);  
-                if (cls == 1) {
-                    return result;
-                } else {
-                    result += classdecoder[cls];
-                }
-                begin = data + i;
-            }
-        }
-    }
-    
+    std::string decode(ClassDecoder& classdecoder);
+            
     EncNGram slice(const int begin,const int length);
+    bool operator==(const EncNGram &other) const;
+    bool operator!=(const EncNGram &other) const;
 };
 
 namespace std {
@@ -43,7 +30,8 @@ struct hash<EncNGram> {
  public: 
         size_t operator()(EncNGram ngram) const throw() {            
             //jenkins hash: http://en.wikipedia.org/wiki/Jenkins_hash_function
-            unsigned long h, i;
+            unsigned long h;
+            int i;
             for(h = i = 0; i < ngram.size(); ++i)
             {
                 h += ngram.data[i];
