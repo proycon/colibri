@@ -3,7 +3,12 @@
 
 using namespace std;
 
-EncNGram::EncNGram(const unsigned char* dataref, char size) {
+EncNGram::EncNGram() {
+    _size = 0;
+    data = NULL;
+}
+
+EncNGram::EncNGram(const unsigned char* dataref, const char size) {
    //create a copy of the character data (will take less space than storing pointers anyhow!)
    _size = size;
    data = new unsigned char[size];
@@ -37,12 +42,12 @@ const int EncNGram::n() const {
     return count;
 }
 
-EncNGram EncNGram::slice(const int begin,const int length) const {
+EncNGram * EncNGram::slice(const int begin,const int length) const {
     //TODO: Do not make copy!
     return getencngram(begin, length, data, _size);
 }
 
-EncNGram getencngram(const int index, const int n, const unsigned char *line, const int size) {
+EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size) {
     //TODO: Do not make copy!
     int currentindex = 0;
     int beginpos = 0;
@@ -61,25 +66,30 @@ EncNGram getencngram(const int index, const int n, const unsigned char *line, co
         endpos = size - 1;
     }
     const char bytesize = (char) (endpos - beginpos + 1);    
-    return EncNGram(line + beginpos, bytesize);
+    return new EncNGram(line + beginpos, bytesize);
 }
 
 std::string EncNGram::decode(ClassDecoder& classdecoder) const {
     //cout << "DECODING NGRAM size=" << (int) _size << " n=" << n() << " data=" << data << endl;
     std::string result = ""; 
     int begin = 0;
-    int l = 0;
+    int l = 0;;
     for (int i = 0; i < _size; i++) {
         l++;
         if ((data[i] == 0) && (l > 0)) {            
             //cout << "N: " << n << endl;        
-            const unsigned int cls = bytestoint(data + begin, l);              
-            if (cls == 1) {
-                //cout << "EOL FOUND" << endl;
-                return result;
-            } else {  
-                //cout << " CLASS " << cls << " (length " << l << ") DECODES TO " << classdecoder[cls] << endl;
-                result += classdecoder[cls] + ' ';
+            if ((i > 0) && (data[i-1] == 0)) {
+                //two 0 bytes in a row, indicates a gap:
+                result += "* ";
+            } else {            
+                const unsigned int cls = bytestoint(data + begin, l);              
+                if (cls == 1) {
+                    //cout << "EOL FOUND" << endl;
+                    return result;
+                } else {  
+                    //cout << " CLASS " << cls << " (length " << l << ") DECODES TO " << classdecoder[cls] << endl;
+                    result += classdecoder[cls] + ' ';
+                }
             }
             begin = i + 1;            
             l = 0;
@@ -121,4 +131,20 @@ EncNGram & EncNGram::operator =(EncNGram other) { //(note: argument passed by va
  
         // by convention, always return *this (for chaining)
         return *this;
+}
+
+EncSingleSkipGram::EncSingleSkipGram(const EncNGram & pregap, const EncNGram & postgap): EncNGram() {
+    const char pregapsize = pregap.size();
+    const char postgapsize = postgap.size();
+    _size = pregapsize + postgapsize + 2;
+    data = new unsigned char[_size];    
+    int cursor = 0;
+    for (int i = 0; i < pregapsize; i++) {
+        data[cursor++] = pregap.data[i];
+    }
+    data[cursor++] = '\0'; //double \0 byte indicates gap
+    data[cursor++] = '\0'; //double \0 byte indicates gap
+    for (int i = 0; i < postgapsize; i++) {
+        data[cursor++] = postgap.data[i];
+    }        
 }
