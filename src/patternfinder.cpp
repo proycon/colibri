@@ -75,7 +75,7 @@ int main( int argc, char *argv[] ) {
     const int MAXLENGTH = 6;
     
     int tokencount[MAXLENGTH+1];
-    
+    int skiptokencount[MAXLENGTH+1];
 
     for (int n = 1; n <= MAXLENGTH; n++) {
         cerr << "Counting " << n << "-grams" << endl;
@@ -86,7 +86,7 @@ int main( int argc, char *argv[] ) {
         
         int linenum = 0;
         tokencount[n] = 0;
-        int skiptokens = 0;
+        skiptokencount[n] = 0;
         const vector< pair<int,int> > gaps = get_consecutive_gaps(n);
         
         
@@ -131,11 +131,13 @@ int main( int argc, char *argv[] ) {
                                     
                 ngrams[n][*ngram] += 1;
                 tokencount[n]++;
-                //cout << ngram_s << endl;
+
             
                 for (int j = 0; j < gaps.size(); j++) {
                     const int begin = gaps[j].first;  
                     const int length = gaps[j].second;
+                    
+                    
                     
                     //Don't count skipgram if its consecutive subparts are not in the ngram lists
                     EncNGram * skipgram_preskip = ngram->slice(0,begin);
@@ -145,21 +147,21 @@ int main( int argc, char *argv[] ) {
                         continue;
                     }
                     
-                    EncNGram * skipgram_postskip = ngram->slice(begin+length+1,ngram->size() - begin - length - 1);
+                    EncNGram * skipgram_postskip = ngram->slice(begin+length,ngram->n() - begin - length);
                     const int postskip_n = skipgram_postskip->n();
                     if ((postskip_n > 1) && (!(ngrams[postskip_n-1].count(*skipgram_postskip)))) {
                         delete skipgram_preskip;
                         delete skipgram_postskip;
                         continue;
 
-                    } 
+                    }
                     
                     EncSingleSkipGram skipgram = EncSingleSkipGram(*skipgram_preskip, *skipgram_postskip);
                     EncNGram * skip = ngram->slice(begin,length);
                     
                     skipgrams[n][skipgram].count++;
                     skipgrams[n][skipgram].skips[*skip] += 1;
-                    skiptokens++;
+                    skiptokencount[n]++;
                     
                     delete skip;
                     delete skipgram_preskip;
@@ -171,7 +173,7 @@ int main( int argc, char *argv[] ) {
             
         };
 
-       cerr << "Found " << tokencount[n] << " " << n << "-grams and " << skiptokens << " skipgrams" << endl;
+       cerr << "Found " << tokencount[n] << " " << n << "-grams and " << skiptokencount[n] << " skipgrams" << endl;
 
        //prune n-grams
        int pruned = 0;
@@ -195,19 +197,20 @@ int main( int argc, char *argv[] ) {
                 skipgramtotal += iter->second.count;
             }
        }
-       cerr << "Pruned " << pruned << " " << "skipgrams, " << (skiptokens - pruned) <<  " left" << endl;
+       cerr << "Pruned " << pruned << " " << "skipgrams, " << (skiptokencount[n] - pruned) <<  " left" << endl;
        
        
        for(freqlist::iterator iter = ngrams[n].begin(); iter != ngrams[n].end(); iter++ ) {
            const double freq = (double) iter->second / ngramtotal;
            const EncNGram ngram = iter->first;
            //cout << "NGRAM " << "N=" << ngram.n() << " SIZE=" << (int) ngram.size() << " DECODED=" << ngram.decode(classdecoder) << endl;
-           cout << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second << '\t' << freq << endl;
+           cout << ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second << '\t' << freq << endl;
        }
        
        for(skipgrammap::iterator iter = skipgrams[n].begin(); iter != skipgrams[n].end(); iter++ ) {
            const double freq = (double) iter->second.count / skipgramtotal;           
-           cout << setprecision(numeric_limits<double>::digits10 + 1) << iter->first.decode(classdecoder) << '\t' << iter->second.count << '\t' << freq << endl;
+           const EncSingleSkipGram skipgram = iter->first;
+           cout << skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count << '\t' << freq << endl;
        }
  
     }   
