@@ -34,21 +34,19 @@ const char EncNGram::size() const {
     return _size;
 }
 
-const int EncNGram::n() const {
-    int count = 1; 
+const char EncNGram::n() const {
+    char count = 1; 
     for (int i = 0; i < _size; i++) {
         if (data[i] == 0) count++;
     }    
     return count;
 }
 
-EncNGram * EncNGram::slice(const int begin,const int length) const {
-    //TODO: Do not make copy!
+EncNGram * EncNGram::slice(const int begin,const int length) const {    
     return getencngram(begin, length, data, _size);
 }
 
 EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size) {
-    //TODO: Do not make copy!
     int currentindex = 0;
     int beginpos = 0;
     int endpos = -1;
@@ -133,7 +131,7 @@ EncNGram & EncNGram::operator =(EncNGram other) { //(note: argument passed by va
         return *this;
 }
 
-EncSingleSkipGram::EncSingleSkipGram(const EncNGram & pregap, const EncNGram & postgap): EncNGram() {
+EncSingleSkipGram::EncSingleSkipGram(const EncNGram & pregap, const EncNGram & postgap, const char refn): EncNGram() {
     const char pregapsize = pregap.size();
     const char postgapsize = postgap.size();
     _size = pregapsize + postgapsize + 2;
@@ -147,4 +145,5 @@ EncSingleSkipGram::EncSingleSkipGram(const EncNGram & pregap, const EncNGram & p
     for (int i = 0; i < postgapsize; i++) {
         data[cursor++] = postgap.data[i];
     }        
+    _n = refn;
 }

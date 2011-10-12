@@ -16,7 +16,7 @@ class EncNGram {
      
      ~EncNGram();
      
-     const int n() const;
+     const char n() const;
      const char size() const;
      
     std::string decode(ClassDecoder& classdecoder) const;
@@ -36,9 +36,9 @@ class EncSingleSkipGram: public EncNGram {
     private:
       char _n;
     public:
-      const int n() const { return (int) _n; };
+      const char n() const { return _n; };
       
-    EncSingleSkipGram(const EncNGram & pregap, const EncNGram & postgap);
+    EncSingleSkipGram(const EncNGram & pregap, const EncNGram & postgap, const char refn);
       
     EncSingleSkipGram(const unsigned char* dataref, const char size, const char n): EncNGram(dataref, size) {
         _n = n;        

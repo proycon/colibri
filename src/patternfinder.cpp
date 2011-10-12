@@ -7,6 +7,9 @@
 #include <limits>
 #include <iomanip> // contains setprecision()
 #include <map>
+#include <unistd.h>
+#include <cmath>
+#include <set>
 
 using namespace std;
 
@@ -32,6 +35,15 @@ long total(freqlist& f) {
 }
 
 
+double compute_entropy(freqlist & data) {
+    double entropy = 0;
+    for(freqlist::iterator iter = data.begin(); iter != data.end(); iter++ ) {
+      entropy += iter->second * -1 * log2(iter->second);
+    }    
+    return -1 * entropy;
+}
+
+
 vector< pair<int,int> > get_consecutive_gaps(const int n) {
     vector< pair<int,int> > gaps;
     int begin = 1;
@@ -48,19 +60,101 @@ vector< pair<int,int> > get_consecutive_gaps(const int n) {
 }
 
 
+void usage() {
+    cerr << "Syntax: patternfinder -c classfile -f encoded-corpus" << endl;
+    cerr << "Options:" << endl;
+    cerr << "\t-t <number>      Token threshold: n-grams and skipgrams occuring less than this will be pruned (default: 2)" << endl;
+    cerr << "\t-l <number>      Maximum n-gram/skipgram length (in words, default: 9)" << endl;
+    cerr << "\t-s               Compute skip-grams" << endl;    
+    cerr << "\t-T <number>      Skip threshold: only skip content that occurs at least x times will be considered (default: 1) " << endl;
+    cerr << "\t-S <number>      Skip type threshold: only skipgrams with x possible types for the skip will be considered, otherwise the skipgram will be pruned  (default: 2)" << endl;
+    cerr << "\t-i               Compute index" << endl;
+        
+}
+
 
 int main( int argc, char *argv[] ) {
     
-    if (argc != 3) {
-        cerr << "Usage: patternfinder classfile encoded-corpus" << endl;
+    string classfile = "";
+    string corpusfile = "";
+    string outputprefix = "";
+    
+    int MINTOKENS = 2;
+    int MINSKIPTOKENS = 1;
+    unsigned int MINSKIPTYPES = 2;
+    int MAXLENGTH = 8;
+    bool DOSKIPGRAMS = false;
+    bool DOINDEX = false;
+    
+    char c;    
+    while ((c = getopt(argc, argv, "c:f:t:T:S:l:o:si")) != -1)
+        switch (c)
+        {
+        case 'c':
+            classfile = optarg;
+            break;
+        case 'f':
+            corpusfile = optarg;
+            break;        
+        case 't':
+            MINTOKENS = atoi(optarg);
+            break;
+        case 'T':
+            MINSKIPTOKENS = atoi(optarg);            
+            break;
+        case 'S':
+            MINSKIPTYPES = atoi(optarg);            
+            break;
+        case 'l':
+            MAXLENGTH = atoi(optarg);            
+            break;
+        case 's':
+            DOSKIPGRAMS = true;
+            break;
+        case 'i':
+            DOINDEX = true;
+            break;
+        case 'o': 
+            outputprefix = optarg;
+            break;
+        case '?':
+            if (optopt == 'c') {
+                cerr <<  "Option -" << optopt << " requires an argument." << endl;
+            } else {
+                cerr << "Unknown option: -" <<  optopt << endl;
+            }
+            
+            return 1;
+        default:
+            cerr << "Unknown option: -" <<  optopt << endl;
+            abort ();
+        }
+    
+    if (classfile.empty() || corpusfile.empty()) {
+        cerr << "Need to specify -c classfile and -f corpusfile" << endl;
         exit(2);
     }
     
-    const string classfile = argv[1];
+    if (outputprefix.empty()) {
+        outputprefix = corpusfile;
+    }
+
+    const string ngramoutputfile = outputprefix + ".ngrams";
+    ofstream *NGRAMSOUT =  new ofstream( ngramoutputfile.c_str() );      
+    const string skipgramoutputfile = outputprefix + ".skipgrams";
+    const string ngramindexfile = outputprefix + ".ngrams.index";
+    const string skipgramindexfile = outputprefix + ".skipgrams.index";
+    ofstream *SKIPGRAMSOUT = NULL;
+    ofstream *NGRAMINDEX = NULL;
+    ofstream *SKIPGRAMINDEX = NULL;
+    if (DOINDEX) NGRAMINDEX = new ofstream( ngramindexfile.c_str() );      
+    if (DOSKIPGRAMS) {    
+         SKIPGRAMSOUT = new ofstream( skipgramoutputfile.c_str() );      
+         if (DOINDEX) SKIPGRAMINDEX = new ofstream( skipgramindexfile.c_str() );      
+    }
     
     ClassDecoder classdecoder = ClassDecoder(classfile);
-    
-    string corpusfile = argv[2];
+
     
     cerr << "Processing " << classfile << endl;
     //int n = atoi(argv[2]);
@@ -69,24 +163,29 @@ int main( int argc, char *argv[] ) {
     unsigned char line[1024];    
     vector<freqlist> ngrams;
     vector<skipgrammap> skipgrams;
+    
+    
     ngrams.push_back(freqlist()); //for 1-based indexing
     skipgrams.push_back(skipgrammap()); //for 1-based indexing
-    const int MINTOKENS = 2;
-    const int MAXLENGTH = 6;
     
     int tokencount[MAXLENGTH+1];
     int skiptokencount[MAXLENGTH+1];
+    
+    unsigned long ngramtotal = 0;
+    unsigned long skipgramtotal = 0;
 
     for (int n = 1; n <= MAXLENGTH; n++) {
         cerr << "Counting " << n << "-grams" << endl;
         ngrams.push_back(freqlist());
         skipgrams.push_back(skipgrammap());
         
-        
+        unordered_map<EncNGram,set<int>> ngram_index;
+        unordered_map<EncSingleSkipGram,set<int> > skipgram_index;
         
         int linenum = 0;
         tokencount[n] = 0;
         skiptokencount[n] = 0;
+
         const vector< pair<int,int> > gaps = get_consecutive_gaps(n);
         
         
@@ -132,8 +231,10 @@ int main( int argc, char *argv[] ) {
                 ngrams[n][*ngram] += 1;
                 tokencount[n]++;
 
+                if (DOINDEX) ngram_index[*ngram].insert(linenum);
+
             
-                for (int j = 0; j < gaps.size(); j++) {
+                for (size_t j = 0; j < gaps.size(); j++) {
                     const int begin = gaps[j].first;  
                     const int length = gaps[j].second;
                     
@@ -142,26 +243,43 @@ int main( int argc, char *argv[] ) {
                     //Don't count skipgram if its consecutive subparts are not in the ngram lists
                     EncNGram * skipgram_preskip = ngram->slice(0,begin);
                     const int preskip_n = skipgram_preskip->n();
-                    if ((preskip_n > 1) && (!(ngrams[preskip_n-1].count(*skipgram_preskip)))) {
+                    if (!(ngrams[preskip_n].count(*skipgram_preskip))) {
                         delete skipgram_preskip;
                         continue;
                     }
                     
                     EncNGram * skipgram_postskip = ngram->slice(begin+length,ngram->n() - begin - length);
                     const int postskip_n = skipgram_postskip->n();
-                    if ((postskip_n > 1) && (!(ngrams[postskip_n-1].count(*skipgram_postskip)))) {
+                    if (!(ngrams[postskip_n].count(*skipgram_postskip))) {
                         delete skipgram_preskip;
                         delete skipgram_postskip;
                         continue;
 
                     }
                     
-                    EncSingleSkipGram skipgram = EncSingleSkipGram(*skipgram_preskip, *skipgram_postskip);
+                    EncSingleSkipGram skipgram = EncSingleSkipGram(*skipgram_preskip, *skipgram_postskip, n);
                     EncNGram * skip = ngram->slice(begin,length);
                     
-                    skipgrams[n][skipgram].count++;
-                    skipgrams[n][skipgram].skips[*skip] += 1;
-                    skiptokencount[n]++;
+                    
+                    bool docount = true;
+                    
+                    if ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS)) {
+                        const int skip_n = skipgram_postskip->n();
+                        if (!(ngrams[skip_n].count(*skip))) {
+                            docount = false;
+                        } else {
+                            docount = (ngrams[skip_n-1][*skip] >= MINSKIPTOKENS);
+                        } 
+                    }
+                    
+                    if (docount) {
+                        skipgrams[n][skipgram].count++;
+                        skipgrams[n][skipgram].skips[*skip] += 1;
+                        skiptokencount[n]++;
+                        
+                        if (DOINDEX) skipgram_index[skipgram].insert(linenum);
+
+                    }
                     
                     delete skip;
                     delete skipgram_preskip;
@@ -173,47 +291,131 @@ int main( int argc, char *argv[] ) {
             
         };
 
-       cerr << "Found " << tokencount[n] << " " << n << "-grams and " << skiptokencount[n] << " skipgrams" << endl;
+       cerr << "Found " << ngrams[n].size() << " " << n << "-grams (" << tokencount[n] << " tokens)";
+       if (DOSKIPGRAMS) {
+        cerr << " and " << skipgrams[n].size() << " skipgrams (" << skiptokencount[n] << " tokens)" << endl;
+       } else {
+        cerr << endl;
+       }
+    
 
        //prune n-grams
        int pruned = 0;
-       int ngramtotal = 0;
+       
        for(freqlist::iterator iter = ngrams[n].begin(); iter != ngrams[n].end(); iter++ ) {
-            if (iter->second <= MINTOKENS) {
-                pruned += ngrams[n].erase(iter->first);
+            if (iter->second < MINTOKENS) {
+                tokencount[n] -= iter->second;
+                pruned++;
+                ngrams[n].erase(iter->first);        
+                if (DOINDEX) ngram_index.erase(iter->first);        
             } else {
                 ngramtotal += iter->second;
             }
        }
-       cerr << "Pruned " << pruned << " " << n << "-grams, " << (tokencount[n] - pruned) <<  " left" << endl;
+       cerr << "Pruned " << pruned << " " << n << "-grams, " << ngrams[n].size() <<  " left (" << tokencount[n] << " tokens)" << endl;
        
-       //prune skipgrams
-       pruned = 0;
-       int skipgramtotal = 0; //total tokens
-       for(skipgrammap::iterator iter = skipgrams[n].begin(); iter != skipgrams[n].end(); iter++ ) {
-            if (iter->second.count <= MINTOKENS) {
-                pruned += skipgrams[n].erase(iter->first);
-            } else {
-                skipgramtotal += iter->second.count;
+    
+       
+       if (DOSKIPGRAMS) {       
+           //prune skipgrams
+           pruned = 0;
+           for(skipgrammap::iterator iter = skipgrams[n].begin(); iter != skipgrams[n].end(); iter++ ) {
+                if ((iter->second.count < MINTOKENS) || (iter->second.skips.size() < MINSKIPTYPES)) {
+                    //prune skipgram
+                    skiptokencount[n] -= iter->second.count;
+                    pruned++;
+                    skipgrams[n].erase(iter->first);                    
+                    if (DOINDEX) skipgram_index.erase(iter->first);
+                } else {
+                    for(freqlist::iterator iter2 = iter->second.skips.begin(); iter2 != iter->second.skips.end(); iter2++ ) {
+                        if (iter2->second < MINSKIPTOKENS) {
+                            //prune skip
+                            iter->second.count -= iter2->second;
+                            iter->second.skips.erase(iter2->first); 
+                        }
+                    }
+                    skipgramtotal += iter->second.count;
+                }
+           }
+           cerr << "Pruned " << pruned << " skipgrams, " << skipgrams[n].size() <<  " left (" << skiptokencount[n] << " tokens)" << endl;
+           
+        }
+        
+        if (DOINDEX) {
+            cerr << "Writing ngram index";
+
+            for(unordered_map<EncNGram,set<int>>::iterator iter = ngram_index.begin(); iter != ngram_index.end(); iter++ ) {
+                const EncNGram ngram = iter->first;
+                *NGRAMINDEX << ngram.decode(classdecoder);
+                for (set<int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                    *NGRAMINDEX << ' ' << *iter2;
+                }
             }
-       }
-       cerr << "Pruned " << pruned << " " << "skipgrams, " << (skiptokencount[n] - pruned) <<  " left" << endl;
-       
-       
-       for(freqlist::iterator iter = ngrams[n].begin(); iter != ngrams[n].end(); iter++ ) {
-           const double freq = (double) iter->second / ngramtotal;
+            *NGRAMINDEX << endl;
+            
+            if (DOSKIPGRAMS) {
+                cerr << "Writing skipgram index";
+
+                for(unordered_map<EncSingleSkipGram,set<int>>::iterator iter = skipgram_index.begin(); iter != skipgram_index.end(); iter++ ) {
+                    const EncSingleSkipGram skipgram = iter->first;
+                    *SKIPGRAMINDEX << skipgram.decode(classdecoder);
+                    for (set<int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                        *SKIPGRAMINDEX << ' ' << *iter2;
+                    }
+                    *SKIPGRAMINDEX << endl;
+                }
+                
+            }
+        }
+    }
+
+
+    
+   
+   
+    cerr << "Writing results to file: " << ngramoutputfile;
+    if (DOSKIPGRAMS) {
+        cerr << " , " << skipgramoutputfile << endl;
+    } else {
+        cerr << endl;
+    }
+    const int grandtotal = ngramtotal + skipgramtotal;
+   
+    for (int n = 1; n <= MAXLENGTH; n++) {   
+        for(freqlist::iterator iter = ngrams[n].begin(); iter != ngrams[n].end(); iter++ ) {
+           const double freq1 = (double) iter->second / tokencount[n];
+           const double freq2 = (double) iter->second / ngramtotal;
+           const double freq3 = (double) iter->second / grandtotal;
            const EncNGram ngram = iter->first;
            //cout << "NGRAM " << "N=" << ngram.n() << " SIZE=" << (int) ngram.size() << " DECODED=" << ngram.decode(classdecoder) << endl;
-           cout << ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second << '\t' << freq << endl;
-       }
+           *NGRAMSOUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << endl;
+        }
        
-       for(skipgrammap::iterator iter = skipgrams[n].begin(); iter != skipgrams[n].end(); iter++ ) {
-           const double freq = (double) iter->second.count / skipgramtotal;           
-           const EncSingleSkipGram skipgram = iter->first;
-           cout << skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count << '\t' << freq << endl;
-       }
- 
-    }   
+        if (DOSKIPGRAMS) {           
+           
+           for(skipgrammap::iterator iter = skipgrams[n].begin(); iter != skipgrams[n].end(); iter++ ) {
+               const double freq1 = (double) iter->second.count / skiptokencount[n]; 
+               const double freq2 = (double) iter->second.count / skipgramtotal;           
+               const double freq3 = (double) iter->second.count / grandtotal;                          
+               const int skiptypes = iter->second.skips.size();
+               const double entropy = compute_entropy(iter->second.skips);
+               const EncSingleSkipGram skipgram = iter->first;                              
+               *SKIPGRAMSOUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t' << skiptypes << '\t' << iter->second.count << '\t' << entropy << endl;
+           }
+           
+        }
+    }
+    
+    NGRAMSOUT->close();
+    if (DOINDEX) NGRAMINDEX->close();
+    if (DOSKIPGRAMS) {
+        SKIPGRAMSOUT->close();
+        if (DOINDEX) SKIPGRAMINDEX->close();
+    }
+    
+      
+
+    
 
 }
 
