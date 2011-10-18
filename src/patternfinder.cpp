@@ -35,10 +35,12 @@ long total(freqlist& f) {
 }
 
 
-double compute_entropy(freqlist & data) {
+double compute_entropy(freqlist & data, const int total) {
     double entropy = 0;
     for(freqlist::iterator iter = data.begin(); iter != data.end(); iter++ ) {
-      entropy += iter->second * -1 * log2(iter->second);
+      double p = iter->second / (double) total;
+      //cout << setprecision(numeric_limits<double>::digits10 + 1) << iter->second << " / " << total << " = " << p << endl;
+      entropy += p * log2(p);
     }    
     return -1 * entropy;
 }
@@ -53,6 +55,7 @@ vector< pair<int,int> > get_consecutive_gaps(const int n) {
             pair<int,int> gap = make_pair(begin, length);
             gaps.push_back(gap);
             length--;
+            
         }
         begin++;
     }      
@@ -398,7 +401,7 @@ int main( int argc, char *argv[] ) {
                const double freq2 = (double) iter->second.count / skipgramtotal;           
                const double freq3 = (double) iter->second.count / grandtotal;                          
                const int skiptypes = iter->second.skips.size();
-               const double entropy = compute_entropy(iter->second.skips);
+               const double entropy = compute_entropy(iter->second.skips, iter->second.count);
                const EncSingleSkipGram skipgram = iter->first;                              
                *SKIPGRAMSOUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t' << skiptypes << '\t' << iter->second.count << '\t' << entropy << endl;
            }
