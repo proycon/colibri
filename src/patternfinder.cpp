@@ -304,19 +304,19 @@ int main( int argc, char *argv[] ) {
 
        //prune n-grams
        int pruned = 0;
-       
+       //unordered_map<EncNGram,set<int>>::iterator iter2 = ngram_index.begin();
        for(freqlist::iterator iter = ngrams[n].begin(); iter != ngrams[n].end(); iter++ ) {
+            //if (DOINDEX) iter2++;
             if (iter->second < MINTOKENS) {
+                if (DOINDEX) ngram_index.erase( iter->first);        
                 tokencount[n] -= iter->second;
                 pruned++;
-                ngrams[n].erase(iter->first);        
-                if (DOINDEX) ngram_index.erase(iter->first);        
+                ngrams[n].erase(iter->first);                        
             } else {
                 ngramtotal += iter->second;
             }
        }
        cerr << "Pruned " << pruned << " " << n << "-grams, " << ngrams[n].size() <<  " left (" << tokencount[n] << " tokens)" << endl;
-       
     
        
        if (DOSKIPGRAMS) {       
@@ -325,10 +325,10 @@ int main( int argc, char *argv[] ) {
            for(skipgrammap::iterator iter = skipgrams[n].begin(); iter != skipgrams[n].end(); iter++ ) {
                 if ((iter->second.count < MINTOKENS) || (iter->second.skips.size() < MINSKIPTYPES)) {
                     //prune skipgram
+                    if (DOINDEX) skipgram_index.erase(iter->first);
                     skiptokencount[n] -= iter->second.count;
                     pruned++;
                     skipgrams[n].erase(iter->first);                    
-                    if (DOINDEX) skipgram_index.erase(iter->first);
                 } else {
                     for(freqlist::iterator iter2 = iter->second.skips.begin(); iter2 != iter->second.skips.end(); iter2++ ) {
                         if (iter2->second < MINSKIPTOKENS) {
@@ -345,25 +345,25 @@ int main( int argc, char *argv[] ) {
         }
         
         if (DOINDEX) {
-            cerr << "Writing ngram index";
+            cerr << "Writing ngram index" << endl;
 
             for(unordered_map<EncNGram,set<int>>::iterator iter = ngram_index.begin(); iter != ngram_index.end(); iter++ ) {
                 const EncNGram ngram = iter->first;
-                *NGRAMINDEX << ngram.decode(classdecoder);
+                *NGRAMINDEX << ngram.decode(classdecoder) << '\t';
                 for (set<int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-                    *NGRAMINDEX << ' ' << *iter2;
+                    *NGRAMINDEX << *iter2 << ' ';
                 }
+                *NGRAMINDEX << endl;
             }
-            *NGRAMINDEX << endl;
-            
+                        
             if (DOSKIPGRAMS) {
-                cerr << "Writing skipgram index";
+                cerr << "Writing skipgram index" << endl;;
 
                 for(unordered_map<EncSingleSkipGram,set<int>>::iterator iter = skipgram_index.begin(); iter != skipgram_index.end(); iter++ ) {
                     const EncSingleSkipGram skipgram = iter->first;
-                    *SKIPGRAMINDEX << skipgram.decode(classdecoder);
+                    *SKIPGRAMINDEX << (int) skipgram.n() << '\t' << skipgram.decode(classdecoder) << '\t';
                     for (set<int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-                        *SKIPGRAMINDEX << ' ' << *iter2;
+                        *SKIPGRAMINDEX << *iter2 << ' ';
                     }
                     *SKIPGRAMINDEX << endl;
                 }
