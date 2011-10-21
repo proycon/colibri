@@ -71,7 +71,8 @@ void usage() {
     cerr << "\t-s               Compute skip-grams" << endl;    
     cerr << "\t-T <number>      Skip threshold: only skip content that occurs at least x times will be considered (default: 1) " << endl;
     cerr << "\t-S <number>      Skip type threshold: only skipgrams with x possible types for the skip will be considered, otherwise the skipgram will be pruned  (default: 2)" << endl;
-    cerr << "\t-i               Compute index" << endl;
+    cerr << "\t-i               Compute and output index" << endl;
+    //cerr << "\t-C               Compute and output compositionality" << endl;
     cerr << "\t-L               Output invididual skips" << endl;
     cerr << "\t-o <string>      Output prefix" << endl;
         
@@ -91,9 +92,10 @@ int main( int argc, char *argv[] ) {
     bool DOSKIPGRAMS = false;
     bool DOINDEX = false;
     bool DOSKIPOUTPUT = false;
+    //bool DOCOMPOSITIONALITY = false;
     
     char c;    
-    while ((c = getopt(argc, argv, "c:f:t:T:S:l:o:siL")) != -1)
+    while ((c = getopt(argc, argv, "c:f:t:T:S:l:o:siLh")) != -1)
         switch (c)
         {
         case 'c':
@@ -140,7 +142,8 @@ int main( int argc, char *argv[] ) {
         }
     
     if (classfile.empty() || corpusfile.empty()) {
-        cerr << "Need to specify -c classfile and -f corpusfile" << endl;
+        cerr << "ERROR: Need to specify -c classfile and -f corpusfile" << endl;
+        usage();
         exit(2);
     }
     
