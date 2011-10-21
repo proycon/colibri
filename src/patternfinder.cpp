@@ -72,6 +72,8 @@ void usage() {
     cerr << "\t-T <number>      Skip threshold: only skip content that occurs at least x times will be considered (default: 1) " << endl;
     cerr << "\t-S <number>      Skip type threshold: only skipgrams with x possible types for the skip will be considered, otherwise the skipgram will be pruned  (default: 2)" << endl;
     cerr << "\t-i               Compute index" << endl;
+    cerr << "\t-L               Output invididual skips" << endl;
+    cerr << "\t-o <string>      Output prefix" << endl;
         
 }
 
@@ -88,9 +90,10 @@ int main( int argc, char *argv[] ) {
     int MAXLENGTH = 8;
     bool DOSKIPGRAMS = false;
     bool DOINDEX = false;
+    bool DOSKIPOUTPUT = false;
     
     char c;    
-    while ((c = getopt(argc, argv, "c:f:t:T:S:l:o:si")) != -1)
+    while ((c = getopt(argc, argv, "c:f:t:T:S:l:o:siL")) != -1)
         switch (c)
         {
         case 'c':
@@ -116,6 +119,9 @@ int main( int argc, char *argv[] ) {
             break;
         case 'i':
             DOINDEX = true;
+            break;
+        case 'L':
+            DOSKIPOUTPUT = true;
             break;
         case 'o': 
             outputprefix = optarg;
@@ -403,7 +409,14 @@ int main( int argc, char *argv[] ) {
                const int skiptypes = iter->second.skips.size();
                const double entropy = compute_entropy(iter->second.skips, iter->second.count);
                const EncSingleSkipGram skipgram = iter->first;                              
-               *SKIPGRAMSOUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t' << skiptypes << '\t' << iter->second.count << '\t' << entropy << endl;
+               *SKIPGRAMSOUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t' << skiptypes << '\t' << iter->second.count << '\t' << entropy << '\t';
+               if (DOSKIPOUTPUT) {
+                   for (freqlist::iterator iter2 = iter->second.skips.begin(); iter2 != iter->second.skips.end(); iter2++) {
+                       const EncNGram skipcontent = iter2->first;
+                      *SKIPGRAMSOUT << skipcontent.decode(classdecoder) << '|' << iter2->second << '|';
+                   }
+               }
+               *SKIPGRAMSOUT << endl;
            }
            
         }
