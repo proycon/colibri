@@ -172,7 +172,7 @@ int main( int argc, char *argv[] ) {
     //int n = atoi(argv[2]);
     
     
-    unsigned char line[1024];    
+    unsigned char line[65536];    
     vector<freqlist> ngrams;
     vector<skipgrammap> skipgrams;
     
