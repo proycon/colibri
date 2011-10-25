@@ -276,11 +276,11 @@ int main( int argc, char *argv[] ) {
                     bool docount = true;
                     
                     if ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS)) {
-                        const int skip_n = skipgram_postskip->n();
-                        if (!(ngrams[skip_n].count(*skip))) {
+                        const int skip_n = skip->n();
+                        if (ngrams[skip_n].count(*skip) == 0) {
                             docount = false;
                         } else {
-                            docount = (ngrams[skip_n-1][*skip] >= MINSKIPTOKENS);
+                            docount = (ngrams[skip_n][*skip] >= MINSKIPTOKENS);
                         } 
                     }
                     
