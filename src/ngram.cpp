@@ -147,3 +147,107 @@ EncSingleSkipGram::EncSingleSkipGram(const EncNGram & pregap, const EncNGram & p
     }        
     _n = refn;
 }
+
+
+
+EncSkipGram::EncSkipGram(const vector<EncNGram*> & dataref, const vector<int> & skipref, bool initialskip, bool finalskip): EncNGram() {
+    //compute size
+    _size = 0;
+    skipcount = 0;
+    for (char i = 0; i < (char) dataref.size(); i++) {
+        _size += (dataref[i])->size();
+        if (i < (char) dataref.size() - 1) skipcount++;
+    }
+    if (initialskip) {
+        _size += 2; //two null bytes at start
+        skipcount += 1;
+    }
+    if (finalskip) {
+        _size += 2; //extra null byte at end
+        skipcount += 1;
+    }
+    
+    
+    
+    if ((char) skipref.size() != skipcount) {
+        cerr << "ENCSKIPGRAM ERROR: Expected " << skipcount << " skips, but configuration specifies " << skipref.size() << endl;
+        exit(1);
+    } else if (skipcount > MAXSKIPS) {
+        cerr << "ENCSKIPGRAM ERROR: Too many skips for memory! " << skipcount << endl;
+        exit(1);
+    }
+                    
+    data = new unsigned char[_size]; 
+    
+    for (unsigned int i = 0; i < skipref.size(); i++) {
+        skipsize[i] = (char) skipref[i];
+    }
+    
+    //good, now fill the data buffer
+    int cursor = 0;
+    if (initialskip) {
+        data[cursor++] = '\0';
+        data[cursor++] = '\0';
+    }
+    for (unsigned int i = 0; i < dataref.size(); i++) {
+        for (int j = 0; j < dataref[i]->size(); j++) {
+            data[cursor++] = dataref[i]->data[j];
+            data[cursor++] = '\0';
+        }
+        if (i < dataref.size() - 1) {            
+            data[cursor++] = '\0';
+        }                
+    }    
+    if (finalskip) {
+        data[cursor++] = '\0';
+        data[cursor++] = '\0';
+    }        
+}
+
+const char EncSkipGram::n() const {
+    char count = 1; 
+    for (int i = 0; i < _size; i++) {
+        if (data[i] == 0) count++;
+    }    
+    for (int i = 0; i < skipcount; i++) {
+        count += skipsize[i] - 1; //minus one because each skip already counted for one in the previous loop
+    }
+    return count;    
+}
+
+
+EncSkipGram::EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, const char refn): EncNGram() {
+    const char pregapsize = pregap.size();
+    const char postgapsize = postgap.size();
+    skipcount = 1;
+    skipsize[0] = refn - pregap.n() - postgap.n();
+            
+    _size = pregapsize + postgapsize + 2;
+    data = new unsigned char[_size];    
+    int cursor = 0;
+    for (int i = 0; i < pregapsize; i++) {
+        data[cursor++] = pregap.data[i];
+    }
+    data[cursor++] = '\0'; //double \0 byte indicates gap
+    data[cursor++] = '\0'; //double \0 byte indicates gap
+    for (int i = 0; i < postgapsize; i++) {
+        data[cursor++] = postgap.data[i];
+    }        
+}
+
+size_t jenkinshash(unsigned char * data, char size) {
+    //jenkins hash: http://en.wikipedia.org/wiki/Jenkins_hash_function
+    unsigned long h;
+    int i;
+    for(h = i = 0; i < size; ++i)
+    {
+        h += data[i];
+        h += (h << 10);
+        h ^= (h >> 6);
+    }
+    h += (h << 3);
+    h ^= (h >> 11);
+    h += (h << 15);
+    return h;
+}
+

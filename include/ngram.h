@@ -2,6 +2,9 @@
 #include <iostream>
 #include "classdecoder.h"
 #include <unordered_map>
+#include <vector>
+
+const int MAXSKIPS = 4;
 
 class EncNGram {
     protected:
@@ -12,8 +15,7 @@ class EncNGram {
      EncNGram();
      EncNGram(const unsigned char* dataref, const char size);
      
-     EncNGram(const EncNGram& ref);
-     
+     EncNGram(const EncNGram& ref);     
      ~EncNGram();
      
      const char n() const;
@@ -43,12 +45,28 @@ class EncSingleSkipGram: public EncNGram {
     EncSingleSkipGram(const unsigned char* dataref, const char size, const char n): EncNGram(dataref, size) {
         _n = n;        
     }     
+  
+};
+ 
+ 
+class EncSkipGram: public EncNGram {
+    private:
+      char skipsize[MAXSKIPS]; //4 bytes reserved for skip size
+      char skipcount; //number of skips
+    public:
+      const char n() const;
+      
+      EncSkipGram(const std::vector<EncNGram*> & dataref, const std::vector<int> & skipref, bool initialskip = false, bool finalskip = false);
+      EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, const char refn);
     
-    //const EncNGram preskippart() const;
-    
-    //const EncNGram postskippart() const;
+      
+    //EncSkipGram(const unsigned char* dataref, const char size): EncNGram(dataref, size) {      
+    //}     
+  
 };
 
+
+size_t jenkinshash(unsigned char * data, char size);
 
 namespace std {
 
@@ -57,18 +75,7 @@ struct hash<EncNGram> {
  public: 
         size_t operator()(EncNGram ngram) const throw() {            
             //jenkins hash: http://en.wikipedia.org/wiki/Jenkins_hash_function
-            unsigned long h;
-            int i;
-            for(h = i = 0; i < ngram.size(); ++i)
-            {
-                h += ngram.data[i];
-                h += (h << 10);
-                h ^= (h >> 6);
-            }
-            h += (h << 3);
-            h ^= (h >> 11);
-            h += (h << 15);
-            return h;
+            return jenkinshash(ngram.data, ngram.size());
         }
 };
 
@@ -79,18 +86,17 @@ struct hash<EncSingleSkipGram> {
  public: 
         size_t operator()(EncSingleSkipGram ngram) const throw() {            
             //jenkins hash: http://en.wikipedia.org/wiki/Jenkins_hash_function
-            unsigned long h;
-            int i;
-            for(h = i = 0; i < ngram.size(); ++i)
-            {
-                h += ngram.data[i];
-                h += (h << 10);
-                h ^= (h >> 6);
-            }
-            h += (h << 3);
-            h ^= (h >> 11);
-            h += (h << 15);
-            return h;
+            return jenkinshash(ngram.data, ngram.size());
+        }
+};
+
+
+template <>
+struct hash<EncSkipGram> {
+ public: 
+        size_t operator()(EncSkipGram ngram) const throw() {            
+            //jenkins hash: http://en.wikipedia.org/wiki/Jenkins_hash_function
+            return jenkinshash(ngram.data, ngram.size());
         }
 };
 

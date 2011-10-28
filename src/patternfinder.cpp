@@ -24,7 +24,7 @@ class skipgramdata {
     }
 };
 
-typedef unordered_map<EncSingleSkipGram,skipgramdata> skipgrammap;
+typedef unordered_map<EncSkipGram,skipgramdata> skipgrammap;
 
 long total(freqlist& f) { 
     long s = 0;
@@ -192,7 +192,7 @@ int main( int argc, char *argv[] ) {
         skipgrams.push_back(skipgrammap());
         
         unordered_map<EncNGram,set<int>> ngram_index;
-        unordered_map<EncSingleSkipGram,set<int> > skipgram_index;
+        unordered_map<EncSkipGram,set<int> > skipgram_index;
         
         int linenum = 0;
         tokencount[n] = 0;
@@ -269,7 +269,7 @@ int main( int argc, char *argv[] ) {
 
                     }
                     
-                    EncSingleSkipGram skipgram = EncSingleSkipGram(*skipgram_preskip, *skipgram_postskip, n);
+                    EncSkipGram skipgram = EncSkipGram(*skipgram_preskip, *skipgram_postskip, n);
                     EncNGram * skip = ngram->slice(begin,length);
                     
                     
@@ -368,8 +368,8 @@ int main( int argc, char *argv[] ) {
             if (DOSKIPGRAMS) {
                 cerr << "Writing skipgram index" << endl;;
 
-                for(unordered_map<EncSingleSkipGram,set<int>>::iterator iter = skipgram_index.begin(); iter != skipgram_index.end(); iter++ ) {
-                    const EncSingleSkipGram skipgram = iter->first;
+                for(unordered_map<EncSkipGram,set<int>>::iterator iter = skipgram_index.begin(); iter != skipgram_index.end(); iter++ ) {
+                    const EncSkipGram skipgram = iter->first;
                     *SKIPGRAMINDEX << (int) skipgram.n() << '\t' << skipgram.decode(classdecoder) << '\t';
                     for (set<int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                         *SKIPGRAMINDEX << *iter2 << ' ';
@@ -411,7 +411,7 @@ int main( int argc, char *argv[] ) {
                const double freq3 = (double) iter->second.count / grandtotal;                          
                const int skiptypes = iter->second.skips.size();
                const double entropy = compute_entropy(iter->second.skips, iter->second.count);
-               const EncSingleSkipGram skipgram = iter->first;                              
+               const EncSkipGram skipgram = iter->first;                              
                *SKIPGRAMSOUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t' << skiptypes << '\t' << iter->second.count << '\t' << entropy << '\t';
                if (DOSKIPOUTPUT) {
                    for (freqlist::iterator iter2 = iter->second.skips.begin(); iter2 != iter->second.skips.end(); iter2++) {
