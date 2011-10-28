@@ -50,10 +50,9 @@ class EncSingleSkipGram: public EncNGram {
  
  
 class EncSkipGram: public EncNGram {
-    private:
+    public:
       char skipsize[MAXSKIPS]; //4 bytes reserved for skip size
       char skipcount; //number of skips
-    public:
       const char n() const;
       
       EncSkipGram(const std::vector<EncNGram*> & dataref, const std::vector<int> & skipref, bool initialskip = false, bool finalskip = false);
