@@ -1,1 +1,1 @@
-pkginclude_HEADERS = classdecoder.h ngram.h
+pkginclude_HEADERS = classdecoder.h ngram.h algorithms.h

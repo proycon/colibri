@@ -67,6 +67,7 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
     return new EncNGram(line + beginpos, bytesize);
 }
 
+
 std::string EncNGram::decode(ClassDecoder& classdecoder) const {
     //cout << "DECODING NGRAM size=" << (int) _size << " n=" << n() << " data=" << data << endl;
     std::string result = ""; 
@@ -74,20 +75,14 @@ std::string EncNGram::decode(ClassDecoder& classdecoder) const {
     int l = 0;;
     for (int i = 0; i < _size; i++) {
         l++;
-        if ((data[i] == 0) && (l > 0)) {            
-            //cout << "N: " << n << endl;        
-            if ((i > 0) && (data[i-1] == 0)) {
-                //two 0 bytes in a row, indicates a gap:
-                result += "* ";
-            } else {            
-                const unsigned int cls = bytestoint(data + begin, l);              
-                if (cls == 1) {
-                    //cout << "EOL FOUND" << endl;
-                    return result;
-                } else {  
-                    //cout << " CLASS " << cls << " (length " << l << ") DECODES TO " << classdecoder[cls] << endl;
-                    result += classdecoder[cls] + ' ';
-                }
+        if ((data[i] == 0) && (l > 0)) {             
+            const unsigned int cls = bytestoint(data + begin, l);              
+            if (cls == 1) {
+                //cout << "EOL FOUND" << endl;
+                return result;
+            } else {  
+                //cout << " CLASS " << cls << " (length " << l << ") DECODES TO " << classdecoder[cls] << endl;
+                result += classdecoder[cls] + ' ';
             }
             begin = i + 1;            
             l = 0;
@@ -100,6 +95,34 @@ std::string EncNGram::decode(ClassDecoder& classdecoder) const {
     }    
     return result;
 }
+
+bool EncNGram::out() const {
+    //cout << "DECODING NGRAM size=" << (int) _size << " n=" << n() << " data=" << data << endl;
+    int begin = 0;
+    int l = 0;;
+    for (int i = 0; i < _size; i++) {
+        l++;
+        if ((data[i] == 0) && (l > 0)) {             
+            const unsigned int cls = bytestoint(data + begin, l);              
+            if (cls == 1) {
+                //cout << "EOL FOUND" << endl;
+                return true;
+            } else {  
+                //cout << " CLASS " << cls << " (length " << l << ") DECODES TO " << classdecoder[cls] << endl;
+                cout << cls << ' ';
+            }
+            begin = i + 1;            
+            l = 0;
+        }
+    }
+    if (l > 0) {
+        const unsigned int cls = bytestoint(data + begin, l);  
+        cout << cls << ' ';
+        //cout << "FINAL CLASS " << cls << " DECODES TO " << classdecoder[cls] << endl;
+    }    
+    return true;
+}
+
 
 bool EncNGram::operator==(const EncNGram &other) const {
         const char othersize = other.size();
@@ -153,30 +176,20 @@ EncSingleSkipGram::EncSingleSkipGram(const EncNGram & pregap, const EncNGram & p
 EncSkipGram::EncSkipGram(const vector<EncNGram*> & dataref, const vector<int> & skipref, bool initialskip, bool finalskip): EncNGram() {
     //compute size
     _size = 0;
-    skipcount = 0;
+    //cerr << "-- INITIAL: " << initialskip << endl;
+    //cerr << "-- FINAL: " << finalskip << endl;
     for (char i = 0; i < (char) dataref.size(); i++) {
         _size += (dataref[i])->size();
-        if (i < (char) dataref.size() - 1) skipcount++;
+        if (i < (char) dataref.size() - 1) _size += 2; //double 0 byte delimiting subngrams
+        //cerr << "--SUBNGRAM-- n=" << (int) (dataref[i])->n() << ",size=" << (int) (dataref[i])->size()  << endl;        
+        //for (int j = 0; j < (dataref[i])->size(); j++) cerr << (int) dataref[i]->data[j] << endl;
     }
     if (initialskip) {
         _size += 2; //two null bytes at start
-        skipcount += 1;
     }
     if (finalskip) {
         _size += 2; //extra null byte at end
-        skipcount += 1;
     }
-    
-    
-    
-    if ((char) skipref.size() != skipcount) {
-        cerr << "ENCSKIPGRAM ERROR: Expected " << skipcount << " skips, but configuration specifies " << skipref.size() << endl;
-        exit(1);
-    } else if (skipcount > MAXSKIPS) {
-        cerr << "ENCSKIPGRAM ERROR: Too many skips for memory! " << skipcount << endl;
-        exit(1);
-    }
-                    
     data = new unsigned char[_size]; 
     
     for (unsigned int i = 0; i < skipref.size(); i++) {
@@ -192,25 +205,55 @@ EncSkipGram::EncSkipGram(const vector<EncNGram*> & dataref, const vector<int> & 
     for (unsigned int i = 0; i < dataref.size(); i++) {
         for (int j = 0; j < dataref[i]->size(); j++) {
             data[cursor++] = dataref[i]->data[j];
-            data[cursor++] = '\0';
         }
         if (i < dataref.size() - 1) {            
+            data[cursor++] = '\0';
             data[cursor++] = '\0';
         }                
     }    
     if (finalskip) {
         data[cursor++] = '\0';
         data[cursor++] = '\0';
-    }        
+    }       
+    
+    //sanity check
+    skipcount = 0;
+    bool prevnull = false;
+    //cerr << "--SKIPGRAM-- (size=" << (int) _size << ")" << endl;
+    for (int i = 0; i < _size; i++) {
+        //cerr << (int) data[i] << ':' << prevnull << ':' << skipcount << endl;
+        if (data[i] == '\0') {
+            if (prevnull) {
+                prevnull = false;
+                skipcount++;
+            } else {
+                prevnull = true;
+            }
+        } else {
+            prevnull = false;
+        }        
+    }
+    if ((char) skipref.size() != skipcount) {
+        cerr << "ENCSKIPGRAM ERROR: Skipgram contains " << (int) skipcount << " skips, but configuration specifies " << skipref.size() << endl;      
+        cerr << data <<endl;
+        exit(1);
+    }    
 }
 
-const char EncSkipGram::n() const {
-    char count = 1; 
+const char EncSkipGram::n() const {    
+    char count = 0;
+    bool item = (data[0] != 0);
     for (int i = 0; i < _size; i++) {
-        if (data[i] == 0) count++;
+        if (data[i] == 0) { 
+            if (item) count++;
+            item = false;
+        } else {
+            item = true;
+        }
     }    
+    if (item) count++;
     for (int i = 0; i < skipcount; i++) {
-        count += skipsize[i] - 1; //minus one because each skip already counted for one in the previous loop
+        count += skipsize[i]; //minus two because each skip already counted for two in the previous loop
     }
     return count;    
 }
@@ -233,6 +276,69 @@ EncSkipGram::EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, cons
     for (int i = 0; i < postgapsize; i++) {
         data[cursor++] = postgap.data[i];
     }        
+}
+
+std::string EncSkipGram::decode(ClassDecoder& classdecoder) const {
+    std::string result = ""; 
+    int begin = 0;
+    int l = 0;
+    int skipnum = 0;
+    for (int i = 0; i < _size; i++) {
+        l++;
+        if ((data[i] == 0) && (l > 0)) {            
+            if ((i > 0) && (data[i-1] == 0)) {
+                char chr[2];
+                chr[0] = 48 + skipsize[skipnum];
+                chr[1] = '\0';                
+                skipnum++;
+                result += std::string("{*") + std::string(chr) + std::string("*} ");                
+            } else {            
+                const unsigned int cls = bytestoint(data + begin, l);              
+                if (cls == 1) {
+                    return result;
+                } else if (cls > 0) {  
+                    result += classdecoder[cls] + ' ';
+                }
+            }
+            begin = i + 1;            
+            l = 0;
+        }
+    }
+    if (l > 0) {
+        const unsigned int cls = bytestoint(data + begin, l);  
+        result += classdecoder[cls];
+    }    
+    return result;
+}
+
+
+
+bool EncSkipGram::out() const {
+    int begin = 0;
+    int l = 0;
+    int skipnum = 0;
+    for (int i = 0; i < _size; i++) {
+        l++;
+        if ((data[i] == 0) && (l > 0)) {            
+            if ((i > 0) && (data[i-1] == 0)) {
+                cout << "{*" << (int) skipsize[skipnum++] << "*} ";                
+            } else {            
+                const unsigned int cls = bytestoint(data + begin, l);              
+                if (cls == 1) {
+                    return true;
+                } else if (cls > 0) {  
+                    cout << cls << ' ';
+                }
+            }
+            begin = i + 1;            
+            l = 0;
+        }
+    }
+    if (l > 0) {
+        const unsigned int cls = bytestoint(data + begin, l);  
+        cout << cls;
+    }    
+    return true;
 }
 
 size_t jenkinshash(unsigned char * data, char size) {

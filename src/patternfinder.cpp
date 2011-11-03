@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <cmath>
 #include <set>
+#include <algorithms.h>
 
 using namespace std;
 
@@ -57,21 +58,6 @@ double compute_entropy(freqlist & data, const int total) {
     return -1 * entropy;
 }
 
-vector< pair<int,int> > get_consecutive_gaps(const int n) {
-    vector< pair<int,int> > gaps;
-    int begin = 1;
-    while (begin < n) {
-        int length = (n - 1) - begin;
-        while (length > 0) {
-            pair<int,int> gap = make_pair(begin, length);
-            gaps.push_back(gap);
-            length--;
-            
-        }
-        begin++;
-    }      
-    return gaps;
-}
 
 
 void usage() {
@@ -208,9 +194,12 @@ int main( int argc, char *argv[] ) {
         int linenum = 0;
         tokencount[n] = 0;
         skiptokencount[n] = 0;
-
-        const vector< pair<int,int> > gaps = get_consecutive_gaps(n);
         
+                
+        vector< vector< pair<int,int> > > gaps;
+        compute_multi_skips(gaps, vector<pair<int,int> >(), n);
+        //const vector< pair<int,int> > gaps = get_consecutive_gaps(n);
+
         
         ifstream *IN =  new ifstream( corpusfile.c_str() );    
         vector<unsigned int> words;
@@ -256,60 +245,138 @@ int main( int argc, char *argv[] ) {
 
                 if (DOINDEX) ngram_index[*ngram].insert(linenum);
 
-            
-                for (size_t j = 0; j < gaps.size(); j++) {
-                    const int begin = gaps[j].first;  
-                    const int length = gaps[j].second;
+                if (DOSKIPGRAMS) {
                     
                     
+                    for (size_t j = 0; j < gaps.size(); j++) {
+                        
+                        vector<EncNGram*> subngrams;
+                        vector<int> skipref;
+                        bool initialskip = false;
+                        bool finalskip = false;
+                        int cursor = 0;
+                        bool docount = true;                    
+                        //cerr << "INSTANCE SIZE: " << gaps[j].size() << endl;
+                        for (size_t k = 0; k < gaps[j].size(); k++) {                                                        
+                            const int begin = gaps[j][k].first;  
+                            const int length = gaps[j][k].second;                        
+                            //cerr << begin << ';' << length << ';' << n << endl;
+                            skipref.push_back( length); 
+                            if (k == 0) {
+                                initialskip = (begin == 0);
+                            }                            
+                            if (begin > cursor) {
+                                EncNGram * subngram = ngram->slice(cursor,begin-cursor);
+                                subngrams.push_back(subngram);                                                               
+                                const int oc = ngrams[subngram->n()].count(*subngram);
+                                if ((oc == 0) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS)) )    {
+                                    docount = false;
+                                    break;
+                                }
+                            }
+                            cursor = begin + length;
+                        }   
+                        if (cursor < n) {
+                            EncNGram * subngram = ngram->slice(cursor,n-cursor);
+                            subngrams.push_back(subngram);
+                            const int oc = ngrams[subngram->n()].count(*subngram);
+                            if ((oc == 0) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS)) )    {
+                                docount = false;
+                                break;
+                            }
+                        } else {
+                            finalskip = true;
+                        }
+                        if (initialskip && finalskip && skipref.size() <= 1) docount = false; //the whole n-gram is a skip, discard
+                        if (docount) {
+                            /*if (n == 4) { //DEBUG
+                                cerr << "SKIPREF=" << skipref.size() << " INITIAL=" << initialskip  << " FINAL=" << finalskip << " SUBNGRAMS=" << subngrams.size() << endl;
+                                cerr << "-- INITIAL: " << initialskip << endl;
+                                cerr << "-- FINAL: " << finalskip << endl;
+                                for (char x = 0; x < (char) subngrams.size(); x++) {
+                                    //_size += (subngrams[i])->size();
+                                    //if (i < (char) subngrams.size() - 1) _size += 2; //double 0 byte delimiting subngrams
+                                    cerr << "--SUBNGRAM-- n=" << (int) (subngrams[x])->n() << ",size=" << (int) (subngrams[x])->size()  << endl;        
+                                    (subngrams[x])->out();
+                                    cout << endl;
+                                }
+                                    
+                            }*/
+                                
+                            EncSkipGram skipgram = EncSkipGram(subngrams, skipref, initialskip, finalskip);
+                            for (size_t k = 0; k < gaps[j].size(); k++) {
+                                const int begin = gaps[j][k].first;  
+                                const int length = gaps[j][k].second;
+                                EncNGram * skip = ngram->slice(begin,length);
+                                skipgrams[n][skipgram].count++;
+                                skipgrams[n][skipgram].skips[(char) k][*skip] += 1;
+                                skiptokencount[n]++;
+                                delete skip;
+                            }
+                            if (DOINDEX) skipgram_index[skipgram].insert(linenum);
+                        }
+                        //cleanup
+                        for (size_t k = 0; k < subngrams.size(); k++) {
+                            delete subngrams[k];
+                        }
                     
-                    //Don't count skipgram if its consecutive subparts are not in the ngram lists
-                    EncNGram * skipgram_preskip = ngram->slice(0,begin);
-                    const int preskip_n = skipgram_preskip->n();
-                    if (!(ngrams[preskip_n].count(*skipgram_preskip))) {
-                        delete skipgram_preskip;
-                        continue;
-                    }
-                    
-                    EncNGram * skipgram_postskip = ngram->slice(begin+length,ngram->n() - begin - length);
-                    const int postskip_n = skipgram_postskip->n();
-                    if (!(ngrams[postskip_n].count(*skipgram_postskip))) {
+                        /* OLD: 
+                        const int begin = gaps[j].first;  
+                        const int length = gaps[j].second;
+                        
+                        
+                        
+                        //Don't count skipgram if its consecutive subparts are not in the ngram lists
+                        EncNGram * skipgram_preskip = ngram->slice(0,begin);
+                        const int preskip_n = skipgram_preskip->n();
+                        if (!(ngrams[preskip_n].count(*skipgram_preskip))) {
+                            delete skipgram_preskip;
+                            continue;
+                        }
+                        
+                        EncNGram * skipgram_postskip = ngram->slice(begin+length,ngram->n() - begin - length);
+                        const int postskip_n = skipgram_postskip->n();
+                        if (!(ngrams[postskip_n].count(*skipgram_postskip))) {
+                            delete skipgram_preskip;
+                            delete skipgram_postskip;
+                            continue;
+
+                        }
+                        
+                        EncSkipGram skipgram = EncSkipGram(*skipgram_preskip, *skipgram_postskip, n);
+                        
+                        int skipcount = skipgram.skipcount;
+                        
+                        EncNGram * skip = ngram->slice(begin,length);
+                        
+                        
+                        bool docount = true;
+                        
+                        if ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS)) {
+                            const int skip_n = skip->n();
+                            if (ngrams[skip_n].count(*skip) == 0) {
+                                docount = false;
+                            } else {
+                                docount = (ngrams[skip_n][*skip] >= MINSKIPTOKENS);
+                            } 
+                        }
+                        
+                        if (docount) {
+                            skipgrams[n][skipgram].count++;
+                            skipgrams[n][skipgram].skips[skipcount][*skip] += 1;
+                            skiptokencount[n]++;
+                            
+                            if (DOINDEX) skipgram_index[skipgram].insert(linenum);
+
+                        }
+                        
+                        delete skip;
                         delete skipgram_preskip;
                         delete skipgram_postskip;
-                        continue;
-
+                        */
                     }
                     
-                    EncSkipGram skipgram = EncSkipGram(*skipgram_preskip, *skipgram_postskip, n);
                     
-                    int skipcount = skipgram.skipcount;
-                    
-                    EncNGram * skip = ngram->slice(begin,length);
-                    
-                    
-                    bool docount = true;
-                    
-                    if ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS)) {
-                        const int skip_n = skip->n();
-                        if (ngrams[skip_n].count(*skip) == 0) {
-                            docount = false;
-                        } else {
-                            docount = (ngrams[skip_n][*skip] >= MINSKIPTOKENS);
-                        } 
-                    }
-                    
-                    if (docount) {
-                        skipgrams[n][skipgram].count++;
-                        skipgrams[n][skipgram].skips[skipcount][*skip] += 1;
-                        skiptokencount[n]++;
-                        
-                        if (DOINDEX) skipgram_index[skipgram].insert(linenum);
-
-                    }
-                    
-                    delete skip;
-                    delete skipgram_preskip;
-                    delete skipgram_postskip;
                 }
                 
                 delete ngram;                 
@@ -455,6 +522,7 @@ int main( int argc, char *argv[] ) {
                             const EncNGram skipcontent = iter3->first;
                             *SKIPGRAMSOUT << skipcontent.decode(classdecoder) << '|' << iter3->second << '|';
                        }
+                       *SKIPGRAMSOUT << '|'; //double pipe at end and delimiter for multiple skips
                    }
                }
                *SKIPGRAMSOUT << endl;

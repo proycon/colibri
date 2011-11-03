@@ -22,7 +22,7 @@ class EncNGram {
      const char size() const;
      
     std::string decode(ClassDecoder& classdecoder) const;
-            
+    bool out() const;
     
     bool operator==(const EncNGram &other) const;
     bool operator!=(const EncNGram &other) const;
@@ -58,7 +58,8 @@ class EncSkipGram: public EncNGram {
       EncSkipGram(const std::vector<EncNGram*> & dataref, const std::vector<int> & skipref, bool initialskip = false, bool finalskip = false);
       EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, const char refn);
     
-      
+      std::string decode(ClassDecoder& classdecoder) const;
+      bool out() const;
     //EncSkipGram(const unsigned char* dataref, const char size): EncNGram(dataref, size) {      
     //}     
   
