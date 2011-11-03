@@ -517,13 +517,15 @@ int main( int argc, char *argv[] ) {
                const EncSkipGram skipgram = iter->first;                              
                *SKIPGRAMSOUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t' << skiptypes << '\t' << iter->second.count << '\t' << entropy << '\t';
                if (DOSKIPOUTPUT) {
-                   for (unordered_map<char,freqlist>::iterator iter2 = iter->second.skips.begin(); iter2 != iter->second.skips.end(); iter2++) {
-                       for(freqlist::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++ ) {
-                            const EncNGram skipcontent = iter3->first;
-                            *SKIPGRAMSOUT << skipcontent.decode(classdecoder) << '|' << iter3->second << '|';
-                       }
-                       *SKIPGRAMSOUT << '|'; //double pipe at end and delimiter for multiple skips
-                   }
+                   for (char c = 0; c < 5; c++) {
+                        if (iter->second.skips.count(c)) {
+                            for(freqlist::iterator iter3 = iter->second.skips[c].begin(); iter3 != iter->second.skips[c].end(); iter3++ ) {
+                                const EncNGram skipcontent = iter3->first;
+                                *SKIPGRAMSOUT << skipcontent.decode(classdecoder) << '|' << iter3->second << '|';
+                            }
+                            *SKIPGRAMSOUT << '|'; //double pipe at end and delimiter for multiple skips
+                        }
+                   }                   
                }
                *SKIPGRAMSOUT << endl;
            }
