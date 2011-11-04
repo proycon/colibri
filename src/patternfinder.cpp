@@ -82,6 +82,8 @@ void usage() {
     cerr << "\t-i               Compute and output index" << endl;
     cerr << "\t-L               Compute and output content of skipgrams" << endl;
     cerr << "\t-S <number>      Skip type threshold: only skipgrams with x possible types for the skip will be considered, otherwise the skipgram will be pruned  (default: 2, works only with -L enabled)" << endl;
+    cerr << "\t-B               Do NOT consider skipgrams that begin with a skip and have no further skips" << endl;
+    cerr << "\t-E               Do NOT consider skipgrams that end in a skip and have no further skips" << endl;
     cerr << "\t-o <string>      Output prefix" << endl;
         
 }
@@ -100,10 +102,12 @@ int main( int argc, char *argv[] ) {
     bool DOSKIPGRAMS = false;
     bool DOINDEX = false;
     bool DOSKIPCONTENT = false;
+    bool DOINITIALONLYSKIP = true;
+    bool DOFINALONLYSKIP = true;
     //bool DOCOMPOSITIONALITY = false;
     
     char c;    
-    while ((c = getopt(argc, argv, "c:f:t:T:S:l:o:siLh")) != -1)
+    while ((c = getopt(argc, argv, "c:f:t:T:S:l:o:siLhnBE")) != -1)
         switch (c)
         {
         case 'c':
@@ -135,6 +139,12 @@ int main( int argc, char *argv[] ) {
             break;
         case 'o': 
             outputprefix = optarg;
+            break;
+        case 'B':
+            DOINITIALONLYSKIP = false;
+            break;
+        case 'E':
+            DOFINALONLYSKIP = false;    
             break;
         case '?':
             if (optopt == 'c') {
@@ -260,6 +270,16 @@ int main( int argc, char *argv[] ) {
                     
                     
                     for (size_t j = 0; j < gaps.size(); j++) {
+
+                        if (gaps[j].size() == 1) {
+                           if (!DOINITIALONLYSKIP) {
+                                if (gaps[j][0].first == 0) continue; 
+                           }
+                           if (!DOFINALONLYSKIP) {
+                               if (gaps[j][0].first + gaps[j][0].second == n) continue; 
+                           }
+                        }
+
                         
                         vector<EncNGram*> subngrams;
                         vector<int> skipref;
@@ -267,7 +287,9 @@ int main( int argc, char *argv[] ) {
                         bool finalskip = false;
                         int cursor = 0;
                         bool docount = true;    
-                        int oc = 0;                
+                        int oc = 0;             
+                        
+                           
                         //cerr << "INSTANCE SIZE: " << gaps[j].size() << endl;
                         for (size_t k = 0; k < gaps[j].size(); k++) {                                                        
                             const int begin = gaps[j][k].first;  
