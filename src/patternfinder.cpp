@@ -255,7 +255,8 @@ int main( int argc, char *argv[] ) {
                         bool initialskip = false;
                         bool finalskip = false;
                         int cursor = 0;
-                        bool docount = true;                    
+                        bool docount = true;    
+                        int oc = 0;                
                         //cerr << "INSTANCE SIZE: " << gaps[j].size() << endl;
                         for (size_t k = 0; k < gaps[j].size(); k++) {                                                        
                             const int begin = gaps[j][k].first;  
@@ -268,7 +269,8 @@ int main( int argc, char *argv[] ) {
                             if (begin > cursor) {
                                 EncNGram * subngram = ngram->slice(cursor,begin-cursor);
                                 subngrams.push_back(subngram);                                                               
-                                const int oc = ngrams[subngram->n()].count(*subngram);
+                                oc = ngrams[subngram->n()].count(*subngram);
+                                if (oc) oc = ngrams[subngram->n()][*subngram];
                                 if ((oc == 0) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS)) )    {
                                     docount = false;
                                     break;
@@ -279,7 +281,8 @@ int main( int argc, char *argv[] ) {
                         if (cursor < n) {
                             EncNGram * subngram = ngram->slice(cursor,n-cursor);
                             subngrams.push_back(subngram);
-                            const int oc = ngrams[subngram->n()].count(*subngram);
+                            oc = ngrams[subngram->n()].count(*subngram);
+                            if (oc) oc = ngrams[subngram->n()][*subngram];
                             if ((oc == 0) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS)) )    {
                                 docount = false;
                                 break;
