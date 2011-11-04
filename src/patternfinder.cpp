@@ -15,11 +15,12 @@
 using namespace std;
 
 typedef unordered_map<EncNGram,int> freqlist;
+typedef unordered_map<EncSkipGram,int> skipgram_freqlist;
 
 class skipgramdata {
    public:
     int count;
-    unordered_map<char,freqlist> skips;
+    skipgram_freqlist skips;
     skipgramdata() {
         count = 0;
     }
@@ -36,7 +37,7 @@ long total(freqlist& f) {
 }
 
 
-double compute_entropy(unordered_map<char,freqlist> & data, const int total) {
+/*double compute_entropy(unordered_map<char,freqlist> & data, const int total) {
     double entropy = 0;
     for(unordered_map<char,freqlist>::iterator iter = data.begin(); iter != data.end(); iter++ ) {
         for(freqlist::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++ ) {
@@ -46,7 +47,7 @@ double compute_entropy(unordered_map<char,freqlist> & data, const int total) {
         }    
     }
     return -1 * entropy;
-}
+}*/
 
 double compute_entropy(freqlist & data, const int total) {
     double entropy = 0;
@@ -58,6 +59,17 @@ double compute_entropy(freqlist & data, const int total) {
     return -1 * entropy;
 }
 
+double compute_entropy(skipgram_freqlist & data, const int total) {
+    double entropy = 0;
+    for(skipgram_freqlist::iterator iter = data.begin(); iter != data.end(); iter++ ) {
+      double p = iter->second / (double) total;
+      //cout << setprecision(numeric_limits<double>::digits10 + 1) << iter->second << " / " << total << " = " << p << endl;
+      entropy += p * log2(p);
+    }    
+    return -1 * entropy;
+}
+
+
 
 
 void usage() {
@@ -66,11 +78,10 @@ void usage() {
     cerr << "\t-t <number>      Token threshold: n-grams and skipgrams occuring less than this will be pruned (default: 2)" << endl;
     cerr << "\t-l <number>      Maximum n-gram/skipgram length (in words, default: 9)" << endl;
     cerr << "\t-s               Compute skip-grams" << endl;    
-    cerr << "\t-T <number>      Skip threshold: only skip content that occurs at least x times will be considered (default: 1) " << endl;
-    cerr << "\t-S <number>      Skip type threshold: only skipgrams with x possible types for the skip will be considered, otherwise the skipgram will be pruned  (default: 2)" << endl;
+    cerr << "\t-T <number>      Skip threshold: only skip content that occurs at least x times will be considered (default: 2) " << endl;
     cerr << "\t-i               Compute and output index" << endl;
-    //cerr << "\t-C               Compute and output compositionality" << endl;
-    cerr << "\t-L               Output invididual skips" << endl;
+    cerr << "\t-L               Compute and output content of skipgrams" << endl;
+    cerr << "\t-S <number>      Skip type threshold: only skipgrams with x possible types for the skip will be considered, otherwise the skipgram will be pruned  (default: 2, works only with -L enabled)" << endl;
     cerr << "\t-o <string>      Output prefix" << endl;
         
 }
@@ -83,12 +94,12 @@ int main( int argc, char *argv[] ) {
     string outputprefix = "";
     
     int MINTOKENS = 2;
-    int MINSKIPTOKENS = 1;
+    int MINSKIPTOKENS = 2;
     unsigned int MINSKIPTYPES = 2;
     int MAXLENGTH = 8;
     bool DOSKIPGRAMS = false;
     bool DOINDEX = false;
-    bool DOSKIPOUTPUT = false;
+    bool DOSKIPCONTENT = false;
     //bool DOCOMPOSITIONALITY = false;
     
     char c;    
@@ -120,7 +131,7 @@ int main( int argc, char *argv[] ) {
             DOINDEX = true;
             break;
         case 'L':
-            DOSKIPOUTPUT = true;
+            DOSKIPCONTENT = true;
             break;
         case 'o': 
             outputprefix = optarg;
@@ -292,34 +303,25 @@ int main( int argc, char *argv[] ) {
                         }
                         if (initialskip && finalskip && skipref.size() <= 1) docount = false; //the whole n-gram is a skip, discard
                         if (docount) {
-                            /*if (n == 4) { //DEBUG
-                                cerr << "SKIPREF=" << skipref.size() << " INITIAL=" << initialskip  << " FINAL=" << finalskip << " SUBNGRAMS=" << subngrams.size() << endl;
-                                cerr << "-- INITIAL: " << initialskip << endl;
-                                cerr << "-- FINAL: " << finalskip << endl;
-                                for (char x = 0; x < (char) subngrams.size(); x++) {
-                                    //_size += (subngrams[i])->size();
-                                    //if (i < (char) subngrams.size() - 1) _size += 2; //double 0 byte delimiting subngrams
-                                    cerr << "--SUBNGRAM-- n=" << (int) (subngrams[x])->n() << ",size=" << (int) (subngrams[x])->size()  << endl;        
-                                    (subngrams[x])->out();
-                                    cout << endl;
-                                }
-                                    
-                            }*/
-                                
-                            EncSkipGram skipgram = EncSkipGram(subngrams, skipref, initialskip, finalskip);
+                            EncSkipGram skipgram = EncSkipGram(subngrams, skipref, initialskip, finalskip);                                                    
+                            vector<EncNGram*> skipcontent_subngrams;
+                            vector<int> skipcontent_skipref;
+                            cursor = 0;
                             for (size_t k = 0; k < gaps[j].size(); k++) {
                                 const int begin = gaps[j][k].first;  
                                 const int length = gaps[j][k].second;
-                                EncNGram * skip = ngram->slice(begin,length);
-                                if (skip->n() != skipref[k]) {
-                                    cerr << "SKIP CONTENT HAS INVALID LENGTH" << endl;
-                                    exit(1);
-                                }
-                                skipgrams[n][skipgram].count++;
-                                skipgrams[n][skipgram].skips[(char) k][*skip] += 1;
-                                skiptokencount[n]++;
-                                delete skip;
-                            }
+                                EncNGram * subskip = ngram->slice(begin,length);                                
+                                skipcontent_subngrams.push_back(subskip);
+                                if (cursor > 0) skipcontent_skipref.push_back(begin - cursor);
+                                cursor = begin+length;
+                            }   
+                            EncSkipGram skipcontent = EncSkipGram(skipcontent_subngrams, skipcontent_skipref, false, false);                                                        
+                            skipgrams[n][skipgram].count++;                                                            
+                            skipgrams[n][skipgram].skips[skipcontent] += 1;
+                            skiptokencount[n]++;                            
+                            for (size_t k = 0; k < skipcontent_subngrams.size(); k++) {       
+                                delete skipcontent_subngrams[k];
+                            }                            
                             if (DOINDEX) skipgram_index[skipgram].insert(linenum);
                         }
                         //cleanup
@@ -421,32 +423,23 @@ int main( int argc, char *argv[] ) {
            pruned = 0;
            for(skipgrammap::iterator iter = skipgrams[n].begin(); iter != skipgrams[n].end(); iter++ ) {                
                 bool pruneskipgram = false;
-                if ((iter->second.count < MINTOKENS) || ((char) iter->second.skips.size() < iter->first.skipcount))  {
+                if ((iter->second.count < MINTOKENS) || ((DOSKIPCONTENT && iter->second.skips.size() < MINSKIPTYPES)))  {
                     pruneskipgram = true;
-                } else {
-                    for(unordered_map<char,freqlist>::iterator iter2 = iter->second.skips.begin(); iter2 != iter->second.skips.end(); iter2++ ) {
-                        if ((iter2->second.size() < MINSKIPTYPES) || (iter->second.count < MINTOKENS))  {
-                            //not enough types or overall tokens, prune entire skipgram
-                            pruneskipgram = true;                        
-                        } else  {               
-                            bool prunedskip = false;
-                            for(freqlist::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++ ) {
-                                if (iter3->second < MINSKIPTOKENS) {
-                                    //prune skip
-                                    prunedskip = true;
-                                    iter->second.count -= iter3->second;
-                                    iter2->second.erase(iter3->first); 
-                                }
-                            }
-                            if ( (prunedskip) && ( (iter2->second.size() < MINSKIPTYPES) || (iter->second.count < MINTOKENS) ) ) { //reevaluate
-                                pruneskipgram = true;
-                            } else {
-                                skipgramtotal += iter->second.count;
-                            }
+                } else if (DOSKIPCONTENT) {                
+                    bool prunedskip = false;
+                    for(skipgram_freqlist::iterator iter2 = iter->second.skips.begin(); iter2 != iter->second.skips.end(); iter2++ ) {
+                        if (iter2->second < MINSKIPTOKENS) {
+                            //prune skip
+                            prunedskip = true;
+                            iter->second.count -= iter2->second;
+                            iter->second.skips.erase(iter2->first); 
                         }
-                        if (pruneskipgram) break;
                     }
-                                        
+                    if ( (prunedskip) && ( (iter->second.skips.size() < MINSKIPTYPES) || (iter->second.count < MINTOKENS) ) ) { //reevaluate
+                        pruneskipgram = true;
+                    } else {
+                        skipgramtotal += iter->second.count;
+                    }
                 }
                 if (pruneskipgram) {
                     if (DOINDEX) skipgram_index.erase(iter->first);
@@ -516,23 +509,18 @@ int main( int argc, char *argv[] ) {
                const double freq1 = (double) iter->second.count / skiptokencount[n]; 
                const double freq2 = (double) iter->second.count / skipgramtotal;           
                const double freq3 = (double) iter->second.count / grandtotal;                          
-               int skiptypes = 0;
-               for(unordered_map<char,freqlist>::iterator iter2 = iter->second.skips.begin(); iter2 != iter->second.skips.end(); iter2++ ) {
-                   skiptypes += iter2->second.size();
-               }               
-               const double entropy = compute_entropy(iter->second.skips, iter->second.count);
                const EncSkipGram skipgram = iter->first;                              
-               *SKIPGRAMSOUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t' << skiptypes << '\t' << iter->second.count << '\t' << entropy << '\t';
-               if (DOSKIPOUTPUT) {
-                   for (char c = 0; c < 5; c++) {
-                        if (iter->second.skips.count(c)) {
-                            for(freqlist::iterator iter3 = iter->second.skips[c].begin(); iter3 != iter->second.skips[c].end(); iter3++ ) {
-                                const EncNGram skipcontent = iter3->first;
-                                *SKIPGRAMSOUT << skipcontent.decode(classdecoder) << '|' << iter3->second << '|';
-                            }
-                            *SKIPGRAMSOUT << '|'; //double pipe at end and delimiter for multiple skips
-                        }
-                   }                   
+               *SKIPGRAMSOUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t';
+               if (DOSKIPCONTENT) {
+                   const int skiptypes = iter->second.skips.size();               
+                   const double entropy = compute_entropy(iter->second.skips, iter->second.count);
+                   *SKIPGRAMSOUT << skiptypes << '\t' << iter->second.count << '\t' << entropy << '\t';
+                    for(skipgram_freqlist::iterator iter2 = iter->second.skips.begin(); iter2 != iter->second.skips.end(); iter2++ ) {
+                        const EncSkipGram skipcontent = iter2->first;
+                        *SKIPGRAMSOUT << skipcontent.decode(classdecoder) << '|' << iter2->second << '|';
+                    }
+               } else {
+                   *SKIPGRAMSOUT << iter->second.count;
                }
                *SKIPGRAMSOUT << endl;
            }
