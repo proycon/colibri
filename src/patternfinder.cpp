@@ -308,6 +308,10 @@ int main( int argc, char *argv[] ) {
                                 const int begin = gaps[j][k].first;  
                                 const int length = gaps[j][k].second;
                                 EncNGram * skip = ngram->slice(begin,length);
+                                if (skip->n() != skipref[k]) {
+                                    cerr << "SKIP CONTENT HAS INVALID LENGTH" << endl;
+                                    exit(1);
+                                }
                                 skipgrams[n][skipgram].count++;
                                 skipgrams[n][skipgram].skips[(char) k][*skip] += 1;
                                 skiptokencount[n]++;

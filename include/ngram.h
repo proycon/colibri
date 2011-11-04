@@ -96,7 +96,32 @@ struct hash<EncSkipGram> {
  public: 
         size_t operator()(EncSkipGram ngram) const throw() {            
             //jenkins hash: http://en.wikipedia.org/wiki/Jenkins_hash_function
-            return jenkinshash(ngram.data, ngram.size());
+            unsigned long h;
+            int i;
+            bool prevnull = false;
+            int skipnum = 0;
+            for(h = i = 0; i < ngram.size(); ++i)
+            {                
+                h += ngram.data[i];
+                h += (h << 10);
+                h ^= (h >> 6);
+                if (ngram.data[i] == 0) {
+                    if (prevnull) {
+                        h += 46021 + ngram.skipsize[skipnum];                        
+                        h += (h << 10);
+                        h ^= (h >> 6);
+                        skipnum++;
+                    } else {
+                        prevnull = true;
+                    }                    
+                } else {
+                    prevnull = false;
+                }                
+            }
+            h += (h << 3);
+            h ^= (h >> 11);
+            h += (h << 15);
+            return h;
         }
 };
 
