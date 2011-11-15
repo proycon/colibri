@@ -48,6 +48,7 @@ class EncSkipGram: public EncNGram {
       const char n() const;
       
       EncSkipGram(const std::vector<EncNGram*> & dataref, const std::vector<int> & skipref, bool initialskip = false, bool finalskip = false);
+      EncSkipGram(const unsigned char *dataref, const char size, const unsigned char* skipref, const char skipcount);
       EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, const char refn);
     
       std::string decode(ClassDecoder& classdecoder) const;

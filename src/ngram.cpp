@@ -245,6 +245,19 @@ EncSkipGram::EncSkipGram(const vector<EncNGram*> & dataref, const vector<int> & 
     }    
 }
 
+EncSkipGram::EncSkipGram(const unsigned char *dataref, const char size, const unsigned char* skipref, const char skipcount) {
+    _size = size;
+    data = new unsigned char[size];
+    for (int i = 0; i < size; i++) {
+        data[i] = dataref[i];
+    }   
+    this->skipcount = skipcount;
+    for (int i = 0; i < skipcount; i++) {
+        skipsize[i] = skipref[i];
+    }
+}
+
+
 const char EncSkipGram::n() const {    
     char count = 0;
     bool item = (data[0] != 0);
@@ -282,6 +295,8 @@ EncSkipGram::EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, cons
         data[cursor++] = postgap.data[i];
     }        
 }
+
+
 
 std::string EncSkipGram::decode(ClassDecoder& classdecoder) const {
     std::string result = ""; 
@@ -362,13 +377,6 @@ size_t jenkinshash(unsigned char * data, char size) {
     return h;
 }
 
-
-EncGramModel::EncGramModel(string filename) {
-    ngramtokencount = 0;
-    skipgramtokencount = 0; 
-    ngramtypecount = 0;
-    skipgramtypecount = 0;
-}
 
 
 EncGramModel::EncGramModel(const string corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINDEX, bool DOSKIPCONTENT, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
@@ -634,27 +642,117 @@ EncGramModel::EncGramModel(const string corpusfile, int MAXLENGTH, int MINTOKENS
         
 }
 
+EncGramModel::EncGramModel(string filename) {
+    ngramtokencount = 0;
+    skipgramtokencount = 0; 
+    ngramtypecount = 0;
+    skipgramtypecount = 0;
+    MAXLENGTH = 0;
+    
+    char buffer[1024];
+    ifstream f;
+    f.open(filename.c_str(), ios::in | ios::binary);
+    
+    f.read(buffer, sizeof(unsigned long));
+    const unsigned long totaltokens = atol(buffer);
+    f.read(buffer, sizeof(unsigned long));
+    const unsigned long totaltypes = atol(buffer);
+    for (int i = 0; i < totaltypes; i++) {
+        f.read(buffer, sizeof(char));
+        const char gapcount = buffer[0];
+        if (gapcount == 0) {
+            //NGRAM
+            f.read(buffer, sizeof(char));
+            const char size = buffer[0];
+            f.read(buffer, (int) size); //read data
+            EncNGram ngram = EncNGram( (unsigned char*) buffer, size);
+            if (ngram.n() > MAXLENGTH) {
+                for (int j = 0; j < ngram.n() - MAXLENGTH; j++) {
+                    ngrams.push_back(freqlist());
+                    skipgrams.push_back(skipgrammap());
+                }
+            }
+            f.read(buffer, sizeof(int)); //read occurrence count
+            ngrams[ngram.n()][ngram] = atoi(buffer); //assign count 
+            f.read(buffer, sizeof(int));
+            const int indexcount = atoi(buffer);
+            for (int j = 0; j < indexcount; j++) {
+                f.read(buffer, sizeof(int));
+                const int index = atoi(buffer);
+                ngram_index[ngram].insert(index);
+            }
+        } else {
+            //SKIPGRAM
+            char skipref[4];
+            for (int j = 0; j < gapcount; j++) {
+                f.read(buffer, sizeof(char));
+                skipref[j] = buffer[0];
+            }
+            f.read(buffer, sizeof(char));
+            const char size = buffer[0];
+            f.read(buffer, (int) size); //read data
+            EncSkipGram skipgram = EncSkipGram( (unsigned char*) buffer, size, (unsigned char*) skipref, gapcount);
+            if (skipgram.n() > MAXLENGTH) {
+                for (int j = 0; j < skipgram.n() - MAXLENGTH; j++) {
+                    ngrams.push_back(freqlist());
+                    skipgrams.push_back(skipgrammap());
+                }
+            }            
+            f.read(buffer, sizeof(int)); //read occurrence count
+            skipgrams[skipgram.n()][skipgram].count = atoi(buffer); //assign
+            f.read(buffer, sizeof(int));   
+            const int skipcontentcount = atoi(buffer);
+            for (int j = 0; j < skipcontentcount; j++) {
+                f.read(buffer, sizeof(char));   
+                const char skip_gapcount = buffer[0];
+                char skipref2[4];
+                for (int j = 0; j < skip_gapcount; j++) {
+                    f.read(buffer, sizeof(char));
+                    skipref2[j] = buffer[0];
+                }
+                f.read(buffer, sizeof(char));   
+                const char skip_size = buffer[0];
+                f.read(buffer, (int) skip_size); //read data
+                EncSkipGram skipcontent = EncSkipGram((unsigned char*) buffer, size, (unsigned char*) skipref2, skip_gapcount);
+                f.read(buffer, sizeof(int)); //read occurrence count
+                skipgrams[skipgram.n()][skipgram].skips[skipcontent] = atoi(buffer); //skipcontent occurrence 
+            }
+            f.read(buffer, sizeof(int));
+            const int indexcount = atoi(buffer);
+            for (int j = 0; j < indexcount; j++) {
+                f.read(buffer, sizeof(int));
+                const int index = atoi(buffer);
+                skipgram_index[skipgram].insert(index);
+            }
+        }        
+    }
+    f.close();
+}
+
+
 
 void EncGramModel::save(std::string filename) {
     ofstream f;
     f.open(filename.c_str(), ios::out | ios::binary);
     
+    const char czero = 0;
     const int zero = 0;
     const int totaltokens = tokens();
     const int totaltypes = types();
+
     
     f.write( (char*) &totaltokens, sizeof(unsigned long) );
     f.write( (char*) &totaltypes, sizeof(unsigned long) );
     for (int n = 1; n <= MAXLENGTH; n++) {
         for(freqlist::iterator iter = ngrams[n].begin(); iter != ngrams[n].end(); iter++ ) {        
             const int size = iter->first.size();
-            f.write( (char*) &size, sizeof(char) ); //size
+            f.write( &czero,sizeof(char) ); //#number of gaps (always zero for ngrams)
+            f.write( (char*) &size, sizeof(char) ); //data length
             f.write( (char*) iter->first.data , iter->first.size() ); //data
-            f.write( (char*) &iter->second, sizeof(int) ); //occurrence count             
-            f.write( (char*) &zero,sizeof(int) ); //#skips            
+            f.write( (char*) &iter->second, sizeof(int) ); //occurrence count                                     
             if (DOINDEX) {
                 const int indexcount = ngram_index[iter->first].size();
-                f.write( (char*) &indexcount, sizeof(int)); //#skips
+                f.write( (char*) &indexcount, sizeof(int));
                 for (set<int>::iterator iter2 = ngram_index[iter->first].begin(); iter2 != ngram_index[iter->first].end(); iter2++) {                    
                     const int c = *iter2;
                     f.write( (char*) &c, sizeof(int) );
@@ -667,6 +765,10 @@ void EncGramModel::save(std::string filename) {
     for (int n = 1; n <= MAXLENGTH; n++) {                
         for(skipgrammap::iterator iter = skipgrams[n].begin(); iter != skipgrams[n].end(); iter++ ) {                
             int size = iter->first.size();
+            f.write( &iter->first.skipcount, sizeof(char) ); //nr of gaps
+            for (int j = 0; j < iter->first.skipcount; j++) { //skip configuration
+                    f.write( &iter->first.skipsize[j], sizeof(char) );
+            }
             f.write( (char*) &size, sizeof(char) ); //size
             f.write( (char*) iter->first.data , iter->first.size() ); //data
             f.write( (char*) &iter->second.count, sizeof(int) ); //occurrence count                         
@@ -675,6 +777,10 @@ void EncGramModel::save(std::string filename) {
                 f.write( (char*) &skipcount, sizeof(int) );
                 for(skipgram_freqlist::iterator iter2 = iter->second.skips.begin(); iter2 != iter->second.skips.end(); iter2++ ) {
                     size = iter2->first.size();
+                    f.write( &iter2->first.skipcount, sizeof(char) ); //nr of gaps
+                    for (int j = 0; j < iter2->first.skipcount; j++) { //skip configuration
+                            f.write( &iter2->first.skipsize[j], sizeof(char) );
+                    }
                     f.write( (char*) &size, sizeof(char) ); //size
                     f.write( (char*) iter2->first.data , iter2->first.size() ); //data
                     f.write( (char*) &(iter2->second), sizeof(int) ); //occurrence count
