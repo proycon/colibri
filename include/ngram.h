@@ -155,7 +155,7 @@ class EncGramModel {
     std::unordered_map< EncSkipGram,std::set<int> > skipgram_index;
         
     EncGramModel(std::string filename);
-    EncGramModel(const std::string corpusfile, int MAXLENGTH = 8, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2, bool DOINDEX = false, bool DOSKIPCONTENT = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
+    EncGramModel(const std::string corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2, bool DOINDEX = false, bool DOSKIPCONTENT = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
     
     int maxlength() const { return MAXLENGTH; }
     
