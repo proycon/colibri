@@ -107,6 +107,18 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
     return new EncNGram(line + beginpos, bytesize);
 }
 
+vector<EncNGram*> EncNGram::subngrams() const {
+    vector<EncNGram*> v;
+    const int N = n();
+    for (int begin = 0; begin < N; begin++) {
+        for (int length = 1; length < N-begin; length++)
+            if (length < N)
+                v.push_back( slice(begin,length) );
+    }        
+    return v;
+}
+
+
 
 std::string EncAnyGram::decode(ClassDecoder& classdecoder) const {
     //cout << "DECODING NGRAM size=" << (int) _size << " n=" << n() << " data=" << data << endl;
@@ -865,66 +877,50 @@ void EncGramModel::save(std::string filename) {
     f.close();    
 }
 
-bool EncGramModel::exists(EncNGram* key) const {    
-    for (int n = 1; n <= MAXLENGTH; n++) {
-        if (ngrams[n].count(*key) > 0) return true;
+
+bool EncGramModel::exists(EncAnyGram* key) const {    
+    if (key->gapcount() == 0) {
+        return (ngrams[key->n()].count(*( (EncNGram*) key) ) > 0);
+    } else {
+        return (skipgrams[key->n()].count(*( (EncSkipGram*) key) ) > 0);
     }
     return false;
 }
 
-bool EncGramModel::exists(EncSkipGram* key) const {    
-    for (int n = 1; n <= MAXLENGTH; n++) {
-            if (skipgrams[n].count(*key) > 0) return true;
-    }
-    return false;
-}
 
-int EncGramModel::count(EncNGram* key) {    
-    for (int n = 1; n <= MAXLENGTH; n++) {
-        if (ngrams[n].count(*key) > 0) 
-         return ngrams[n][*key];
+
+int EncGramModel::count(EncAnyGram* key) {    
+    const int n = key->n();
+    if (key->gapcount() == 0) {        
+        if (ngrams[n].count(*( (EncNGram*) key) ) > 0) return ngrams[n][*( (EncNGram*) key) ];
+    } else {
+        const int n = key->n();
+        if (skipgrams[n].count(*( (EncSkipGram*) key) ) > 0) return skipgrams[n][*( (EncSkipGram*) key) ].count;   
     }
     return 0;
 }
 
-int EncGramModel::count(EncSkipGram* key) {
-    for (int n = 1; n <= MAXLENGTH; n++) {
-        const EncSkipGram* key2 = (EncSkipGram*) key;
-        if (skipgrams[n].count(*key2) > 0) 
-         return skipgrams[n][*key2].count;
-    }
-    return 0;
-}
 
-double EncGramModel::freq(EncNGram* key) {    
-    for (int n = 1; n <= MAXLENGTH; n++) {
-        if (ngrams[n].count(*key) > 0) return ngrams[n][*key] / tokens();
-    }
-    return 0;
-}
-
-double EncGramModel::freq(EncSkipGram* key) {    
-    for (int n = 1; n <= MAXLENGTH; n++) {
+double EncGramModel::freq(EncAnyGram* key) {    
+    const int n = key->n();
+    if (key->gapcount() == 0) {        
+        if (ngrams[n].count(*( (EncNGram*) key) ) > 0) return ngrams[n][*( (EncNGram*) key) ] / tokens();
+    } else {
         if (skipgrams[n].count( *( (EncSkipGram*) key)) > 0) return skipgrams[n][ *( (EncSkipGram*) key)].count / tokens();
     }
-    return 0;    
-}
-
-
-double EncGramModel::relfreq(EncNGram* key) {    
-    for (int n = 1; n <= MAXLENGTH; n++) {
-        if (ngrams[n].count(*key) > 0) return ngrams[n][*key] / skiptokencount[n];
-    }
     return 0;
 }
 
-double EncGramModel::relfreq(EncSkipGram* key) {    
-    for (int n = 1; n <= MAXLENGTH; n++) {
-        if (skipgrams[n].count( *( (EncSkipGram*) key)) > 0) return skipgrams[n][ *( (EncSkipGram*) key)].count / tokencount[n];
+
+double EncGramModel::relfreq(EncAnyGram* key) {    
+    const int n = key->n();
+    if (key->gapcount() == 0) {        
+        if (ngrams[n].count(*( (EncNGram*) key) ) > 0) return ngrams[n][*( (EncNGram*) key) ] / tokencount[n];
+    } else {
+        if (skipgrams[n].count( *( (EncSkipGram*) key)) > 0) return skipgrams[n][ *( (EncSkipGram*) key)].count / skiptokencount[n];
     }
     return 0;
 }
-
 
 
 void EncGramModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, ostream *SKIPGRAMSOUT) {
@@ -993,3 +989,27 @@ double compute_entropy(skipgram_freqlist & data, const int total) {
     return -1 * entropy;
 }
 
+
+
+
+
+EncGramGraphModel::EncGramGraphModel(EncGramModel& model) {
+    for (int n = 2; n <= model.maxlength(); n++) {
+        for(freqlist::iterator iter = model.ngrams[n].begin(); iter != model.ngrams[n].end(); iter++ ) {
+            const EncNGram * ngram = &(iter->first);
+            vector<EncNGram*> subngrams = ngram->subngrams();
+            for (vector<EncNGram*>::iterator iter2 = subngrams.begin(); iter2 != subngrams.end(); iter2++) {
+                EncAnyGram * subngram = *iter2;
+                if (model.exists(subngram)) {
+                    //subgram exists, add relation:
+                    rel_subsumption_children[*ngram].insert(*subngram);
+                    
+                    //reverse:
+                    //rel_subsumption_parents[*subgram].insert(*ngram);
+                }
+                //free memory:
+                delete subngram;
+            }        
+        }
+    }    
+}

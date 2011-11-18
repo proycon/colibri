@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include <set>
+#include <unordered_set>
 #include <iomanip> // contains setprecision()
 
 const int MAXSKIPS = 4;
@@ -56,6 +57,7 @@ class EncNGram: public EncAnyGram {
     EncNGram(const EncNGram& ref): EncAnyGram(ref) {};     
     
     EncNGram * slice(const int begin,const int length) const;    
+    std::vector<EncNGram*> subngrams() const;
 };
 
 /*
@@ -236,14 +238,10 @@ class EncGramModel {
     int types() const { return ngramtypecount + skipgramtypecount; }
     int tokens() const { return ngramtokencount + skipgramtokencount; }
     
-    bool exists(EncNGram* key) const;
-    bool exists(EncSkipGram* key) const;
-    int count(EncNGram* key);
-    int count(EncSkipGram* key);
-    double freq(EncNGram* key);    
-    double freq(EncSkipGram* key);    
-    double relfreq(EncNGram* key);    
-    double relfreq(EncSkipGram* key);    
+    bool exists(EncAnyGram* key) const;
+    int count(EncAnyGram* key);
+    double freq(EncAnyGram* key);    
+    double relfreq(EncAnyGram* key);    
     
     void save(std::string filename);
     
@@ -255,23 +253,18 @@ class EncGramModel {
 
 
 
-/*
-class EncGramGraphModel {
-    
-    
-   private:
-    
-    unordered_map<size_t,std::vector<EncNGram*> > rel_subsumption_children;
-    
+
+class EncGramGraphModel {    
+   private:    
+    std::unordered_map<EncAnyGram,std::unordered_set<EncAnyGram> > rel_subsumption_children;
+        
    public:
     EncGramGraphModel(EncGramModel& model); //compute entire model    
-    
-    
-    
-    EncGramGraphModel(std:string filename);
-    save(std:string filename);
+        
+    //EncGramGraphModel(std:string filename);
+    //save(std:string filename);
 };
-*/
+
 
 double compute_entropy(freqlist & data, const int total);
 double compute_entropy(skipgram_freqlist & data, const int total);
