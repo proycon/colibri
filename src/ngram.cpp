@@ -10,12 +10,12 @@ using namespace std;
 
 //TODO: Computation of skipgramtokens[] is still bugged upon processing a corpus
 
-EncNGram::EncNGram() {
+EncAnyGram::EncAnyGram() {
     _size = 0;
     data = NULL;
 }
 
-EncNGram::EncNGram(const unsigned char* dataref, const char size) {
+EncAnyGram::EncAnyGram(const unsigned char* dataref, const char size) {
    //create a copy of the character data (will take less space than storing pointers anyhow!)
    _size = size;
    data = new unsigned char[size];
@@ -24,7 +24,7 @@ EncNGram::EncNGram(const unsigned char* dataref, const char size) {
    }
 }
 
-EncNGram::EncNGram(const EncNGram& ref) {
+EncAnyGram::EncAnyGram(const EncAnyGram& ref) {
     _size = ref.size();
     data = new unsigned char[_size];   
     for (int i = 0; i < _size; i++) {
@@ -32,21 +32,54 @@ EncNGram::EncNGram(const EncNGram& ref) {
     }    
 }
 
-EncNGram::~EncNGram() {     
+EncAnyGram::~EncAnyGram() {     
     if (data != NULL) delete [] data;        
     data = NULL;
 }
 
-const char EncNGram::size() const {
+
+
+
+const char EncAnyGram::size() const {
     return _size;
 }
 
-const char EncNGram::n() const {
+const char EncAnyGram::n() const {
     char count = 1; 
     for (int i = 0; i < _size; i++) {
         if (data[i] == 0) count++;
     }    
     return count;
+}
+
+const size_t EncAnyGram::hash() const {
+    //adapted from jenkins hash: http://en.wikipedia.org/wiki/Jenkins_hash_function
+    unsigned long h;
+    int i;
+    bool prevnull = false;
+    int skipnum = 0;
+    for(h = i = 0; i < size(); ++i)
+    {                
+        h += data[i];
+        h += (h << 10);
+        h ^= (h >> 6);
+        if (data[i] == 0) {
+            if (prevnull) {
+                h += 46021 + gapsize(skipnum);                        
+                h += (h << 10);
+                h ^= (h >> 6);
+                skipnum++;
+            } else {
+                prevnull = true;
+            }                    
+        } else {
+            prevnull = false;
+        }                
+    }
+    h += (h << 3);
+    h ^= (h >> 11);
+    h += (h << 15);
+    return h;
 }
 
 EncNGram * EncNGram::slice(const int begin,const int length) const {    
@@ -75,7 +108,7 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
 }
 
 
-std::string EncNGram::decode(ClassDecoder& classdecoder) const {
+std::string EncAnyGram::decode(ClassDecoder& classdecoder) const {
     //cout << "DECODING NGRAM size=" << (int) _size << " n=" << n() << " data=" << data << endl;
     std::string result = ""; 
     int begin = 0;
@@ -103,7 +136,7 @@ std::string EncNGram::decode(ClassDecoder& classdecoder) const {
     return result;
 }
 
-bool EncNGram::out() const {
+bool EncAnyGram::out() const {
     //cout << "DECODING NGRAM size=" << (int) _size << " n=" << n() << " data=" << data << endl;
     int begin = 0;
     int l = 0;;
@@ -131,7 +164,7 @@ bool EncNGram::out() const {
 }
 
 
-bool EncNGram::operator==(const EncNGram &other) const {
+bool EncAnyGram::operator==(const EncAnyGram &other) const {
         const char othersize = other.size();
         if (_size == othersize) {
             for (int i = 0; i < _size; i++) {
@@ -142,11 +175,11 @@ bool EncNGram::operator==(const EncNGram &other) const {
             return false;
         }        
 }
-bool EncNGram::operator!=(const EncNGram &other) const {
+bool EncAnyGram::operator!=(const EncAnyGram &other) const {
     return !(*this == other);
 }
 
-EncNGram & EncNGram::operator =(EncNGram other) { //(note: argument passed by value!
+EncAnyGram & EncAnyGram::operator =(EncAnyGram other) { //(note: argument passed by value!
         //delete old data
         if (data != NULL) delete [] data;
         
@@ -181,7 +214,7 @@ EncSingleSkipGram::EncSingleSkipGram(const EncNGram & pregap, const EncNGram & p
 
 
 
-EncSkipGram::EncSkipGram(const vector<EncNGram*> & dataref, const vector<int> & skipref, bool initialskip, bool finalskip): EncNGram() {
+EncSkipGram::EncSkipGram(const vector<EncNGram*> & dataref, const vector<int> & skipref, bool initialskip, bool finalskip): EncAnyGram() {
     //compute size
     _size = 0;
     //cerr << "-- INITIAL: " << initialskip << endl;
@@ -248,12 +281,7 @@ EncSkipGram::EncSkipGram(const vector<EncNGram*> & dataref, const vector<int> & 
     }    
 }
 
-EncSkipGram::EncSkipGram(const unsigned char *dataref, const char size, const unsigned char* skipref, const char skipcount) {
-    _size = size;
-    data = new unsigned char[size];
-    for (int i = 0; i < size; i++) {
-        data[i] = dataref[i];
-    }   
+EncSkipGram::EncSkipGram(const unsigned char *dataref, const char size, const unsigned char* skipref, const char skipcount): EncAnyGram(dataref,size) {
     this->skipcount = skipcount;
     for (int i = 0; i < skipcount; i++) {
         skipsize[i] = skipref[i];
@@ -280,7 +308,7 @@ const char EncSkipGram::n() const {
 }
 
 
-EncSkipGram::EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, const char refn): EncNGram() {
+EncSkipGram::EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, const char refn): EncAnyGram() {
     const char pregapsize = pregap.size();
     const char postgapsize = postgap.size();
     skipcount = 1;
@@ -364,7 +392,7 @@ bool EncSkipGram::out() const {
     return true;
 }
 
-size_t jenkinshash(unsigned char * data, char size) {
+/*size_t jenkinshash(unsigned char * data, char size) {
     //jenkins hash: http://en.wikipedia.org/wiki/Jenkins_hash_function
     unsigned long h;
     int i;
@@ -378,7 +406,7 @@ size_t jenkinshash(unsigned char * data, char size) {
     h ^= (h >> 11);
     h += (h << 15);
     return h;
-}
+}*/
 
 
 

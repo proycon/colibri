@@ -9,10 +9,61 @@
 
 const int MAXSKIPS = 4;
 
+
+class EncAnyGram {
+    protected:
+     char _size;    
+    public:    
+     unsigned char* data;
+    
+     EncAnyGram();
+     EncAnyGram(const unsigned char* dataref, const char size);
+     EncAnyGram(const EncAnyGram& ref);     
+     virtual ~EncAnyGram();
+     
+     virtual const char n() const;
+     virtual const char size() const;
+     
+     virtual std::string decode(ClassDecoder& classdecoder) const;
+     virtual bool out() const;
+     
+    
+     virtual bool operator==(const EncAnyGram &other) const;
+     virtual bool operator!=(const EncAnyGram &other) const;
+     virtual EncAnyGram & operator =(EncAnyGram other);    
+    
+     const size_t hash() const;
+    
+     //EncNGram * slice(const int begin,const int length) const;
+    
+     virtual bool isskipgram() const { 
+         return false; 
+     }
+     virtual const char gapcount() const {
+         return 0;
+     }
+     virtual const char gapsize(char i) const {
+         return 0;
+     }
+     
+};
+
+
+class EncNGram: public EncAnyGram {
+   public:
+    EncNGram(): EncAnyGram() {}; 
+    EncNGram(const unsigned char* dataref, const char size): EncAnyGram(dataref, size) {};
+    EncNGram(const EncNGram& ref): EncAnyGram(ref) {};     
+    
+    EncNGram * slice(const int begin,const int length) const;    
+};
+
+/*
+
 class EncNGram {
     protected:
-     char _size;
-    public:
+     char _size;    
+    public:    
      unsigned char* data;
     
      EncNGram();
@@ -33,15 +84,18 @@ class EncNGram {
     
     EncNGram * slice(const int begin,const int length) const;
     
-    bool isskipgram() const { return false; }
+    virtual bool isskipgram() const { 
+        return false; 
+    }
 };
+*/
 
 EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size);
 
 
  
  
-class EncSkipGram: public EncNGram {
+class EncSkipGram: public EncAnyGram {
     public:
       char skipsize[MAXSKIPS]; //4 bytes reserved for skip size
       char skipcount; //number of skips
@@ -54,29 +108,49 @@ class EncSkipGram: public EncNGram {
       std::string decode(ClassDecoder& classdecoder) const;
       bool out() const;
       bool isskipgram() const { return (skipcount > 0); }
+      
+      const char gapcount() const {
+         return skipcount;
+      }
+      const char gapsize(char i) const {
+            return skipsize[i]; //TODO: Add proper exceptions
+      }
+      
     //EncSkipGram(const unsigned char* dataref, const char size): EncNGram(dataref, size) {      
     //}     
   
 };
 
 
-size_t jenkinshash(unsigned char * data, char size);
+//size_t jenkinshash(unsigned char * data, char size);
 
 namespace std {
 
     template <>
+    struct hash<EncAnyGram> {
+     public: 
+            size_t operator()(EncAnyGram anygram) const throw() {            
+                return anygram.hash();
+            }
+    };
+
+    
+    template <>
     struct hash<EncNGram> {
      public: 
             size_t operator()(EncNGram ngram) const throw() {            
-                //jenkins hash: http://en.wikipedia.org/wiki/Jenkins_hash_function
-                return jenkinshash(ngram.data, ngram.size());
+                return ngram.hash();
             }
     };
+    
 
     template <>
     struct hash<EncSkipGram> {
      public: 
-            size_t operator()(EncSkipGram ngram) const throw() {            
+          size_t operator()(EncSkipGram skipgram) const throw() {                            
+              return skipgram.hash();              
+          }
+           /* size_t operator()(EncSkipGram ngram) const throw() {                            
                 //jenkins hash: http://en.wikipedia.org/wiki/Jenkins_hash_function
                 unsigned long h;
                 int i;
@@ -104,7 +178,7 @@ namespace std {
                 h ^= (h >> 11);
                 h += (h << 15);
                 return h;
-            }
+            }*/
     };
 
 }
@@ -173,15 +247,31 @@ class EncGramModel {
     
     void save(std::string filename);
     
+    size_t hash();
+    
+    
     void decode(ClassDecoder & classdecoder, std::ostream *NGRAMSOUT, std::ostream *SKIPGRAMSOUT);    
 };
 
 
 
-class EncGramGraphModel: EncGramModel {
+/*
+class EncGramGraphModel {
     
+    
+   private:
+    
+    unordered_map<size_t,std::vector<EncNGram*> > rel_subsumption_children;
+    
+   public:
+    EncGramGraphModel(EncGramModel& model); //compute entire model    
+    
+    
+    
+    EncGramGraphModel(std:string filename);
+    save(std:string filename);
 };
-
+*/
 
 double compute_entropy(freqlist & data, const int total);
 double compute_entropy(skipgram_freqlist & data, const int total);
