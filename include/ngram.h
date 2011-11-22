@@ -1,6 +1,7 @@
 #include <string>
 #include <iostream>
 #include <ostream>
+#include <istream>
 #include "classdecoder.h"
 #include <unordered_map>
 #include <vector>
@@ -19,7 +20,7 @@ class EncAnyGram {
     
      EncAnyGram();
      EncAnyGram(const unsigned char* dataref, const char size);
-     EncAnyGram(const EncAnyGram& ref);     
+     EncAnyGram(const EncAnyGram& ref);          
      virtual ~EncAnyGram();
      
      virtual const char n() const;
@@ -47,6 +48,13 @@ class EncAnyGram {
          return 0;
      }
      
+     virtual void writeasbinary(std::ostream * out) const; //write binary output
+             
+     //virtual bool is_subgram() const; //TODO?
+     
+     //virtual bool is_supergram() const; //TODO?
+     
+    
 };
 
 
@@ -55,11 +63,11 @@ class EncNGram: public EncAnyGram {
     EncNGram(): EncAnyGram() {}; 
     EncNGram(const unsigned char* dataref, const char size): EncAnyGram(dataref, size) {};
     EncNGram(const EncNGram& ref): EncAnyGram(ref) {};     
-    
+    EncNGram(std::istream * in);
     EncNGram * slice(const int begin,const int length) const;    
     
     
-    int subngrams(std::vector<EncNGram*> & container) const; 
+    int subngrams(std::vector<EncNGram*> & container) const;     
 };
 
 /*
@@ -108,7 +116,7 @@ class EncSkipGram: public EncAnyGram {
       EncSkipGram(const std::vector<EncNGram*> & dataref, const std::vector<int> & skipref, bool initialskip = false, bool finalskip = false);
       EncSkipGram(const unsigned char *dataref, const char size, const unsigned char* skipref, const char skipcount);
       EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, const char refn);
-    
+      EncSkipGram(std::istream * in, const char gapcount = 0);
       std::string decode(ClassDecoder& classdecoder) const;
       bool out() const;
       bool isskipgram() const { return (skipcount > 0); }
@@ -121,6 +129,8 @@ class EncSkipGram: public EncAnyGram {
       }
       
       int parts(std::vector<EncNGram*> & container) const; //returns all consecutive parts
+      
+      void writeasbinary(std::ostream * out) const; //write binary output
       
     //EncSkipGram(const unsigned char* dataref, const char size): EncNGram(dataref, size) {      
     //}     
@@ -261,12 +271,15 @@ class EncGramModel {
 class EncGramGraphModel {    
    private:    
     std::unordered_map<EncAnyGram,std::unordered_set<EncAnyGram> > rel_subsumption_children;
+    //std::unordered_map<EncAnyGram,std::unordered_set<EncAnyGram> > rel_subsumption_parents; //reverse
+    
+    //std::unordered_map<EncNGram,std::unordered_set<EncSkipGram> > rel_inskips; //ngrams pluggable in gaps in skipgrams (reverse index of skipgram.data)
         
    public:
     EncGramGraphModel(EncGramModel& model); //compute entire model    
         
     //EncGramGraphModel(std:string filename);
-    //save(std:string filename);
+    void save(std::string filename);
 };
 
 
