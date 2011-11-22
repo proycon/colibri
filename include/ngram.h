@@ -57,7 +57,9 @@ class EncNGram: public EncAnyGram {
     EncNGram(const EncNGram& ref): EncAnyGram(ref) {};     
     
     EncNGram * slice(const int begin,const int length) const;    
-    std::vector<EncNGram*> subngrams() const;
+    
+    
+    int subngrams(std::vector<EncNGram*> & container) const; 
 };
 
 /*
@@ -117,6 +119,8 @@ class EncSkipGram: public EncAnyGram {
       const char gapsize(char i) const {
             return skipsize[i]; //TODO: Add proper exceptions
       }
+      
+      int parts(std::vector<EncNGram*> & container) const; //returns all consecutive parts
       
     //EncSkipGram(const unsigned char* dataref, const char size): EncNGram(dataref, size) {      
     //}     
@@ -238,10 +242,10 @@ class EncGramModel {
     int types() const { return ngramtypecount + skipgramtypecount; }
     int tokens() const { return ngramtokencount + skipgramtokencount; }
     
-    bool exists(EncAnyGram* key) const;
-    int count(EncAnyGram* key);
-    double freq(EncAnyGram* key);    
-    double relfreq(EncAnyGram* key);    
+    bool exists(const EncAnyGram* key) const;
+    int count(const EncAnyGram* key);
+    double freq(const EncAnyGram* key);    
+    double relfreq(const EncAnyGram* key);    
     
     void save(std::string filename);
     
