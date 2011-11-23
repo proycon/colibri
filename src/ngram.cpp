@@ -718,6 +718,7 @@ EncGramModel::EncGramModel(const string corpusfile, int MAXLENGTH, int MINTOKENS
 
 EncNGram::EncNGram(istream * in) {
     in->read(&_size, sizeof(char));
+    data = new unsigned char[_size];
     in->read((char*) data, (int) _size); //read data                                                
 }
 
@@ -731,6 +732,7 @@ EncSkipGram::EncSkipGram(istream * in, const char gapcount) {
         in->read(skipsize + j, sizeof(char)); //reads in skipref[j]                
     }
     in->read(&_size, sizeof(char));
+    data = new unsigned char[_size];
     in->read((char*) data, (int) _size); //read data                                                
 }
 
@@ -1006,8 +1008,9 @@ double compute_entropy(skipgram_freqlist & data, const int total) {
 
 
 EncGramGraphModel::EncGramGraphModel(EncGramModel& model) {
-        
+    
     for (int n = 2; n <= model.maxlength(); n++) {
+        cerr << "Computing subsumption relations on " << n << "-grams" << endl;
         for(freqlist::iterator iter = model.ngrams[n].begin(); iter != model.ngrams[n].end(); iter++ ) {
             const EncNGram * ngram = &(iter->first);
             vector<EncNGram*> subngrams;
@@ -1028,6 +1031,7 @@ EncGramGraphModel::EncGramGraphModel(EncGramModel& model) {
     }   
     
     for (int n = 2; n <= model.maxlength(); n++) {
+        cerr << "Computing subsumption relations on skip-" << n << "-grams" << endl;
         for(skipgrammap::iterator iter = model.skipgrams[n].begin(); iter != model.skipgrams[n].end(); iter++ ) {        
             const EncSkipGram * skipgram = &(iter->first);
             
@@ -1037,7 +1041,7 @@ EncGramGraphModel::EncGramGraphModel(EncGramModel& model) {
                 const EncNGram * ngram = *iter2;
                 vector<EncNGram*> subngrams;
                 ngram->subngrams(subngrams);
-                for (vector<EncNGram*>::iterator iter3 = subngrams.begin(); iter3 != subngrams.end(); iter2++) {
+                for (vector<EncNGram*>::iterator iter3 = subngrams.begin(); iter3 != subngrams.end(); iter3++) {
                     //subgram exists, add relation:
                     const EncAnyGram * subngram = *iter3;
                     rel_subsumption_children[*skipgram].insert(*subngram);

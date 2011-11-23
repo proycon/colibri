@@ -18,7 +18,7 @@ int main( int argc, char *argv[] ) {
     string modelfile = "";
     string outputprefix = "";
     char c;    
-    while ((c = getopt(argc, argv, "c:f:h")) != -1)
+    while ((c = getopt(argc, argv, "c:f:ho:")) != -1)
         switch (c)
         {
         case 'c':
@@ -58,6 +58,9 @@ int main( int argc, char *argv[] ) {
     
     cerr << "Constructing graph " << endl;
     EncGramGraphModel graph = EncGramGraphModel(model);    
+    
+    cerr << "Saving graph " << endl;
+    graph.save(outputprefix + ".graph.bin");
     
     return 0;
 
