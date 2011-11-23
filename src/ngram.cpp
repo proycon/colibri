@@ -745,7 +745,6 @@ EncGramModel::EncGramModel(string filename) {
     ngrams.push_back(freqlist());
     skipgrams.push_back(skipgrammap());    
     
-    char buffer[1024];
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
     
@@ -1054,6 +1053,41 @@ EncGramGraphModel::EncGramGraphModel(EncGramModel& model) {
     
     
      
+}
+
+EncGramGraphModel::EncGramGraphModel(string filename) {
+    ifstream f;
+    f.open(filename.c_str(), ios::in | ios::binary);
+    
+    unsigned long supernodes;
+    f.read( (char*) &supernodes, sizeof(unsigned long));        
+    
+    for (int i = 0; i < supernodes; i++) {
+        char gapcount;
+        f.read(&gapcount, sizeof(char));
+        EncAnyGram * anygram;
+        if (gapcount == 0) {
+            anygram = new EncNGram(&f);
+        } else {
+            anygram = new EncSkipGram(&f, gapcount);
+        }
+        unsigned int relations;
+        f.read( (char*) &relations, sizeof(int));        
+        for (int j = 0; j < relations; j++) {
+            char gapcount2;
+            f.read(&gapcount2, sizeof(char));
+            EncAnyGram * anygram2;
+            if (gapcount2 == 0) {
+                anygram2 = new EncNGram(&f);
+            } else {
+                anygram2 = new EncSkipGram(&f, gapcount);
+            }
+            rel_subsumption_children[anygram].insert(anygram2);
+            delete anygram2;
+        }
+        delete anygram;
+    }    
+    f.close();
 }
 
 void EncGramGraphModel::save(string filename) {

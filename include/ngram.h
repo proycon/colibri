@@ -277,6 +277,7 @@ class EncGramGraphModel {
         
    public:
     EncGramGraphModel(EncGramModel& model); //compute entire model    
+    EncGramGraphModel(std::string filename);
         
     //EncGramGraphModel(std:string filename);
     void save(std::string filename);
