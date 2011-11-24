@@ -452,13 +452,14 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
 
 
 
-EncGramModel::EncGramModel(const string corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINDEX, bool DOSKIPCONTENT, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
+EncGramModel::EncGramModel(const string corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINDEX, bool DOREVERSEINDEX, bool DOSKIPCONTENT, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
     
     this->MAXLENGTH = MAXLENGTH;
     this->MINTOKENS = MINTOKENS;
     this->DOSKIPGRAMS = DOSKIPGRAMS;
     this->MINSKIPTOKENS = MINSKIPTOKENS;
     this->DOINDEX = DOINDEX;
+    this->DOREVERSEINDEX = DOREVERSEINDEX;
     this->DOSKIPCONTENT = DOSKIPCONTENT;
     this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
     this->DOFINALONLYSKIP = DOFINALONLYSKIP;
@@ -680,38 +681,14 @@ EncGramModel::EncGramModel(const string corpusfile, int MAXLENGTH, int MINTOKENS
            cerr << "Pruned " << pruned << " skipgrams, " << skipgrams[n].size() <<  " left (" << skiptokencount[n] << " tokens)" << endl;
            
         }
-        
-        if (DOINDEX) { //TODO: REFACTOR
-            /*cerr << "Writing ngram index" << endl;
-
-            for(unordered_map<EncNGram,set<int>>::iterator iter = ngram_index.begin(); iter != ngram_index.end(); iter++ ) {
-                const EncNGram ngram = iter->first;
-                *NGRAMINDEX << ngram.decode(classdecoder) << '\t';
-                for (set<int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-                    *NGRAMINDEX << *iter2 << ' ';
-                }
-                *NGRAMINDEX << endl;
-            }
-                        
-            if (DOSKIPGRAMS) {
-                cerr << "Writing skipgram index" << endl;;
-
-                for(unordered_map<EncSkipGram,set<int>>::iterator iter = skipgram_index.begin(); iter != skipgram_index.end(); iter++ ) {
-                    const EncSkipGram skipgram = iter->first;
-                    *SKIPGRAMINDEX << (int) skipgram.n() << '\t' << skipgram.decode(classdecoder) << '\t';
-                    for (set<int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-                        *SKIPGRAMINDEX << *iter2 << ' ';
-                    }
-                    *SKIPGRAMINDEX << endl;
-                }
-                
-            }*/
-        }
     
         ngramtypecount += ngrams[n].size();
         skipgramtypecount += skipgrams[n].size();     
     }
 
+    if (DOREVERSEINDEX) {
+        //TODO: Compute reverse index        
+    }
         
 }
 
@@ -736,7 +713,11 @@ EncSkipGram::EncSkipGram(istream * in, const char gapcount) {
     in->read((char*) data, (int) _size); //read data                                                
 }
 
-EncGramModel::EncGramModel(string filename) {
+EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, bool DOSKIPCONTENT) {
+    this->DOINDEX = DOINDEX;
+    this->DOREVERSEINDEX = DOREVERSEINDEX;
+    this->DOSKIPCONTENT = DOSKIPCONTENT;    
+    
     ngramtokencount = 0;
     skipgramtokencount = 0; 
     ngramtypecount = 0;
@@ -750,22 +731,12 @@ EncGramModel::EncGramModel(string filename) {
     
     unsigned long totaltokens;
     f.read( (char*) &totaltokens, sizeof(unsigned long));        
-    //cerr << "DEBUG totaltokens=" << totaltokens << endl;
     unsigned long totaltypes;
     f.read( (char*) &totaltypes, sizeof(unsigned long));            
-    //cerr << "DEBUG totaltypes=" << totaltypes << endl;
     
-    for (int i = 0; i < totaltypes; i++) {
-        //cerr << "DEBUG reading pattern #" << (i + 1) << " of " << totaltypes << endl;
-        /*unsigned char check;
-        f.read((char*) &check, sizeof(char));
-        if (check != 255) {
-            //cerr << "DEBUG check is " << (int) check << endl;
-            exit(2);
-        } */       
+    for (int i = 0; i < totaltypes; i++) {   
         char gapcount;
         f.read(&gapcount, sizeof(char));
-        //cerr << "DEBUG gapcount=" << (int)  gapcount << endl;
         if (gapcount == 0) {
             ngramtypecount++;
             //NGRAM
@@ -780,33 +751,28 @@ EncGramModel::EncGramModel(string filename) {
                 }
                 MAXLENGTH = ngram.n();
             }
-            //cerr << "DEBUG buffer=" << buffer << endl;
             int count;
             f.read((char*) &count, sizeof(int)); //read occurrence count
-            //cerr << "DEBUG count=" << count << endl;
             ngrams[ngram.n()][ngram] = count; //assign count 
             ngramtokencount += count;
             tokencount[ngram.n()] += count;
             int indexcount;                        
             f.read((char*) &indexcount, sizeof(int));
-            //cerr << "DEBUG indexcount=" << indexcount << endl;
             for (int j = 0; j < indexcount; j++) {
                 int index;
                 f.read((char*) &index, sizeof(int));                
-                //cerr << "DEBUG index=" << index << endl;
-                ngram_index[ngram].insert(index);                
+                if (DOINDEX) {
+                    ngram_index[ngram].insert(index);         
+                }
+                if (DOREVERSEINDEX) {
+                    reverse_index[index].insert(&ngram);
+                }
+                       
             }
         } else {
             //SKIPGRAM
             skipgramtypecount++;            
             EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              
-            //EncSkipGram skipgram = EncSkipGram( (unsigned char*) buffer, size, (unsigned char*) skipref, gapcount);
-            /*if (skipgram.n() > MAXLENGTH) {
-                for (int j = 0; j < skipgram.n() - MAXLENGTH; j++) {
-                    ngrams.push_back(freqlist());
-                    skipgrams.push_back(skipgrammap());
-                }
-            }*/           
             int count;
             f.read((char*) &count, sizeof(int)); //read occurrence count            
             skipgrams[skipgram.n()][skipgram].count = count; //assign
@@ -815,16 +781,23 @@ EncGramModel::EncGramModel(string filename) {
             int skipcontentcount;
             f.read((char*) &skipcontentcount, sizeof(int));   
             for (int j = 0; j < skipcontentcount; j++) {                
-                EncSkipGram skipcontent = EncSkipGram(&f);
-                f.read((char*) &count, sizeof(int)); //read occurrence count
-                skipgrams[skipgram.n()][skipgram].skips[skipcontent] = count; //skipcontent occurrence 
+                f.read((char*) &count, sizeof(int)); //read occurrence count                
+                EncSkipGram skipcontent = EncSkipGram(&f);  //also when !DOSKIPCONTENT, bytes have to be read
+                if (DOSKIPCONTENT) {
+                    skipgrams[skipgram.n()][skipgram].skips[skipcontent] = count; //skipcontent occurrence 
+                }
             }
             int indexcount;
             f.read((char*) &indexcount, sizeof(int));        
             for (int j = 0; j < indexcount; j++) {
                 int index;
                 f.read((char*) &index, sizeof(int));
-                skipgram_index[skipgram].insert(index);
+                if (DOINDEX) {
+                    skipgram_index[skipgram].insert(index);
+                }
+                if (DOREVERSEINDEX) {
+                    reverse_index[index].insert(&skipgram);
+                }
             }
         }        
     }
@@ -1006,6 +979,7 @@ double compute_entropy(skipgram_freqlist & data, const int total) {
 
 
 
+
 EncGramGraphModel::EncGramGraphModel(EncGramModel& model) {
     
     for (int n = 2; n <= model.maxlength(); n++) {
@@ -1082,7 +1056,7 @@ EncGramGraphModel::EncGramGraphModel(string filename) {
             } else {
                 anygram2 = new EncSkipGram(&f, gapcount);
             }
-            rel_subsumption_children[anygram].insert(anygram2);
+            //rel_subsumption_children[anygram].insert(anygram2); //TODO: FIX!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             delete anygram2;
         }
         delete anygram;
@@ -1119,3 +1093,6 @@ void EncGramGraphModel::save(string filename) {
     f.close();
     
 }
+
+
+

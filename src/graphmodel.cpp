@@ -47,7 +47,6 @@ int main( int argc, char *argv[] ) {
     if (outputprefix.empty()) {
         outputprefix = modelfile; //TODO: strip .clsenc. .bin?
     }
-
     cerr << "Loading class decoder " << classfile << endl;
     ClassDecoder classdecoder = ClassDecoder(classfile);
     

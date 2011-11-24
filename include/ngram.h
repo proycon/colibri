@@ -149,7 +149,15 @@ namespace std {
                 return anygram.hash();
             }
     };
-
+    
+    template <>
+    struct hash<EncAnyGram*> {
+     public: 
+            size_t operator()(EncAnyGram * anygram) const throw() {            
+                return anygram->hash();
+            }
+    };
+    
     
     template <>
     struct hash<EncNGram> {
@@ -217,6 +225,7 @@ class skipgramdata {
 typedef std::unordered_map<EncSkipGram,skipgramdata> skipgrammap;
 
 
+
 class EncGramModel {    
    private:
     int MINTOKENS; // = 2;
@@ -225,6 +234,7 @@ class EncGramModel {
     int MAXLENGTH; //= 8;
     bool DOSKIPGRAMS; //= false;
     bool DOINDEX; //= false;
+    bool DOREVERSEINDEX; //= false;
     bool DOSKIPCONTENT; //= false;
     bool DOINITIALONLYSKIP; //= true;
     bool DOFINALONLYSKIP; //= true;
@@ -243,9 +253,10 @@ class EncGramModel {
     
     std::unordered_map< EncNGram,std::set<int>  > ngram_index;
     std::unordered_map< EncSkipGram,std::set<int> > skipgram_index;
+    std::unordered_map< int,std::unordered_set<EncAnyGram*> > reverse_index;
         
-    EncGramModel(std::string filename);
-    EncGramModel(const std::string corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2, bool DOINDEX = false, bool DOSKIPCONTENT = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
+    EncGramModel(std::string filename, bool DOINDEX = true, bool DOREVERSEINDEX = false, bool DOSKIPCONTENT  = true);
+    EncGramModel(const std::string corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2, bool DOINDEX = false, bool DOREVERSEINDEX = false, bool DOSKIPCONTENT = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
     
     int maxlength() const { return MAXLENGTH; }
     
@@ -264,7 +275,6 @@ class EncGramModel {
     
     void decode(ClassDecoder & classdecoder, std::ostream *NGRAMSOUT, std::ostream *SKIPGRAMSOUT);    
 };
-
 
 
 
