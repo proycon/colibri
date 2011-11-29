@@ -24,6 +24,6 @@ class ClassDecoder {
 };
 
 unsigned int bytestoint(const unsigned char* a, const int l);
-int readline(std::istream* IN, unsigned char* buffer);
+int readline(std::istream* IN, unsigned char* buffer, const int);
 
 const int countwords(const unsigned char* data, const int l);

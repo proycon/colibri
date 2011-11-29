@@ -470,7 +470,8 @@ EncGramModel::EncGramModel(const string corpusfile, int MAXLENGTH, int MINTOKENS
     ngramtypecount = 0;
     skipgramtypecount = 0;
 
-    unsigned char line[65536];
+    const int BUFFERSIZE = 65536;
+    unsigned char line[BUFFERSIZE];
 
     ngrams.push_back(freqlist());
     skipgrams.push_back(skipgrammap());   
@@ -492,7 +493,7 @@ EncGramModel::EncGramModel(const string corpusfile, int MAXLENGTH, int MINTOKENS
         ifstream *IN =  new ifstream( corpusfile.c_str() );    
         vector<unsigned int> words;
         while (IN->good()) {
-            const int linesize = readline(IN, line);            
+            const int linesize = readline(IN, line, BUFFERSIZE );            
                     
             linenum++;
 

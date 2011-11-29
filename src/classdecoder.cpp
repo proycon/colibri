@@ -75,13 +75,17 @@ void ClassDecoder::decodefile(const string filename) {
 
 
 
-int readline(istream* IN, unsigned char* buffer) {
+int readline(istream* IN, unsigned char* buffer, const int MAXBUFFERSIZE) {
     int n = 0;
     short eolsequence = 0; //3 stages: 0 1 0 , when all three are found, we have a sentence
     while (IN->good()) {
         char bufchar;
         IN->get(bufchar);
         unsigned char c = (unsigned char) bufchar;
+        if (n >= MAXBUFFERSIZE) {
+            cerr << "Buffer overflow in classdecoder readline(): " << n << ". This indicates a sentence in the data that is far longer than anything reasonable, probably an error in sentence segmentation or tokenisation." << endl;
+            exit(666);
+        }
         buffer[n] = c;        
         if (c == 0) {
             eolsequence++;
