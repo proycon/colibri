@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <cmath>
+#include <cstdlib>
 #include <algorithms.h>
 #include <limits>
 
@@ -765,7 +766,9 @@ EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, b
                     ngram_index[ngram].insert(index);         
                 }
                 if (DOREVERSEINDEX) {
-                    reverse_index[index].insert(&ngram);
+                    bool found = false;
+                    for (int k = 0; k < reverse_index[index].size(); k++) if (*(reverse_index[index][k]) == ngram) { found = true; break; };
+                    if (found) reverse_index[index].push_back(&ngram);
                 }
                        
             }
@@ -796,7 +799,9 @@ EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, b
                     skipgram_index[skipgram].insert(index);
                 }
                 if (DOREVERSEINDEX) {
-                    reverse_index[index].insert(&skipgram);
+                    bool found = false;
+                    for (int k = 0; k < reverse_index[index].size(); k++) if (*(reverse_index[index][k]) == skipgram) { found = true; break; };
+                    if (found) reverse_index[index].push_back(&skipgram);
                 }
             }
         }        
@@ -1095,4 +1100,81 @@ void EncGramGraphModel::save(string filename) {
 }
 
 
+AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD) {
+    int round = 0;    
+    unsigned long c = 0;
+    double totaldivergence = 0;
+    double prevavdivergence = 0;
+    bool converged = false;
+    do {       
+        round++; 
+        //use reverse index to iterate over all sentences
+        for (reverseindexmap::iterator iter = sourcemodel.reverse_index.begin(); iter != sourcemodel.reverse_index.end(); iter++) {
+            const int key = iter->first;        
+            vector<EncAnyGram*> & sourcegrams = iter->second;            
+            if (targetmodel.reverse_index.count(key) > 0) { //target model contains sentence?
+                vector<EncAnyGram*> & targetgrams = targetmodel.reverse_index[key];
 
+                //compute sentencetotal for normalisation later in count step, sum_s(p(t|s))                
+                unordered_map<EncAnyGram*, double> sentencetotal;
+                for (vector<EncAnyGram*>::iterator iter2 = targetgrams.begin(); iter2 != targetgrams.end();  iter2++) {    
+                    EncAnyGram* targetgram = *iter2;   
+                    sentencetotal[targetgram] = 0;
+                    for (vector<EncAnyGram*>::iterator iter3 = sourcegrams.begin(); iter3 != sourcegrams.end();  iter3++) {                        
+                        
+                        EncAnyGram* sourcegram = *iter3;
+                        pair<EncAnyGram*,EncAnyGram*> targetgram_given_sourcegram;
+                        targetgram_given_sourcegram.first = targetgram;
+                        targetgram_given_sourcegram.second = sourcegram;
+                        
+                        sentencetotal[targetgram] += transprob[targetgram_given_sourcegram]; //compute sum over all source conditions for a targetgram under consideration
+                    }
+                }
+                                            
+                                            
+                //collect counts (for evidence that a targetgram is aligned to a sourcegram)
+                alignmentprobmap count;                
+                unordered_map<EncAnyGram*, double> total;
+                for (vector<EncAnyGram*>::iterator iter2 = targetgrams.begin(); iter2 != targetgrams.end();  iter2++) {    
+                    EncAnyGram* targetgram = *iter2;                                                               
+                    for (vector<EncAnyGram*>::iterator iter3 = sourcegrams.begin(); iter3 != sourcegrams.end();  iter3++) {                        
+                        EncAnyGram* sourcegram = *iter3;   
+                        pair<EncAnyGram*,EncAnyGram*> targetgram_given_sourcegram;
+                        targetgram_given_sourcegram.first = targetgram;
+                        targetgram_given_sourcegram.second = sourcegram;
+                        
+                        const double countvalue = transprob[targetgram_given_sourcegram] /  sentencetotal[targetgram];                        
+                        count[targetgram_given_sourcegram] += countvalue;
+                        total[targetgram] += countvalue;                        
+                    }                    
+                }
+                 
+                 
+
+                double prevtransprob;
+                //estimate new probabilities (normalised count is the new estimated probability)
+                for (vector<EncAnyGram*>::iterator iter2 = targetgrams.begin(); iter2 != targetgrams.end();  iter2++) {    
+                    EncAnyGram* targetgram = *iter2;                                                                                   
+                    for (vector<EncAnyGram*>::iterator iter3 = sourcegrams.begin(); iter3 != sourcegrams.end();  iter3++) {                        
+                        EncAnyGram* sourcegram = *iter3;                   
+                        pair<EncAnyGram*,EncAnyGram*> targetgram_given_sourcegram;
+                        targetgram_given_sourcegram.first = targetgram;
+                        targetgram_given_sourcegram.second = sourcegram;
+                        
+                        prevtransprob = transprob[targetgram_given_sourcegram];
+                        const double newtransprob = count[targetgram_given_sourcegram] / total[targetgram];
+                        transprob[targetgram_given_sourcegram] = newtransprob;                        
+                        
+                        //for computation of convergence
+                        const double divergence = abs(newtransprob - prevtransprob);
+                        totaldivergence += divergence;
+                        c++;
+                    }
+                }
+            }
+        }
+        const double avdivergence = totaldivergence / c;
+        converged = (((round >= MAXROUNDS) || abs(avdivergence - prevavdivergence)) <= CONVERGEDTHRESHOLD);       
+        prevavdivergence = avdivergence;
+    } while (!converged);    
+}
