@@ -754,6 +754,7 @@ EncSkipGram::EncSkipGram(istream * in, const char gapcount) {
 }
 
 EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, bool DOSKIPCONTENT) {
+    const bool DEBUG = false;
     this->DOINDEX = DOINDEX;
     this->DOREVERSEINDEX = DOREVERSEINDEX;
     this->DOSKIPCONTENT = DOSKIPCONTENT;    
@@ -778,20 +779,21 @@ EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, b
     unsigned long totaltypes;
     f.read( (char*) &totaltypes, sizeof(unsigned long));            
     
-    for (int i = 0; i < totaltypes; i++) {   
+    for (int i = 0; i < totaltypes; i++) {           
         char gapcount;
-        unsigned char check;
+        /*unsigned char check;
         f.read((char*) &check, sizeof(char));
         if (check != 255) {
             cerr << "Error during read of item " << i + 1 << " , expected check 255, got " << (int) check << endl;            
             exit(2);
-        }
+        }*/
+        if (DEBUG) cerr << "\t@" << i;
         f.read(&gapcount, sizeof(char));
         if (gapcount == 0) {
+            if (DEBUG)  cerr << "\tNGRAM";
             ngramtypecount++;
             //NGRAM
-            EncNGram ngram = EncNGram(&f); //read from file            
-            
+            EncNGram ngram = EncNGram(&f); //read from file                        
             if (ngram.n() > MAXLENGTH) {
                 tokencount[ngram.n()] = 0;
                 skiptokencount[ngram.n()] = 0;
@@ -823,18 +825,20 @@ EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, b
             }
         } else {
             //SKIPGRAM
+            if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
             skipgramtypecount++;            
             EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              
             int count;
             f.read((char*) &count, sizeof(int)); //read occurrence count            
             skipgrams[skipgram.n()][skipgram].count = count; //assign
             skipgramtokencount += count;
-            skiptokencount[skipgram.n()] += count;
+            skiptokencount[skipgram.n()] += count;            
             int skipcontentcount;
             f.read((char*) &skipcontentcount, sizeof(int));   
-            for (int j = 0; j < skipcontentcount; j++) {                
-                f.read((char*) &count, sizeof(int)); //read occurrence count                
+            if (DEBUG) cerr << "\tcontentcount=" << (int) skipcontentcount;
+            for (int j = 0; j < skipcontentcount; j++) {                                
                 EncSkipGram skipcontent = EncSkipGram(&f);  //also when !DOSKIPCONTENT, bytes have to be read
+                f.read((char*) &count, sizeof(int)); //read occurrence count                
                 if (DOSKIPCONTENT) {
                     skipgrams[skipgram.n()][skipgram].skips[skipcontent] = count; //skipcontent occurrence 
                 }
@@ -853,7 +857,8 @@ EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, b
                     if (found) reverse_index[index].push_back(&skipgram);
                 }
             }
-        }        
+        }
+        if (DEBUG)  cerr << endl;      //DEBUG  
     }
     f.close();
 }
@@ -866,7 +871,7 @@ void EncGramModel::save(std::string filename) {
     
     const char czero = 0;
     const int zero = 0;
-    const unsigned char check = 255;
+    //const unsigned char check = 255;
     const unsigned long totaltokens = tokens();
     const unsigned long totaltypes = types();
     
@@ -874,7 +879,7 @@ void EncGramModel::save(std::string filename) {
     f.write( (char*) &totaltypes, sizeof(unsigned long) );
     for (int n = 1; n <= MAXLENGTH; n++) {
         for(freqlist::iterator iter = ngrams[n].begin(); iter != ngrams[n].end(); iter++ ) {        
-            f.write((char*) &check, sizeof(char)); 
+            //f.write((char*) &check, sizeof(char)); 
             f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
             iter->first.writeasbinary(&f);
             f.write( (char*) &iter->second, sizeof(int) ); //occurrence count                                     
@@ -892,7 +897,7 @@ void EncGramModel::save(std::string filename) {
     }    
     for (int n = 1; n <= MAXLENGTH; n++) {                
         for(skipgrammap::iterator iter = skipgrams[n].begin(); iter != skipgrams[n].end(); iter++ ) {                            
-            f.write((char*)  &check, sizeof(char)); 
+            //f.write((char*)  &check, sizeof(char)); 
             iter->first.writeasbinary(&f);
             f.write( (char*) &(iter->second.count), sizeof(int) ); //occurrence count                         
             if (DOSKIPCONTENT) {
