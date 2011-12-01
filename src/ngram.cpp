@@ -698,7 +698,7 @@ EncGramModel::EncGramModel(const string corpusfile, int MAXLENGTH, int MINTOKENS
 EncNGram::EncNGram(istream * in) {
     in->read(&_size, sizeof(char));    
     if (_size == 0) {
-        cerr << "EncNGram: data has size 0, not possible!";
+        cerr << "EncNGram: data has size 0, not possible!" << endl;;
         exit(5);
     }
     data = new unsigned char[_size];
@@ -706,17 +706,17 @@ EncNGram::EncNGram(istream * in) {
 }
 
 EncSkipGram::EncSkipGram(istream * in, const char gapcount) {
-    if (gapcount == 0) {
+    if (gapcount < 0) {
         in->read(&skipcount, sizeof(char));
     } else {
         skipcount = gapcount;
-    }
+    }    
     for (int j = 0; j < skipcount; j++) {
         in->read(skipsize + j, sizeof(char)); //reads in skipref[j]                
     }
     in->read(&_size, sizeof(char));
     if (_size == 0) {
-        cerr << "EncSkipGram: data has size 0, not possible!";
+        cerr << "EncSkipGram: data has size 0, not possible!" << endl;;
         exit(5);
     }
     data = new unsigned char[_size];

@@ -116,7 +116,7 @@ class EncSkipGram: public EncAnyGram {
       EncSkipGram(const std::vector<EncNGram*> & dataref, const std::vector<int> & skipref, bool initialskip = false, bool finalskip = false);
       EncSkipGram(const unsigned char *dataref, const char size, const unsigned char* skipref, const char skipcount);
       EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, const char refn);
-      EncSkipGram(std::istream * in, const char gapcount = 0);
+      EncSkipGram(std::istream * in, const char gapcount = -1);
       std::string decode(ClassDecoder& classdecoder) const;
       bool out() const;
       bool isskipgram() const { return (skipcount > 0); }
