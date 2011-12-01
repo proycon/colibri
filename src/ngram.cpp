@@ -730,6 +730,10 @@ EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, b
     
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
+    if (!f) {
+       cerr << "File does not exist: " << filename << endl;
+       exit(3);
+    }
     
     unsigned long totaltokens;
     f.read( (char*) &totaltokens, sizeof(unsigned long));        
@@ -1038,6 +1042,10 @@ EncGramGraphModel::EncGramGraphModel(EncGramModel& model) {
 EncGramGraphModel::EncGramGraphModel(string filename) {
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
+    if (!f) {
+           cerr << "File does not exist: " << filename << endl;
+           exit(3);
+    }
     
     unsigned long supernodes;
     f.read( (char*) &supernodes, sizeof(unsigned long));        

@@ -15,8 +15,12 @@ unsigned int bytestoint(const unsigned char* a, const int l) {
 
 
 ClassDecoder::ClassDecoder(const string filename) {
+        
        ifstream *IN =  new ifstream( filename.c_str() );    
-
+       if (!(*IN)) {
+           cerr << "File does not exist: " << filename << endl;
+           exit(3);
+       }
         while (IN->good()) {
           string line;
           getline(*IN, line);              
@@ -30,8 +34,9 @@ ClassDecoder::ClassDecoder(const string filename) {
               }
               
           }
-        }
+        }        
         IN->close();  
+
 }
 
         
