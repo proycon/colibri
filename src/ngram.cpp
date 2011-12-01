@@ -1168,6 +1168,7 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
     bool converged = false;
     do {       
         round++; 
+        cerr << "  EM Round " << round;
         //use reverse index to iterate over all sentences
         for (reverseindexmap::iterator iter = sourcemodel.reverse_index.begin(); iter != sourcemodel.reverse_index.end(); iter++) {
             const int key = iter->first;        
@@ -1236,5 +1237,6 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
         const double avdivergence = totaldivergence / c;
         converged = (((round >= MAXROUNDS) || abs(avdivergence - prevavdivergence)) <= CONVERGEDTHRESHOLD);       
         prevavdivergence = avdivergence;
+        cerr << " average divergence = " << avdivergence << endl;
     } while (!converged);    
 }
