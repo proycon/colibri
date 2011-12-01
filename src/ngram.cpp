@@ -228,6 +228,10 @@ EncAnyGram & EncAnyGram::operator =(EncAnyGram other) { //(note: argument passed
 
 
 void EncAnyGram::writeasbinary(ostream * out) const {
+    if (_size <= 0) {
+        cerr << "Writing skipgram with size <= 0! Not possible!" << endl;
+        exit(3);
+    }
     out->write( &_size, sizeof(char) ); //data length
     out->write( (char*) data , (int) _size ); //data
 }
@@ -236,6 +240,10 @@ void EncSkipGram::writeasbinary(ostream * out) const {
     out->write( &skipcount, sizeof(char) ); //nr of gaps
     for (int j = 0; j < skipcount; j++) { //skip configuration
             out->write( skipsize + j , sizeof(char) );
+    }
+    if (_size <= 0) {
+        cerr << "Writing skipgram with size <= 0! Not possible!" << endl;
+        exit(3);
     }
     out->write( &_size, sizeof(char) ); //size
     out->write( (char*) data , (int) _size ); //data
@@ -525,7 +533,7 @@ EncGramModel::EncGramModel(const string corpusfile, int MAXLENGTH, int MINTOKENS
             
             const int l = countwords(line, linesize);            
             
-            if (linesize > 0) //no { on purpose!
+            if (linesize > 0) //no { on purpose! applies to next for loop
             for (int i = 0; i < l - n + 1; i++) {
                 
                 EncNGram * ngram = getencngram(i,n, line, linesize);  
@@ -737,8 +745,8 @@ EncSkipGram::EncSkipGram(istream * in, const char gapcount) {
         in->read(skipsize + j, sizeof(char)); //reads in skipref[j]                
     }
     in->read(&_size, sizeof(char));
-    if (_size == 0) {
-        cerr << "EncSkipGram: data has size 0, not possible!" << endl;;
+    if (_size <= 0) {
+        cerr << "EncSkipGram: data has to have size >0, read " << _size << ", not possible!" << endl;;
         exit(5);
     }
     data = new unsigned char[_size];
@@ -772,8 +780,8 @@ EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, b
     
     for (int i = 0; i < totaltypes; i++) {   
         char gapcount;
-        char check;
-        f.read(&check, sizeof(char));
+        unsigned char check;
+        f.read((char*) &check, sizeof(char));
         if (check != 255) {
             cerr << "Error during read of item " << i + 1 << " , expected check 255, got " << (int) check << endl;            
             exit(2);
