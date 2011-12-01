@@ -817,9 +817,9 @@ EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, b
                     ngram_index[ngram].insert(index);         
                 }
                 if (DOREVERSEINDEX) {
-                    bool found = false;
+                    bool found = false;;
                     for (int k = 0; k < reverse_index[index].size(); k++) if (*(reverse_index[index][k]) == ngram) { found = true; break; };
-                    if (found) reverse_index[index].push_back(&ngram);
+                    if (!found) reverse_index[index].push_back(&ngram);
                 }
                        
             }
@@ -854,7 +854,7 @@ EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, b
                 if (DOREVERSEINDEX) {
                     bool found = false;
                     for (int k = 0; k < reverse_index[index].size(); k++) if (*(reverse_index[index][k]) == skipgram) { found = true; break; };
-                    if (found) reverse_index[index].push_back(&skipgram);
+                    if (!found) reverse_index[index].push_back(&skipgram);
                 }
             }
         }
@@ -1175,6 +1175,7 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
             vector<EncAnyGram*> & sourcegrams = iter->second;            
             if (targetmodel.reverse_index.count(key) > 0) { //target model contains sentence?
                 vector<EncAnyGram*> & targetgrams = targetmodel.reverse_index[key];
+                cerr << sourcegrams.size() << "x" << targetgrams.size() << " ";
 
                 //compute sentencetotal for normalisation later in count step, sum_s(p(t|s))                
                 unordered_map<EncAnyGram*, double> sentencetotal;
@@ -1237,6 +1238,6 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
         const double avdivergence = totaldivergence / c;
         converged = (((round >= MAXROUNDS) || abs(avdivergence - prevavdivergence)) <= CONVERGEDTHRESHOLD);       
         prevavdivergence = avdivergence;
-        cerr << " average divergence = " << avdivergence << endl;
+        cerr << " average divergence = " << avdivergence << ", transprob size = " << transprob.size() << endl;
     } while (!converged);    
 }
