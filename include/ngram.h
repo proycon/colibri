@@ -309,6 +309,7 @@ double compute_entropy(skipgram_freqlist & data, const int total);
 typedef std::unordered_map<std::pair<EncAnyGram*, EncAnyGram*>, double> alignmentprobmap;
 
 class AlignmentModel {
+   public:
     alignmentprobmap transprob;
     
     AlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001);        

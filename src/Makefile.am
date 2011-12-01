@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -I@top_srcdir@/include
 
-bin_PROGRAMS = classdecode modeldecode patternfinder graphmodel
+bin_PROGRAMS = classdecode modeldecode patternfinder graphmodel aligner
 
 lib_LTLIBRARIES = libcppnlp.la
 
@@ -26,7 +26,11 @@ patternfinder_CXXFLAGS = -Wall -std=c++0x
 patternfinder_LDADD = libcppnlp.la
 patternfinder_SOURCES = patternfinder.cpp
 patternfinder_LDFLAGS = -static
-#LDADD = libcppnlp.la
+
+aligner_CXXFLAGS = -Wall -std=c++0x
+aligner_LDADD = libcppnlp.la
+aligner_SOURCES = aligner.cpp
+aligner_LDFLAGS = -static
 
 testskipgrams_CXXFLAGS = -Wall -std=c++0x
 testskipgrams_LDADD = libcppnlp.la
