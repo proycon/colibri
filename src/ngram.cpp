@@ -18,7 +18,12 @@ EncAnyGram::EncAnyGram() {
 
 EncAnyGram::EncAnyGram(const unsigned char* dataref, const char size) {
    //create a copy of the character data (will take less space than storing pointers anyhow!)
+   if (size <= 0) {
+       cerr << "EncAnyGram: Data size must be > 0! Parameter says " << (int) size << "!" << endl;
+       exit(3);
+   }
    _size = size;
+   
    data = new unsigned char[size];
    for (int i = 0; i < size; i++) {
         data[i] = dataref[i];
@@ -27,6 +32,10 @@ EncAnyGram::EncAnyGram(const unsigned char* dataref, const char size) {
 
 EncAnyGram::EncAnyGram(const EncAnyGram& ref) {
     _size = ref.size();
+    if (_size <= 0) {
+        cerr << "EncAnyGram: Data size must be > 0, reference n-gram has " << (int) _size << "!" << endl;
+        exit(3);    
+    }
     data = new unsigned char[_size];   
     for (int i = 0; i < _size; i++) {
         data[i] = ref.data[i];
@@ -84,6 +93,10 @@ const size_t EncAnyGram::hash() const {
 }
 
 EncNGram * EncNGram::slice(const int begin,const int length) const {    
+    if (length <= 0) {
+        cerr << "slice got length argument <= 0! Not possible!" << endl;
+        exit(3);
+    }
     return getencngram(begin, length, data, _size);
 }
 
@@ -105,6 +118,10 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
         endpos = size - 1;
     }
     const char bytesize = (char) (endpos - beginpos + 1);    
+    if (bytesize <= 0) {
+        cerr << "getencgram yields ngram with size <= 0! Not possible!" << " index="<<index << " n="<<n <<" size="<< size << endl;
+        exit(3);
+    }
     return new EncNGram(line + beginpos, bytesize);
 }
 
@@ -327,6 +344,10 @@ EncSkipGram::EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, cons
     skipsize[0] = refn - pregap.n() - postgap.n();
             
     _size = pregapsize + postgapsize + 2;
+    if (_size <= 0) {
+        cerr << "EncSkipGram: Data size must be > 0!" << endl;
+        exit(3);    
+    }
     data = new unsigned char[_size];    
     int cursor = 0;
     for (int i = 0; i < pregapsize; i++) {
@@ -504,6 +525,7 @@ EncGramModel::EncGramModel(const string corpusfile, int MAXLENGTH, int MINTOKENS
             
             const int l = countwords(line, linesize);            
             
+            if (linesize > 0) //no { on purpose!
             for (int i = 0; i < l - n + 1; i++) {
                 
                 EncNGram * ngram = getencngram(i,n, line, linesize);  
@@ -697,8 +719,8 @@ EncGramModel::EncGramModel(const string corpusfile, int MAXLENGTH, int MINTOKENS
 
 EncNGram::EncNGram(istream * in) {
     in->read(&_size, sizeof(char));    
-    if (_size == 0) {
-        cerr << "EncNGram: data has size 0, not possible!" << endl;;
+    if (_size <= 0) {
+        cerr << "EncNGram: data has to have size >0, " << (int) _size << " is not possible!" << endl;;
         exit(5);
     }
     data = new unsigned char[_size];
@@ -750,6 +772,12 @@ EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, b
     
     for (int i = 0; i < totaltypes; i++) {   
         char gapcount;
+        char check;
+        f.read(&check, sizeof(char));
+        if (check != 255) {
+            cerr << "Error during read of item " << i + 1 << " , expected check 255, got " << (int) check << endl;            
+            exit(2);
+        }
         f.read(&gapcount, sizeof(char));
         if (gapcount == 0) {
             ngramtypecount++;
@@ -830,7 +858,7 @@ void EncGramModel::save(std::string filename) {
     
     const char czero = 0;
     const int zero = 0;
-    //const unsigned char check = 255;
+    const unsigned char check = 255;
     const unsigned long totaltokens = tokens();
     const unsigned long totaltypes = types();
     
@@ -838,6 +866,7 @@ void EncGramModel::save(std::string filename) {
     f.write( (char*) &totaltypes, sizeof(unsigned long) );
     for (int n = 1; n <= MAXLENGTH; n++) {
         for(freqlist::iterator iter = ngrams[n].begin(); iter != ngrams[n].end(); iter++ ) {        
+            f.write((char*) &check, sizeof(char)); 
             f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
             iter->first.writeasbinary(&f);
             f.write( (char*) &iter->second, sizeof(int) ); //occurrence count                                     
@@ -855,6 +884,7 @@ void EncGramModel::save(std::string filename) {
     }    
     for (int n = 1; n <= MAXLENGTH; n++) {                
         for(skipgrammap::iterator iter = skipgrams[n].begin(); iter != skipgrams[n].end(); iter++ ) {                            
+            f.write((char*)  &check, sizeof(char)); 
             iter->first.writeasbinary(&f);
             f.write( (char*) &(iter->second.count), sizeof(int) ); //occurrence count                         
             if (DOSKIPCONTENT) {
