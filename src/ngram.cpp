@@ -1001,11 +1001,11 @@ vector<EncAnyGram*> EncGramModel::reverse_index(const int i) {
     vector<EncAnyGram*> revindex;
     if (ngram_reverse_index.count(i) > 0)
         for (vector<EncNGram>::iterator iter = ngram_reverse_index[i].begin(); iter != ngram_reverse_index[i].end(); iter++) {
-            revindex.push_back((EncAnyGram*) &iter);
+            revindex.push_back(&(*iter));
         }   
     if (skipgram_reverse_index.count(i) > 0)        
         for (vector<EncSkipGram>::iterator iter = skipgram_reverse_index[i].begin(); iter != skipgram_reverse_index[i].begin(); iter++) {
-            revindex.push_back((EncSkipGram*) &iter);
+            revindex.push_back(&(*iter));
         }   
     return revindex;
 }
@@ -1212,7 +1212,7 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
     
     do {       
         round++; 
-        cerr << "  EM Round " << round;
+        cerr << "  EM Round " << round << "... ";
         //use reverse index to iterate over all sentences
         for (vector<int>::iterator iter = reverseindexkeys.begin(); iter != reverseindexkeys.end(); iter++) {
             const int key = *iter;        
