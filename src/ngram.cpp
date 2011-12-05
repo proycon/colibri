@@ -1222,6 +1222,7 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
     bool converged = false;
     
     set<int> reverseindexkeys = sourcemodel.reverse_index_keys();
+    pair<EncAnyGram*,EncAnyGram*> targetgram_given_sourcegram;
             
     do {       
         round++; 
@@ -1241,14 +1242,14 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
                 unordered_map<EncAnyGram*, double> sentencetotal;
                 for (int i = 0; i < targetgrams_size; i++) {    
                     EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
-                    sentencetotal[targetgram] = 0;
+                    int t = 0;                    
                     for (int j = 0; j < sourcegrams_size; j++) {                                            
-                        EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);
-                        pair<EncAnyGram*,EncAnyGram*> targetgram_given_sourcegram;
+                        EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);                        
                         targetgram_given_sourcegram.first = targetgram;
                         targetgram_given_sourcegram.second = sourcegram;                        
-                        sentencetotal[targetgram] += transprob[targetgram_given_sourcegram]; //compute sum over all source conditions for a targetgram under consideration
+                        t += transprob[targetgram_given_sourcegram]; //compute sum over all source conditions for a targetgram under consideration
                     }
+                    sentencetotal[targetgram] = t;
                 }                                        
                                             
                 //collect counts (for evidence that a targetgram is aligned to a sourcegram)
@@ -1256,16 +1257,17 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
                 unordered_map<EncAnyGram*, double> total;
                 for (int i = 0; i < targetgrams_size; i++) {    
                     EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
+                    double t = 0;
                     for (int j = 0; j < sourcegrams_size; j++) {                                            
-                        EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);
-                        pair<EncAnyGram*,EncAnyGram*> targetgram_given_sourcegram;
+                        EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);                        
                         targetgram_given_sourcegram.first = targetgram;
                         targetgram_given_sourcegram.second = sourcegram;
                         
                         const double countvalue = transprob[targetgram_given_sourcegram] /  sentencetotal[targetgram];                        
                         count[targetgram_given_sourcegram] += countvalue;
-                        total[targetgram] += countvalue;                        
+                        t += countvalue;
                     }                    
+                    total[targetgram] = t;                        
                 }
                  
                  
