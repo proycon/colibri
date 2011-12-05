@@ -232,7 +232,6 @@ class skipgramdata {
 };
 
 typedef std::unordered_map<EncSkipGram,skipgramdata> skipgrammap;
-typedef std::unordered_map< int,std::vector<EncAnyGram*> > reverseindexmap;
 
 
 class EncGramModel {    
@@ -262,7 +261,9 @@ class EncGramModel {
     
     std::unordered_map< EncNGram,std::set<int>  > ngram_index;
     std::unordered_map< EncSkipGram,std::set<int> > skipgram_index;
-    reverseindexmap reverse_index;
+    
+    std::unordered_map< int,std::vector<EncNGram> > ngram_reverse_index;
+    std::unordered_map< int,std::vector<EncSkipGram> > skipgram_reverse_index;
         
     EncGramModel(std::string filename, bool DOINDEX = true, bool DOREVERSEINDEX = false, bool DOSKIPCONTENT  = true);
     EncGramModel(const std::string corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2, bool DOINDEX = false, bool DOREVERSEINDEX = false, bool DOSKIPCONTENT = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
@@ -276,6 +277,13 @@ class EncGramModel {
     int count(const EncAnyGram* key);
     double freq(const EncAnyGram* key);    
     double relfreq(const EncAnyGram* key);    
+    
+    std::vector<int> reverse_index_keys();
+    bool reverse_index_haskey(const int i) const;
+    
+    int reverse_index_size(const int i);
+    int reverse_index_size();
+    std::vector<EncAnyGram*> reverse_index(const int i);
     
     void save(std::string filename);
     

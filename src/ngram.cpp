@@ -3,6 +3,7 @@
 #include <fstream>
 #include <cmath>
 #include <cstdlib>
+#include <algorithm>
 #include <algorithms.h>
 #include <limits>
 
@@ -817,9 +818,9 @@ EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, b
                     ngram_index[ngram].insert(index);         
                 }
                 if (DOREVERSEINDEX) {
-                    bool found = false;;
-                    for (int k = 0; k < reverse_index[index].size(); k++) if (*(reverse_index[index][k]) == ngram) { found = true; break; };
-                    if (!found) reverse_index[index].push_back(&ngram);
+                    bool found = false;
+                    for (int k = 0; k < ngram_reverse_index[index].size(); k++) if (ngram_reverse_index[index][k] == ngram) { found = true; break; };
+                    if (!found) ngram_reverse_index[index].push_back(ngram);
                 }
                        
             }
@@ -853,8 +854,8 @@ EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, b
                 }
                 if (DOREVERSEINDEX) {
                     bool found = false;
-                    for (int k = 0; k < reverse_index[index].size(); k++) if (*(reverse_index[index][k]) == skipgram) { found = true; break; };
-                    if (!found) reverse_index[index].push_back(&skipgram);
+                    for (int k = 0; k < skipgram_reverse_index[index].size(); k++) if (skipgram_reverse_index[index][k] == skipgram) { found = true; break; };
+                    if (!found) skipgram_reverse_index[index].push_back(skipgram);                    
                 }
             }
         }
@@ -968,6 +969,45 @@ double EncGramModel::relfreq(const EncAnyGram* key) {
         if (skipgrams[n].count( *( (EncSkipGram*) key)) > 0) return skipgrams[n][ *( (EncSkipGram*) key)].count / skiptokencount[n];
     }
     return 0;
+}
+
+std::vector<int> EncGramModel::reverse_index_keys() {
+    vector<int> keys;
+    for (unordered_map<int,vector<EncNGram> >::iterator iter = ngram_reverse_index.begin(); iter != ngram_reverse_index.end(); iter++) {
+        keys.push_back(iter->first);
+    }   
+    for (unordered_map<int,vector<EncSkipGram> >::iterator iter = skipgram_reverse_index.begin(); iter != skipgram_reverse_index.end(); iter++) {
+        keys.push_back(iter->first);
+    }    
+    sort(keys.begin(), keys.end());
+    return keys;
+}
+
+
+int EncGramModel::reverse_index_size(const int i) {
+    return ngram_reverse_index.count(i) + skipgram_reverse_index.count(i);
+}
+
+int EncGramModel::reverse_index_size() {
+    return ngram_reverse_index.size() + skipgram_reverse_index.size();
+}
+
+bool EncGramModel::reverse_index_haskey(const int i) const {
+    return ((ngram_reverse_index.count(i) > 0) || (skipgram_reverse_index.count(i) > 0));
+}
+
+
+vector<EncAnyGram*> EncGramModel::reverse_index(const int i) {
+    vector<EncAnyGram*> revindex;
+    if (ngram_reverse_index.count(i) > 0)
+        for (vector<EncNGram>::iterator iter = ngram_reverse_index[i].begin(); iter != ngram_reverse_index[i].end(); iter++) {
+            revindex.push_back((EncAnyGram*) &iter);
+        }   
+    if (skipgram_reverse_index.count(i) > 0)        
+        for (vector<EncSkipGram>::iterator iter = skipgram_reverse_index[i].begin(); iter != skipgram_reverse_index[i].begin(); iter++) {
+            revindex.push_back((EncSkipGram*) &iter);
+        }   
+    return revindex;
 }
 
 
@@ -1166,15 +1206,19 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
     double totaldivergence = 0;
     double prevavdivergence = 0;
     bool converged = false;
+    
+    vector<int> reverseindexkeys = sourcemodel.reverse_index_keys();
+    
+    
     do {       
         round++; 
         cerr << "  EM Round " << round;
         //use reverse index to iterate over all sentences
-        for (reverseindexmap::iterator iter = sourcemodel.reverse_index.begin(); iter != sourcemodel.reverse_index.end(); iter++) {
-            const int key = iter->first;        
-            vector<EncAnyGram*> & sourcegrams = iter->second;            
-            if (targetmodel.reverse_index.count(key) > 0) { //target model contains sentence?
-                vector<EncAnyGram*> & targetgrams = targetmodel.reverse_index[key];
+        for (vector<int>::iterator iter = reverseindexkeys.begin(); iter != reverseindexkeys.end(); iter++) {
+            const int key = *iter;        
+            vector<EncAnyGram*> sourcegrams = sourcemodel.reverse_index(key);
+            if (targetmodel.reverse_index_haskey(key)) { //target model contains sentence?                
+                vector<EncAnyGram*> targetgrams = targetmodel.reverse_index(key);  
                 cerr << sourcegrams.size() << "x" << targetgrams.size() << " ";
 
                 //compute sentencetotal for normalisation later in count step, sum_s(p(t|s))                
