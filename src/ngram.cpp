@@ -1240,24 +1240,24 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
 
                 //compute sentencetotal for normalisation later in count step, sum_s(p(t|s))                
                 unordered_map<EncAnyGram*, double> sentencetotal;
+                cerr << "A";
                 for (int i = 0; i < targetgrams_size; i++) {    
                     EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
-                    int t = 0;                    
                     for (int j = 0; j < sourcegrams_size; j++) {                                            
                         EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);                        
                         targetgram_given_sourcegram.first = targetgram;
                         targetgram_given_sourcegram.second = sourcegram;                        
-                        t += transprob[targetgram_given_sourcegram]; //compute sum over all source conditions for a targetgram under consideration
+                        sentencetotal[targetgram] += transprob[targetgram_given_sourcegram]; //compute sum over all source conditions for a targetgram under consideration
                     }
-                    sentencetotal[targetgram] = t;
-                }                                        
+                }               
+                cerr << "B";
                                             
                 //collect counts (for evidence that a targetgram is aligned to a sourcegram)
                 alignmentprobmap count;                
                 unordered_map<EncAnyGram*, double> total;
+                cerr << "C";
                 for (int i = 0; i < targetgrams_size; i++) {    
                     EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
-                    double t = 0;
                     for (int j = 0; j < sourcegrams_size; j++) {                                            
                         EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);                        
                         targetgram_given_sourcegram.first = targetgram;
@@ -1265,11 +1265,10 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
                         
                         const double countvalue = transprob[targetgram_given_sourcegram] /  sentencetotal[targetgram];                        
                         count[targetgram_given_sourcegram] += countvalue;
-                        t += countvalue;
+                        total[targetgram] += countvalue;
                     }                    
-                    total[targetgram] = t;                        
                 }
-                 
+                cerr << "D"; 
                  
 
                 double prevtransprob;
@@ -1278,7 +1277,6 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
                     EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
                     for (int j = 0; j < sourcegrams_size; j++) {                                            
                         EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);
-                        pair<EncAnyGram*,EncAnyGram*> targetgram_given_sourcegram;
                         targetgram_given_sourcegram.first = targetgram;
                         targetgram_given_sourcegram.second = sourcegram;
                         
@@ -1292,6 +1290,7 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
                         c++;
                     }
                 }
+                cerr << "E"; 
             }
         }
         const double avdivergence = totaldivergence / c;
