@@ -1324,7 +1324,7 @@ double CoocAlignmentModel::cooc( set<int> & sourceindex, set<int> & targetindex 
     for (set<int>::iterator iter = sourceindex.begin(); iter != sourceindex.end(); iter++) {
         for (set<int>::iterator iter2 = sourceindex.begin(); iter2 != sourceindex.end(); iter2++) {    
             if (*iter == *iter2) intersectioncount++;                        
-        }
+        }        
     }    
     const int unioncount = (sourceindex.size() + targetindex.size()) - intersectioncount; 
     return intersectioncount / unioncount;
@@ -1334,26 +1334,30 @@ CoocAlignmentModel::CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel 
     int c = 0;
     //Count co-occurence
     for (unordered_map<EncNGram,set<int> >::iterator iter = sourcemodel.ngram_index.begin();  iter != sourcemodel.ngram_index.end(); iter++) {        
-        cerr << ++c << " ";
+        cerr << "N" << ++c << " ";
         const EncAnyGram * sourcegram = &iter->first;
         for (unordered_map<EncNGram,set<int> >::iterator iter2 = targetmodel.ngram_index.begin();  iter2 != targetmodel.ngram_index.end(); iter2++) {
             const EncAnyGram * targetgram = &iter2->first;
+            cerr << iter->second.size() << "n" << iter2->second.size();
             alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
         }
         for (unordered_map<EncSkipGram,set<int> >::iterator iter2 = targetmodel.skipgram_index.begin();  iter2 != targetmodel.skipgram_index.end(); iter2++) {
             const EncAnyGram * targetgram = &iter2->first;
+            cerr << iter->second.size() << "s" << iter2->second.size();
             alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
         }        
     }
     for (unordered_map<EncSkipGram,set<int> >::iterator iter = sourcemodel.skipgram_index.begin();  iter != sourcemodel.skipgram_index.end(); iter++) {
-        cerr << ++c << " ";
+        cerr << ++c << "S ";
         const EncAnyGram * sourcegram = &iter->first;
         for (unordered_map<EncNGram,set<int> >::iterator iter2 = targetmodel.ngram_index.begin();  iter2 != targetmodel.ngram_index.end(); iter2++) {
             const EncAnyGram * targetgram = &iter2->first;
+            cerr << iter->second.size() << "n" << iter2->second.size();
             alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
         }
         for (unordered_map<EncSkipGram,set<int> >::iterator iter2 = targetmodel.skipgram_index.begin();  iter2 != targetmodel.skipgram_index.end(); iter2++) {
             const EncAnyGram * targetgram = &iter2->first;
+            cerr << iter->second.size() << "s" << iter2->second.size();
             alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
         }        
     }
