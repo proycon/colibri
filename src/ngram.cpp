@@ -1218,31 +1218,31 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
     bool converged = false;
     
     set<int> reverseindexkeys = sourcemodel.reverse_index_keys();
-    
-    
+            
     do {       
         round++; 
         cerr << "  EM Round " << round << "... ";
         //use reverse index to iterate over all sentences
         for (set<int>::iterator iter = reverseindexkeys.begin(); iter != reverseindexkeys.end(); iter++) {
             const int key = *iter;        
-            vector<EncAnyGram*> sourcegrams = sourcemodel.reverse_index(key);
-            if (targetmodel.reverse_index_haskey(key)) { //target model contains sentence?                
-                vector<EncAnyGram*> targetgrams = targetmodel.reverse_index(key);  
-                cerr << key << "=" << sourcegrams.size() << "x" << targetgrams.size() << " ";
+            const int sourcegrams_size =  sourcemodel.reverse_index_size(key);
+            //vector<EncAnyGram*> sourcegrams = sourcemodel.reverse_index(key);
+            const int targetgrams_size =  sourcemodel.reverse_index_size(key);
+            
+            if (targetgrams_size > 0 ) { //target model contains sentence?               
+                //vector<EncAnyGram*> targetgrams = targetmodel.reverse_index(key);  
+                cerr << key << "=" << sourcegrams_size << "x" << targetgrams_size << " ";
 
                 //compute sentencetotal for normalisation later in count step, sum_s(p(t|s))                
                 unordered_map<EncAnyGram*, double> sentencetotal;
-                for (vector<EncAnyGram*>::iterator iter2 = targetgrams.begin(); iter2 != targetgrams.end();  iter2++) {    
-                    EncAnyGram* targetgram = *iter2;   
+                for (int i = 0; i < targetgrams_size; i++) {    
+                    EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
                     sentencetotal[targetgram] = 0;
-                    for (vector<EncAnyGram*>::iterator iter3 = sourcegrams.begin(); iter3 != sourcegrams.end();  iter3++) {                        
-                        
-                        EncAnyGram* sourcegram = *iter3;
+                    for (int j = 0; j < sourcegrams_size; j++) {                                            
+                        EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);
                         pair<EncAnyGram*,EncAnyGram*> targetgram_given_sourcegram;
                         targetgram_given_sourcegram.first = targetgram;
-                        targetgram_given_sourcegram.second = sourcegram;
-                        
+                        targetgram_given_sourcegram.second = sourcegram;                        
                         sentencetotal[targetgram] += transprob[targetgram_given_sourcegram]; //compute sum over all source conditions for a targetgram under consideration
                     }
                 }                                        
@@ -1250,10 +1250,10 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
                 //collect counts (for evidence that a targetgram is aligned to a sourcegram)
                 alignmentprobmap count;                
                 unordered_map<EncAnyGram*, double> total;
-                for (vector<EncAnyGram*>::iterator iter2 = targetgrams.begin(); iter2 != targetgrams.end();  iter2++) {    
-                    EncAnyGram* targetgram = *iter2;                                                               
-                    for (vector<EncAnyGram*>::iterator iter3 = sourcegrams.begin(); iter3 != sourcegrams.end();  iter3++) {                        
-                        EncAnyGram* sourcegram = *iter3;   
+                for (int i = 0; i < targetgrams_size; i++) {    
+                    EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
+                    for (int j = 0; j < sourcegrams_size; j++) {                                            
+                        EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);
                         pair<EncAnyGram*,EncAnyGram*> targetgram_given_sourcegram;
                         targetgram_given_sourcegram.first = targetgram;
                         targetgram_given_sourcegram.second = sourcegram;
@@ -1268,10 +1268,10 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
 
                 double prevtransprob;
                 //estimate new probabilities (normalised count is the new estimated probability)
-                for (vector<EncAnyGram*>::iterator iter2 = targetgrams.begin(); iter2 != targetgrams.end();  iter2++) {    
-                    EncAnyGram* targetgram = *iter2;                                                                                   
-                    for (vector<EncAnyGram*>::iterator iter3 = sourcegrams.begin(); iter3 != sourcegrams.end();  iter3++) {                        
-                        EncAnyGram* sourcegram = *iter3;                   
+                for (int i = 0; i < targetgrams_size; i++) {    
+                    EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
+                    for (int j = 0; j < sourcegrams_size; j++) {                                            
+                        EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);
                         pair<EncAnyGram*,EncAnyGram*> targetgram_given_sourcegram;
                         targetgram_given_sourcegram.first = targetgram;
                         targetgram_given_sourcegram.second = sourcegram;

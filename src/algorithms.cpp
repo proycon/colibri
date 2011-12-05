@@ -20,11 +20,11 @@ vector< pair<int,int> > get_consecutive_gaps(const int n, const int leftmargin=0
     return gaps;
 }
 
-void compute_multi_skips(vector< vector<pair<int,int> > > & skips, vector<pair<int,int> > path, const int n, const int maxskips, const int skipnum, const int leftmargin) {    
+void compute_multi_skips(vector< vector<pair<int,int> > > & skips, const vector<pair<int,int> > & path, const int n, const int maxskips, const int skipnum, const int leftmargin) {    
     vector< pair<int,int> > currentskips = get_consecutive_gaps(n, leftmargin);
     for (vector< pair<int,int> >::iterator iter = currentskips.begin(); iter != currentskips.end(); iter++) {                
          const int newleftmargin = iter->first + iter->second + 1;   
-         vector< pair<int,int> > newpath = vector< pair<int,int> >(path); //copy
+         vector< pair<int,int> > newpath = path; //copy
          newpath.push_back( *iter );
          if ((skipnum + 1 == maxskips) || ( n - newleftmargin <= 2)) {
             skips.push_back( newpath );

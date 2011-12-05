@@ -14,7 +14,7 @@ unsigned int bytestoint(const unsigned char* a, const int l) {
 }
 
 
-ClassDecoder::ClassDecoder(const string filename) {
+ClassDecoder::ClassDecoder(const string & filename) {
         
        ifstream *IN =  new ifstream( filename.c_str() );    
        if (!(*IN)) {
@@ -40,7 +40,7 @@ ClassDecoder::ClassDecoder(const string filename) {
 }
 
         
-vector<string> ClassDecoder::decodeseq(vector<int> seq) {
+vector<string> ClassDecoder::decodeseq(const vector<int> & seq) {
     vector<string> result;
     const int l = seq.size();
     for (int i = 0; i < l; i++) 
@@ -50,7 +50,7 @@ vector<string> ClassDecoder::decodeseq(vector<int> seq) {
 
 
 
-void ClassDecoder::decodefile(const string filename) {
+void ClassDecoder::decodefile(const string & filename) {
     ifstream *IN = new ifstream(filename.c_str()); //, ios::in | ios::binary);
     unsigned char buffer[10];
     int n = 0;
