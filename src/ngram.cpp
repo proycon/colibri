@@ -1338,12 +1338,12 @@ CoocAlignmentModel::CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel 
         const EncAnyGram * sourcegram = &iter->first;
         for (unordered_map<EncNGram,set<int> >::iterator iter2 = targetmodel.ngram_index.begin();  iter2 != targetmodel.ngram_index.end(); iter2++) {
             const EncAnyGram * targetgram = &iter2->first;
-            cerr << iter->second.size() << "n" << iter2->second.size();
+            cerr << iter->second.size() << "n" << iter2->second.size() << " ";
             alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
         }
         for (unordered_map<EncSkipGram,set<int> >::iterator iter2 = targetmodel.skipgram_index.begin();  iter2 != targetmodel.skipgram_index.end(); iter2++) {
             const EncAnyGram * targetgram = &iter2->first;
-            cerr << iter->second.size() << "s" << iter2->second.size();
+            cerr << iter->second.size() << "s" << iter2->second.size() << " ";
             alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
         }        
     }
@@ -1352,12 +1352,12 @@ CoocAlignmentModel::CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel 
         const EncAnyGram * sourcegram = &iter->first;
         for (unordered_map<EncNGram,set<int> >::iterator iter2 = targetmodel.ngram_index.begin();  iter2 != targetmodel.ngram_index.end(); iter2++) {
             const EncAnyGram * targetgram = &iter2->first;
-            cerr << iter->second.size() << "n" << iter2->second.size();
+            cerr << iter->second.size() << "n" << iter2->second.size() << " ";
             alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
         }
         for (unordered_map<EncSkipGram,set<int> >::iterator iter2 = targetmodel.skipgram_index.begin();  iter2 != targetmodel.skipgram_index.end(); iter2++) {
             const EncAnyGram * targetgram = &iter2->first;
-            cerr << iter->second.size() << "s" << iter2->second.size();
+            cerr << iter->second.size() << "s" << iter2->second.size() << " ";
             alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
         }        
     }
