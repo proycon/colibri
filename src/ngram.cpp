@@ -1227,7 +1227,7 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
             const int key = *iter;        
             const int sourcegrams_size =  sourcemodel.reverse_index_size(key);
             //vector<EncAnyGram*> sourcegrams = sourcemodel.reverse_index(key);
-            const int targetgrams_size =  sourcemodel.reverse_index_size(key);
+            const int targetgrams_size =  targetmodel.reverse_index_size(key);
             
             if (targetgrams_size > 0 ) { //target model contains sentence?               
                 //vector<EncAnyGram*> targetgrams = targetmodel.reverse_index(key);  
