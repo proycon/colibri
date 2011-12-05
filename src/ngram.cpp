@@ -986,17 +986,17 @@ std::set<int> EncGramModel::reverse_index_keys() {
 int EncGramModel::reverse_index_size(const int i) {
     int s = 0;
     if (ngram_reverse_index.count(i)) s += ngram_reverse_index[i].size();
-    if (skipgram_reverse_index.count(i)) s += skipgram_reverse_index[i].size();
+    //if (skipgram_reverse_index.count(i)) s += skipgram_reverse_index[i].size();
     return s;
     
 }
 
 int EncGramModel::reverse_index_size() {
-    return ngram_reverse_index.size() + skipgram_reverse_index.size();
+    return ngram_reverse_index.size();//+ skipgram_reverse_index.size();
 }
 
 bool EncGramModel::reverse_index_haskey(const int i) const {
-    return ((ngram_reverse_index.count(i) > 0) || (skipgram_reverse_index.count(i) > 0));
+    return ((ngram_reverse_index.count(i) > 0)); //|| (skipgram_reverse_index.count(i) > 0));
 }
 
 
@@ -1015,14 +1015,14 @@ vector<EncAnyGram*> EncGramModel::reverse_index(const int i) {
 
 
 EncAnyGram* EncGramModel::get_reverse_index_item(const int key, const int i) {
-    const int s = ngram_reverse_index[key].size();
-    if (i < s) {                
+    //const int s = ngram_reverse_index[key].size();
+    //if (i < s) {                
         vector<EncNGram>::iterator iter = ngram_reverse_index[key].begin() + i;
         return &(*iter);
-    } else {
-        vector<EncSkipGram>::iterator iter = skipgram_reverse_index[key].begin() + (i - s);
-        return &(*iter);
-    }    
+    //} else {
+        //vector<EncSkipGram>::iterator iter = skipgram_reverse_index[key].begin() + (i - s);
+        //return &(*iter);
+    //}    
 }
 
 void EncGramModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, ostream *SKIPGRAMSOUT) {
@@ -1239,8 +1239,8 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
                 cerr << key << "=" << sourcegrams_size << "x" << targetgrams_size << " ";
 
                 //compute sentencetotal for normalisation later in count step, sum_s(p(t|s))                
-                unordered_map<EncAnyGram*, double> sentencetotal;
-                cerr << "A";
+                cerr << "A";                            
+                unordered_map<EncAnyGram*, double> sentencetotal;                
                 for (int i = 0; i < targetgrams_size; i++) {    
                     EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
                     for (int j = 0; j < sourcegrams_size; j++) {                                            
@@ -1250,12 +1250,11 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
                         sentencetotal[targetgram] += transprob[targetgram_given_sourcegram]; //compute sum over all source conditions for a targetgram under consideration
                     }
                 }               
-                cerr << "B";
-                                            
+                
+                cerr << "B";                            
                 //collect counts (for evidence that a targetgram is aligned to a sourcegram)
                 alignmentprobmap count;                
                 unordered_map<EncAnyGram*, double> total;
-                cerr << "C";
                 for (int i = 0; i < targetgrams_size; i++) {    
                     EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
                     for (int j = 0; j < sourcegrams_size; j++) {                                            
@@ -1263,14 +1262,14 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
                         targetgram_given_sourcegram.first = targetgram;
                         targetgram_given_sourcegram.second = sourcegram;
                         
-                        const double countvalue = transprob[targetgram_given_sourcegram] /  sentencetotal[targetgram];                        
+                        const double countvalue = transprob[targetgram_given_sourcegram] / sentencetotal[targetgram];
                         count[targetgram_given_sourcegram] += countvalue;
                         total[targetgram] += countvalue;
                     }                    
                 }
-                cerr << "D"; 
+                
                  
-
+                cerr << "C"; 
                 double prevtransprob;
                 //estimate new probabilities (normalised count is the new estimated probability)
                 for (int i = 0; i < targetgrams_size; i++) {    
@@ -1290,7 +1289,6 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
                         c++;
                     }
                 }
-                cerr << "E"; 
             }
         }
         const double avdivergence = totaldivergence / c;
