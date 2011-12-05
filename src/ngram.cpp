@@ -1020,7 +1020,7 @@ EncAnyGram* EncGramModel::get_reverse_index_item(const int key, const int i) {
         vector<EncNGram>::iterator iter = ngram_reverse_index[key].begin() + i;
         return &(*iter);
     } else {
-        vector<EncSkipGram>::iterator iter = skipgram_reverse_index[key].begin() + (i - s);
+        vector<EncSkipGram>::iterator iter = skipgram_reverse_index[key].begin() + (s - i);
         return &(*iter);
     }    
 }
