@@ -278,7 +278,7 @@ class EncGramModel {
     double freq(const EncAnyGram* key);    
     double relfreq(const EncAnyGram* key);    
     
-    std::vector<int> reverse_index_keys();
+    std::set<int> reverse_index_keys();
     bool reverse_index_haskey(const int i) const;
     
     int reverse_index_size(const int i);

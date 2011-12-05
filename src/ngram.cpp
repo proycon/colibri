@@ -971,15 +971,14 @@ double EncGramModel::relfreq(const EncAnyGram* key) {
     return 0;
 }
 
-std::vector<int> EncGramModel::reverse_index_keys() {
-    vector<int> keys;
+std::set<int> EncGramModel::reverse_index_keys() {
+    set<int> keys;
     for (unordered_map<int,vector<EncNGram> >::iterator iter = ngram_reverse_index.begin(); iter != ngram_reverse_index.end(); iter++) {
-        keys.push_back(iter->first);
+        keys.insert(iter->first);
     }   
     for (unordered_map<int,vector<EncSkipGram> >::iterator iter = skipgram_reverse_index.begin(); iter != skipgram_reverse_index.end(); iter++) {
-        keys.push_back(iter->first);
+        keys.insert(iter->first);
     }    
-    sort(keys.begin(), keys.end());
     return keys;
 }
 
@@ -1218,14 +1217,14 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
     double prevavdivergence = 0;
     bool converged = false;
     
-    vector<int> reverseindexkeys = sourcemodel.reverse_index_keys();
+    set<int> reverseindexkeys = sourcemodel.reverse_index_keys();
     
     
     do {       
         round++; 
         cerr << "  EM Round " << round << "... ";
         //use reverse index to iterate over all sentences
-        for (vector<int>::iterator iter = reverseindexkeys.begin(); iter != reverseindexkeys.end(); iter++) {
+        for (set<int>::iterator iter = reverseindexkeys.begin(); iter != reverseindexkeys.end(); iter++) {
             const int key = *iter;        
             vector<EncAnyGram*> sourcegrams = sourcemodel.reverse_index(key);
             if (targetmodel.reverse_index_haskey(key)) { //target model contains sentence?                
