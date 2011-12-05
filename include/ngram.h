@@ -284,6 +284,7 @@ class EncGramModel {
     int reverse_index_size(const int i);
     int reverse_index_size();
     std::vector<EncAnyGram*> reverse_index(const int i);
+    EncAnyGram* get_reverse_index_item(const int, const int);
     
     void save(std::string filename);
     

@@ -1011,6 +1011,17 @@ vector<EncAnyGram*> EncGramModel::reverse_index(const int i) {
 }
 
 
+EncAnyGram* EncGramModel::get_reverse_index_item(const int key, const int i) {
+    const int s = ngram_reverse_index.count(key);
+    if (i < s) {
+        vector<EncNGram>::iterator iter = ngram_reverse_index[key].begin() + i;
+        return &(*iter);
+    } else {
+        vector<EncSkipGram>::iterator iter = skipgram_reverse_index[key].begin() + (i - s);
+        return &(*iter);
+    }    
+}
+
 void EncGramModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, ostream *SKIPGRAMSOUT) {
     const int grandtotal = ngramtokencount + skipgramtokencount;   
     for (int n = 1; n <= MAXLENGTH; n++) {   
@@ -1219,7 +1230,7 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
             vector<EncAnyGram*> sourcegrams = sourcemodel.reverse_index(key);
             if (targetmodel.reverse_index_haskey(key)) { //target model contains sentence?                
                 vector<EncAnyGram*> targetgrams = targetmodel.reverse_index(key);  
-                cerr << sourcegrams.size() << "x" << targetgrams.size() << " ";
+                cerr << key << "=" << sourcegrams.size() << "x" << targetgrams.size() << " ";
 
                 //compute sentencetotal for normalisation later in count step, sum_s(p(t|s))                
                 unordered_map<EncAnyGram*, double> sentencetotal;
@@ -1235,8 +1246,7 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
                         
                         sentencetotal[targetgram] += transprob[targetgram_given_sourcegram]; //compute sum over all source conditions for a targetgram under consideration
                     }
-                }
-                                            
+                }                                        
                                             
                 //collect counts (for evidence that a targetgram is aligned to a sourcegram)
                 alignmentprobmap count;                
