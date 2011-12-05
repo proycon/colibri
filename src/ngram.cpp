@@ -984,7 +984,11 @@ std::set<int> EncGramModel::reverse_index_keys() {
 
 
 int EncGramModel::reverse_index_size(const int i) {
-    return ngram_reverse_index.count(i) + skipgram_reverse_index.count(i);
+    int s = 0;
+    if (ngram_reverse_index.count(i)) s += ngram_reverse_index[i].size();
+    if (skipgram_reverse_index.count(i)) s += skipgram_reverse_index[i].size();
+    return s;
+    
 }
 
 int EncGramModel::reverse_index_size() {
