@@ -1015,8 +1015,8 @@ vector<EncAnyGram*> EncGramModel::reverse_index(const int i) {
 
 
 EncAnyGram* EncGramModel::get_reverse_index_item(const int key, const int i) {
-    const int s = ngram_reverse_index.count(key);
-    if (i < s) {
+    const int s = ngram_reverse_index[i].size();
+    if (i < s) {        
         vector<EncNGram>::iterator iter = ngram_reverse_index[key].begin() + i;
         return &(*iter);
     } else {
