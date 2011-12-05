@@ -971,6 +971,22 @@ double EncGramModel::relfreq(const EncAnyGram* key) {
     return 0;
 }
 
+
+set<int> * EncGramModel::index(const EncAnyGram* key) {
+    if (key->gapcount() == 0) {        
+        if (ngram_index.count(*( (EncNGram*) key) ) > 0) return &ngram_index[*( (EncNGram*) key) ];
+    } else {
+        if (skipgram_index.count( *( (EncSkipGram*) key)) > 0) return &skipgram_index[ *( (EncSkipGram*) key)];
+    }
+}
+
+int EncGramModel::index_size() const {
+    return ngram_index.size() + skipgram_index.size();
+}
+
+
+
+
 std::set<int> EncGramModel::reverse_index_keys() {
     set<int> keys;
     for (unordered_map<int,vector<EncNGram> >::iterator iter = ngram_reverse_index.begin(); iter != ngram_reverse_index.end(); iter++) {
@@ -1214,7 +1230,7 @@ void EncGramGraphModel::save(const string & filename) {
 }
 
 
-AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD) {
+EMAlignmentModel::EMAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD) {
     int round = 0;    
     unsigned long c = 0;
     double totaldivergence = 0;
@@ -1297,3 +1313,50 @@ AlignmentModel::AlignmentModel(EncGramModel & sourcemodel, EncGramModel & target
         cerr << " average divergence = " << avdivergence << ", transprob size = " << transprob.size() << endl;
     } while (!converged);    
 }
+
+
+double CoocAlignmentModel::cooc( set<int> & sourceindex, set<int> & targetindex ) {    
+    //Jaccard co-occurrence
+    
+    int intersectioncount = 0;    
+
+    //count union and intersections
+    for (set<int>::iterator iter = sourceindex.begin(); iter != sourceindex.end(); iter++) {
+        for (set<int>::iterator iter2 = sourceindex.begin(); iter2 != sourceindex.end(); iter2++) {    
+            if (*iter == *iter2) intersectioncount++;                        
+        }
+    }    
+    const int unioncount = (sourceindex.size() + targetindex.size()) - intersectioncount; 
+    return intersectioncount / unioncount;
+}
+
+CoocAlignmentModel::CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel) {
+    int c = 0;
+    //Count co-occurence
+    for (unordered_map<EncNGram,set<int> >::iterator iter = sourcemodel.ngram_index.begin();  iter != sourcemodel.ngram_index.end(); iter++) {        
+        cerr << ++c << " ";
+        const EncAnyGram * sourcegram = &iter->first;
+        for (unordered_map<EncNGram,set<int> >::iterator iter2 = targetmodel.ngram_index.begin();  iter2 != targetmodel.ngram_index.end(); iter2++) {
+            const EncAnyGram * targetgram = &iter2->first;
+            alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
+        }
+        for (unordered_map<EncSkipGram,set<int> >::iterator iter2 = targetmodel.skipgram_index.begin();  iter2 != targetmodel.skipgram_index.end(); iter2++) {
+            const EncAnyGram * targetgram = &iter2->first;
+            alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
+        }        
+    }
+    for (unordered_map<EncSkipGram,set<int> >::iterator iter = sourcemodel.skipgram_index.begin();  iter != sourcemodel.skipgram_index.end(); iter++) {
+        cerr << ++c << " ";
+        const EncAnyGram * sourcegram = &iter->first;
+        for (unordered_map<EncNGram,set<int> >::iterator iter2 = targetmodel.ngram_index.begin();  iter2 != targetmodel.ngram_index.end(); iter2++) {
+            const EncAnyGram * targetgram = &iter2->first;
+            alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
+        }
+        for (unordered_map<EncSkipGram,set<int> >::iterator iter2 = targetmodel.skipgram_index.begin();  iter2 != targetmodel.skipgram_index.end(); iter2++) {
+            const EncAnyGram * targetgram = &iter2->first;
+            alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
+        }        
+    }
+        
+}
+    

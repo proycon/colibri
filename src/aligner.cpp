@@ -50,16 +50,17 @@ int main( int argc, char *argv[] ) {
     ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    
     
     cerr << "Loading source model " << sourcemodelfile << endl;
-    EncGramModel sourcemodel = EncGramModel(sourcemodelfile,true,true,true);
+    EncGramModel sourcemodel = EncGramModel(sourcemodelfile,true,false,true);
     cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
-    cerr << "  Reverse index has " << sourcemodel.reverse_index_size() << " sentences" << endl;    
+    //cerr << "  Reverse index has " << sourcemodel.reverse_index_size() << " sentences" << endl;    
     
     cerr << "Loading target model " << targetmodelfile << endl;
-    EncGramModel targetmodel = EncGramModel(targetmodelfile,true,true,true);
+    EncGramModel targetmodel = EncGramModel(targetmodelfile,true,false,true);
     cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
-    cerr << "  Reverse index has " << targetmodel.reverse_index_size() << " sentences" << endl;
+    //cerr << "  Reverse index has " << targetmodel.reverse_index_size() << " sentences" << endl;
     
     cerr << "Computing alignment model..." << endl;
-    AlignmentModel(sourcemodel,targetmodel,10000,0.001);    
+    CoocAlignmentModel(sourcemodel,targetmodel);    
+    //EMAlignmentModel(sourcemodel,targetmodel,10000,0.001);    
     
 }

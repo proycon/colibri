@@ -276,15 +276,20 @@ class EncGramModel {
     bool exists(const EncAnyGram* key) const;
     int count(const EncAnyGram* key);
     double freq(const EncAnyGram* key);    
-    double relfreq(const EncAnyGram* key);    
+    double relfreq(const EncAnyGram* key);        
+    std::set<int> * index(const EncAnyGram* key);
+    
+    int index_size() const;
     
     std::set<int> reverse_index_keys(); 
-    bool reverse_index_haskey(const int i) const;
-    
+    bool reverse_index_haskey(const int i) const;    
     int reverse_index_size(const int i);
     int reverse_index_size();
     std::vector<EncAnyGram*> reverse_index(const int i);
     EncAnyGram* get_reverse_index_item(const int, const int);
+    
+    
+    
     
     void save(const std::string & filename);
     
@@ -317,10 +322,19 @@ double compute_entropy(skipgram_freqlist & data, const int total);
 
 typedef std::unordered_map<std::pair<EncAnyGram*, EncAnyGram*>, double> alignmentprobmap;
 
-class AlignmentModel {
+class EMAlignmentModel {
    public:
     alignmentprobmap transprob;
     
-    AlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001);        
+    EMAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001);        
     //save(const std::string filename);
 };
+
+class CoocAlignmentModel {
+   public:
+    double cooc( std::set<int> & sourceindex, std::set<int> & targetindex ); 
+    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignprob;    
+    CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel);        
+    //save(const std::string filename);
+};
+
