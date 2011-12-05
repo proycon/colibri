@@ -1,6 +1,29 @@
-C++ Natural Language Processing Library
+COLIBRI: Construction as Linguistic Bridges
 	Maarten van Gompel 
 	proycon@anaproy.nl
 	Radboud University Nijmegen
 
 	Licensed under GPLv3
+
+
+
+1) Encode your plain-text corpus data to a compressed binary form for optimised processing:
+ 
+ tools/pynlpl/classencode.py /path/to/yourcorpus.txt
+
+This results in a class file (yourcorpus.cls) and the encoded corpus (yourcorpus.clsenc)
+ 
+
+2) Invoke the pattern finder on these files:
+
+ patternfinder -f yourcorpus.clsenc 
+ 
+ 
+(See patternfinder -h for important options, including pruning thresholds)
+
+This results in an ngram/skipgram model yourcorpus.clsenc.bin (binary) 
+
+ 
+3) Decode the binary file back to a text file
+
+ modeldecode -f yourcorpus.clsenc.bin -c yourcorpus.cls
