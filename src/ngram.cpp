@@ -483,7 +483,7 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
 
 
 
-EncGramModel::EncGramModel(const string corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINDEX, bool DOREVERSEINDEX, bool DOSKIPCONTENT, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
+EncGramModel::EncGramModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINDEX, bool DOREVERSEINDEX, bool DOSKIPCONTENT, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
     
     this->MAXLENGTH = MAXLENGTH;
     this->MINTOKENS = MINTOKENS;
@@ -754,7 +754,7 @@ EncSkipGram::EncSkipGram(istream * in, const char gapcount) {
     in->read((char*) data, (int) _size); //read data                                                
 }
 
-EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, bool DOSKIPCONTENT) {
+EncGramModel::EncGramModel(const string & filename, bool DOINDEX, bool DOREVERSEINDEX, bool DOSKIPCONTENT) {
     const bool DEBUG = false;
     this->DOINDEX = DOINDEX;
     this->DOREVERSEINDEX = DOREVERSEINDEX;
@@ -866,7 +866,7 @@ EncGramModel::EncGramModel(string filename, bool DOINDEX, bool DOREVERSEINDEX, b
 
 
 
-void EncGramModel::save(std::string filename) {
+void EncGramModel::save(const std::string & filename) {
     ofstream f;
     f.open(filename.c_str(), ios::out | ios::binary);
     
@@ -1144,7 +1144,7 @@ EncGramGraphModel::EncGramGraphModel(EncGramModel& model) {
      
 }
 
-EncGramGraphModel::EncGramGraphModel(string filename) {
+EncGramGraphModel::EncGramGraphModel(const string & filename) {
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
     if (!f) {
@@ -1183,7 +1183,7 @@ EncGramGraphModel::EncGramGraphModel(string filename) {
     f.close();
 }
 
-void EncGramGraphModel::save(string filename) {
+void EncGramGraphModel::save(const string & filename) {
     ofstream f;
     f.open(filename.c_str(), ios::out | ios::binary);
     

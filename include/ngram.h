@@ -265,8 +265,8 @@ class EncGramModel {
     std::unordered_map< int,std::vector<EncNGram> > ngram_reverse_index;
     std::unordered_map< int,std::vector<EncSkipGram> > skipgram_reverse_index;
         
-    EncGramModel(std::string filename, bool DOINDEX = true, bool DOREVERSEINDEX = false, bool DOSKIPCONTENT  = true);
-    EncGramModel(const std::string corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2, bool DOINDEX = false, bool DOREVERSEINDEX = false, bool DOSKIPCONTENT = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
+    EncGramModel(const std::string & filename, bool DOINDEX = true, bool DOREVERSEINDEX = false, bool DOSKIPCONTENT  = true);
+    EncGramModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2, bool DOINDEX = false, bool DOREVERSEINDEX = false, bool DOSKIPCONTENT = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
     
     int maxlength() const { return MAXLENGTH; }
     
@@ -278,7 +278,7 @@ class EncGramModel {
     double freq(const EncAnyGram* key);    
     double relfreq(const EncAnyGram* key);    
     
-    std::set<int> reverse_index_keys();
+    std::set<int> reverse_index_keys(); 
     bool reverse_index_haskey(const int i) const;
     
     int reverse_index_size(const int i);
@@ -286,7 +286,7 @@ class EncGramModel {
     std::vector<EncAnyGram*> reverse_index(const int i);
     EncAnyGram* get_reverse_index_item(const int, const int);
     
-    void save(std::string filename);
+    void save(const std::string & filename);
     
     size_t hash();
     
@@ -305,10 +305,10 @@ class EncGramGraphModel {
         
    public:
     EncGramGraphModel(EncGramModel& model); //compute entire model    
-    EncGramGraphModel(std::string filename);
+    EncGramGraphModel(const std::string & filename);
         
-    //EncGramGraphModel(std:string filename);
-    void save(std::string filename);
+
+    void save(const std::string & filename);
 };
 
 
@@ -322,6 +322,5 @@ class AlignmentModel {
     alignmentprobmap transprob;
     
     AlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001);        
-    AlignmentModel(const std::string filename);
     //save(const std::string filename);
 };
