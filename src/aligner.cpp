@@ -50,12 +50,12 @@ int main( int argc, char *argv[] ) {
     ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    
     
     cerr << "Loading source model " << sourcemodelfile << endl;
-    EncGramModel sourcemodel = EncGramModel(sourcemodelfile,true,false,true);
+    EncGramModel sourcemodel = EncGramModel(sourcemodelfile,true,true,true);
     cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
     //cerr << "  Reverse index has " << sourcemodel.reverse_index_size() << " sentences" << endl;    
     
     cerr << "Loading target model " << targetmodelfile << endl;
-    EncGramModel targetmodel = EncGramModel(targetmodelfile,true,false,true);
+    EncGramModel targetmodel = EncGramModel(targetmodelfile,true,true,true);
     cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
     //cerr << "  Reverse index has " << targetmodel.reverse_index_size() << " sentences" << endl;
     

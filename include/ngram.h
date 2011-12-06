@@ -333,6 +333,7 @@ class EMAlignmentModel {
 class CoocAlignmentModel {
    public:
     double cooc( std::set<int> & sourceindex, std::set<int> & targetindex ); 
+    int compute(const EncAnyGram * sourcegram, std::set<int> & sourceindex, EncGramModel & targetmodel);
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignprob;    
     CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel);        
     //save(const std::string filename);
