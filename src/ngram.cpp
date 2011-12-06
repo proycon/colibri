@@ -1232,16 +1232,16 @@ void EncGramGraphModel::save(const string & filename) {
 
 EMAlignmentModel::EMAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD) {
     int round = 0;    
-    unsigned long c = 0;
+    unsigned long c;
     double totaldivergence = 0;
     double prevavdivergence = 0;
     bool converged = false;
     
     set<int> reverseindexkeys = sourcemodel.reverse_index_keys();
-    pair<EncAnyGram*,EncAnyGram*> targetgram_given_sourcegram;
             
     do {       
         round++; 
+        c = 0;
         cerr << "  EM Round " << round << "... ";
         //use reverse index to iterate over all sentences
         for (set<int>::iterator iter = reverseindexkeys.begin(); iter != reverseindexkeys.end(); iter++) {
@@ -1255,29 +1255,24 @@ EMAlignmentModel::EMAlignmentModel(EncGramModel & sourcemodel, EncGramModel & ta
                 cerr << key << ":" << sourcegrams_size << "x" << targetgrams_size << " ";
 
                 //compute sentencetotal for normalisation later in count step, sum_s(p(t|s))                                      
-                unordered_map<EncAnyGram*, double> sentencetotal;                
+                unordered_map<const EncAnyGram*, double> sentencetotal;                
                 for (int i = 0; i < targetgrams_size; i++) {    
-                    EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
+                    const EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
                     for (int j = 0; j < sourcegrams_size; j++) {                                            
-                        EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);                        
-                        targetgram_given_sourcegram.first = targetgram;
-                        targetgram_given_sourcegram.second = sourcegram;                        
-                        sentencetotal[targetgram] += transprob[targetgram_given_sourcegram]; //compute sum over all source conditions for a targetgram under consideration
+                        const EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);                        
+                        sentencetotal[targetgram] += alignprob[sourcegram][targetgram]; //compute sum over all source conditions for a targetgram under consideration
                     }
                 }               
                 
                 //collect counts (for evidence that a targetgram is aligned to a sourcegram)
-                alignmentprobmap count;                
-                unordered_map<EncAnyGram*, double> total;
+                std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > count;                
+                unordered_map<const EncAnyGram*, double> total;
                 for (int i = 0; i < targetgrams_size; i++) {    
-                    EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
+                    const EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
                     for (int j = 0; j < sourcegrams_size; j++) {                                            
-                        EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);                        
-                        targetgram_given_sourcegram.first = targetgram;
-                        targetgram_given_sourcegram.second = sourcegram;
-                        
-                        const double countvalue = transprob[targetgram_given_sourcegram] / sentencetotal[targetgram];
-                        count[targetgram_given_sourcegram] += countvalue;
+                        const EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);                        
+                        const double countvalue = alignprob[sourcegram][targetgram] / sentencetotal[targetgram];
+                        count[sourcegram][targetgram] += countvalue;
                         total[targetgram] += countvalue;
                     }                    
                 }
@@ -1286,28 +1281,30 @@ EMAlignmentModel::EMAlignmentModel(EncGramModel & sourcemodel, EncGramModel & ta
                 double prevtransprob;
                 //estimate new probabilities (normalised count is the new estimated probability)
                 for (int i = 0; i < targetgrams_size; i++) {    
-                    EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
+                    const EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
                     for (int j = 0; j < sourcegrams_size; j++) {                                            
-                        EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);
-                        targetgram_given_sourcegram.first = targetgram;
-                        targetgram_given_sourcegram.second = sourcegram;
+                        const EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);
                         
-                        prevtransprob = transprob[targetgram_given_sourcegram];
-                        const double newtransprob = count[targetgram_given_sourcegram] / total[targetgram];
-                        transprob[targetgram_given_sourcegram] = newtransprob;                        
+                        prevtransprob = alignprob[sourcegram][targetgram];
+                        const double newtransprob = (double) count[sourcegram][targetgram] / total[targetgram];
+                        alignprob[sourcegram][targetgram] = newtransprob;                        
                         
                         //for computation of convergence
                         const double divergence = abs(newtransprob - prevtransprob);
+                        cerr << " prevtransprob=" << prevtransprob << " ";
+                        cerr << " newtransprob=" << newtransprob << " ";
+                        cerr << " div=" << divergence << " ";
+                    
                         totaldivergence += divergence;
                         c++;
                     }
                 }
             }
         }
-        const double avdivergence = totaldivergence / c;
+        const double avdivergence = (double) totaldivergence / c;
         converged = (((round >= MAXROUNDS) || abs(avdivergence - prevavdivergence)) <= CONVERGEDTHRESHOLD);       
         prevavdivergence = avdivergence;
-        cerr << " average divergence = " << avdivergence << ", transprob size = " << transprob.size() << endl;
+        cerr << " average divergence = " << avdivergence << ", alignprob size = " << alignprob.size() << endl;
     } while (!converged);    
 }
 
@@ -1379,7 +1376,7 @@ CoocAlignmentModel::CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel 
     }            
 }
     
-void CoocAlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
+void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignprob.begin(); iter != alignprob.end(); iter++) {
         const EncAnyGram* sourcegram = iter->first;
         *OUT << sourcegram->decode(sourceclassdecoder) << "\t";

@@ -72,11 +72,11 @@ int main( int argc, char *argv[] ) {
     cerr << "  Reverse index has " << targetmodel.reverse_index_size() << " sentences" << endl;
     
     cerr << "Computing alignment model..." << endl;
-    CoocAlignmentModel a = CoocAlignmentModel(sourcemodel,targetmodel, prunevalue);    
+    /*CoocAlignmentModel a = CoocAlignmentModel(sourcemodel,targetmodel, prunevalue);    
     if (DODECODE) {
         cerr << "Decoding..." << endl;
         a.decode(sourceclassdecoder, targetclassdecoder, &cout);    
-    }
-    //EMAlignmentModel(sourcemodel,targetmodel,10000,0.001);    
+    }*/
+    EMAlignmentModel(sourcemodel,targetmodel,10000,0.001);    
     
 }

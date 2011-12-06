@@ -320,17 +320,22 @@ class EncGramGraphModel {
 double compute_entropy(freqlist & data, const int total);
 double compute_entropy(skipgram_freqlist & data, const int total);
 
-typedef std::unordered_map<std::pair<EncAnyGram*, EncAnyGram*>, double> alignmentprobmap;
+//typedef std::unordered_map<std::pair<EncAnyGram*, EncAnyGram*>, double> alignmentprobmap;
 
-class EMAlignmentModel {
+class AlignmentModel {
    public:
-    alignmentprobmap transprob;
-    
+    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignprob;    
+    void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
+
+};
+
+class EMAlignmentModel: public AlignmentModel {
+   public:    
     EMAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001);        
     //save(const std::string filename);
 };
 
-class CoocAlignmentModel {
+class CoocAlignmentModel: public AlignmentModel {
    private:
     double absthreshold;
     double relthreshold;
@@ -344,7 +349,6 @@ class CoocAlignmentModel {
     
     
     
-    void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
     //void save(const std::string filename);
 };
 
