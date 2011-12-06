@@ -331,11 +331,20 @@ class EMAlignmentModel {
 };
 
 class CoocAlignmentModel {
+   private:
+    double absthreshold;
+    double relthreshold;
    public:
-    double cooc( std::set<int> & sourceindex, std::set<int> & targetindex ); 
-    int compute(const EncAnyGram * sourcegram, std::set<int> & sourceindex, EncGramModel & targetmodel);
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignprob;    
-    CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel);        
-    //save(const std::string filename);
+   
+    CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodelconst, double absthreshold = 0,  const double relthreshold = 0);         
+   
+    double cooc( std::set<int> & sourceindex, std::set<int> & targetindex); 
+    int compute(const EncAnyGram * sourcegram, std::set<int> & sourceindex, EncGramModel & targetmodel);
+    
+    
+    
+    void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
+    //void save(const std::string filename);
 };
 

@@ -1,4 +1,5 @@
 #include "ngram.h"
+#include <iostream>
 #include <unordered_map>
 
 using namespace std;
@@ -60,7 +61,9 @@ int main( int argc, char *argv[] ) {
     cerr << "  Reverse index has " << targetmodel.reverse_index_size() << " sentences" << endl;
     
     cerr << "Computing alignment model..." << endl;
-    CoocAlignmentModel(sourcemodel,targetmodel);    
+    CoocAlignmentModel a = CoocAlignmentModel(sourcemodel,targetmodel);    
+    cerr << "Decoding..." << endl;
+    a.decode(sourceclassdecoder, targetclassdecoder, &cout);    
     //EMAlignmentModel(sourcemodel,targetmodel,10000,0.001);    
     
 }

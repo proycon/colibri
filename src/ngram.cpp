@@ -1312,19 +1312,17 @@ EMAlignmentModel::EMAlignmentModel(EncGramModel & sourcemodel, EncGramModel & ta
 }
 
 
-double CoocAlignmentModel::cooc( set<int> & sourceindex, set<int> & targetindex ) {    
+double CoocAlignmentModel::cooc( set<int> & sourceindex, set<int> & targetindex) {    
     //Jaccard co-occurrence    
     int intersectioncount = 0;    
     
     set<int>::iterator sourceiter = sourceindex.begin();    
     set<int>::iterator targetiter = targetindex.begin();
-    const set<int>::iterator sourceend = sourceindex.end();
-    const set<int>::iterator targetend = targetindex.begin();
     
-    while (sourceiter!=sourceindex.end() && targetiter!=targetend) {
+    while ((sourceiter !=sourceindex.end()) && (targetiter!=targetindex.end())) {
         if (*sourceiter < *targetiter) { 
             sourceiter++;
-        } else if (*targetiter<*sourceiter) {
+        } else if (*targetiter < *sourceiter) {
             targetiter++;
         } else {  //equal
             intersectioncount++;
@@ -1333,12 +1331,14 @@ double CoocAlignmentModel::cooc( set<int> & sourceindex, set<int> & targetindex 
         }
     }
     const int unioncount = (sourceindex.size() + targetindex.size()) - intersectioncount; 
-    return intersectioncount / unioncount;
+    //cerr << "union=" << unioncount << " intersection=" << intersectioncount << " ";
+    return (double) intersectioncount / unioncount;
 }
 
 
 int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, set<int> & sourceindex, EncGramModel & targetmodel) {        
     int c = 0;
+    double bestcooc = 0;
     for (set<int>::iterator iter2 = sourceindex.begin(); iter2 != sourceindex.end(); iter2++) {
         const int sentencenumber = *iter2;        
         const int targetgrams_size =  targetmodel.reverse_index_size(sentencenumber);    
@@ -1351,13 +1351,22 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, set<int> & source
             } else {
                targetindices = &targetmodel.skipgram_index[*( (EncSkipGram*) targetgram)];
             }
-            alignprob[sourcegram][targetgram] = cooc(sourceindex, *targetindices);    
+            
+            const double coocvalue = cooc(sourceindex, *targetindices);            
+            //cerr << "cooc=" << coocvalue << " ";
+            if ((relthreshold) && (coocvalue > bestcooc)) bestcooc = coocvalue;            
+            if (coocvalue >= absthreshold) {                
+                alignprob[sourcegram][targetgram] = coocvalue;
+            }
         }
+        if (relthreshold) {
+            //TODO: prune based on relative threshold
+        }   
     }    
     return c;
 }
 
-CoocAlignmentModel::CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel) {
+CoocAlignmentModel::CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel, const double absthreshold, const double relthreshold) {
     int c = 0;
     for (unordered_map<EncNGram,set<int> >::iterator iter = sourcemodel.ngram_index.begin();  iter != sourcemodel.ngram_index.end(); iter++) {
         cerr << "N" << ++c << "=";
@@ -1367,5 +1376,19 @@ CoocAlignmentModel::CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel 
         cerr << "S" << ++c << "=";
         cerr << compute(&iter->first, iter->second, targetmodel) << " ";
     }        
+    this->absthreshold = absthreshold;
+    this->relthreshold = relthreshold;
 }
     
+void CoocAlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
+    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignprob.begin(); iter != alignprob.end(); iter++) {
+        const EncAnyGram* sourcegram = iter->first;
+        *OUT << sourcegram->decode(sourceclassdecoder) << "\t";
+        for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+            const EncAnyGram* targetgram = iter2->first;            
+            *OUT << targetgram->decode(targetclassdecoder) << "\t" << iter2->second << "\t";
+        }
+        *OUT << endl;
+    }
+}
+
