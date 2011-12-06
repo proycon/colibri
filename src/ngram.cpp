@@ -1252,10 +1252,9 @@ EMAlignmentModel::EMAlignmentModel(EncGramModel & sourcemodel, EncGramModel & ta
             
             if (targetgrams_size > 0 ) { //target model contains sentence?               
                 //vector<EncAnyGram*> targetgrams = targetmodel.reverse_index(key);  
-                cerr << key << "=" << sourcegrams_size << "x" << targetgrams_size << " ";
+                cerr << key << ":" << sourcegrams_size << "x" << targetgrams_size << " ";
 
-                //compute sentencetotal for normalisation later in count step, sum_s(p(t|s))                
-                cerr << "A";                            
+                //compute sentencetotal for normalisation later in count step, sum_s(p(t|s))                                      
                 unordered_map<EncAnyGram*, double> sentencetotal;                
                 for (int i = 0; i < targetgrams_size; i++) {    
                     EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
@@ -1267,7 +1266,6 @@ EMAlignmentModel::EMAlignmentModel(EncGramModel & sourcemodel, EncGramModel & ta
                     }
                 }               
                 
-                cerr << "B";                            
                 //collect counts (for evidence that a targetgram is aligned to a sourcegram)
                 alignmentprobmap count;                
                 unordered_map<EncAnyGram*, double> total;
@@ -1285,7 +1283,6 @@ EMAlignmentModel::EMAlignmentModel(EncGramModel & sourcemodel, EncGramModel & ta
                 }
                 
                  
-                cerr << "C"; 
                 double prevtransprob;
                 //estimate new probabilities (normalised count is the new estimated probability)
                 for (int i = 0; i < targetgrams_size; i++) {    
@@ -1316,16 +1313,25 @@ EMAlignmentModel::EMAlignmentModel(EncGramModel & sourcemodel, EncGramModel & ta
 
 
 double CoocAlignmentModel::cooc( set<int> & sourceindex, set<int> & targetindex ) {    
-    //Jaccard co-occurrence
-    
+    //Jaccard co-occurrence    
     int intersectioncount = 0;    
-
-    //count union and intersections
-    for (set<int>::iterator iter = sourceindex.begin(); iter != sourceindex.end(); iter++) {
-        for (set<int>::iterator iter2 = targetindex.begin(); iter2 != targetindex.end(); iter2++) {    
-            if (*iter == *iter2) intersectioncount++;                        
-        }        
-    }    
+    
+    set<int>::iterator sourceiter = sourceindex.begin();    
+    set<int>::iterator targetiter = targetindex.begin();
+    const set<int>::iterator sourceend = sourceindex.end();
+    const set<int>::iterator targetend = targetindex.begin();
+    
+    while (sourceiter!=sourceindex.end() && targetiter!=targetend) {
+        if (*sourceiter < *targetiter) { 
+            sourceiter++;
+        } else if (*targetiter<*sourceiter) {
+            targetiter++;
+        } else {  //equal
+            intersectioncount++;
+            sourceiter++;
+            targetiter++;
+        }
+    }
     const int unioncount = (sourceindex.size() + targetindex.size()) - intersectioncount; 
     return intersectioncount / unioncount;
 }
@@ -1353,50 +1359,13 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, set<int> & source
 
 CoocAlignmentModel::CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel) {
     int c = 0;
-    for (unordered_map<EncNGram,set<int> >::iterator iter = sourcemodel.ngram_index.begin();  iter != sourcemodel.ngram_index.end(); iter++) {        
+    for (unordered_map<EncNGram,set<int> >::iterator iter = sourcemodel.ngram_index.begin();  iter != sourcemodel.ngram_index.end(); iter++) {
         cerr << "N" << ++c << "=";
         cerr << compute(&iter->first, iter->second, targetmodel) << " ";
     }    
     for (unordered_map<EncSkipGram,set<int> >::iterator iter = sourcemodel.skipgram_index.begin();  iter != sourcemodel.skipgram_index.end(); iter++) {
         cerr << "S" << ++c << "=";
         cerr << compute(&iter->first, iter->second, targetmodel) << " ";
-    }
-    
-    /*
-    int c = 0;
-    //Count co-occurence
-    for (unordered_map<EncNGram,set<int> >::iterator iter = sourcemodel.ngram_index.begin();  iter != sourcemodel.ngram_index.end(); iter++) {        
-        cerr << "N" << ++c << " ";
-        const EncAnyGram * sourcegram = &iter->first;
-        for (unordered_map<EncNGram,set<int> >::iterator iter2 = targetmodel.ngram_index.begin();  iter2 != targetmodel.ngram_index.end(); iter2++) {
-            const EncAnyGram * targetgram = &iter2->first;
-            //cerr << '.';
-            //cerr << iter->second.size() << "n" << iter2->second.size() << " ";
-            alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
-        }
-        for (unordered_map<EncSkipGram,set<int> >::iterator iter2 = targetmodel.skipgram_index.begin();  iter2 != targetmodel.skipgram_index.end(); iter2++) {
-            const EncAnyGram * targetgram = &iter2->first;
-            //cerr << ',';
-            //cerr << iter->second.size() << "s" << iter2->second.size() << " ";
-            alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
-        }        
-    }
-    for (unordered_map<EncSkipGram,set<int> >::iterator iter = sourcemodel.skipgram_index.begin();  iter != sourcemodel.skipgram_index.end(); iter++) {
-        cerr << ++c << "S ";
-        const EncAnyGram * sourcegram = &iter->first;
-        for (unordered_map<EncNGram,set<int> >::iterator iter2 = targetmodel.ngram_index.begin();  iter2 != targetmodel.ngram_index.end(); iter2++) {
-            const EncAnyGram * targetgram = &iter2->first;
-            //cerr << ':';
-            //cerr << iter->second.size() << "n" << iter2->second.size() << " ";
-            alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
-        }
-        for (unordered_map<EncSkipGram,set<int> >::iterator iter2 = targetmodel.skipgram_index.begin();  iter2 != targetmodel.skipgram_index.end(); iter2++) {
-            const EncAnyGram * targetgram = &iter2->first;
-            //cerr << ';';
-            //cerr << iter->second.size() << "s" << iter2->second.size() << " ";
-            alignprob[sourcegram][targetgram] = cooc(iter->second, iter2->second);
-        }        
-    }*/
-        
+    }        
 }
     
