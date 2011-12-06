@@ -1353,7 +1353,6 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, set<int> & source
             }
             
             const double coocvalue = cooc(sourceindex, *targetindices);            
-            //cerr << "cooc=" << coocvalue << " ";
             if ((relthreshold) && (coocvalue > bestcooc)) bestcooc = coocvalue;            
             if (coocvalue >= absthreshold) {                
                 alignprob[sourcegram][targetgram] = coocvalue;
@@ -1367,17 +1366,17 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, set<int> & source
 }
 
 CoocAlignmentModel::CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel, const double absthreshold, const double relthreshold) {
-    int c = 0;
-    for (unordered_map<EncNGram,set<int> >::iterator iter = sourcemodel.ngram_index.begin();  iter != sourcemodel.ngram_index.end(); iter++) {
-        cerr << "N" << ++c << "=";
-        cerr << compute(&iter->first, iter->second, targetmodel) << " ";
-    }    
-    for (unordered_map<EncSkipGram,set<int> >::iterator iter = sourcemodel.skipgram_index.begin();  iter != sourcemodel.skipgram_index.end(); iter++) {
-        cerr << "S" << ++c << "=";
-        cerr << compute(&iter->first, iter->second, targetmodel) << " ";
-    }        
     this->absthreshold = absthreshold;
     this->relthreshold = relthreshold;
+    int c = 0;
+    for (unordered_map<EncNGram,set<int> >::iterator iter = sourcemodel.ngram_index.begin();  iter != sourcemodel.ngram_index.end(); iter++) {
+        cerr << ++c << " ";
+        compute(&iter->first, iter->second, targetmodel);
+    }    
+    for (unordered_map<EncSkipGram,set<int> >::iterator iter = sourcemodel.skipgram_index.begin();  iter != sourcemodel.skipgram_index.end(); iter++) {
+        cerr << ++c << " ";
+        compute(&iter->first, iter->second, targetmodel);
+    }            
 }
     
 void CoocAlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
