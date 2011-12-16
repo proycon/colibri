@@ -52,7 +52,7 @@ int main( int argc, char *argv[] ) {
     ClassDecoder classdecoder = ClassDecoder(classfile);
     
     cerr << "Loading model " << modelfile << endl;
-    EncGramModel model = EncGramModel(modelfile);
+    EncGramIndexedModel model = EncGramIndexedModel(modelfile);
     
     cerr << "Loaded " << model.types() << " types, " << model.tokens() << " tokens" << endl;
     

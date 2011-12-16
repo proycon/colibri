@@ -1,21 +1,15 @@
-#include <string>
-#include <iostream>
-#include <ostream>
-#include <istream>
-#include "classdecoder.h"
-#include <unordered_map>
-#include <vector>
-#include <set>
-#include <unordered_set>
+#include <ngram.h>
+#include <cmath>
 #include <cstdint>
 
 class CorpusReference {
     /* Reference to a position in the corpus */
+   public:
     uint32_t sentence;
     unsigned char token;  
     CorpusReference(uint32_t, unsigned char);  
     CorpusReference(std::istream * in);  
-    void writeasbinary(ostream * out) const; 
+    void writeasbinary(std::ostream * out) const; 
     bool operator< (CorpusReference& other) {
         if (sentence < other.sentence) {
             return true;
@@ -25,17 +19,17 @@ class CorpusReference {
             return false;
         }
     }
-}
+};
 
 
 
 class NGramData {
    public:
-    set<CorpusReference> refs;
+    std::set<CorpusReference> refs;
     uint32_t count() const {
         return (uint32_t) refs.size();
     }
-    void writeasbinary(ostream * out) const; 
+    void writeasbinary(std::ostream * out) const; 
     NGramData() {};
     NGramData(std::istream * in);
 };
@@ -48,7 +42,6 @@ class SkipGramData {
        return _count;
     }
     SkipGramData() { _count = 0; }
-    void writeasbinary(ostream * out) const; 
     double entropy();
 };
 
@@ -73,6 +66,8 @@ class EncGramIndexedModel {
     
     int tokencount[10]; //relative token count
     int skiptokencount[10];
+    int typecount[10]; //relative token count
+    int skiptypecount[10];
    public:
     std::unordered_map<EncNGram,NGramData > ngrams;
     std::unordered_map<EncSkipGram,SkipGramData > skipgrams;    
@@ -80,8 +75,8 @@ class EncGramIndexedModel {
     std::unordered_map< int,std::vector<EncNGram> > ngram_reverse_index;
     std::unordered_map< int,std::vector<EncSkipGram> > skipgram_reverse_index;
         
-    EncGramIndexedModel(const std::string & filename, bool DOINDEX = true, bool DOREVERSEINDEX = false, bool DOSKIPCONTENT  = true);
-    EncGramIndexedModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2, bool DOINDEX = false, bool DOREVERSEINDEX = false, bool DOSKIPCONTENT = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
+    EncGramIndexedModel(const std::string & filename, bool DOREVERSEINDEX = false);
+    EncGramIndexedModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOREVERSEINDEX = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
     
     int maxlength() const { return MAXLENGTH; }
     

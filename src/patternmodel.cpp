@@ -1,3 +1,7 @@
+#include "patternmodel.h"
+#include "algorithms.h"
+
+using namespace std;
 
 CorpusReference::CorpusReference(uint32_t sentence, unsigned char token) {
     this->sentence = sentence;
@@ -12,7 +16,7 @@ void CorpusReference::writeasbinary(ostream * out) const {
 
 void NGramData::writeasbinary(ostream * out) const {
     for (set<CorpusReference>::iterator iter = refs.begin(); iter != refs.end(); iter++) {
-        iter.writeasbinary(out);
+        iter->writeasbinary(out);
     }
 }
 
@@ -67,7 +71,7 @@ EncGramIndexedModel::EncGramIndexedModel(const string & corpusfile, int MAXLENGT
             
             const int l = countwords(line, linesize);            
             if (l > 256) {
-                cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping!"
+                cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping!";
                 continue;
             }
             
@@ -99,9 +103,9 @@ EncGramIndexedModel::EncGramIndexedModel(const string & corpusfile, int MAXLENGT
                 
                 
                 
-                ref = CorpusReference(sentence,i)
-                if (ngrams[*ngram].empty()) typecount[n]++;
-                ngrams[*ngram].insert(ref);                        
+                CorpusReference ref = CorpusReference(sentence,i);
+                if (ngrams[*ngram].refs.empty()) typecount[n]++;
+                ngrams[*ngram].refs.insert(ref);                        
                 tokencount[n]++;            
 
                 if (DOSKIPGRAMS) {
@@ -139,7 +143,7 @@ EncGramIndexedModel::EncGramIndexedModel(const string & corpusfile, int MAXLENGT
                                 EncNGram * subngram = ngram->slice(cursor,begin-cursor);
                                 subngrams.push_back(subngram);                                                               
                                 oc = ngrams.count(*subngram);
-                                if (oc) oc = ngrams[*subngram];
+                                if (oc) oc = ngrams[*subngram].count();
                                 if ((oc == 0) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS)) )    {
                                     docount = false;
                                     break;
@@ -176,7 +180,7 @@ EncGramIndexedModel::EncGramIndexedModel(const string & corpusfile, int MAXLENGT
                             EncSkipGram skipcontent = EncSkipGram(skipcontent_subngrams, skipcontent_skipref, false, false);                                                        
                             if (skipgrams[skipgram].count() == 0) skiptypecount[n]++;                            
                             skipgrams[skipgram]._count++;
-                            skipgrams[skipgram].skips[skipcontent].insert(ref);
+                            skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
                             skiptokencount[n]++;                            
                             for (size_t k = 0; k < skipcontent_subngrams.size(); k++) {       
                                 delete skipcontent_subngrams[k];
@@ -206,7 +210,7 @@ EncGramIndexedModel::EncGramIndexedModel(const string & corpusfile, int MAXLENGT
        int pruned = 0;
        for(unordered_map<EncNGram,NGramData>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
             if (iter->first.n() == n) {
-                if (iter->second < MINTOKENS) {
+                if (iter->second.count() < MINTOKENS) {
                     tokencount[n] -= iter->second.count();
                     typecount[n]--;
                     pruned++;
@@ -222,22 +226,22 @@ EncGramIndexedModel::EncGramIndexedModel(const string & corpusfile, int MAXLENGT
        if (DOSKIPGRAMS) {       
            //prune skipgrams
            pruned = 0;
-           for(unordered_map<EncNGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {     
+           for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {     
                if (iter->first.n() == n) {                          
                     bool pruneskipgram = false;
-                    if ((iter->second.count < MINTOKENS) || ((DOSKIPCONTENT && iter->second.skips.size() < MINSKIPTYPES)))  {
+                    if ((iter->second.count() < MINTOKENS) || ((DOSKIPCONTENT && iter->second.skipcontent.size() < MINSKIPTYPES)))  {
                         pruneskipgram = true;
-                    } else if (DOSKIPCONTENT) {                
+                    } else {             // if (DOSKIPCONTENT)
                         int prunedskiptokens = 0;
-                        for(std::unordered_map<EncSkipGram,NGramData> iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {
+                        for(std::unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {
                             if (iter2->second.count() < MINSKIPTOKENS) {
                                 //prune skip
-                                iter->second.count -= iter2->second.count();
+                                iter->second._count -= iter2->second.count();
                                 prunedskiptokens += iter2->second.count();
-                                iter->second.skips.erase(iter2->first); 
+                                iter->second.skipcontent.erase(iter2->first); 
                             }
                         }
-                        if ( (prunedskiptokens > 0) && ( (iter->second.skips.size() < MINSKIPTYPES) || (iter->second.count - prunedskiptokens < MINTOKENS) ) ) { //reevaluate
+                        if ( (prunedskiptokens > 0) && ( (iter->second.skipcontent.size() < MINSKIPTYPES) || (iter->second.count() - prunedskiptokens < MINTOKENS) ) ) { //reevaluate
                             pruneskipgram = true;
                             skiptokencount[n] -= prunedskiptokens;
                         } else {
@@ -245,7 +249,6 @@ EncGramIndexedModel::EncGramIndexedModel(const string & corpusfile, int MAXLENGT
                         }
                     }
                     if (pruneskipgram) {
-                        if (DOINDEX) skipgram_index.erase(iter->first);
                         skiptokencount[n] -= iter->second.count();
                         skiptypecount[n]--;
                         pruned++;
@@ -256,10 +259,10 @@ EncGramIndexedModel::EncGramIndexedModel(const string & corpusfile, int MAXLENGT
            cerr << "Pruned " << pruned << " skipgrams, " << skiptypecount[n] <<  " left (" << skiptokencount[n] << " tokens)" << endl;
            
         }
-        ngramtokencount += tokencount[n]
-        ngramtypecount += typecount[n]
-        skipgramtokencount += skiptokencount[n]
-        skipgramtypecount += skiptypecount[n]
+        ngramtokencount += tokencount[n];
+        ngramtypecount += typecount[n];
+        skipgramtokencount += skiptokencount[n];
+        skipgramtypecount += skiptypecount[n];
     }
 
     if (DOREVERSEINDEX) {
@@ -269,7 +272,7 @@ EncGramIndexedModel::EncGramIndexedModel(const string & corpusfile, int MAXLENGT
 }
 
 
-EncGramIndexedModel::EncGramIndexedModel(const string & filename, bool DOREVERSEINDEX, bool DOSKIPCONTENT) {
+EncGramIndexedModel::EncGramIndexedModel(const string & filename, bool DOREVERSEINDEX) {
     const bool DEBUG = false;
     this->DOREVERSEINDEX = DOREVERSEINDEX;
     this->DOSKIPCONTENT = DOSKIPCONTENT;    
@@ -279,8 +282,7 @@ EncGramIndexedModel::EncGramIndexedModel(const string & filename, bool DOREVERSE
     ngramtypecount = 0;
     skipgramtypecount = 0;
     MAXLENGTH = 0;
-    ngrams.push_back(freqlist());
-    skipgrams.push_back(skipgrammap());    
+    
     
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
@@ -313,7 +315,7 @@ EncGramIndexedModel::EncGramIndexedModel(const string & filename, bool DOREVERSE
             f.read((char*) &count, sizeof(uint32_t)); //read occurrence count
             for (int j = 0; j < count; j++) {
                 int index;
-                ref = CorpusReference(&f); //read from file
+                CorpusReference ref = CorpusReference(&f); //read from file
                 ngrams[ngram].refs.insert(ref);
                 /*if (DOREVERSEINDEX) {
                     bool found = false;
@@ -341,7 +343,7 @@ EncGramIndexedModel::EncGramIndexedModel(const string & filename, bool DOREVERSE
                 EncSkipGram skipcontent = EncSkipGram(&f);  //also when !DOSKIPCONTENT, bytes have to be read
                 f.read((char*) &count, sizeof(int)); //read occurrence count                
                 for (int k = 0; k < count; k++) {
-                    ref = CorpusReference(&f); //read from file
+                    CorpusReference ref = CorpusReference(&f); //read from file
                     skipgrams[skipgram].skipcontent[skipcontent].insert(ref);
                 }
             }

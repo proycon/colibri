@@ -4,8 +4,8 @@ bin_PROGRAMS = classdecode modeldecode patternfinder graphmodel aligner
 
 lib_LTLIBRARIES = libcolibri.la
 
-libcppnlp_la_CXXFLAGS = -Wall -std=c++0x
-libcppnlp_la_SOURCES = classdecoder.cpp ngram.cpp algorithms.cpp patternmodel.cpp
+libcolibri_la_CXXFLAGS = -Wall -std=c++0x
+libcolibri_la_SOURCES = classdecoder.cpp ngram.cpp algorithms.cpp patternmodel.cpp
 
 classdecode_CXXFLAGS = -Wall -std=c++0x
 classdecode_LDADD = libcolibri.la
