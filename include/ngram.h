@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <iomanip> // contains setprecision()
 
+
 const int MAXSKIPS = 4;
 
 
@@ -70,38 +71,6 @@ class EncNGram: public EncAnyGram {
     int subngrams(std::vector<EncNGram*> & container) const;     
 };
 
-/*
-
-class EncNGram {
-    protected:
-     char _size;    
-    public:    
-     unsigned char* data;
-    
-     EncNGram();
-     EncNGram(const unsigned char* dataref, const char size);
-     
-     EncNGram(const EncNGram& ref);     
-     ~EncNGram();
-     
-     const char n() const;
-     const char size() const;
-     
-    std::string decode(ClassDecoder& classdecoder) const;
-    bool out() const;
-    
-    bool operator==(const EncNGram &other) const;
-    bool operator!=(const EncNGram &other) const;
-    EncNGram & operator =(EncNGram other);    
-    
-    EncNGram * slice(const int begin,const int length) const;
-    
-    virtual bool isskipgram() const { 
-        return false; 
-    }
-};
-*/
-
 EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size);
 
 
@@ -132,13 +101,8 @@ class EncSkipGram: public EncAnyGram {
       
       void writeasbinary(std::ostream * out) const; //write binary output
       
-    //EncSkipGram(const unsigned char* dataref, const char size): EncNGram(dataref, size) {      
-    //}     
-  
 };
 
-
-//size_t jenkinshash(unsigned char * data, char size);
 
 namespace std {
 
@@ -183,172 +147,6 @@ namespace std {
           size_t operator()(EncSkipGram skipgram) const throw() {                            
               return skipgram.hash();              
           }
-           /* size_t operator()(EncSkipGram ngram) const throw() {                            
-                //jenkins hash: http://en.wikipedia.org/wiki/Jenkins_hash_function
-                unsigned long h;
-                int i;
-                bool prevnull = false;
-                int skipnum = 0;
-                for(h = i = 0; i < ngram.size(); ++i)
-                {                
-                    h += ngram.data[i];
-                    h += (h << 10);
-                    h ^= (h >> 6);
-                    if (ngram.data[i] == 0) {
-                        if (prevnull) {
-                            h += 46021 + ngram.skipsize[skipnum];                        
-                            h += (h << 10);
-                            h ^= (h >> 6);
-                            skipnum++;
-                        } else {
-                            prevnull = true;
-                        }                    
-                    } else {
-                        prevnull = false;
-                    }                
-                }
-                h += (h << 3);
-                h ^= (h >> 11);
-                h += (h << 15);
-                return h;
-            }*/
     };
 
 }
-
-
-
-typedef std::unordered_map<EncNGram,int> freqlist;
-typedef std::unordered_map<EncSkipGram,int> skipgram_freqlist;
-
-
-class skipgramdata {
-   public:
-    int count;
-    skipgram_freqlist skips;
-    skipgramdata() {
-        count = 0;
-    }
-};
-
-typedef std::unordered_map<EncSkipGram,skipgramdata> skipgrammap;
-
-
-class EncGramModel {    
-   private:
-    int MINTOKENS; // = 2;
-    int MINSKIPTOKENS; // = 2;
-    int MINSKIPTYPES; //= 2;
-    int MAXLENGTH; //= 8;
-    bool DOSKIPGRAMS; //= false;
-    bool DOINDEX; //= false;
-    bool DOREVERSEINDEX; //= false;
-    bool DOSKIPCONTENT; //= false;
-    bool DOINITIALONLYSKIP; //= true;
-    bool DOFINALONLYSKIP; //= true;
-
-    unsigned long ngramtokencount;
-    unsigned long skipgramtokencount; 
-    int ngramtypecount;
-    int skipgramtypecount;
-    
-    
-    int tokencount[10]; //relative token count
-    int skiptokencount[10];
-   public:   
-    std::vector<freqlist> ngrams;
-    std::vector<skipgrammap> skipgrams;
-    
-    std::unordered_map< EncNGram,std::set<int>  > ngram_index;
-    std::unordered_map< EncSkipGram,std::set<int> > skipgram_index;
-    
-    std::unordered_map< int,std::vector<EncNGram> > ngram_reverse_index;
-    std::unordered_map< int,std::vector<EncSkipGram> > skipgram_reverse_index;
-        
-    EncGramModel(const std::string & filename, bool DOINDEX = true, bool DOREVERSEINDEX = false, bool DOSKIPCONTENT  = true);
-    EncGramModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2, bool DOINDEX = false, bool DOREVERSEINDEX = false, bool DOSKIPCONTENT = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
-    
-    int maxlength() const { return MAXLENGTH; }
-    
-    int types() const { return ngramtypecount + skipgramtypecount; }
-    int tokens() const { return ngramtokencount + skipgramtokencount; }
-    
-    bool exists(const EncAnyGram* key) const;
-    int count(const EncAnyGram* key);
-    double freq(const EncAnyGram* key);    
-    double relfreq(const EncAnyGram* key);        
-    std::set<int> * index(const EncAnyGram* key);
-    
-    int index_size() const;
-    
-    std::set<int> reverse_index_keys(); 
-    bool reverse_index_haskey(const int i) const;    
-    int reverse_index_size(const int i);
-    int reverse_index_size();
-    std::vector<EncAnyGram*> reverse_index(const int i);
-    EncAnyGram* get_reverse_index_item(const int, const int);
-    
-    
-    
-    
-    void save(const std::string & filename);
-    
-    size_t hash();
-    
-    
-    void decode(ClassDecoder & classdecoder, std::ostream *NGRAMSOUT, std::ostream *SKIPGRAMSOUT);    
-};
-
-
-
-class EncGramGraphModel {    
-   private:    
-    std::unordered_map<EncAnyGram,std::unordered_set<EncAnyGram> > rel_subsumption_children;
-    //std::unordered_map<EncAnyGram,std::unordered_set<EncAnyGram> > rel_subsumption_parents; //reverse
-    
-    //std::unordered_map<EncNGram,std::unordered_set<EncSkipGram> > rel_inskips; //ngrams pluggable in gaps in skipgrams (reverse index of skipgram.data)
-        
-   public:
-    EncGramGraphModel(EncGramModel& model); //compute entire model    
-    EncGramGraphModel(const std::string & filename);
-        
-
-    void save(const std::string & filename);
-};
-
-
-double compute_entropy(freqlist & data, const int total);
-double compute_entropy(skipgram_freqlist & data, const int total);
-
-//typedef std::unordered_map<std::pair<EncAnyGram*, EncAnyGram*>, double> alignmentprobmap;
-
-class AlignmentModel {
-   public:
-    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignprob;    
-    void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
-
-};
-
-class EMAlignmentModel: public AlignmentModel {
-   public:    
-    EMAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001);        
-    //save(const std::string filename);
-};
-
-class CoocAlignmentModel: public AlignmentModel {
-   private:
-    double absthreshold;
-    double relthreshold;
-   public:
-    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignprob;    
-   
-    CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodelconst, double absthreshold = 0,  const double relthreshold = 0);         
-   
-    double cooc( std::set<int> & sourceindex, std::set<int> & targetindex); 
-    int compute(const EncAnyGram * sourcegram, std::set<int> & sourceindex, EncGramModel & targetmodel);
-    
-    
-    
-    //void save(const std::string filename);
-};
-
