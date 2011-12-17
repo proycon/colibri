@@ -1,5 +1,6 @@
 #include "patternmodel.h"
 #include "algorithms.h"
+#include <limits>
 
 using namespace std;
 
@@ -344,7 +345,7 @@ EncGramIndexedModel::EncGramIndexedModel(const string & filename, bool DOREVERSE
                 f.read((char*) &count, sizeof(int)); //read occurrence count                
                 for (int k = 0; k < count; k++) {
                     CorpusReference ref = CorpusReference(&f); //read from file
-                    skipgrams[skipgram].skipcontent[skipcontent].insert(ref);
+                    skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
                 }
             }
             /*
@@ -385,20 +386,20 @@ void EncGramIndexedModel::save(const std::string & filename) {
         }                
     }    
 
-    for (int n = 1; n <= MAXLENGTH; n++) {                
-        for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = skipgrams[n].begin(); iter != skipgrams[n].end(); iter++ ) {                            
-            //f.write((char*)  &check, sizeof(char)); 
-            iter->first.writeasbinary(&f);
-            const uint32_t c  = iter->second.count();
-            f.write( (char*) &c, sizeof(uint32_t) ); //occurrence count                         
-            const uint32_t nrofskips = (uint32_t) iter->second.skipcontent.size();                
-            f.write( (char*) &nrofskips, sizeof(uint32_t) );
-            for(unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {                    
-                iter2->first.writeasbinary(&f);
-                iter2->second.writeasbinary(&f);
-            }
-        }            
-    }
+             
+    for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {                            
+        //f.write((char*)  &check, sizeof(char)); 
+        iter->first.writeasbinary(&f);
+        const uint32_t c  = iter->second.count();
+        f.write( (char*) &c, sizeof(uint32_t) ); //occurrence count                         
+        const uint32_t nrofskips = (uint32_t) iter->second.skipcontent.size();                
+        f.write( (char*) &nrofskips, sizeof(uint32_t) );
+        for(unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {                    
+            iter2->first.writeasbinary(&f);
+            iter2->second.writeasbinary(&f);
+        }
+    }            
+
     f.close();    
 }
 
@@ -416,9 +417,9 @@ bool EncGramIndexedModel::exists(const EncAnyGram* key) const {
 
 int EncGramIndexedModel::count(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
-        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ];
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ].count();
     } else {
-        if (skipgrams.count(*( (EncSkipGram*) key) ) > 0) return skipgrams[*( (EncSkipGram*) key) ].count;   
+        if (skipgrams.count(*( (EncSkipGram*) key) ) > 0) return skipgrams[*( (EncSkipGram*) key) ].count();   
     }
     return 0;
 }
@@ -426,9 +427,9 @@ int EncGramIndexedModel::count(const EncAnyGram* key) {
 
 double EncGramIndexedModel::freq(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
-        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ] / tokens();
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ].count() / tokens();
     } else {
-        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return skipgrams[ *( (EncSkipGram*) key)].count / tokens();
+        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return skipgrams[ *( (EncSkipGram*) key)].count() / tokens();
     }
     return 0;
 }
@@ -436,9 +437,9 @@ double EncGramIndexedModel::freq(const EncAnyGram* key) {
 
 double EncGramIndexedModel::relfreq(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
-        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ] / tokencount[n];
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ].count() / tokencount[key->n()];
     } else {
-        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return skipgrams[ *( (EncSkipGram*) key)].count / skiptokencount[n];
+        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return skipgrams[ *( (EncSkipGram*) key)].count() / skiptokencount[key->n()];
     }
     return 0;
 }
@@ -513,11 +514,11 @@ void EncGramIndexedModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT
     const int grandtotal = ngramtokencount + skipgramtokencount;   
 
     for(unordered_map<EncNGram,NGramData>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
-       const double freq1 = (double) iter->second / tokencount[iter->first.n()];
-       const double freq2 = (double) iter->second / ngramtokencount;
-       const double freq3 = (double) iter->second / grandtotal;
+       const double freq1 = (double) iter->second.count() / tokencount[iter->first.n()];
+       const double freq2 = (double) iter->second.count() / ngramtokencount;
+       const double freq3 = (double) iter->second.count() / grandtotal;
        const EncNGram ngram = iter->first;
-        *NGRAMSOUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second << '\t' << freq1 << '\t' << freq2 << '\t' << freq3;
+        *NGRAMSOUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq1 << '\t' << freq2 << '\t' << freq3;
         *NGRAMSOUT << '\t';
         for (set<CorpusReference>::iterator iter2 = iter->second.refs.begin() ; iter2 != iter->second.refs.end(); iter2++) {
             *NGRAMSOUT << iter2->sentence << ':' << iter2->token << ' ';
@@ -527,20 +528,21 @@ void EncGramIndexedModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT
    
 
    if (SKIPGRAMSOUT != NULL) {
-       for(unordered_map<EncNGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {
+       for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {
            const double freq1 = (double) iter->second.count() / skiptokencount[iter->first.n()]; 
            const double freq2 = (double) iter->second.count() / skipgramtokencount;           
            const double freq3 = (double) iter->second.count() / grandtotal;                          
            const EncSkipGram skipgram = iter->first;                              
-           *SKIPGRAMSOUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t';
-           const int skiptypes = iter->second.skips.size();               
+           *SKIPGRAMSOUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t';
+           const int skiptypes = iter->second.skipcontent.size();               
            const double entropy = iter->second.entropy();
-           *SKIPGRAMSOUT << skiptypes << '\t' << iter->second.count << '\t' << entropy << '\t';
+           *SKIPGRAMSOUT << skiptypes << '\t' << iter->second.count() << '\t' << entropy << '\t';
             for(unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {
                 *SKIPGRAMSOUT << iter2->first.decode(classdecoder) << '|' << iter2->second.count() << '|';
                 for (set<CorpusReference>::iterator iter3 = iter2->second.refs.begin() ; iter3 != iter2->second.refs.end(); iter3++) {
                     *SKIPGRAMSOUT << iter3->sentence << ':' << iter3->token;        
-                    if (iter3 != iter2->second.refs.ends() - 1) *SKIPGRAMSOUT << ',';
+                    *SKIPGRAMSOUT << ',';
+                    //if (iter3 != iter2->second.refs.end() - 1) 
                 }
                 //MAYBE TODO: output references?
             }

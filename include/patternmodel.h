@@ -10,7 +10,7 @@ class CorpusReference {
     CorpusReference(uint32_t, unsigned char);  
     CorpusReference(std::istream * in);  
     void writeasbinary(std::ostream * out) const; 
-    bool operator< (CorpusReference& other) {
+    bool operator< (const CorpusReference& other) const {
         if (sentence < other.sentence) {
             return true;
         } else if (sentence == other.sentence) {
