@@ -1,4 +1,3 @@
-#include <ngram.h>
 #include <patternmodel.h>
 #include <fstream>
 #include <iostream>
@@ -19,7 +18,7 @@ void usage() {
     cerr << "\t-l <number>      Maximum n-gram/skipgram length (in words, default: 9)" << endl;
     cerr << "\t-s               Compute skip-grams (costs extra memory and time)" << endl;    
     cerr << "\t-T <number>      Skip threshold: only skip content that occurs at least x times will be considered (default: 2) " << endl;
-    cerr << "\t-L               Compute and maintain content of skipgrams (costs extra memory)" << endl;
+    //cerr << "\t-L               Compute and maintain content of skipgrams (costs extra memory)" << endl;
     cerr << "\t-S <number>      Skip type threshold: only skipgrams with x possible types for the skip will be considered, otherwise the skipgram will be pruned  (default: 2, works only with -L enabled)" << endl;
     cerr << "\t-B               Do NOT consider skipgrams that begin with a skip and have no further skips" << endl;
     cerr << "\t-E               Do NOT consider skipgrams that end in a skip and have no further skips" << endl;
@@ -115,7 +114,7 @@ int main( int argc, char *argv[] ) {
     
     
     cerr << "Computing model on " << corpusfile << endl;
-    EncGramModel model = EncGramModel(corpusfile, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS, MINSKIPTYPES, DOINDEX, DOREVERSEINDEX, DOSKIPCONTENT,DOINITIALONLYSKIP,DOFINALONLYSKIP);
+    EncGramIndexedModel model = EncGramIndexedModel(corpusfile, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS, MINSKIPTYPES, DOREVERSEINDEX ,DOINITIALONLYSKIP,DOFINALONLYSKIP);
         
     cerr << "Saving "  << endl;
     const string outputfile = outputprefix + ".bin";    

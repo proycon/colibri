@@ -9,6 +9,11 @@ CorpusReference::CorpusReference(uint32_t sentence, unsigned char token) {
     this->token = token;
 }
 
+CorpusReference::CorpusReference(istream * in) {
+    in->read( (char*) &sentence, sizeof(uint32_t)); 
+    in->read( (char*) &token, sizeof(unsigned char)); 
+}
+
 void CorpusReference::writeasbinary(ostream * out) const {  
     out->write( (char*) &sentence, sizeof(uint32_t) );
     out->write( (char*) &token, sizeof(unsigned char) );
@@ -521,7 +526,7 @@ void EncGramIndexedModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT
         *NGRAMSOUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq1 << '\t' << freq2 << '\t' << freq3;
         *NGRAMSOUT << '\t';
         for (set<CorpusReference>::iterator iter2 = iter->second.refs.begin() ; iter2 != iter->second.refs.end(); iter2++) {
-            *NGRAMSOUT << iter2->sentence << ':' << iter2->token << ' ';
+            *NGRAMSOUT << iter2->sentence << ':' << (int) iter2->token << ' ';
         }                
         *NGRAMSOUT << endl;
     }
@@ -540,7 +545,7 @@ void EncGramIndexedModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT
             for(unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {
                 *SKIPGRAMSOUT << iter2->first.decode(classdecoder) << '|' << iter2->second.count() << '|';
                 for (set<CorpusReference>::iterator iter3 = iter2->second.refs.begin() ; iter3 != iter2->second.refs.end(); iter3++) {
-                    *SKIPGRAMSOUT << iter3->sentence << ':' << iter3->token;        
+                    *SKIPGRAMSOUT << iter3->sentence << ':' << (int) iter3->token;        
                     *SKIPGRAMSOUT << ',';
                     //if (iter3 != iter2->second.refs.end() - 1) 
                 }

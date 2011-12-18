@@ -1,4 +1,4 @@
-#include <ngram.h>
+#include <patternmodel.h>
 #include <fstream>
 #include <vector>
 #include <iostream>

@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -I@top_srcdir@/include
 
-bin_PROGRAMS = classdecode modeldecode patternfinder graphmodel aligner
+bin_PROGRAMS = classdecode modeldecode patternfinder #graphmodel aligner
 
 lib_LTLIBRARIES = libcolibri.la
 
