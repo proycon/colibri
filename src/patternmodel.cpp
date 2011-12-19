@@ -21,6 +21,8 @@ void CorpusReference::writeasbinary(ostream * out) const {
 
 
 void NGramData::writeasbinary(ostream * out) const {
+    const uint32_t s = refs.size();
+    out->write( (char*) &s, sizeof(uint32_t) );
     for (set<CorpusReference>::iterator iter = refs.begin(); iter != refs.end(); iter++) {
         iter->writeasbinary(out);
     }
@@ -279,7 +281,7 @@ EncGramIndexedModel::EncGramIndexedModel(const string & corpusfile, int MAXLENGT
 
 
 EncGramIndexedModel::EncGramIndexedModel(const string & filename, bool DOREVERSEINDEX) {
-    const bool DEBUG = false;
+    const bool DEBUG = true;
     this->DOREVERSEINDEX = DOREVERSEINDEX;
     this->DOSKIPCONTENT = DOSKIPCONTENT;    
     
@@ -297,10 +299,10 @@ EncGramIndexedModel::EncGramIndexedModel(const string & filename, bool DOREVERSE
        exit(3);
     }
     
-    unsigned long totaltokens;
-    f.read( (char*) &totaltokens, sizeof(unsigned long));        
-    unsigned long totaltypes;
-    f.read( (char*) &totaltypes, sizeof(unsigned long));            
+    uint64_t totaltokens;
+    f.read( (char*) &totaltokens, sizeof(uint64_t));        
+    uint64_t totaltypes;
+    f.read( (char*) &totaltypes, sizeof(uint64_t));            
     
     for (int i = 0; i < totaltypes; i++) {           
         char gapcount;
@@ -316,11 +318,10 @@ EncGramIndexedModel::EncGramIndexedModel(const string & filename, bool DOREVERSE
             if (DEBUG)  cerr << "\tNGRAM";
             ngramtypecount++;
             //NGRAM
-            EncNGram ngram = EncNGram(&f); //read from file                        
-            int count;
+            EncNGram ngram = EncNGram(&f); //read from file
+            uint32_t count;
             f.read((char*) &count, sizeof(uint32_t)); //read occurrence count
             for (int j = 0; j < count; j++) {
-                int index;
                 CorpusReference ref = CorpusReference(&f); //read from file
                 ngrams[ngram].refs.insert(ref);
                 /*if (DOREVERSEINDEX) {
@@ -335,19 +336,19 @@ EncGramIndexedModel::EncGramIndexedModel(const string & filename, bool DOREVERSE
         } else {
             //SKIPGRAM
             if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
-            skipgramtypecount++;            
+            skipgramtypecount++;
             EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              
-            int count;
+            uint32_t count;
             f.read((char*) &count, sizeof(uint32_t)); //read occurrence count            
             skipgrams[skipgram]._count = count; //assign
             skipgramtokencount += count;
             skiptokencount[skipgram.n()] += count;            
-            int skipcontentcount;
-            f.read((char*) &skipcontentcount, sizeof(int));   
-            if (DEBUG) cerr << "\tcontentcount=" << (int) skipcontentcount;
+            uint32_t skipcontentcount;
+            f.read((char*) &skipcontentcount, sizeof(uint32_t));   
+            if (DEBUG) cerr << "\tskipcontentcount=" << (int) skipcontentcount;
             for (int j = 0; j < skipcontentcount; j++) {                                
                 EncSkipGram skipcontent = EncSkipGram(&f);  //also when !DOSKIPCONTENT, bytes have to be read
-                f.read((char*) &count, sizeof(int)); //read occurrence count                
+                f.read((char*) &count, sizeof(uint32_t)); //read occurrence count                
                 for (int k = 0; k < count; k++) {
                     CorpusReference ref = CorpusReference(&f); //read from file
                     skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
@@ -375,11 +376,12 @@ void EncGramIndexedModel::save(const std::string & filename) {
     const char czero = 0;
     const int zero = 0;
     //const unsigned char check = 255;
-    const unsigned long totaltokens = tokens();
-    const unsigned long totaltypes = types();
+    const uint64_t totaltokens = tokens();
+    const uint64_t totaltypes = ngrams.size() + skipgrams.size();
     
-    f.write( (char*) &totaltokens, sizeof(unsigned long) );
-    f.write( (char*) &totaltypes, sizeof(unsigned long) );
+    f.write( (char*) &totaltokens, sizeof(uint64_t) );
+    f.write( (char*) &totaltypes, sizeof(uint64_t) );
+    
     for(unordered_map<EncNGram,NGramData>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {        
         //f.write((char*) &check, sizeof(char)); 
         f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
@@ -397,8 +399,8 @@ void EncGramIndexedModel::save(const std::string & filename) {
         iter->first.writeasbinary(&f);
         const uint32_t c  = iter->second.count();
         f.write( (char*) &c, sizeof(uint32_t) ); //occurrence count                         
-        const uint32_t nrofskips = (uint32_t) iter->second.skipcontent.size();                
-        f.write( (char*) &nrofskips, sizeof(uint32_t) );
+        const uint32_t skipcontentcount = (uint32_t) iter->second.skipcontent.size();                
+        f.write( (char*) &skipcontentcount, sizeof(uint32_t) );
         for(unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {                    
             iter2->first.writeasbinary(&f);
             iter2->second.writeasbinary(&f);

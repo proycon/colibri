@@ -503,7 +503,7 @@ EncSkipGram::EncSkipGram(istream * in, const char gapcount) {
     }
     in->read(&_size, sizeof(char));
     if (_size <= 0) {
-        cerr << "EncSkipGram: data has to have size >0, read " << _size << ", not possible!" << endl;;
+        cerr << "EncSkipGram: data has to have size >0, read " << (int) _size << ", not possible!" << endl;;
         exit(5);
     }
     data = new unsigned char[_size];
