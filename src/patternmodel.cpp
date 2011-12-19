@@ -733,6 +733,35 @@ int GraphPatternModel::xcount(const EncAnyGram* anygram) {
 }
 
 
+void GraphPatternModel::readrelations(std::istream * in, const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relationhash) {
+    uint16_t count;
+    in->read((char*) &count,  sizeof(uint16_t));
+    char gapcount;
+    for (int i = 0; i < count; i++) {                        
+       in->read(&gapcount, sizeof(char));
+       if (gapcount == 0) {
+        EncNGram ngram = EncNGram(in);
+        relationhash[model->getkey(anygram)].insert(model->getkey((EncAnyGram*) &ngram));
+       } else {
+        EncSkipGram skipgram = EncSkipGram( in, gapcount);
+        relationhash[model->getkey(anygram)].insert(model->getkey((EncAnyGram*) &skipgram));
+       }           
+    }    
+}
+
+void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relationhash) {
+    uint16_t count = relationhash[model->getkey(anygram)].size();
+    out->write((char*) &count, sizeof(uint16_t));
+    char gapcount;
+    for (int i = 0; i < count; i++) {                        
+        for (unordered_set<const EncAnyGram*>::iterator iter = relationhash[model->getkey(anygram)].begin(); iter != relationhash[model->getkey(anygram)].end(); iter++) {
+            const EncAnyGram * anygram2 = *iter;
+            anygram2->writeasbinary(out);
+        }
+    }    
+}
+
+
 void GraphPatternModel::readheader(std::istream * in) {
     in->read((char*) &DOPARENTS,  sizeof(bool)); //1 byte, not 1 bit
     in->read((char*) &DOCHILDREN, sizeof(bool)); //1 byte, not 1 bit
@@ -744,7 +773,38 @@ void GraphPatternModel::writeheader(std::ostream * out) {
 }
 
 void GraphPatternModel::readngram(std::istream * in, const EncNGram & ngram) {
-    
+    if (DOPARENTS) 
+        readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_parents);
+
+    if (DOCHILDREN) 
+        readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_children);    
+
+}
+
+void GraphPatternModel::readskipgram(std::istream * in, const EncSkipGram & skipgram) {
+    if (DOPARENTS) 
+        readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_parents);
+
+    if (DOCHILDREN) 
+        readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_children);        
+}
+
+
+void GraphPatternModel::writengram(std::ostream * out, const EncNGram & ngram) {
+    if (DOPARENTS)  
+        writerelations(out, (const EncAnyGram*) &ngram, rel_subsumption_parents);
+        
+    if (DOCHILDREN)  
+        writerelations(out, (const EncAnyGram*) &ngram, rel_subsumption_children);        
+}
+
+void GraphPatternModel::writeskipgram(std::ostream * out, const EncSkipGram & skipgram) {
+    if (DOPARENTS)  
+        writerelations(out, (const EncAnyGram*) &skipgram, rel_subsumption_parents);
+        
+    if (DOCHILDREN)  
+        writerelations(out, (const EncAnyGram*) &skipgram, rel_subsumption_children);
+        
 }
 
 GraphPatternModel::GraphPatternModel(const string & filename) {
