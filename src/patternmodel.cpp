@@ -711,16 +711,17 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
 int GraphPatternModel::xcount(const EncAnyGram* anygram) {
     const AnyGramData* data = model->getdata(anygram);
     if (data == NULL) throw "xcount: No such anygram";
-    const set<CorpusReference> allrefs = data->get_refs();
+    set<CorpusReference> allrefs = data->get_refs();
         
     //compute union of all parent references
     set<CorpusReference> parentrefs;
     for (std::unordered_set<const EncAnyGram*>::iterator iter = rel_subsumption_parents[anygram].begin(); iter != rel_subsumption_parents[anygram].end(); iter++) {
         const AnyGramData * parentdata = model->getdata(*iter);
         if (parentdata != NULL) {
-            const set<CorpusReference> parentrefs = parentdata->get_refs();
+            parentrefs = parentdata->get_refs();
             for (set<CorpusReference>::iterator iter2 = parentrefs.begin(); iter2 != parentrefs.end(); iter2++) {
-                const CorpusReference r = *iter2;
+                CorpusReference r = *iter2; 
+                //const CorpusReference * r = &(*(iter2)); //ugly, I know
                 parentrefs.insert(r);
             }
         }        

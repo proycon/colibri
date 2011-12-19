@@ -4,6 +4,7 @@
 #include <string>
 #include <cmath>
 #include <algorithms.h>
+#include <common.h>
 
 using namespace std;
 
@@ -109,10 +110,10 @@ int main( int argc, char *argv[] ) {
     
     if (outputprefix.empty()) {
         outputprefix = corpusfile; //TODO: strip .clsenc. .bin?
-        strip_extension(outputprefix,'colibri');
-        strip_extension(outputprefix,'bin');
-        strip_extension(outputprefix,'clsenc');
-        strip_extension(outputprefix,'txt');    
+        strip_extension(outputprefix,"colibri");
+        strip_extension(outputprefix,"bin");
+        strip_extension(outputprefix,"clsenc");
+        strip_extension(outputprefix,"txt");    
     }
     
     
