@@ -9,6 +9,10 @@ class CorpusReference {
     unsigned char token;  
     CorpusReference(uint32_t, unsigned char);  
     CorpusReference(std::istream * in);  
+    CorpusReference(const CorpusReference& other) { //copy constructor
+        sentence = other.sentence;
+        token = other.token;
+    };     
     void writeasbinary(std::ostream * out) const; 
     bool operator< (const CorpusReference& other) const {
         if (sentence < other.sentence) {
@@ -19,22 +23,30 @@ class CorpusReference {
             return false;
         }
     }
+    bool operator==(const CorpusReference &other) const { return ( (sentence == other.sentence) && (token == other.token)); };
+    bool operator!=(const CorpusReference &other) const { return ( (sentence != other.sentence) || (token != other.token)); };
 };
 
+class AnyGramData {
+    public: 
+     virtual std::set<CorpusReference> get_refs() const =0;
+};
 
-
-class NGramData {
+class NGramData: public AnyGramData {
    public:
     std::set<CorpusReference> refs;
     uint32_t count() const {
         return (uint32_t) refs.size();
     }
     void writeasbinary(std::ostream * out) const; 
+    std::set<CorpusReference> get_refs() const {
+        return refs;
+    }
     NGramData() {};
     NGramData(std::istream * in);
 };
 
-class SkipGramData {
+class SkipGramData: public AnyGramData {
    public:
     uint32_t _count;
     std::unordered_map<EncSkipGram,NGramData> skipcontent;
@@ -43,10 +55,11 @@ class SkipGramData {
     }
     SkipGramData() { _count = 0; }
     double entropy();
+    std::set<CorpusReference> get_refs() const;
 };
 
 
-class EncGramIndexedModel {    
+class IndexedPatternModel {    
    private:
     int MINTOKENS; // = 2;
     int MINSKIPTOKENS; // = 2;
@@ -75,8 +88,8 @@ class EncGramIndexedModel {
     std::unordered_map< int,std::vector<EncNGram> > ngram_reverse_index;
     std::unordered_map< int,std::vector<EncSkipGram> > skipgram_reverse_index;
         
-    EncGramIndexedModel(const std::string & filename, bool DOREVERSEINDEX = false);
-    EncGramIndexedModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOREVERSEINDEX = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
+    IndexedPatternModel(const std::string & filename, bool DOREVERSEINDEX = false);
+    IndexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOREVERSEINDEX = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
     
     int maxlength() const { return MAXLENGTH; }
     
@@ -84,7 +97,8 @@ class EncGramIndexedModel {
     int tokens() const { return ngramtokencount + skipgramtokencount; }
     
     bool exists(const EncAnyGram* key) const;
-    const EncAnyGram* get(const EncAnyGram* key);
+    const EncAnyGram* getkey(const EncAnyGram* key);
+    const AnyGramData* getdata(const EncAnyGram* key);
     int count(const EncAnyGram* key);
     double freq(const EncAnyGram* key);    
     double relfreq(const EncAnyGram* key);        
@@ -122,11 +136,15 @@ class EncGramGraphModel {
     //std::unordered_map<EncNGram,std::unordered_set<EncSkipGram> > rel_inskips; //ngrams pluggable in gaps in skipgrams (reverse index of skipgram.data)
         
    public:
+    IndexedPatternModel * model;
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_children;    
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_parents;
    
-    EncGramGraphModel(EncGramIndexedModel& model, bool DOPARENTS=true,bool DOCHILDREN=false); //compute entire model
+    EncGramGraphModel(IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=false); //compute entire model
     //EncGramGraphModel(const std::string & filename);
+    
+    int xcount(const EncAnyGram* anygram); //exclusive count    
+    
         
 
     //void save(const std::string & filename);
@@ -145,7 +163,7 @@ class AlignmentModel {
 
 class EMAlignmentModel: public AlignmentModel {
    public:    
-    EMAlignmentModel(EncGramindexedModel & sourcemodel, EncGramindexedModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001);        
+    EMAlignmentModel(IndexedPatternModel & sourcemodel, IndexedPatternModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001);        
     //save(const std::string filename);
 };
 
@@ -156,10 +174,10 @@ class CoocAlignmentModel: public AlignmentModel {
    public:
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignprob;    
    
-    CoocAlignmentModel(EncGramindexedModel & sourcemodel, EncGramindexedModel & targetmodelconst, double absthreshold = 0,  const double relthreshold = 0);         
+    CoocAlignmentModel(IndexedPatternModel & sourcemodel, IndexedPatternModel & targetmodelconst, double absthreshold = 0,  const double relthreshold = 0);         
    
     double cooc( std::set<uint32_t> & sourceindex, std::set<uint32_t> & targetindex); 
-    int compute(const EncAnyGram * sourcegram, std::set<int> & sourceindex, EncGramindexedModel & targetmodel);
+    int compute(const EncAnyGram * sourcegram, std::set<int> & sourceindex, IndexedPatternModel & targetmodel);
     
     
     

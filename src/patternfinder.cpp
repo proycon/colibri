@@ -108,16 +108,19 @@ int main( int argc, char *argv[] ) {
     }
     
     if (outputprefix.empty()) {
-        outputprefix = corpusfile;
+        outputprefix = corpusfile; //TODO: strip .clsenc. .bin?
+        strip_extension(outputprefix,'colibri');
+        strip_extension(outputprefix,'bin');
+        strip_extension(outputprefix,'clsenc');
+        strip_extension(outputprefix,'txt');    
     }
-
     
     
     cerr << "Computing model on " << corpusfile << endl;
-    EncGramIndexedModel model = EncGramIndexedModel(corpusfile, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS, MINSKIPTYPES, DOREVERSEINDEX ,DOINITIALONLYSKIP,DOFINALONLYSKIP);
+    IndexedPatternModel model = IndexedPatternModel(corpusfile, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS, MINSKIPTYPES, DOREVERSEINDEX ,DOINITIALONLYSKIP,DOFINALONLYSKIP);
         
     cerr << "Saving "  << endl;
-    const string outputfile = outputprefix + ".bin";    
+    const string outputfile = outputprefix + ".indexedpatternmodel.colibri";
     model.save(outputfile);
     
     

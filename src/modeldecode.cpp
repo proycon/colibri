@@ -45,14 +45,19 @@ int main( int argc, char *argv[] ) {
     }
 
     if (outputprefix.empty()) {
-        outputprefix = modelfile; //TODO: strip .clsenc. .bin?
+        outputprefix = modelfile; 
+        strip_extension(outputprefix, 'bin');
+        strip_extension(outputprefix, 'colibri');
+        strip_extension(outputprefix, 'indexedpatternmodel');
+        strip_extension(outputprefix, 'clsenc');
+        strip_extension(outputprefix, 'txt');    
     }
 
     cerr << "Loading class decoder " << classfile << endl;
     ClassDecoder classdecoder = ClassDecoder(classfile);
     
     cerr << "Loading model " << modelfile << endl;
-    EncGramIndexedModel model = EncGramIndexedModel(modelfile);
+    EncGramIndexedModel model = IndexedPatternModel(modelfile);
     
     cerr << "Loaded " << model.types() << " types, " << model.tokens() << " tokens" << endl;
     

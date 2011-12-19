@@ -31,7 +31,7 @@ void NGramData::writeasbinary(ostream * out) const {
 
 
 
-EncGramIndexedModel::EncGramIndexedModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOREVERSEINDEX, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
+IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOREVERSEINDEX, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
     
     this->MAXLENGTH = MAXLENGTH;
     this->MINTOKENS = MINTOKENS;
@@ -280,7 +280,7 @@ EncGramIndexedModel::EncGramIndexedModel(const string & corpusfile, int MAXLENGT
 }
 
 
-EncGramIndexedModel::EncGramIndexedModel(const string & filename, bool DOREVERSEINDEX) {
+IndexedPatternModel::IndexedPatternModel(const string & filename, bool DOREVERSEINDEX) {
     const bool DEBUG = true;
     this->DOREVERSEINDEX = DOREVERSEINDEX;
     this->DOSKIPCONTENT = DOSKIPCONTENT;    
@@ -369,7 +369,7 @@ EncGramIndexedModel::EncGramIndexedModel(const string & filename, bool DOREVERSE
 
 
 
-void EncGramIndexedModel::save(const std::string & filename) {
+void IndexedPatternModel::save(const std::string & filename) {
     ofstream f;
     f.open(filename.c_str(), ios::out | ios::binary);
     
@@ -411,7 +411,7 @@ void EncGramIndexedModel::save(const std::string & filename) {
 }
 
 
-bool EncGramIndexedModel::exists(const EncAnyGram* key) const {    
+bool IndexedPatternModel::exists(const EncAnyGram* key) const {    
     if (key->gapcount() == 0) {
         return (ngrams.count(*( (EncNGram*) key) ) > 0);
     } else {
@@ -420,7 +420,7 @@ bool EncGramIndexedModel::exists(const EncAnyGram* key) const {
     return false;
 }
 
-const EncAnyGram* EncGramIndexedModel::get(const EncAnyGram* key) {
+const EncAnyGram* IndexedPatternModel::getkey(const EncAnyGram* key) {
     if (key->gapcount() == 0) {
         std::unordered_map<EncNGram,NGramData >::iterator iter = ngrams.find(*( (EncNGram*) key) );
         if (iter != ngrams.end()) {
@@ -439,7 +439,27 @@ const EncAnyGram* EncGramIndexedModel::get(const EncAnyGram* key) {
 }
 
 
-int EncGramIndexedModel::count(const EncAnyGram* key) {    
+const AnyGramData* IndexedPatternModel::getdata(const EncAnyGram* key) {
+    if (key->gapcount() == 0) {
+        std::unordered_map<EncNGram,NGramData >::iterator iter = ngrams.find(*( (EncNGram*) key) );
+        if (iter != ngrams.end()) {
+            return &iter->second;
+        } else {
+            return NULL;
+        }
+    } else {
+        std::unordered_map<EncSkipGram,SkipGramData >::iterator iter = skipgrams.find(*( (EncSkipGram*) key) );
+        if (iter != skipgrams.end()) {
+            return &iter->second;
+        } else {
+            return NULL;
+        }        
+    }
+}
+
+
+
+int IndexedPatternModel::count(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
         if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ].count();
     } else {
@@ -449,7 +469,7 @@ int EncGramIndexedModel::count(const EncAnyGram* key) {
 }
 
 
-double EncGramIndexedModel::freq(const EncAnyGram* key) {    
+double IndexedPatternModel::freq(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
         if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ].count() / tokens();
     } else {
@@ -459,7 +479,7 @@ double EncGramIndexedModel::freq(const EncAnyGram* key) {
 }
 
 
-double EncGramIndexedModel::relfreq(const EncAnyGram* key) {    
+double IndexedPatternModel::relfreq(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
         if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ].count() / tokencount[key->n()];
     } else {
@@ -469,7 +489,7 @@ double EncGramIndexedModel::relfreq(const EncAnyGram* key) {
 }
 
 
-/*set<int> * EncGramIndexedModel::index(const EncAnyGram* key) {
+/*set<int> * IndexedPatternModel::index(const EncAnyGram* key) {
     if (key->gapcount() == 0) {        
         if (ngram_index.count(*( (EncNGram*) key) ) > 0) return &ngram_index[*( (EncNGram*) key) ];
     } else {
@@ -480,7 +500,7 @@ double EncGramIndexedModel::relfreq(const EncAnyGram* key) {
 
 
 
-std::set<int> EncGramIndexedModel::reverse_index_keys() {
+std::set<int> IndexedPatternModel::reverse_index_keys() {
     set<int> keys;
     for (unordered_map<int,vector<EncNGram> >::iterator iter = ngram_reverse_index.begin(); iter != ngram_reverse_index.end(); iter++) {
         keys.insert(iter->first);
@@ -492,7 +512,7 @@ std::set<int> EncGramIndexedModel::reverse_index_keys() {
 }
 
 
-int EncGramIndexedModel::reverse_index_size(const int i) {
+int IndexedPatternModel::reverse_index_size(const int i) {
     int s = 0;
     if (ngram_reverse_index.count(i)) s += ngram_reverse_index[i].size();
     if (skipgram_reverse_index.count(i)) s += skipgram_reverse_index[i].size();
@@ -500,16 +520,16 @@ int EncGramIndexedModel::reverse_index_size(const int i) {
     
 }
 
-int EncGramIndexedModel::reverse_index_size() {
+int IndexedPatternModel::reverse_index_size() {
     return ngram_reverse_index.size() + skipgram_reverse_index.size();
 }
 
-bool EncGramIndexedModel::reverse_index_haskey(const int i) const {
+bool IndexedPatternModel::reverse_index_haskey(const int i) const {
     return ((ngram_reverse_index.count(i) > 0) || (skipgram_reverse_index.count(i) > 0));
 }
 
 
-vector<EncAnyGram*> EncGramIndexedModel::reverse_index(const int i) {
+vector<EncAnyGram*> IndexedPatternModel::reverse_index(const int i) {
     vector<EncAnyGram*> revindex;
     if (ngram_reverse_index.count(i) > 0)
         for (vector<EncNGram>::iterator iter = ngram_reverse_index[i].begin(); iter != ngram_reverse_index[i].end(); iter++) {
@@ -523,7 +543,7 @@ vector<EncAnyGram*> EncGramIndexedModel::reverse_index(const int i) {
 }
 
 
-EncAnyGram* EncGramIndexedModel::get_reverse_index_item(const int key, const int i) {
+EncAnyGram* IndexedPatternModel::get_reverse_index_item(const int key, const int i) {
     const int s = ngram_reverse_index[key].size();
     if (i < s) {                
         vector<EncNGram>::iterator iter = ngram_reverse_index[key].begin() + i;
@@ -534,7 +554,7 @@ EncAnyGram* EncGramIndexedModel::get_reverse_index_item(const int key, const int
     }    
 }
 
-void EncGramIndexedModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, ostream *SKIPGRAMSOUT) {
+void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, ostream *SKIPGRAMSOUT) {
     const int grandtotal = ngramtokencount + skipgramtokencount;   
 
     for(unordered_map<EncNGram,NGramData>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
@@ -589,22 +609,52 @@ double SkipGramData::entropy() {
 }
 
 
+std::set<CorpusReference> SkipGramData::get_refs() const {
+    std::set<CorpusReference> s;
+    for (std::unordered_map<EncSkipGram,NGramData>::const_iterator iter = skipcontent.begin(); iter != skipcontent.end(); iter++) {
+        for (std::set<CorpusReference>::const_iterator iter2 = iter->second.refs.begin(); iter2 != iter->second.refs.end(); iter2++) {
+            s.insert(*iter2);
+        }
+    }
+    return s;
+}
 
 
 
-EncGramGraphModel::EncGramGraphModel(EncGramIndexedModel& model, bool DOPARENTS, bool DOCHILDREN) {
+
+int intersection( set<CorpusReference> & a, set<CorpusReference> & b) {    
+    //Jaccard co-occurrence    
+    int intersectioncount = 0;        
+    set<CorpusReference>::iterator iter_a = a.begin();    
+    set<CorpusReference>::iterator iter_b = b.begin();    
+    while ((iter_a !=a.end()) && (iter_b!=b.end())) {
+        if (*iter_a < *iter_b) { 
+            iter_a++;
+        } else if (*iter_b < *iter_a) {
+            iter_b++;
+        } else {  //equal
+            intersectioncount++;
+            iter_a++;
+            iter_b++;
+        }
+    }
+    return intersectioncount;
+}
+
+
+
+EncGramGraphModel::EncGramGraphModel(IndexedPatternModel * model, bool DOPARENTS, bool DOCHILDREN) {
+    this->model = model;
     this->DOPARENTS = DOPARENTS;
-    this->DOCHILDREN = DOCHILDREN;
-    
-    
+    this->DOCHILDREN = DOCHILDREN;        
     
     cerr << "Computing subsumption relations on n-grams" << endl;
-    for(std::unordered_map<EncNGram,NGramData >::iterator iter = model.ngrams.begin(); iter != model.ngrams.end(); iter++ ) {
+    for(std::unordered_map<EncNGram,NGramData >::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
         const EncNGram * ngram = &(iter->first);
         vector<EncNGram*> subngrams;
         ngram->subngrams(subngrams);
         for (vector<EncNGram*>::iterator iter2 = subngrams.begin(); iter2 != subngrams.end(); iter2++) {                
-            const EncAnyGram * subngram = model.get(*iter2);
+            const EncAnyGram * subngram = model->getkey(*iter2);
             if (subngram != NULL) {
                 //subgram exists, add relation:
                 if (DOCHILDREN)
@@ -620,7 +670,7 @@ EncGramGraphModel::EncGramGraphModel(EncGramIndexedModel& model, bool DOPARENTS,
     
 
     cerr << "Computing subsumption relations on skip-grams" << endl;
-    for(std::unordered_map<EncSkipGram,SkipGramData >::iterator iter = model.skipgrams.begin(); iter != model.skipgrams.end(); iter++ ) {        
+    for(std::unordered_map<EncSkipGram,SkipGramData >::iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {        
         const EncSkipGram * skipgram = &(iter->first);
         
         vector<EncNGram*> parts;
@@ -631,7 +681,7 @@ EncGramGraphModel::EncGramGraphModel(EncGramIndexedModel& model, bool DOPARENTS,
             ngram->subngrams(subngrams);
             for (vector<EncNGram*>::iterator iter3 = subngrams.begin(); iter3 != subngrams.end(); iter3++) {
                 //subgram exists, add relation:
-                const EncAnyGram * subngram = model.get(*iter3);
+                const EncAnyGram * subngram = model->getkey(*iter3);
                 if (subngram != NULL) {
                     if (DOCHILDREN)
                      rel_subsumption_children[skipgram].insert(subngram);
@@ -646,6 +696,31 @@ EncGramGraphModel::EncGramGraphModel(EncGramIndexedModel& model, bool DOPARENTS,
 
         
 }
+
+
+int EncGramGraphModel::xcount(const EncAnyGram* anygram) {
+    const AnyGramData* data = model->getdata(anygram);
+    if (data == NULL) throw "xcount: No such anygram";
+    const set<CorpusReference> allrefs = data->get_refs();
+        
+    //compute union of all parent references
+    set<CorpusReference> parentrefs;
+    for (std::unordered_set<const EncAnyGram*>::iterator iter = rel_subsumption_parents.begin(); iter != rel_subsumption_parents.end(); iter++) {
+        const EncAnyGram * parentdata = model->getdata(iter);
+        if (parentdata != NULL) {
+            const set<CorpusReference> parentrefs = parentdata->get_refs();
+            for (set<CorpusReference>::iterator iter2 = parentrefs.begin(); iter2 != parentrefs.end(); iter2++) {
+                parentrefs.insert(*iter2);
+            }
+        }        
+    }
+        
+    //compute: union - intersection
+    return allrefs.size() - intersection(allrefs, parentrefs);
+}
+
+
+
 
 /*
 EncGramGraphModel::EncGramGraphModel(const string & filename) {
@@ -722,7 +797,7 @@ void EncGramGraphModel::save(const string & filename) {
 
 /*
 
-EMAlignmentModel::EMAlignmentModel(EncGramIndexedModel & sourcemodel, EncGramIndexedModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD) {
+EMAlignmentModel::EMAlignmentModel(IndexedPatternModel & sourcemodel, IndexedPatternModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD) {
     int round = 0;    
     unsigned long c;
     double totaldivergence = 0;
@@ -801,6 +876,9 @@ EMAlignmentModel::EMAlignmentModel(EncGramIndexedModel & sourcemodel, EncGramInd
 }
 
 
+
+
+
 double CoocAlignmentModel::cooc( set<CorpusReference> & sourceindex, set<CorpusReference> & targetindex) {    
     //Jaccard co-occurrence    
     int intersectioncount = 0;    
@@ -825,7 +903,7 @@ double CoocAlignmentModel::cooc( set<CorpusReference> & sourceindex, set<CorpusR
 }
 
 
-int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, set<int> & sourceindex, EncGramIndexedModel & targetmodel) {        
+int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, set<int> & sourceindex, IndexedPatternModel & targetmodel) {        
     int c = 0;
     double bestcooc = 0;
     for (set<int>::iterator iter2 = sourceindex.begin(); iter2 != sourceindex.end(); iter2++) {
