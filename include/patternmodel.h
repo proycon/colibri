@@ -84,6 +84,7 @@ class EncGramIndexedModel {
     int tokens() const { return ngramtokencount + skipgramtokencount; }
     
     bool exists(const EncAnyGram* key) const;
+    const EncAnyGram* get(const EncAnyGram* key);
     int count(const EncAnyGram* key);
     double freq(const EncAnyGram* key);    
     double relfreq(const EncAnyGram* key);        
@@ -111,24 +112,26 @@ class EncGramIndexedModel {
 //typedef std::unordered_map<EncNGram,set<CorpusReference> > freqlist;
 //typedef std::unordered_map<EncSkipGram,set<CorpusReference> > skipgram_freqlist;
 
-/*
+
+
 
 class EncGramGraphModel {    
    private:    
-    std::unordered_map<EncAnyGram,std::unordered_set<EncAnyGram> > rel_subsumption_children;
-    //std::unordered_map<EncAnyGram,std::unordered_set<EncAnyGram> > rel_subsumption_parents; //reverse
-    
+    bool DOPARENTS;
+    bool DOCHILDREN;        
     //std::unordered_map<EncNGram,std::unordered_set<EncSkipGram> > rel_inskips; //ngrams pluggable in gaps in skipgrams (reverse index of skipgram.data)
         
    public:
-    EncGramGraphModel(EncGramIndexedModel& model); //compute entire model    
-    EncGramGraphModel(const std::string & filename);
+    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_children;    
+    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_parents;
+   
+    EncGramGraphModel(EncGramIndexedModel& model, bool DOPARENTS=true,bool DOCHILDREN=false); //compute entire model
+    //EncGramGraphModel(const std::string & filename);
         
 
-    void save(const std::string & filename);
+    //void save(const std::string & filename);
 };
 
-*/
 
 
 /*

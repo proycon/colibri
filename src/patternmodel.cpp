@@ -79,7 +79,7 @@ EncGramIndexedModel::EncGramIndexedModel(const string & corpusfile, int MAXLENGT
             
             const int l = countwords(line, linesize);            
             if (l > 256) {
-                cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping!";
+                cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping!" << endl;
                 continue;
             }
             
@@ -420,6 +420,23 @@ bool EncGramIndexedModel::exists(const EncAnyGram* key) const {
     return false;
 }
 
+const EncAnyGram* EncGramIndexedModel::get(const EncAnyGram* key) {
+    if (key->gapcount() == 0) {
+        std::unordered_map<EncNGram,NGramData >::iterator iter = ngrams.find(*( (EncNGram*) key) );
+        if (iter != ngrams.end()) {
+            return &iter->first;
+        } else {
+            return NULL;
+        }
+    } else {
+        std::unordered_map<EncSkipGram,SkipGramData >::iterator iter = skipgrams.find(*( (EncSkipGram*) key) );
+        if (iter != skipgrams.end()) {
+            return &iter->first;
+        } else {
+            return NULL;
+        }        
+    }
+}
 
 
 int EncGramIndexedModel::count(const EncAnyGram* key) {    
@@ -574,56 +591,63 @@ double SkipGramData::entropy() {
 
 
 
-/*
-EncGramGraphModel::EncGramGraphModel(EncGramModel& model) {
+
+EncGramGraphModel::EncGramGraphModel(EncGramIndexedModel& model, bool DOPARENTS, bool DOCHILDREN) {
+    this->DOPARENTS = DOPARENTS;
+    this->DOCHILDREN = DOCHILDREN;
     
-    for (int n = 2; n <= model.maxlength(); n++) {
-        cerr << "Computing subsumption relations on " << n << "-grams" << endl;
-        for(freqlist::iterator iter = model.ngrams[n].begin(); iter != model.ngrams[n].end(); iter++ ) {
-            const EncNGram * ngram = &(iter->first);
-            vector<EncNGram*> subngrams;
-            ngram->subngrams(subngrams);
-            for (vector<EncNGram*>::iterator iter2 = subngrams.begin(); iter2 != subngrams.end(); iter2++) {
-                const EncAnyGram * subngram = *iter2;
-                if (model.exists(subngram)) {
-                    //subgram exists, add relation:
-                    rel_subsumption_children[*ngram].insert(*subngram);
-                                        
-                    //reverse:
-                    //rel_subsumption_parents[*subgram].insert(*ngram);
-                }
-                //free memory:
-                delete subngram;
-            }        
-        }
-    }   
     
-    for (int n = 2; n <= model.maxlength(); n++) {
-        cerr << "Computing subsumption relations on skip-" << n << "-grams" << endl;
-        for(skipgrammap::iterator iter = model.skipgrams[n].begin(); iter != model.skipgrams[n].end(); iter++ ) {        
-            const EncSkipGram * skipgram = &(iter->first);
-            
-            vector<EncNGram*> parts;
-            skipgram->parts(parts);
-            for (vector<EncNGram*>::iterator iter2 = parts.begin(); iter2 != parts.end(); iter2++) {
-                const EncNGram * ngram = *iter2;
-                vector<EncNGram*> subngrams;
-                ngram->subngrams(subngrams);
-                for (vector<EncNGram*>::iterator iter3 = subngrams.begin(); iter3 != subngrams.end(); iter3++) {
-                    //subgram exists, add relation:
-                    const EncAnyGram * subngram = *iter3;
-                    rel_subsumption_children[*skipgram].insert(*subngram);
-                    delete subngram;
-                }
-                delete ngram;
-            }    
-        }
+    
+    cerr << "Computing subsumption relations on n-grams" << endl;
+    for(std::unordered_map<EncNGram,NGramData >::iterator iter = model.ngrams.begin(); iter != model.ngrams.end(); iter++ ) {
+        const EncNGram * ngram = &(iter->first);
+        vector<EncNGram*> subngrams;
+        ngram->subngrams(subngrams);
+        for (vector<EncNGram*>::iterator iter2 = subngrams.begin(); iter2 != subngrams.end(); iter2++) {                
+            const EncAnyGram * subngram = model.get(*iter2);
+            if (subngram != NULL) {
+                //subgram exists, add relation:
+                if (DOCHILDREN)
+                 rel_subsumption_children[ngram].insert(subngram);
+                                    
+                //reverse:
+                if (DOPARENTS)
+                 rel_subsumption_parents[subngram].insert(ngram);
+            }
+        }                  
     }
     
     
-     
+
+    cerr << "Computing subsumption relations on skip-grams" << endl;
+    for(std::unordered_map<EncSkipGram,SkipGramData >::iterator iter = model.skipgrams.begin(); iter != model.skipgrams.end(); iter++ ) {        
+        const EncSkipGram * skipgram = &(iter->first);
+        
+        vector<EncNGram*> parts;
+        skipgram->parts(parts);
+        for (vector<EncNGram*>::iterator iter2 = parts.begin(); iter2 != parts.end(); iter2++) {
+            const EncNGram * ngram = *iter2;
+            vector<EncNGram*> subngrams;
+            ngram->subngrams(subngrams);
+            for (vector<EncNGram*>::iterator iter3 = subngrams.begin(); iter3 != subngrams.end(); iter3++) {
+                //subgram exists, add relation:
+                const EncAnyGram * subngram = model.get(*iter3);
+                if (subngram != NULL) {
+                    if (DOCHILDREN)
+                     rel_subsumption_children[skipgram].insert(subngram);
+                     
+                    if (DOPARENTS)
+                     rel_subsumption_parents[subngram].insert(skipgram);
+                }
+            }
+            delete ngram;
+        }          
+    }
+
+        
 }
 
+/*
 EncGramGraphModel::EncGramGraphModel(const string & filename) {
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
@@ -693,10 +717,10 @@ void EncGramGraphModel::save(const string & filename) {
     
 }
 
+*/
 
 
-
-
+/*
 
 EMAlignmentModel::EMAlignmentModel(EncGramIndexedModel & sourcemodel, EncGramIndexedModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD) {
     int round = 0;    
