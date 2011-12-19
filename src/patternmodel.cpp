@@ -715,12 +715,13 @@ int GraphPatternModel::xcount(const EncAnyGram* anygram) {
         
     //compute union of all parent references
     set<CorpusReference> parentrefs;
-    for (std::unordered_set<const EncAnyGram*>::iterator iter = rel_subsumption_parents.begin(); iter != rel_subsumption_parents.end(); iter++) {
-        const EncAnyGram * parentdata = model->getdata(iter);
+    for (std::unordered_set<const EncAnyGram*>::iterator iter = rel_subsumption_parents[anygram].begin(); iter != rel_subsumption_parents[anygram].end(); iter++) {
+        const AnyGramData * parentdata = model->getdata(*iter);
         if (parentdata != NULL) {
             const set<CorpusReference> parentrefs = parentdata->get_refs();
             for (set<CorpusReference>::iterator iter2 = parentrefs.begin(); iter2 != parentrefs.end(); iter2++) {
-                parentrefs.insert(*iter2);
+                const CorpusReference r = *iter2;
+                parentrefs.insert(r);
             }
         }        
     }

@@ -62,13 +62,13 @@ class SkipGramData: public AnyGramData {
 class ModelExtension {
    public:
     virtual void readheader(std::istream * in) =0;
-    virtual void readngram(std::istream * in, EncNGram & ngram) =0;
-    virtual void readskipgram(std::istream * in, EncSkipGram & skipgram) =0;
+    virtual void readngram(std::istream * in, const EncNGram & ngram) =0;
+    virtual void readskipgram(std::istream * in, const EncSkipGram & skipgram) =0;
     virtual void readfooter(std::istream * in) =0;    
     
     virtual void writeheader(std::ostream * out) =0;
-    virtual void writengram(std::ostream * out, EncNGram & ngram) =0;
-    virtual void writeskipgram(std::ostream * out, EncSkipGram & skipgram) =0;
+    virtual void writengram(std::ostream * out, const EncNGram & ngram) =0;
+    virtual void writeskipgram(std::ostream * out, const EncSkipGram & skipgram) =0;
     virtual void writefooter(std::ostream * out) =0;
 };
 
