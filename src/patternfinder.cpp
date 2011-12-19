@@ -23,8 +23,7 @@ void usage() {
     cerr << "\t-S <number>      Skip type threshold: only skipgrams with x possible types for the skip will be considered, otherwise the skipgram will be pruned  (default: 2, works only with -L enabled)" << endl;
     cerr << "\t-B               Do NOT consider skipgrams that begin with a skip and have no further skips" << endl;
     cerr << "\t-E               Do NOT consider skipgrams that end in a skip and have no further skips" << endl;
-    cerr << "\t-o <string>      Output prefix" << endl;
-        
+    cerr << "\t-o <string>      Output prefix" << endl;        
 }
 
 
