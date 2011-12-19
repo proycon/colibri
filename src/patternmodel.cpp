@@ -657,6 +657,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
     this->model = model;
     this->DOPARENTS = DOPARENTS;
     this->DOCHILDREN = DOCHILDREN;        
+    DELETEMODEL = false;
     
     cerr << "Computing subsumption relations on n-grams" << endl;
     for(std::unordered_map<EncNGram,NGramData >::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
@@ -732,7 +733,28 @@ int GraphPatternModel::xcount(const EncAnyGram* anygram) {
 }
 
 
+void GraphPatternModel::readheader(std::istream * in) {
+    in->read((char*) &DOPARENTS,  sizeof(bool)); //1 byte, not 1 bit
+    in->read((char*) &DOCHILDREN, sizeof(bool)); //1 byte, not 1 bit
+}
 
+void GraphPatternModel::writeheader(std::ostream * out) {
+    out->write((char*) &DOPARENTS,  sizeof(bool)); //1 byte, not 1 bit
+    out->write((char*) &DOCHILDREN, sizeof(bool)); //1 byte, not 1 bit
+}
+
+void GraphPatternModel::readngram(std::istream * in, const EncNGram & ngram) {
+    
+}
+
+GraphPatternModel::GraphPatternModel(const string & filename) {
+    DELETEMODEL = true;
+    model = new IndexedPatternModel(filename, this);
+}
+
+GraphPatternModel::~GraphPatternModel() {
+    if (DELETEMODEL) delete model;
+}
 
 /*
 EncGramGraphModel::EncGramGraphModel(const string & filename) {

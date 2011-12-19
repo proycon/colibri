@@ -107,39 +107,40 @@ class EncSkipGram: public EncAnyGram {
 namespace std {
 
     template <>
-    struct hash<EncAnyGram> {
+    struct hash<const EncAnyGram> {
      public: 
-            size_t operator()(EncAnyGram anygram) const throw() {            
+            size_t operator()(const EncAnyGram anygram) const throw() {            
                 return anygram.hash();
             }
     };
     
     template <>
-    struct hash<EncAnyGram*> {
+    struct hash<const EncAnyGram*> {
      public: 
-            size_t operator()(EncAnyGram * anygram) const throw() {            
+            size_t operator()(const EncAnyGram * anygram) const throw() {            
                 return anygram->hash();
             }
     };
     
-    template <>
-    struct hash<pair<EncAnyGram*,EncAnyGram*>> {
-     public: 
-            size_t operator()(pair<EncAnyGram*,EncAnyGram*> p) const throw() {            
-                return p.first->hash() ^ p.second->hash();
-            }
-    };
-        
+
     
     
     template <>
-    struct hash<EncNGram> {
+    struct hash<const EncNGram> {
      public: 
-            size_t operator()(EncNGram ngram) const throw() {            
+            size_t operator()(const EncNGram ngram) const throw() {            
                 return ngram.hash();
             }
     };
     
+
+    template <>
+    struct hash<const EncSkipGram> {
+     public: 
+          size_t operator()(const EncSkipGram skipgram) const throw() {                            
+              return skipgram.hash();              
+          }
+    };
 
     template <>
     struct hash<EncSkipGram> {
@@ -147,6 +148,6 @@ namespace std {
           size_t operator()(EncSkipGram skipgram) const throw() {                            
               return skipgram.hash();              
           }
-    };
+    };    
 
 }

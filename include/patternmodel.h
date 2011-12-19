@@ -96,8 +96,8 @@ class IndexedPatternModel {
     int typecount[10]; //relative token count
     int skiptypecount[10];
    public:
-    std::unordered_map<EncNGram,NGramData > ngrams;
-    std::unordered_map<EncSkipGram,SkipGramData > skipgrams;    
+    std::unordered_map<const EncNGram,NGramData > ngrams;
+    std::unordered_map<const EncSkipGram,SkipGramData > skipgrams;    
     
     std::unordered_map< int,std::vector<EncNGram> > ngram_reverse_index;
     std::unordered_map< int,std::vector<EncSkipGram> > skipgram_reverse_index;
@@ -142,27 +142,45 @@ class IndexedPatternModel {
 
 
 
-class GraphPatternModel: public ModelExtension {    
-   private:    
+class GraphPatternModel: public ModelExtension {               
+   protected:
     bool DOPARENTS;
-    bool DOCHILDREN;        
-    //std::unordered_map<EncNGram,std::unordered_set<EncSkipGram> > rel_inskips; //ngrams pluggable in gaps in skipgrams (reverse index of skipgram.data)
-        
+    bool DOCHILDREN;
+    
+    bool DELETEMODEL;
    public:
+   
     IndexedPatternModel * model;
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_children;    
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_parents;
    
     GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=false); //compute entire model
-    //EncGramGraphModel(const std::string & filename);
+    GraphPatternModel(const std::string & filename);
+    ~GraphPatternModel();
     
     int xcount(const EncAnyGram* anygram); //exclusive count    
-    
         
-
-    //void save(const std::string & filename);
+    void save(const std::string & filename) { model->save(filename, this); }
+    
+    virtual void readheader(std::istream * in);
+    virtual void readngram(std::istream * in, const EncNGram & ngram);
+    virtual void readskipgram(std::istream * in, const EncSkipGram & skipgram);
+    virtual void readfooter(std::istream * in) {};    
+    
+    virtual void writeheader(std::ostream * out);
+    virtual void writengram(std::ostream * out, const EncNGram & ngram);
+    virtual void writeskipgram(std::ostream * out, const EncSkipGram & skipgram);
+    virtual void writefooter(std::ostream * out) {};    
 };
 
+
+class CoocPatternModel {
+    /* Read only model, reads graphpatternmodel in a simplified, less memory intensive representation for Co-occurrence alignment */
+    
+    public:
+     CoocPatternModel(const std::string & filename); //read a graph pattern model as cooc pattern model
+     
+};
 
 
 /*
