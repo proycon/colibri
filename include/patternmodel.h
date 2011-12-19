@@ -59,6 +59,20 @@ class SkipGramData: public AnyGramData {
 };
 
 
+class ModelExtension {
+   public:
+    virtual void readheader(std::istream * in) =0;
+    virtual void readngram(std::istream * in, EncNGram & ngram) =0;
+    virtual void readskipgram(std::istream * in, EncSkipGram & skipgram) =0;
+    virtual void readfooter(std::istream * in) =0;    
+    
+    virtual void writeheader(std::ostream * out) =0;
+    virtual void writengram(std::ostream * out, EncNGram & ngram) =0;
+    virtual void writeskipgram(std::ostream * out, EncSkipGram & skipgram) =0;
+    virtual void writefooter(std::ostream * out) =0;
+};
+
+
 class IndexedPatternModel {    
    private:
     int MINTOKENS; // = 2;
@@ -88,7 +102,7 @@ class IndexedPatternModel {
     std::unordered_map< int,std::vector<EncNGram> > ngram_reverse_index;
     std::unordered_map< int,std::vector<EncSkipGram> > skipgram_reverse_index;
         
-    IndexedPatternModel(const std::string & filename, bool DOREVERSEINDEX = false);
+    IndexedPatternModel(const std::string & filename, ModelExtension * modelextension = NULL, bool DOREVERSEINDEX = false);
     IndexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOREVERSEINDEX = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
     
     int maxlength() const { return MAXLENGTH; }
@@ -114,7 +128,7 @@ class IndexedPatternModel {
     EncAnyGram* get_reverse_index_item(const int, const int);
     
     
-    void save(const std::string & filename);
+    void save(const std::string & filename, ModelExtension * modelextension = NULL);
     
     size_t hash();
     
@@ -128,8 +142,7 @@ class IndexedPatternModel {
 
 
 
-
-class EncGramGraphModel {    
+class GraphPatternModel: public ModelExtension {    
    private:    
     bool DOPARENTS;
     bool DOCHILDREN;        
@@ -140,7 +153,7 @@ class EncGramGraphModel {
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_children;    
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_parents;
    
-    EncGramGraphModel(IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=false); //compute entire model
+    GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=false); //compute entire model
     //EncGramGraphModel(const std::string & filename);
     
     int xcount(const EncAnyGram* anygram); //exclusive count    

@@ -280,7 +280,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
 }
 
 
-IndexedPatternModel::IndexedPatternModel(const string & filename, bool DOREVERSEINDEX) {
+IndexedPatternModel::IndexedPatternModel(const string & filename, ModelExtension * modelextension, bool DOREVERSEINDEX) {
     const bool DEBUG = true;
     this->DOREVERSEINDEX = DOREVERSEINDEX;
     this->DOSKIPCONTENT = DOSKIPCONTENT;    
@@ -304,6 +304,8 @@ IndexedPatternModel::IndexedPatternModel(const string & filename, bool DOREVERSE
     uint64_t totaltypes;
     f.read( (char*) &totaltypes, sizeof(uint64_t));            
     
+    if (modelextension != NULL) modelextension->readheader(&f);
+    
     for (int i = 0; i < totaltypes; i++) {           
         char gapcount;
         /*unsigned char check;
@@ -324,6 +326,7 @@ IndexedPatternModel::IndexedPatternModel(const string & filename, bool DOREVERSE
             for (int j = 0; j < count; j++) {
                 CorpusReference ref = CorpusReference(&f); //read from file
                 ngrams[ngram].refs.insert(ref);
+                if (modelextension != NULL) modelextension->readngram(&f, ngram);
                 /*if (DOREVERSEINDEX) {
                     bool found = false;
                     for (int k = 0; k < ngram_reverse_index[index].size(); k++) if (ngram_reverse_index[index][k] == ngram) { found = true; break; };
@@ -353,6 +356,7 @@ IndexedPatternModel::IndexedPatternModel(const string & filename, bool DOREVERSE
                     CorpusReference ref = CorpusReference(&f); //read from file
                     skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
                 }
+                if (modelextension != NULL) modelextension->readskipgram(&f, skipgram);
             }
             /*
                 if (DOREVERSEINDEX) {
@@ -364,12 +368,14 @@ IndexedPatternModel::IndexedPatternModel(const string & filename, bool DOREVERSE
         }
         if (DEBUG)  cerr << endl;      //DEBUG  
     }
+    if (modelextension != NULL) modelextension->readfooter(&f);
+    
     f.close();
 }
 
 
 
-void IndexedPatternModel::save(const std::string & filename) {
+void IndexedPatternModel::save(const std::string & filename, ModelExtension * modelextension) {
     ofstream f;
     f.open(filename.c_str(), ios::out | ios::binary);
     
@@ -381,6 +387,7 @@ void IndexedPatternModel::save(const std::string & filename) {
     
     f.write( (char*) &totaltokens, sizeof(uint64_t) );
     f.write( (char*) &totaltypes, sizeof(uint64_t) );
+    if (modelextension != NULL) modelextension->writeheader(&f);
     
     for(unordered_map<EncNGram,NGramData>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {        
         //f.write((char*) &check, sizeof(char)); 
@@ -391,7 +398,9 @@ void IndexedPatternModel::save(const std::string & filename) {
         for (set<CorpusReference>::iterator iter2 = iter->second.refs.begin(); iter2 != iter->second.refs.end(); iter2++) {                    
             iter2->writeasbinary(&f);
         }                
+        if (modelextension != NULL) modelextension->writengram(&f, iter->first);
     }    
+    
 
              
     for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {                            
@@ -405,8 +414,9 @@ void IndexedPatternModel::save(const std::string & filename) {
             iter2->first.writeasbinary(&f);
             iter2->second.writeasbinary(&f);
         }
+        if (modelextension != NULL) modelextension->writeskipgram(&f, iter->first);
     }            
-
+    if (modelextension != NULL) modelextension->writefooter(&f);
     f.close();    
 }
 
@@ -643,7 +653,7 @@ int intersection( set<CorpusReference> & a, set<CorpusReference> & b) {
 
 
 
-EncGramGraphModel::EncGramGraphModel(IndexedPatternModel * model, bool DOPARENTS, bool DOCHILDREN) {
+GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS, bool DOCHILDREN) {
     this->model = model;
     this->DOPARENTS = DOPARENTS;
     this->DOCHILDREN = DOCHILDREN;        
@@ -698,7 +708,7 @@ EncGramGraphModel::EncGramGraphModel(IndexedPatternModel * model, bool DOPARENTS
 }
 
 
-int EncGramGraphModel::xcount(const EncAnyGram* anygram) {
+int GraphPatternModel::xcount(const EncAnyGram* anygram) {
     const AnyGramData* data = model->getdata(anygram);
     if (data == NULL) throw "xcount: No such anygram";
     const set<CorpusReference> allrefs = data->get_refs();
