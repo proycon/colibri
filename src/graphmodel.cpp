@@ -109,18 +109,22 @@ int main( int argc, char *argv[] ) {
             ClassDecoder classdecoder = ClassDecoder(classfile);
             
             cerr << "Decoding graph" << endl;
-            graphmodel.decode(classdecoder, (ostream*) &stdout, (ostream*) &stdout);
+            graphmodel.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
         }        
     } else {
-        cerr << "Loading graph model " << modelfile << endl;
-        GraphPatternModel graphmodel = GraphPatternModel(modelfile, patternmodelfile);
-        
         if (!classfile.empty()) {
+            
+            cerr << "Loading graph model " << modelfile << endl;
+            GraphPatternModel graphmodel = GraphPatternModel(modelfile, patternmodelfile);        
+        
             cerr << "Loading class decoder " << classfile << endl;
             ClassDecoder classdecoder = ClassDecoder(classfile);
             
             cerr << "Decoding graph" << endl;
-            graphmodel.decode(classdecoder, (ostream*) &stdout, (ostream*) &stdout);
+            graphmodel.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
+        } else {
+            cerr << "No classer specified" << endl;
+            exit(4);
         }
     }
     return 0;

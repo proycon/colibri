@@ -353,7 +353,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
 IndexedPatternModel::IndexedPatternModel(const string & filename, bool DOREVERSEINDEX) {    
     const bool DEBUG = true;
     this->DOREVERSEINDEX = DOREVERSEINDEX;
-    //this->DOSKIPCONTENT = DOSKIPCONTENT;    
+    this->DOSKIPCONTENT = DOSKIPCONTENT;    
     
     ngramtokencount = 0;
     skipgramtokencount = 0; 
@@ -885,11 +885,13 @@ GraphPatternModel::~GraphPatternModel() {
 void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, ostream *SKIPGRAMSOUT) {
     const int grandtotal = model->tokens();
 
-    for(unordered_map<EncNGram,NGramData>::iterator iter = model->ngrams.begin(); iter !=  model->ngrams.end(); iter++ ) {
+    *NGRAMSOUT << "test" << endl;
+    cerr << "Outputting n-grams" << endl;    
+    for(unordered_map<EncNGram,NGramData>::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
        const double freq1 = (double) iter->second.count() / model->tokencount[iter->first.n()];
        const double freq2 = (double) iter->second.count() / model->ngramtokencount;
        const double freq3 = (double) iter->second.count() / grandtotal;
-       const EncNGram ngram = iter->first;
+       const EncNGram ngram = iter->first;       
         *NGRAMSOUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t';
         if (DOXCOUNT) {            
             if (data_xcount.count( (const EncAnyGram*) &ngram ) ) {
@@ -908,6 +910,7 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, 
    
 
    if (SKIPGRAMSOUT != NULL) {
+       cerr << "Outputting skip-grams" << endl;
        for(unordered_map<EncSkipGram,SkipGramData>::iterator iter =  model->skipgrams.begin(); iter !=  model->skipgrams.end(); iter++ ) {
            const double freq1 = (double) iter->second.count() / model->skiptokencount[iter->first.n()]; 
            const double freq2 = (double) iter->second.count() / model->skipgramtokencount;           
@@ -918,9 +921,9 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, 
                 if (data_xcount.count( (const EncAnyGram*) &skipgram ) ) {
                     int xc = data_xcount[(const EncAnyGram*) &skipgram ];
                     double xratio = data_xcount[(const EncAnyGram*) &skipgram ] / (double) iter->second.count() ;
-                    *NGRAMSOUT << xc << '\t' << xratio << '\t';                
+                    *SKIPGRAMSOUT << xc << '\t' << xratio << '\t';                
                 } else {            
-                    *NGRAMSOUT << "nan" << '\t' << "nan" << '\t';
+                    *SKIPGRAMSOUT << "nan" << '\t' << "nan" << '\t';
                 }
             }           
            const int skiptypes = iter->second.skipcontent.size();               

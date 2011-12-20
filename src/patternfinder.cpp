@@ -138,11 +138,7 @@ int main( int argc, char *argv[] ) {
         strip_extension(outputprefix,"clsenc");
         strip_extension(outputprefix,"txt");    
     }
-    
-    if (!classfile.empty()) {
-        
-    }
-    
+
     
     if (!corpusfile.empty()) {
         cerr << "Computing model on " << corpusfile << endl;
@@ -157,7 +153,7 @@ int main( int argc, char *argv[] ) {
             cerr << "Loading class decoder " << classfile << endl;
             ClassDecoder classdecoder = ClassDecoder(classfile);
             cerr << "Decoding" << endl;
-            model.decode(classdecoder, (ostream*) &stdout, (ostream*) &stdout);   
+            model.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);   
         }
     } else if ( (!modelfile.empty()) && (!classfile.empty()) ) {
         IndexedPatternModel model = IndexedPatternModel(modelfile);
@@ -165,7 +161,7 @@ int main( int argc, char *argv[] ) {
             cerr << "Loading class decoder " << classfile << endl;
             ClassDecoder classdecoder = ClassDecoder(classfile);
             cerr << "Decoding" << endl;
-            model.decode(classdecoder, (ostream*) &stdout, (ostream*) &stdout);   
+            model.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);   
         }
     }
 
