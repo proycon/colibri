@@ -100,17 +100,20 @@ class IndexedPatternModel: public ModelReader, public ModelWriter {
     bool DOINITIALONLYSKIP; //= true;
     bool DOFINALONLYSKIP; //= true;
 
-    unsigned long ngramtokencount;
-    unsigned long skipgramtokencount; 
+    
     int ngramtypecount;
     int skipgramtypecount;
     
+
+   public:
+    unsigned long ngramtokencount;
+    unsigned long skipgramtokencount; 
     
     int tokencount[10]; //relative token count
     int skiptokencount[10];
     int typecount[10]; //relative token count
-    int skiptypecount[10];
-   public:
+    int skiptypecount[10];   
+   
     std::unordered_map<const EncNGram,NGramData > ngrams;
     std::unordered_map<const EncSkipGram,SkipGramData > skipgrams;    
     
@@ -228,12 +231,15 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     virtual void writeskipgram(std::ostream * out, const EncSkipGram & skipgram);
     virtual void writeskipgrams(std::ostream * out);
     virtual void writefooter(std::ostream * out) {};    
+    
+    void decode(ClassDecoder & classdecoder, std::ostream *NGRAMSOUT, std::ostream *SKIPGRAMSOUT);    
 };
 
 /*
-struct EnhancedCountData {
+struct IndexedPatternModel {    
     uint32_t count;
     uint32_t xcount;
+    set<uint32_t> sentencerefs;
 };
 
 class EnhancedCountPatternModel: public ModelReader {

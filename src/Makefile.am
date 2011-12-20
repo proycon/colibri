@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -I@top_srcdir@/include
 
-bin_PROGRAMS = classdecode modeldecode patternfinder graphmodel #aligner
+bin_PROGRAMS = classdecode patternfinder graphmodel #aligner
 
 lib_LTLIBRARIES = libcolibri.la
 
@@ -11,11 +11,6 @@ classdecode_CXXFLAGS = -Wall -std=c++0x
 classdecode_LDADD = libcolibri.la
 classdecode_SOURCES = classdecode.cpp
 classdecode_LDFLAGS = -static
-
-modeldecode_CXXFLAGS = -Wall -std=c++0x
-modeldecode_LDADD = libcolibri.la
-modeldecode_SOURCES = modeldecode.cpp
-modeldecode_LDFLAGS = -static
 
 graphmodel_CXXFLAGS = -Wall -std=c++0x
 graphmodel_LDADD = libcolibri.la

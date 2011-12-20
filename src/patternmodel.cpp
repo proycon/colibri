@@ -706,7 +706,6 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
     cerr << "Computing relations on skip-grams" << endl;
     for(std::unordered_map<EncSkipGram,SkipGramData >::iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {        
         const EncSkipGram * skipgram = &(iter->first);
-        
         vector<EncNGram*> parts;
         skipgram->parts(parts);
         for (vector<EncNGram*>::iterator iter2 = parts.begin(); iter2 != parts.end(); iter2++) {
@@ -882,6 +881,65 @@ GraphPatternModel::~GraphPatternModel() {
     if (DELETEMODEL) delete model;
 }
 
+
+void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, ostream *SKIPGRAMSOUT) {
+    const int grandtotal = model->tokens();
+
+    for(unordered_map<EncNGram,NGramData>::iterator iter = model->ngrams.begin(); iter !=  model->ngrams.end(); iter++ ) {
+       const double freq1 = (double) iter->second.count() / model->tokencount[iter->first.n()];
+       const double freq2 = (double) iter->second.count() / model->ngramtokencount;
+       const double freq3 = (double) iter->second.count() / grandtotal;
+       const EncNGram ngram = iter->first;
+        *NGRAMSOUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t';
+        if (DOXCOUNT) {            
+            if (data_xcount.count( (const EncAnyGram*) &ngram ) ) {
+                int xc = data_xcount[(const EncAnyGram*) &ngram ];
+                double xratio = data_xcount[(const EncAnyGram*) &ngram ] / (double) iter->second.count() ;
+                *NGRAMSOUT << xc << '\t' << xratio << '\t';                
+            } else {            
+                *NGRAMSOUT << "nan" << '\t' << "nan" << '\t';
+            }
+        }
+        for (set<CorpusReference>::iterator iter2 = iter->second.refs.begin() ; iter2 != iter->second.refs.end(); iter2++) {
+            *NGRAMSOUT << iter2->sentence << ':' << (int) iter2->token << ' ';
+        }                
+        *NGRAMSOUT << endl;
+    }
+   
+
+   if (SKIPGRAMSOUT != NULL) {
+       for(unordered_map<EncSkipGram,SkipGramData>::iterator iter =  model->skipgrams.begin(); iter !=  model->skipgrams.end(); iter++ ) {
+           const double freq1 = (double) iter->second.count() / model->skiptokencount[iter->first.n()]; 
+           const double freq2 = (double) iter->second.count() / model->skipgramtokencount;           
+           const double freq3 = (double) iter->second.count() / grandtotal;                          
+           const EncSkipGram skipgram = iter->first;                              
+           *SKIPGRAMSOUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t';
+            if (DOXCOUNT) {            
+                if (data_xcount.count( (const EncAnyGram*) &skipgram ) ) {
+                    int xc = data_xcount[(const EncAnyGram*) &skipgram ];
+                    double xratio = data_xcount[(const EncAnyGram*) &skipgram ] / (double) iter->second.count() ;
+                    *NGRAMSOUT << xc << '\t' << xratio << '\t';                
+                } else {            
+                    *NGRAMSOUT << "nan" << '\t' << "nan" << '\t';
+                }
+            }           
+           const int skiptypes = iter->second.skipcontent.size();               
+           const double entropy = iter->second.entropy();
+           *SKIPGRAMSOUT << skiptypes << '\t' << iter->second.count() << '\t' << entropy << '\t';
+            for(unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {
+                *SKIPGRAMSOUT << iter2->first.decode(classdecoder) << '|' << iter2->second.count() << '|';
+                for (set<CorpusReference>::iterator iter3 = iter2->second.refs.begin() ; iter3 != iter2->second.refs.end(); iter3++) {
+                    *SKIPGRAMSOUT << iter3->sentence << ':' << (int) iter3->token;        
+                    *SKIPGRAMSOUT << ',';
+                    //if (iter3 != iter2->second.refs.end() - 1) 
+                }
+                //MAYBE TODO: output references?
+            }
+           *SKIPGRAMSOUT << endl;
+       }
+    }
+
+}
 
 
 

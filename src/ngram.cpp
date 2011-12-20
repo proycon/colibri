@@ -445,8 +445,8 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
             if (prevnull) {                            
                 prevnull = false;                
             } else {                
-                prevnull = true;                
-                container.push_back( new EncNGram(data + begin,i-begin) );
+                prevnull = true;                                
+                if (i > begin) container.push_back( new EncNGram(data + begin,i-begin) );
                 begin = i+1;
                 count++;
             }
@@ -454,8 +454,8 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
             prevnull = false;
         }        
     }
-    if (begin < _size - 1) {
-        container.push_back( new EncNGram(data + begin,_size-begin) );
+    if (begin < _size - 1) {        
+        container.push_back( new EncNGram(data + begin,_size-begin) );        
     }
     return count;
 }
