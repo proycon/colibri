@@ -54,7 +54,7 @@ class SkipGramData: public AnyGramData {
        return _count;
     }
     SkipGramData() { _count = 0; }
-    double entropy();
+    double entropy() const;
     std::set<CorpusReference> get_refs() const;
 };
 
