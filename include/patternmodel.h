@@ -59,21 +59,36 @@ class SkipGramData: public AnyGramData {
 };
 
 
-class ModelExtension {
+class ModelReader {
    public:
-    virtual void readheader(std::istream * in) =0;
+    virtual uint64_t id() =0;
+    virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes) =0;
     virtual void readngram(std::istream * in, const EncNGram & ngram) =0;
     virtual void readskipgram(std::istream * in, const EncSkipGram & skipgram) =0;
     virtual void readfooter(std::istream * in) =0;    
     
+    virtual void readfile(const std::string & filename);
+};
+
+class ModelWriter {
+   public:
+    virtual uint64_t id() =0;    
     virtual void writeheader(std::ostream * out) =0;
+    virtual void writengrams(std::ostream * out) =0;
     virtual void writengram(std::ostream * out, const EncNGram & ngram) =0;
+    virtual void writeskipgrams(std::ostream * out) =0;
     virtual void writeskipgram(std::ostream * out, const EncSkipGram & skipgram) =0;
     virtual void writefooter(std::ostream * out) =0;
+    
+    virtual uint64_t tokens() const =0;
+    virtual uint64_t types() const =0;
+    virtual void writefile(const std::string & filename);
 };
 
 
-class IndexedPatternModel {    
+
+
+class IndexedPatternModel: public ModelReader, public ModelWriter {    
    private:
     int MINTOKENS; // = 2;
     int MINSKIPTOKENS; // = 2;
@@ -102,13 +117,13 @@ class IndexedPatternModel {
     std::unordered_map< int,std::vector<EncNGram> > ngram_reverse_index;
     std::unordered_map< int,std::vector<EncSkipGram> > skipgram_reverse_index;
         
-    IndexedPatternModel(const std::string & filename, ModelExtension * modelextension = NULL, bool DOREVERSEINDEX = false);
+    IndexedPatternModel(const std::string & filename, bool DOREVERSEINDEX = false);
     IndexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOREVERSEINDEX = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
     
     int maxlength() const { return MAXLENGTH; }
     
-    int types() const { return ngramtypecount + skipgramtypecount; }
-    int tokens() const { return ngramtokencount + skipgramtokencount; }
+    uint64_t types() const { return ngrams.size() + skipgrams.size(); }
+    uint64_t tokens() const { return ngramtokencount + skipgramtokencount; }
     
     bool exists(const EncAnyGram* key) const;
     const EncAnyGram* getkey(const EncAnyGram* key);
@@ -127,8 +142,20 @@ class IndexedPatternModel {
     std::vector<EncAnyGram*> reverse_index(const int i);
     EncAnyGram* get_reverse_index_item(const int, const int);
     
+    virtual uint64_t id() { return 1; }
+    virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes) {};
+    virtual void readngram(std::istream * in, const EncNGram & ngram);
+    virtual void readskipgram(std::istream * in, const EncSkipGram & skipgram);
+    virtual void readfooter(std::istream * in) {};    
     
-    void save(const std::string & filename, ModelExtension * modelextension = NULL);
+    virtual void writeheader(std::ostream * out) {};
+    virtual void writengrams(std::ostream * out);
+    virtual void writengram(std::ostream * out, const EncNGram & ngram);
+    virtual void writeskipgrams(std::ostream * out);
+    virtual void writeskipgram(std::ostream * out, const EncSkipGram & skipgram);
+    virtual void writefooter(std::ostream * out) {}; 
+        
+    void save(const std::string & filename) { ModelWriter::writefile(filename); }
     
     size_t hash();
     
@@ -142,14 +169,23 @@ class IndexedPatternModel {
 
 
 
-class GraphPatternModel: public ModelExtension {               
+class GraphPatternModel: public ModelReader, public ModelWriter {               
    protected:
     bool DOPARENTS;
     bool DOCHILDREN;
+    bool DOXCOUNT;
+    bool DOSKIPCONTENT;
+    bool DOINSKIPCONTENT;
+    
+    bool HASPARENTS;
+    bool HASCHILDREN;
+    bool HASXCOUNT;
+    bool HASSKIPCONTENT;
+    bool HASINSKIPCONTENT;
     
     bool DELETEMODEL;
     
-    void readrelations(std::istream * in,const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & );
+    void readrelations(std::istream * in,const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > &, bool ignore = false);
     void writerelations(std::ostream * out, const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & );
     
    public:
@@ -157,35 +193,59 @@ class GraphPatternModel: public ModelExtension {
     IndexedPatternModel * model;
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_parents;
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_children;        
+    std::unordered_map<const EncAnyGram*,int> data_xcount;        
    
-    GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=false); //compute entire model
-    GraphPatternModel(const std::string & filename);
+    //std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_skipcontent; //skipgram -> skipcontent       
+    //std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_inskipcontent; //skipcontent -> skipgram
+    
+    uint64_t types() const { return model->types(); }
+    uint64_t tokens() const { return model->tokens(); }
+    
+
+   
+    GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=false,bool DOXCOUNT=false); //compute entire model
+    GraphPatternModel(const std::string & graphmodelfilename, const std::string & patternmodelfilename) { 
+        DELETEMODEL = true; 
+        model = new IndexedPatternModel(patternmodelfilename);
+        readfile(graphmodelfilename); 
+    }
     ~GraphPatternModel();
     
     int xcount(const EncAnyGram* anygram); //exclusive count    
         
-    void save(const std::string & filename) { model->save(filename, this); }
+    void save(const std::string & filename) { writefile(filename); }
     
-    virtual void readheader(std::istream * in);
+    virtual uint64_t id() { return 20; }
+    
+    virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes);
     virtual void readngram(std::istream * in, const EncNGram & ngram);
     virtual void readskipgram(std::istream * in, const EncSkipGram & skipgram);
     virtual void readfooter(std::istream * in) {};    
     
     virtual void writeheader(std::ostream * out);
+    virtual void writengrams(std::ostream * out);
     virtual void writengram(std::ostream * out, const EncNGram & ngram);
     virtual void writeskipgram(std::ostream * out, const EncSkipGram & skipgram);
+    virtual void writeskipgrams(std::ostream * out);
     virtual void writefooter(std::ostream * out) {};    
 };
 
-
-class CoocPatternModel {
-    /* Read only model, reads graphpatternmodel in a simplified, less memory intensive representation for Co-occurrence alignment */
-    
-    public:
-     CoocPatternModel(const std::string & filename); //read a graph pattern model as cooc pattern model
-     
+/*
+struct EnhancedCountData {
+    uint32_t count;
+    uint32_t xcount;
 };
 
+class EnhancedCountPatternModel: public ModelReader {
+    // Read only model, reads graphpatternmodel in a simplified, less memory intensive representation for Co-occurrence alignment 
+    
+    public:
+     std::unordered_map<EncNGram,EnhancedCountData> ngrams;
+     std::unordered_map<EncSkipGram,EnhancedCountData> skipgrams;
+     EnhancedCountPatternModel(const std::string & filename); //read a graph pattern model as cooc pattern model
+     
+};
+*/
 
 /*
 

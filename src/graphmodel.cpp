@@ -11,7 +11,12 @@ using namespace std;
 
 
 void usage() {
-    cerr << "Syntax: graphmodel -f filename.indexedpatternmodel.colibri -c classfile" << endl;        
+    cerr << "Syntax: graphmodel -f filename.indexedpatternmodel.colibri" << endl;        
+    cerr << "Constructs a graph model" << endl;
+    cerr << "\t-P       Compute/load subsumption relations from children to parents (reverse of -C)" << endl;
+    cerr << "\t-C       Compute/load subsumption relations from parents to children (reverse of -P)" << endl;
+    cerr << "\t-X       Compute/load exclusive count" << endl;
+    
 }
 
 int main( int argc, char *argv[] ) {
@@ -20,9 +25,10 @@ int main( int argc, char *argv[] ) {
     string outputprefix = "";
     bool DOPARENTS = false;
     bool DOCHILDREN = false;
+    bool DOXCOUNT = false;
     
     char c;    
-    while ((c = getopt(argc, argv, "c:f:ho:PC")) != -1)
+    while ((c = getopt(argc, argv, "c:f:ho:PCX")) != -1)
         switch (c)
         {
         case 'c':
@@ -36,6 +42,12 @@ int main( int argc, char *argv[] ) {
             break;
         case 'P': 
             DOPARENTS = true;
+            break;
+        case 'C': 
+            DOCHILDREN = true;
+            break;
+        case 'X': 
+            DOXCOUNT = true;
             break;
         case 'h':
             usage();
@@ -53,7 +65,7 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
 
-    if ((!DOPARENTS) && (!DOCHILDREN)) {
+    if ((!DOPARENTS) && (!DOCHILDREN) && (!DOXCOUNT)) {
         usage();
         exit(2);
     }
@@ -75,7 +87,7 @@ int main( int argc, char *argv[] ) {
     cerr << "Loaded " << model.types() << " types, " << model.tokens() << " tokens" << endl;
     
     cerr << "Constructing graph " << endl;
-    GraphPatternModel graph = GraphPatternModel(&model, DOPARENTS, DOCHILDREN);    
+    GraphPatternModel graph = GraphPatternModel(&model, DOPARENTS, DOCHILDREN, DOXCOUNT);
     
     cerr << "Saving graph " << endl;
     graph.save(outputprefix + ".graphpatternmodel.colibri");
