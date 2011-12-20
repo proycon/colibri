@@ -77,20 +77,22 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
 
-    if (outputprefix.empty()) {
-        outputprefix = modelfile; //TODO: strip .clsenc. .bin?
-        strip_extension(outputprefix, string("bin"));
-        strip_extension(outputprefix, string("colibri"));
-        strip_extension(outputprefix, string("indexedpatternmodel"));
-        strip_extension(outputprefix, string("clsenc"));
-        strip_extension(outputprefix, string("txt"));   
-    }
+    
     
 
     
     
     
     if (modelfile.empty()) {
+        if (outputprefix.empty()) {
+            outputprefix = patternmodelfile; //TODO: strip .clsenc. .bin?
+            strip_extension(outputprefix, string("bin"));
+            strip_extension(outputprefix, string("colibri"));
+            strip_extension(outputprefix, string("indexedpatternmodel"));
+            strip_extension(outputprefix, string("clsenc"));
+            strip_extension(outputprefix, string("txt"));   
+        }
+        
         cerr << "Loading pattern model " << patternmodelfile << endl;
         IndexedPatternModel patternmodel = IndexedPatternModel(patternmodelfile);
     
