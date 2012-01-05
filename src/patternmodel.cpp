@@ -640,9 +640,8 @@ void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT
 
 }
 
-/* BEGIN UNINDEXED PATTERNMODEL */
 
-UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOREVERSEINDEX, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
+UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
     
     this->MAXLENGTH = MAXLENGTH;
     this->MINTOKENS = MINTOKENS;
@@ -1039,9 +1038,6 @@ void UnindexedPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSO
 
 }
 
-
-
-/* END UNINDEXED PATTERNMODEL */
 
 double SkipGramData::entropy() const {
     double entropy = 0;

@@ -56,7 +56,7 @@ int main( int argc, char *argv[] ) {
     unsigned int MINSKIPTYPES = 2;
     int MAXLENGTH = 8;
     bool DOSKIPGRAMS = false;
-    bool DOINDEX = false;
+    bool DOINDEX = true;
     bool DOREVERSEINDEX = false;
     bool DOSKIPCONTENT = false;
     bool DOINITIALONLYSKIP = true;
@@ -64,7 +64,7 @@ int main( int argc, char *argv[] ) {
     //bool DOCOMPOSITIONALITY = false;
     
     char c;    
-    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:siLhnBE")) != -1)
+    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBE")) != -1)
         switch (c)
         {
         case 'c':
@@ -91,9 +91,6 @@ int main( int argc, char *argv[] ) {
         case 's':
             DOSKIPGRAMS = true;
             break;
-        case 'i':
-            DOINDEX = true;
-            break;
         case 'L':
             DOSKIPCONTENT = true;
             break;
@@ -106,6 +103,9 @@ int main( int argc, char *argv[] ) {
         case 'E':
             DOFINALONLYSKIP = false;    
             break;
+		case 'u':
+			DOINDEX = false;    		
+			break;
         case 'h':
             usage();
             exit(0);
@@ -142,28 +142,59 @@ int main( int argc, char *argv[] ) {
 
     
     if (!corpusfile.empty()) {
-        cerr << "Computing model on " << corpusfile << endl;
-        IndexedPatternModel model = IndexedPatternModel(corpusfile, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS, MINSKIPTYPES, DOREVERSEINDEX ,DOINITIALONLYSKIP,DOFINALONLYSKIP);
-            
-        cerr << "Saving " << outputprefix << ".indexedpatternmodel.colibri"  << endl;
-        const string outputfile = outputprefix + ".indexedpatternmodel.colibri";
-        model.save(outputfile);            
-        cerr << "Loading class decoder " << classfile << endl;
-        
-        if (!classfile.empty()) {
-            cerr << "Loading class decoder " << classfile << endl;
-            ClassDecoder classdecoder = ClassDecoder(classfile);
-            cerr << "Decoding" << endl;
-            model.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);   
+    	if (DOINDEX) {
+    
+		    cerr << "Computing model on " << corpusfile << endl;
+		    IndexedPatternModel model = IndexedPatternModel(corpusfile, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS, MINSKIPTYPES, DOREVERSEINDEX ,DOINITIALONLYSKIP,DOFINALONLYSKIP);
+		        
+		    cerr << "Saving " << outputprefix << ".indexedpatternmodel.colibri"  << endl;
+		    const string outputfile = outputprefix + ".indexedpatternmodel.colibri";
+		    model.save(outputfile);            
+		    cerr << "Loading class decoder " << classfile << endl;
+		    
+		    if (!classfile.empty()) {
+		        cerr << "Loading class decoder " << classfile << endl;
+		        ClassDecoder classdecoder = ClassDecoder(classfile);
+		        cerr << "Decoding" << endl;
+		        model.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);   
+		    }
+		    
+        } else {    
+		    cerr << "Computing model on " << corpusfile << endl;
+		    UnindexedPatternModel model = UnindexedPatternModel(corpusfile, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS ,DOINITIALONLYSKIP,DOFINALONLYSKIP);
+		        
+		    cerr << "Saving " << outputprefix << ".unindexedpatternmodel.colibri"  << endl;
+		    const string outputfile = outputprefix + ".unindexedpatternmodel.colibri";
+		    model.save(outputfile);            
+		    cerr << "Loading class decoder " << classfile << endl;
+		    
+		    if (!classfile.empty()) {
+		        cerr << "Loading class decoder " << classfile << endl;
+		        ClassDecoder classdecoder = ClassDecoder(classfile);
+		        cerr << "Decoding" << endl;
+		        model.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);   
+		    }
+		            	
         }
     } else if ( (!modelfile.empty()) && (!classfile.empty()) ) {
-        IndexedPatternModel model = IndexedPatternModel(modelfile);
-        if (!classfile.empty()) {
-            cerr << "Loading class decoder " << classfile << endl;
-            ClassDecoder classdecoder = ClassDecoder(classfile);
-            cerr << "Decoding" << endl;
-            model.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);   
-        }
+    	if (DOINDEX) {
+		    IndexedPatternModel model = IndexedPatternModel(modelfile);
+		    if (!classfile.empty()) {
+		        cerr << "Loading class decoder " << classfile << endl;
+		        ClassDecoder classdecoder = ClassDecoder(classfile);
+		        cerr << "Decoding" << endl;
+		        model.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);   
+		    }
+		} else {
+		    UnindexedPatternModel model = UnindexedPatternModel(modelfile);
+		    if (!classfile.empty()) {
+		        cerr << "Loading class decoder " << classfile << endl;
+		        ClassDecoder classdecoder = ClassDecoder(classfile);
+		        cerr << "Decoding" << endl;
+		        model.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);   
+		    }			
+		}
+        
     }
 
 

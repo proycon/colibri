@@ -197,7 +197,7 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter {
     std::unordered_map<const EncSkipGram,uint32_t > skipgrams;    
             
     UnindexedPatternModel(const std::string & filename, bool DOREVERSEINDEX = false);
-    UnindexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOREVERSEINDEX = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
+    UnindexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
     
     int maxlength() const { return MAXLENGTH; }
     
