@@ -17,7 +17,6 @@ void usage() {
     cerr << "\t-C               Compute/load subsumption relations from parents to children (reverse of -P)" << endl;
     cerr << "\t-X               Compute/load exclusive count" << endl;
     cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced" << endl;
-    
 }
 
 int main( int argc, char *argv[] ) {

@@ -187,7 +187,8 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                 tokencount[n]++;            
 
                 if (DOSKIPGRAMS) {
-                    for (size_t j = 0; j < gaps.size(); j++) {
+                	//Iterate over all possible gap configurations
+                    for (size_t j = 0; j < gaps.size(); j++) { 
 
                         if (gaps[j].size() == 1) {
                            if (!DOINITIALONLYSKIP) {
@@ -209,6 +210,8 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                         
                            
                         //cerr << "INSTANCE SIZE: " << gaps[j].size() << endl;
+                        
+                    	//Iterate over all gaps in this configuration    
                         for (size_t k = 0; k < gaps[j].size(); k++) {                                                        
                             const int begin = gaps[j][k].first;  
                             const int length = gaps[j][k].second;                        
@@ -222,7 +225,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                                 subngrams.push_back(subngram);                                                               
                                 oc = ngrams.count(*subngram);
                                 if (oc) oc = ngrams[*subngram].count();
-                                if ((oc == 0) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS)) )    {
+                                if ((((oc == 0)) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS)) ))    {
                                     docount = false;
                                     break;
                                 }
@@ -234,7 +237,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                             subngrams.push_back(subngram);
                             oc = ngrams.count(*subngram);
                             if (oc) oc = ngrams[*subngram].count();
-                            if ((oc == 0) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS)) )    {
+                            if (((oc == 0)) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS)) )  {
                                 docount = false;
                                 break;
                             }
@@ -251,18 +254,27 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                                 const int begin = gaps[j][k].first;  
                                 const int length = gaps[j][k].second;
                                 EncNGram * subskip = ngram->slice(begin,length);                                
-                                skipcontent_subngrams.push_back(subskip);
+                                skipcontent_subngrams.push_back(subskip);                               
+                                oc = ngrams.count(*subskip);
+                                if (oc) oc = ngrams[*subskip].count();
+                                if ((oc == 0) || (oc < MINTOKENS) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS) ) )  {
+                                	//skip content doesn't occur often enough, abort count
+                                	docount = false;
+                                	break;
+                                }
                                 if (cursor > 0) skipcontent_skipref.push_back(begin - cursor);
                                 cursor = begin+length;
                             }   
-                            EncSkipGram skipcontent = EncSkipGram(skipcontent_subngrams, skipcontent_skipref, false, false);                                                        
-                            if (skipgrams[skipgram].count() == 0) skiptypecount[n]++;                            
-                            skipgrams[skipgram]._count++;
-                            skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
-                            skiptokencount[n]++;                            
+                            if (docount) { //second check, we might have aborted
+		                        EncSkipGram skipcontent = EncSkipGram(skipcontent_subngrams, skipcontent_skipref, false, false);                                                        
+		                        if (skipgrams[skipgram].count() == 0) skiptypecount[n]++;                            
+		                        skipgrams[skipgram]._count++;
+		                        skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
+		                        skiptokencount[n]++;                            
+                            }
                             for (size_t k = 0; k < skipcontent_subngrams.size(); k++) {       
-                                delete skipcontent_subngrams[k];
-                            }                            
+		                        delete skipcontent_subngrams[k];
+		                    }             
                         }
                         //cleanup
                         for (size_t k = 0; k < subngrams.size(); k++) {
@@ -628,8 +640,408 @@ void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT
 
 }
 
+/* BEGIN UNINDEXED PATTERNMODEL */
+
+UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOREVERSEINDEX, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
+    
+    this->MAXLENGTH = MAXLENGTH;
+    this->MINTOKENS = MINTOKENS;
+    this->DOSKIPGRAMS = DOSKIPGRAMS;
+    this->MINSKIPTOKENS = MINSKIPTOKENS;
+    this->DOREVERSEINDEX = DOREVERSEINDEX;
+    this->DOSKIPCONTENT = true;
+    this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
+    this->DOFINALONLYSKIP = DOFINALONLYSKIP;
+    
+    ngramtokencount = 0;
+    skipgramtokencount = 0; 
+    ngramtypecount = 0;
+    skipgramtypecount = 0;
+
+    const int BUFFERSIZE = 65536;
+    unsigned char line[BUFFERSIZE];
 
 
+    for (int n = 1; n <= MAXLENGTH; n++) {
+        cerr << "Counting " << n << "-grams" << endl;            
+        
+        uint32_t sentence = 0;
+    
+        tokencount[n] = 0;
+        skiptokencount[n] = 0;
+        typecount[n] = 0;
+        skiptypecount[n] = 0;
+                
+        vector< vector< pair<int,int> > > gaps;
+        compute_multi_skips(gaps, vector<pair<int,int> >(), n);    
+        
+        unordered_map<const EncSkipGram,size_t> lastskipcontenthash; //0 if not seen yet , 1 if already verified, hash key otherwise
+        
+        ifstream *IN =  new ifstream( corpusfile.c_str() );    
+        vector<unsigned int> words;
+        while (IN->good()) {
+            const int linesize = readline(IN, line, BUFFERSIZE );            
+                    
+            sentence++;
+
+            if (sentence % 10000 == 0) {
+                cerr << "\t@" << sentence << endl;
+            }
+                            
+            
+            const int l = countwords(line, linesize);            
+            if (l > 256) {
+                cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping!" << endl;
+                continue;
+            }
+            
+            if (linesize > 0) //no { on purpose! applies to next for loop
+            for (unsigned char i = 0; ((i < l - n + 1) && (i < 256)); i++) {                
+                EncNGram * ngram = getencngram(i,n, line, linesize);  
+                                                
+
+                //cout << "NGRAM("<<ngram->n()<<","<<(int)ngram->size() << ")" << endl;
+                              
+                if (n > 2) {                    
+                    EncNGram * subngram1 = ngram->slice(0, n - 1);
+                    if (!(ngrams.count(*subngram1))) {
+                        delete subngram1;
+                        delete ngram;
+                        continue; //if subngram does not exist (count==0), no need to count ngram, skip to next
+                    }
+                    delete subngram1;
+
+                                                             
+                    EncNGram * subngram2 = ngram->slice(1, n - 1);
+                    if (!(ngrams.count(*subngram2))) {
+                        delete subngram2;
+                        delete ngram;
+                        continue; //if subngram does not exist (count==0), no need to count ngram, skip to next
+                    }
+                    delete subngram2;                    
+                }
+                
+                
+                if (ngrams[*ngram] == 0) typecount[n]++;
+                ngrams[*ngram]++; //increase occurence count                     
+                tokencount[n]++;            
+
+                if (DOSKIPGRAMS) {                	                 
+                    for (size_t j = 0; j < gaps.size(); j++) {
+
+                        if (gaps[j].size() == 1) {
+                           if (!DOINITIALONLYSKIP) {
+                                if (gaps[j][0].first == 0) continue; 
+                           }
+                           if (!DOFINALONLYSKIP) {
+                               if (gaps[j][0].first + gaps[j][0].second == n) continue; 
+                           }
+                        }
+
+                        
+                        vector<EncNGram*> subngrams;
+                        vector<int> skipref;
+                        bool initialskip = false;
+                        bool finalskip = false;
+                        int cursor = 0;
+                        bool docount = true;    
+                        int oc = 0;             
+                        
+                           
+                        //cerr << "INSTANCE SIZE: " << gaps[j].size() << endl;
+                        for (size_t k = 0; k < gaps[j].size(); k++) {                                                        
+                            const int begin = gaps[j][k].first;  
+                            const int length = gaps[j][k].second;                        
+                            //cerr << begin << ';' << length << ';' << n << endl;
+                            skipref.push_back( length); 
+                            if (k == 0) {
+                                initialskip = (begin == 0);
+                            }                            
+                            if (begin > cursor) {
+                                EncNGram * subngram = ngram->slice(cursor,begin-cursor);
+                                subngrams.push_back(subngram);                                                               
+                                oc = ngrams.count(*subngram);
+                                if (oc) oc = ngrams[*subngram];
+                                if ((oc == 0) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS)) )    {
+                                    docount = false;
+                                    break;
+                                }
+                            }
+                            cursor = begin + length;
+                        }   
+                        if (cursor < n) {
+                            EncNGram * subngram = ngram->slice(cursor,n-cursor);
+                            subngrams.push_back(subngram);
+                            oc = ngrams.count(*subngram);
+                            if (oc) oc = ngrams[*subngram];
+                            if ((oc == 0) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS)) )    {
+                                docount = false;
+                                break;
+                            }
+                        } else {
+                            finalskip = true;
+                        }
+                        if (initialskip && finalskip && skipref.size() <= 1) docount = false; //the whole n-gram is a skip, discard
+                        if (docount) {                        
+                            EncSkipGram skipgram = EncSkipGram(subngrams, skipref, initialskip, finalskip);
+                            if (skipgrams[skipgram] == 0) skiptypecount[n]++;                            
+                            skipgrams[skipgram]++;
+                            skiptokencount[n]++;                            
+                        }
+                        if (docount) {
+                            EncSkipGram skipgram = EncSkipGram(subngrams, skipref, initialskip, finalskip);                                                    
+                            vector<EncNGram*> skipcontent_subngrams;
+                            vector<int> skipcontent_skipref;
+                            cursor = 0;
+                            //iterate over all gaps in this configuration (to check their occurrence count)
+                            for (size_t k = 0; k < gaps[j].size(); k++) {
+                                const int begin = gaps[j][k].first;  
+                                const int length = gaps[j][k].second;
+                                EncNGram * subskip = ngram->slice(begin,length);                                                               
+                                oc = ngrams.count(*subskip);
+                                if (oc) oc = ngrams[*subskip];                                
+                                if (lastskipcontenthash[skipgram] != 1) {
+                                	const size_t newskipcontenthash = subskip->hash(); 
+									if (newskipcontenthash != lastskipcontenthash[skipgram]) {
+        								lastskipcontenthash[skipgram] = 1;
+        							} else {
+        								lastskipcontenthash[skipgram] = newskipcontenthash;
+        							}          	
+                                }                             
+                                delete subskip;                                     
+                                if ((oc == 0) || (oc < MINTOKENS) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS) ) )  {
+                                	//skip content doesn't occur often enough, abort count
+                                	docount = false;
+                                	break;
+                                }
+                                cursor = begin+length;                                
+                            }   
+                            if (docount) { //second check, we might have aborted                                                        
+		                        if (skipgrams[skipgram] == 0) skiptypecount[n]++;                            
+		                        skipgrams[skipgram]++; //increase count
+		                        skiptokencount[n]++;                            		                        
+                            }
+                        }
+                        
+                        //cleanup
+                        for (size_t k = 0; k < subngrams.size(); k++) {
+                            delete subngrams[k];
+                        }
+                    }                    
+                }
+                
+                delete ngram;                 
+            }            
+            
+        };
+
+       cerr << "Found " << typecount[n] << " " << n << "-grams (" << tokencount[n] << " tokens)";
+       if (DOSKIPGRAMS) {
+        cerr << " and " << skiptypecount[n] << " skipgrams (" << skiptokencount[n] << " tokens)" << endl;
+       } else {
+        cerr << endl;
+       }
+    
+
+       //prune n-grams
+       int pruned = 0;
+       for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
+            if (iter->first.n() == n) {
+                if (iter->second < MINTOKENS) {
+                    tokencount[n] -= iter->second;
+                    typecount[n]--;
+                    pruned++;
+                    ngrams.erase(iter->first);                        
+                } else {
+                    ngramtokencount += iter->second;
+                }
+            }
+       }
+       cerr << "Pruned " << pruned << " " << n << "-grams, " << typecount[n] <<  " left (" << tokencount[n] << " tokens)" << endl;
+    
+       
+       if (DOSKIPGRAMS) {       
+           //prune skipgrams
+           pruned = 0;
+           for(unordered_map<EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {     
+               if (iter->first.n() == n) {                          
+                    bool pruneskipgram = false;
+                    if ( (iter->second < MINTOKENS) || (lastskipcontenthash[iter->first] != 1) ) {
+                        pruneskipgram = true;
+                        skiptokencount[n] -= iter->second;
+                        skiptypecount[n]--;
+                        pruned++;
+                        skipgrams.erase(iter->first);
+                    }
+               }
+           }
+           cerr << "Pruned " << pruned << " skipgrams, " << skiptypecount[n] <<  " left (" << skiptokencount[n] << " tokens)" << endl;
+           
+        }
+        ngramtokencount += tokencount[n];
+        ngramtypecount += typecount[n];
+        skipgramtokencount += skiptokencount[n];
+        skipgramtypecount += skiptypecount[n];
+    }
+
+        
+}
+
+
+UnindexedPatternModel::UnindexedPatternModel(const string & filename, bool DOREVERSEINDEX) {    
+    const bool DEBUG = true;
+    this->DOREVERSEINDEX = DOREVERSEINDEX;
+    this->DOSKIPCONTENT = DOSKIPCONTENT;    
+    
+    ngramtokencount = 0;
+    skipgramtokencount = 0; 
+    ngramtypecount = 0;
+    skipgramtypecount = 0;
+    MAXLENGTH = 0;
+    
+    readfile(filename);
+}
+
+void UnindexedPatternModel::readngram(std::istream * f, const EncNGram & ngram) {
+    ngramtypecount++;
+    uint32_t count;
+    f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
+    ngrams[ngram] = count;
+    ngramtokencount += count;    
+    if (ngram.n() > MAXLENGTH) MAXLENGTH = ngram.n();
+    tokencount[ngram.n()] += count;
+}
+
+
+
+void UnindexedPatternModel::readskipgram(std::istream * f, const EncSkipGram & skipgram) {
+    skipgramtypecount++;
+    uint32_t count;
+    f->read((char*) &count, sizeof(uint32_t)); //read occurrence count            
+    skipgrams[skipgram] = count; //assign
+    skipgramtokencount += count;
+    skiptokencount[skipgram.n()] += count;            
+}
+
+void UnindexedPatternModel::writengram(std::ostream * f, const EncNGram & ngram) {
+    const uint32_t c = ngrams[ngram];
+    f->write( (char*) &c, sizeof(uint32_t) ); //occurrence count                                       
+}
+
+
+void UnindexedPatternModel::writengrams(std::ostream * f) {    
+    const char czero = 0;
+    for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {        
+        f->write(&czero, sizeof(char)); //gapcount, always zero for ngrams
+        iter->first.writeasbinary(f);
+        writengram(f, iter->first);       
+    }   
+}
+
+
+void UnindexedPatternModel::writeskipgram(std::ostream * f, const EncSkipGram & skipgram) {
+    const uint32_t c  = skipgrams[skipgram];
+    f->write( (char*) &c, sizeof(uint32_t) ); //occurrence count                         
+}
+
+
+void UnindexedPatternModel::writeskipgrams(std::ostream * f) {             
+    for(unordered_map<EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {                               
+        iter->first.writeasbinary(f);        
+        writeskipgram(f, iter->first);
+    }     
+}
+
+
+bool UnindexedPatternModel::exists(const EncAnyGram* key) const {    
+    if (key->gapcount() == 0) {
+        return (ngrams.count(*( (EncNGram*) key) ) > 0);
+    } else {
+        return (skipgrams.count(*( (EncSkipGram*) key) ) > 0);
+    }
+    return false;
+}
+
+const EncAnyGram* UnindexedPatternModel::getkey(const EncAnyGram* key) {
+    if (key->gapcount() == 0) {
+        std::unordered_map<EncNGram,uint32_t >::iterator iter = ngrams.find(*( (EncNGram*) key) );
+        if (iter != ngrams.end()) {
+            return &iter->first;
+        } else {
+            return NULL;
+        }
+    } else {
+        std::unordered_map<EncSkipGram,uint32_t >::iterator iter = skipgrams.find(*( (EncSkipGram*) key) );
+        if (iter != skipgrams.end()) {
+            return &iter->first;
+        } else {
+            return NULL;
+        }        
+    }
+}
+
+
+
+
+int UnindexedPatternModel::count(const EncAnyGram* key) {    
+    if (key->gapcount() == 0) {        
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ];
+    } else {
+        if (skipgrams.count(*( (EncSkipGram*) key) ) > 0) return skipgrams[*( (EncSkipGram*) key) ];   
+    }
+    return 0;
+}
+
+
+double UnindexedPatternModel::freq(const EncAnyGram* key) {    
+    if (key->gapcount() == 0) {        
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ] / tokens();
+    } else {
+        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return skipgrams[ *( (EncSkipGram*) key)] / tokens();
+    }
+    return 0;
+}
+
+
+double UnindexedPatternModel::relfreq(const EncAnyGram* key) {    
+    if (key->gapcount() == 0) {        
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ] / tokencount[key->n()];
+    } else {
+        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return skipgrams[ *( (EncSkipGram*) key)] / skiptokencount[key->n()];
+    }
+    return 0;
+}
+
+
+void UnindexedPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, ostream *SKIPGRAMSOUT) {
+    const int grandtotal = ngramtokencount + skipgramtokencount;   
+
+    for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
+       const double freq1 = (double) iter->second / tokencount[iter->first.n()];
+       const double freq2 = (double) iter->second / ngramtokencount;
+       const double freq3 = (double) iter->second / grandtotal;
+       const EncNGram ngram = iter->first;
+        *NGRAMSOUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second << '\t' << freq1 << '\t' << freq2 << '\t' << freq3;
+        *NGRAMSOUT << endl;
+    }
+   
+
+   if (SKIPGRAMSOUT != NULL) {
+       for(unordered_map<EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {
+           const double freq1 = (double) iter->second / skiptokencount[iter->first.n()]; 
+           const double freq2 = (double) iter->second / skipgramtokencount;           
+           const double freq3 = (double) iter->second / grandtotal;                          
+           const EncSkipGram skipgram = iter->first;                              
+           *SKIPGRAMSOUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t';          
+           *SKIPGRAMSOUT << endl;
+       }
+    }
+
+}
+
+
+
+/* END UNINDEXED PATTERNMODEL */
 
 double SkipGramData::entropy() const {
     double entropy = 0;

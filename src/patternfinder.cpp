@@ -20,9 +20,10 @@ void usage() {
     cerr << "\t-t <number>      Token threshold: n-grams and skipgrams occuring less than this will be pruned (default: 2)" << endl;
     cerr << "\t-l <number>      Maximum n-gram/skipgram length (in words, default: 9)" << endl;
     cerr << "\t-s               Compute skip-grams (costs extra memory and time)" << endl;    
-    cerr << "\t-T <number>      Skip threshold: only skip content that occurs at least x times will be considered (default: 2) " << endl;
+    cerr << "\t-T <number>      Skip threshold: only skip content that occurs at least x times will be considered (default: same as -t). Value can never be lower than value for -t" << endl;
+    cerr << "\t-u				Create an unindexed model instead of an indexed model. Significantly reduces memory requirements" << endl;
     //cerr << "\t-L               Compute and maintain content of skipgrams (costs extra memory)" << endl;
-    cerr << "\t-S <number>      Skip type threshold: only skipgrams with x possible types for the skip will be considered, otherwise the skipgram will be pruned  (default: 2, works only with -L enabled)" << endl;
+    cerr << "\t-S <number>      Skip type threshold: only skipgrams with at least x possible types for the skip will be considered, otherwise the skipgram will be pruned  (default: 2, this value is unchangable and fixed to 2 when -u is set)" << endl;
     cerr << "\t-B               Do NOT consider skipgrams that begin with a skip and have no further skips" << endl;
     cerr << "\t-E               Do NOT consider skipgrams that end in a skip and have no further skips" << endl;
     cerr << "\t-o <string>      Output prefix" << endl;        

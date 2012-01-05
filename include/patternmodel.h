@@ -58,7 +58,6 @@ class SkipGramData: public AnyGramData {
     std::set<CorpusReference> get_refs() const;
 };
 
-
 class ModelReader {
    public:
     virtual uint64_t id() =0;
@@ -162,6 +161,74 @@ class IndexedPatternModel: public ModelReader, public ModelWriter {
     
     size_t hash();
     
+    
+    void decode(ClassDecoder & classdecoder, std::ostream *NGRAMSOUT, std::ostream *SKIPGRAMSOUT);    
+};
+
+
+class UnindexedPatternModel: public ModelReader, public ModelWriter {
+   /* unindexed model */    
+   private:
+    int MINTOKENS; // = 2;
+    int MINSKIPTOKENS; // = 2;
+    int MINSKIPTYPES; //= 2;
+    int MAXLENGTH; //= 8;
+    bool DOSKIPGRAMS; //= false;
+    bool DOREVERSEINDEX; //= false;
+    bool DOSKIPCONTENT; //= false;
+    bool DOINITIALONLYSKIP; //= true;
+    bool DOFINALONLYSKIP; //= true;
+
+    
+    int ngramtypecount;
+    int skipgramtypecount;
+    
+
+   public:
+    unsigned long ngramtokencount;
+    unsigned long skipgramtokencount; 
+    
+    int tokencount[10]; //relative token count
+    int skiptokencount[10];
+    int typecount[10]; //relative token count
+    int skiptypecount[10];   
+   
+    std::unordered_map<const EncNGram,uint32_t > ngrams;
+    std::unordered_map<const EncSkipGram,uint32_t > skipgrams;    
+            
+    UnindexedPatternModel(const std::string & filename, bool DOREVERSEINDEX = false);
+    UnindexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOREVERSEINDEX = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
+    
+    int maxlength() const { return MAXLENGTH; }
+    
+    uint64_t types() const { return ngrams.size() + skipgrams.size(); }
+    uint64_t tokens() const { return ngramtokencount + skipgramtokencount; }
+    
+    bool exists(const EncAnyGram* key) const;
+    const EncAnyGram* getkey(const EncAnyGram* key);
+    int count(const EncAnyGram* key);
+    double freq(const EncAnyGram* key);    
+    double relfreq(const EncAnyGram* key);        
+    //std::set<int> * index(const EncAnyGram* key);    
+    //int index_size() const;
+
+    
+    virtual uint64_t id() { return 0; }
+    virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes) {};
+    virtual void readngram(std::istream * in, const EncNGram & ngram);
+    virtual void readskipgram(std::istream * in, const EncSkipGram & skipgram);
+    virtual void readfooter(std::istream * in) {};    
+    
+    virtual void writeheader(std::ostream * out) {};
+    virtual void writengrams(std::ostream * out);
+    virtual void writengram(std::ostream * out, const EncNGram & ngram);
+    virtual void writeskipgrams(std::ostream * out);
+    virtual void writeskipgram(std::ostream * out, const EncSkipGram & skipgram);
+    virtual void writefooter(std::ostream * out) {}; 
+        
+    void save(const std::string & filename) { ModelWriter::writefile(filename); }
+    
+    size_t hash();
     
     void decode(ClassDecoder & classdecoder, std::ostream *NGRAMSOUT, std::ostream *SKIPGRAMSOUT);    
 };
