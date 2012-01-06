@@ -148,7 +148,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                             
             
             const int l = countwords(line, linesize);            
-            if (l > 256) {
+            if (l >= 256) {
                 cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping!" << endl;
                 continue;
             }
@@ -689,7 +689,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
                             
             
             const int l = countwords(line, linesize);            
-            if (l > 256) {
+            if (l >= 256) {
                 cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping!" << endl;
                 continue;
             }
