@@ -76,6 +76,7 @@ void ClassEncoder::build(const string & filename) {
               if ((line[i] == ' ') || (i == line.size() - 1)) {              
               	  string word = string(line.begin() + begin, line.begin() + i);
               	  freqlist[word]++;
+              	  begin = i+ 1; 
               }
               
           }
@@ -85,15 +86,17 @@ void ClassEncoder::build(const string & filename) {
         //sort by occurrence count  using intermediate representation
         multimap<const int, const string> revfreqlist;
         for (unordered_map<const string,int>::iterator iter = freqlist.begin(); iter != freqlist.end(); iter++) {
+        	cerr << iter->first << '\t' << iter->second << endl; 
         	revfreqlist.insert( pair<const int,const string>(iter->second, iter->first) );
         } 
         
         freqlist.clear();
         
-        int cls = 2; //one is reserved
+        int cls = 1; //one is reserved
         for (multimap<const int,const string>::iterator iter = revfreqlist.begin(); iter != revfreqlist.end(); iter++) {
+        	cls++;
         	while (!validclass(cls)) cls++;
-        	classes[iter->second] = iter->first;
+        	classes[iter->second] = cls;
         }
 }
 
@@ -101,7 +104,7 @@ void ClassEncoder::save(const string & filename) {
 	ofstream OUT;
 	OUT.open( filename.c_str() );
 	for (std::unordered_map<std::string,unsigned int>::iterator iter = classes.begin(); iter != classes.end(); iter++) {
-		OUT << iter->first << '\t' << iter->second << endl;
+		OUT << iter->second << '\t' << iter->first << endl;
 	}
 	OUT.close();
 }
