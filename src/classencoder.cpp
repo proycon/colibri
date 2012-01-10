@@ -48,7 +48,7 @@ ClassEncoder::ClassEncoder(const string & filename) {
               if (line[i] == '\t') {
                   const string cls_s = string(line.begin(), line.begin() + i);
                   unsigned int cls = (unsigned int) atoi(cls_s.c_str());
-                  const string word = string(line.begin() + i + 1, line.end());
+                  const string word = string(line.begin() + i + 1, line.end());                  
                   classes[word] = cls;
                   //cerr << "CLASS=" << cls << " WORD=" << word << endl;
               }
@@ -75,7 +75,8 @@ void ClassEncoder::build(const string & filename) {
           for (int i = 0; i < line.size(); i++) {
               if ((line[i] == ' ') || (i == line.size() - 1)) {              
               	  string word = string(line.begin() + begin, line.begin() + i);
-              	  freqlist[word]++;
+              	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " "))
+              	  	freqlist[word]++;
               	  begin = i+ 1; 
               }
               
@@ -87,13 +88,14 @@ void ClassEncoder::build(const string & filename) {
         multimap<const int, const string> revfreqlist;
         for (unordered_map<const string,int>::iterator iter = freqlist.begin(); iter != freqlist.end(); iter++) {
         	cerr << iter->first << '\t' << iter->second << endl; 
-        	revfreqlist.insert( pair<const int,const string>(iter->second, iter->first) );
+        	revfreqlist.insert( pair<const int,const string>(-1 * iter->second, iter->first) );
         } 
         
         freqlist.clear();
         
         int cls = 1; //one is reserved
         for (multimap<const int,const string>::iterator iter = revfreqlist.begin(); iter != revfreqlist.end(); iter++) {
+        	cerr << iter->first << endl;
         	cls++;
         	while (!validclass(cls)) cls++;
         	classes[iter->second] = cls;
@@ -136,7 +138,7 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
           	  begin = i;
           	  if (word == "\n") {
           	  	if (i < line.size() - 1) OUT.write(&one, sizeof(char)); //write newline
-          	  } else {
+          	  } else if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
           	  	unsigned int cls = classes[word];
           	  	int length = 0;
   	        	const unsigned char * byterep = inttobytes(cls, length);
