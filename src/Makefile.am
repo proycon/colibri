@@ -5,12 +5,18 @@ bin_PROGRAMS = classdecode patternfinder graphmodel #aligner
 lib_LTLIBRARIES = libcolibri.la
 
 libcolibri_la_CXXFLAGS = -Wall -std=c++0x
-libcolibri_la_SOURCES = classdecoder.cpp ngram.cpp algorithms.cpp patternmodel.cpp common.cpp
+libcolibri_la_SOURCES = classdecoder.cpp classencoder.cpp ngram.cpp algorithms.cpp patternmodel.cpp common.cpp
 
 classdecode_CXXFLAGS = -Wall -std=c++0x
 classdecode_LDADD = libcolibri.la
 classdecode_SOURCES = classdecode.cpp
 classdecode_LDFLAGS = -static
+
+classencode_CXXFLAGS = -Wall -std=c++0x
+classencode_LDADD = libcolibri.la
+classencode_SOURCES = classencode.cpp
+classencode_LDFLAGS = -static
+
 
 graphmodel_CXXFLAGS = -Wall -std=c++0x
 graphmodel_LDADD = libcolibri.la

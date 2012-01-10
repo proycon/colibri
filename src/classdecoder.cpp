@@ -77,7 +77,7 @@ void ClassDecoder::decodefile(const string & filename) {
     }
     IN->close();                    
 } 
-
+	
 
 
 int readline(istream* IN, unsigned char* buffer, const int MAXBUFFERSIZE) {
