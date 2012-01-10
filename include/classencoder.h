@@ -23,10 +23,11 @@ class ClassEncoder {
     unsigned int operator[](const std::string & key) {
          return classes[key];
     }
-};
+};    
 
 bool validclass(unsigned int cls);
 unsigned char * inttobytes(unsigned int, int & length);
 int readline(std::istream* IN, unsigned char* buffer, const int);
 
 const int countwords(const unsigned char* data, const int l);
+

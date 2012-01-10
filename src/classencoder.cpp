@@ -59,7 +59,7 @@ ClassEncoder::ClassEncoder(const string & filename) {
 }
 
 void ClassEncoder::build(const string & filename) {
-	   unordered_map<const string,int> freqlist;
+	   unordered_map<string,int> freqlist;
 	    
 	   //compute frequency list of all words        
        ifstream IN;
@@ -74,7 +74,7 @@ void ClassEncoder::build(const string & filename) {
           int begin = 0;
           for (int i = 0; i < line.size(); i++) {
               if ((line[i] == ' ') || (i == line.size() - 1)) {              
-              	  const string word = string(line.begin() + begin, line.begin() + i);
+              	  string word = string(line.begin() + begin, line.begin() + i);
               	  freqlist[word]++;
               }
               
