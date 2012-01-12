@@ -135,13 +135,16 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
       string line;
       getline(IN, line);              
       int begin = 0;
-      for (int i = 0; i < line.size(); i++) {
-          if ((line[i] == ' ') || (i == line.size() - 1)) {              
-          	  const string word = string(line.begin() + begin, line.begin() + i);
+      for (int i = 0; i < line.length(); i++) {
+      	  if ((line[i] == ' ') || (i == line.length() - 1)) {
+          	  string word;
+          	  if (line[i] == ' ') {
+          	  	word  = string(line.begin() + begin, line.begin() + i);
+          	  } else {
+			   	word  = string(line.begin() + begin, line.begin() + i + 1);
+          	  }
           	  begin = i+1;
-          	  if (word == "\n") {
-          	  	OUT.write(&one, sizeof(char)); //write newline
-          	  } else if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
+          	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
           	  	unsigned int cls = classes[word];
           	  	int length = 0;
   	        	const unsigned char * byterep = inttobytes(cls, length);
@@ -149,9 +152,11 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
   	        	OUT.write((const char *) byterep, length);
   	        	delete byterep; 
           	  }
-			 if (i < line.size() - 1) OUT.write(&zero, sizeof(char)); //write separator
+			 OUT.write(&zero, sizeof(char)); //write separator
           }
       }
+      OUT.write(&one, sizeof(char)); //newline          
+      OUT.write(&zero, sizeof(char)); //write separator          
     }        
 	IN.close();
 	OUT.close();
