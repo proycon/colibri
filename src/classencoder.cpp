@@ -20,14 +20,19 @@ bool validclass(unsigned int cls) {
 
 unsigned char * inttobytes(unsigned int cls, int & length) {	
 	//compute length of byte array
-	length = ceil(cls / 256);	
+	unsigned int cls2 = cls;
+	length = 0;
+	do {
+		cls2 = cls2 / 256;
+		length++;
+	} while (cls2 > 0);
 	unsigned char * byterep = new unsigned char[length];
 	int i = 0;
     do {
     	int r = cls % 256;
     	byterep[i++] = (unsigned char) r;
     	cls = cls / 256;
-    } while (cls >= 256);
+    } while (cls > 0);
 	return byterep;    
 }
 
@@ -87,7 +92,6 @@ void ClassEncoder::build(const string & filename) {
         //sort by occurrence count  using intermediate representation
         multimap<const int, const string> revfreqlist;
         for (unordered_map<const string,int>::iterator iter = freqlist.begin(); iter != freqlist.end(); iter++) {
-        	cerr << iter->first << '\t' << iter->second << endl; 
         	revfreqlist.insert( pair<const int,const string>(-1 * iter->second, iter->first) );
         } 
         
@@ -95,7 +99,6 @@ void ClassEncoder::build(const string & filename) {
         
         int cls = 1; //one is reserved
         for (multimap<const int,const string>::iterator iter = revfreqlist.begin(); iter != revfreqlist.end(); iter++) {
-        	cerr << iter->first << endl;
         	cls++;
         	while (!validclass(cls)) cls++;
         	classes[iter->second] = cls;
@@ -123,7 +126,7 @@ vector<unsigned int> ClassEncoder::encodeseq(const vector<string> & seq) {
 
 void ClassEncoder::encodefile(const std::string & inputfilename, const std::string & outputfilename) {
 	const char zero = 0;
-	const char one = 0;
+	const char one = 1;
 	ofstream OUT;
 	ifstream IN;
 	OUT.open(outputfilename.c_str(), ios::out | ios::binary);	
@@ -135,18 +138,19 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
       for (int i = 0; i < line.size(); i++) {
           if ((line[i] == ' ') || (i == line.size() - 1)) {              
           	  const string word = string(line.begin() + begin, line.begin() + i);
-          	  begin = i;
+          	  begin = i+1;
           	  if (word == "\n") {
-          	  	if (i < line.size() - 1) OUT.write(&one, sizeof(char)); //write newline
+          	  	OUT.write(&one, sizeof(char)); //write newline
           	  } else if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
           	  	unsigned int cls = classes[word];
           	  	int length = 0;
   	        	const unsigned char * byterep = inttobytes(cls, length);
+  	        	//cerr << "writing " << word << " as " << cls << " in " << length << " bytes" << endl;
   	        	OUT.write((const char *) byterep, length);
   	        	delete byterep; 
           	  }
+			 if (i < line.size() - 1) OUT.write(&zero, sizeof(char)); //write separator
           }
-          if (i < line.size() - 1) OUT.write(&zero, sizeof(char)); //write separator
       }
     }        
 	IN.close();
