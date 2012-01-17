@@ -6,22 +6,76 @@ COLIBRI: Construction as Linguistic Bridges
 	Licensed under GPLv3
 
 
+1. ENCODING YOUR CORPUS
+----------------------
 
-1) Encode your plain-text corpus data to a compressed binary form:
+Encode your plain-text corpus data to a compressed binary form. Make sure your input is tokenised and each sentence is on one line!
  
-classencode -f yourcorpus
+	classencode -f yourcorpus
 
-This results in a class file (yourcorpus.cls) and the encoded corpus (yourcorpus.clsenc)
+This results in a class file (yourcorpus.cls) and the encoded corpus (yourcorpus.clsenc). These can be used by the patternfinder. 
+
+To decode an encoded corpus back to it's normal textual form:
+
+ 	classdecode -f yourcorpus.clsenc -c yourcorpus.cls
+ 	
+If your corpus is not tokenised yet, you can use ucto (distributed seperately), this will also do sentence detection and output one line per sentence. 
+
+	ucto -L en -n untokenisedcorpus.txt > tokenisedcorpus.txt
+	
+	(for English, several other languages are also supported )
+
+2. FINDING PATTERNS
+-------------------------
+ 
+ 1) Make sure to have a properly encoded corpus (see previous section)
+ 
+ 2) Invoke the pattern finder your encoded corpus. You can create either an indexed model or an unindexed model, the latter will consume significantly less memory as it does not retain an index to where ngrams/skipgrams occur in the corpus, it does not retain skip content either and is less configurable.
+
+  To make an indexed model:	
+	 patternfinder -f yourcorpus.clsenc -t 10 
+
+  To make an unindexed model (add -u)
+	 patternfinder -u -f yourcorpus.clsenc -t 10
+ 
+ (-t specified the pruning threshold in number of tokens per construction. See patternfinder -h for all options)
+
+ This results in an ngram/skipgram model yourcorpus.indexedpatternmodel.colibri or yourcorpus.unindexedpatternmodel.colibri .
+ 
+ 3) Decode the model back (to stdout) using the -d and -c options 
+ 
+   For indexed models:
+    patternfinder -d your.indexedpatternmodel.colibri -c yourcorpus.cls > patterns.txt
+	
+   For unindexed models add -u:
+    patternfinder -u -d your.unindexedpatternmodel.colibri -c yourcorpus.cls > patterns.txt
+     
+    
+3. BUILDING A GRAPH MODEL    
+-------------------------
+
+Indexed pattern models can be used to build more sophisticated graph-based models.
+
+ (to be completed later)
+
+4. TRAINING AN ALIGNMENT MODEL
+---------------------------------
+ 
+ 1) Encode your source corpus and target corpus (see section 1)
+ 2) Build an (independent) indexed pattern model for both (see section 2)
+ 3) For both source and target, build a graph model (see previous section) containing parent relations (-P) and exclusive count data (-X):
+    graphmodel -f source.indexedpatternmodel.colibri -P -X
+    graphmodel -f target.indexedpatternmodel.colibri -P -X
+  
+  This results in source.graphmodel.colibri and target.graphmodel.colibri . These models can be decoded to a textual representation by passing them to graphmodel using -d and the cls file using -c . 
+ 
+ 4) Train an alignment model using the graph models:
+   
+ 
+ 
+   
+  
+    
+      
  
 
-2) Invoke the pattern finder on these files:
-
- patternfinder -f yourcorpus.clsenc
- 
-(See patternfinder -h for important options, including pruning thresholds)
-
-This results in an ngram/skipgram model yourcorpus.clsenc.bin (binary) 
- 
-3) Decode the binary file back to a text file
-
- modeldecode -f yourcorpus.clsenc.bin -c yourcorpus.cls
