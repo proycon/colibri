@@ -66,11 +66,11 @@ void ClassDecoder::decodefile(const string & filename, unsigned int start, unsig
             //cout << "N: " << n << endl;
             const unsigned int cls = bytestoint(buffer, n);  
             if (cls == 1) {
-            	if (linenumber > start) cout << endl;
+            	if (linenumber >= start) cout << endl;
                 linenumber++;            	
             } else {
                 //cout << cls << ' ';
-                if (linenumber > start) cout << classes[cls] << ' ';
+                if (linenumber >= start) cout << classes[cls] << ' ';
             }
             n = 0;
         } else {
@@ -78,7 +78,7 @@ void ClassDecoder::decodefile(const string & filename, unsigned int start, unsig
         }
     }
     IN->close();     
-    cerr << "Decoded " << linenumber << " lines";               
+    cerr << "Decoded " << linenumber - start << " lines" << endl;               
 } 
 	
 
