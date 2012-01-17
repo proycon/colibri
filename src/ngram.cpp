@@ -21,7 +21,7 @@ EncAnyGram::EncAnyGram(const unsigned char* dataref, const char size) {
    //create a copy of the character data (will take less space than storing pointers anyhow!)
    if (size <= 0) {
        cerr << "INTERNAL ERROR EncAnyGram(): Data size must be > 0! Parameter says " << (int) size << "!" << endl;
-       exit(3);
+       exit(666);
    }
    _size = size;
    
