@@ -153,10 +153,10 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
             
             const int l = countwords(line, linesize);            
             if (l >= 256) {
-                cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping!" << endl;
+                cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping! (" << linesize << " bytes)" << endl;
                 continue;
            } else if (l == 0) {
-            	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping!" << endl;
+            	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping! (" << linesize << " bytes)" << endl;
                 continue;                
             }
             

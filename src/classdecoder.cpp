@@ -123,7 +123,11 @@ int readline(istream* IN, unsigned char* buffer, const int MAXBUFFERSIZE) {
         }
         n++;
     }    
-    return 0;
+    if (IN->eof()) {
+    	return n;
+    } else {    
+    	return 0;
+    }
 }
 
 const int countwords(const unsigned char* data, const int l) {
