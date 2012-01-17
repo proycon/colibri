@@ -50,11 +50,12 @@ vector<string> ClassDecoder::decodeseq(const vector<int> & seq) {
 
 
 
-void ClassDecoder::decodefile(const string & filename) {
+void ClassDecoder::decodefile(const string & filename, unsigned int start, unsigned int end) {
     ifstream *IN = new ifstream(filename.c_str()); //, ios::in | ios::binary);
     unsigned char buffer[10];
     int n = 0;
-    while (IN->good()) {
+    unsigned int linenumber = 1;
+    while ((IN->good()) && ((end == 0) || (linenumber <= end))) {
         char bufchar;
         IN->get(bufchar);
         
@@ -65,17 +66,19 @@ void ClassDecoder::decodefile(const string & filename) {
             //cout << "N: " << n << endl;
             const unsigned int cls = bytestoint(buffer, n);  
             if (cls == 1) {
-                cout << endl;
+            	if (linenumber > start) cout << endl;
+                linenumber++;            	
             } else {
                 //cout << cls << ' ';
-                cout << classes[cls] << ' ';
+                if (linenumber > start) cout << classes[cls] << ' ';
             }
             n = 0;
         } else {
             n++;
         }
     }
-    IN->close();                    
+    IN->close();     
+    cerr << "Decoded " << linenumber << " lines";               
 } 
 	
 

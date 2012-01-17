@@ -4,6 +4,7 @@
 #include <iostream>
 #include <map>
 #include <unordered_map>
+#include "common.h"
 
 using namespace std;
 
@@ -75,7 +76,8 @@ void ClassEncoder::build(const string & filename) {
        }       
         while (IN.good()) {
           string line;
-          getline(IN, line);              
+          getline(IN, line);     
+          line = trim(line, " \t");         
           int begin = 0;
           for (int i = 0; i < line.size(); i++) {
               if ((line[i] == ' ') || (i == line.size() - 1)) {              
@@ -131,10 +133,12 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
 	ifstream IN;
 	OUT.open(outputfilename.c_str(), ios::out | ios::binary);	
 	IN.open(inputfilename.c_str());
+	unsigned int linenum = 1;
 	while (IN.good()) {	
       string line;
       getline(IN, line);              
       int begin = 0;
+      bool empty = true;
       for (int i = 0; i < line.length(); i++) {
       	  if ((line[i] == ' ') || (i == line.length() - 1)) {
           	  string word;
@@ -145,9 +149,14 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
           	  }
           	  begin = i+1;
           	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
+          	    empty = false;
           	  	unsigned int cls = classes[word];
           	  	int length = 0;
   	        	const unsigned char * byterep = inttobytes(cls, length);
+  	        	if (length == 0) {
+  	        		cerr << "INTERNAL ERROR: Error whilst encoding '" << word << "' (class " << cls << "), length==0, not possible!" << endl;
+  	        		exit(13);
+  	        	}  	        		
   	        	//cerr << "writing " << word << " as " << cls << " in " << length << " bytes" << endl;
   	        	OUT.write((const char *) byterep, length);
   	        	delete byterep;
@@ -155,9 +164,14 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
           	  }			 
           }
       }
+      if (empty) {
+      	 cerr << "NOTICE: Line " << linenum << " is empty..." << endl;
+      }
       OUT.write(&one, sizeof(char)); //newline          
       OUT.write(&zero, sizeof(char)); //write separator          
+      linenum++;
     }        
+    cerr << "Encoded " << linenum << " lines" << endl;
 	IN.close();
 	OUT.close();
 }

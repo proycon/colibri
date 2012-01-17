@@ -71,7 +71,7 @@ class EncNGram: public EncAnyGram {
     int subngrams(std::vector<EncNGram*> & container) const;     
 };
 
-EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size);
+EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size, const unsigned int linenum = 0);
 
 
  

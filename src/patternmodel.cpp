@@ -155,7 +155,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
             
             if (linesize > 0) //no { on purpose! applies to next for loop
             for (unsigned char i = 0; ((i < l - n + 1) && (i < 256)); i++) {                
-                EncNGram * ngram = getencngram(i,n, line, linesize);  
+                EncNGram * ngram = getencngram(i,n, line, linesize, sentence);  
                                                 
 
                 //cout << "NGRAM("<<ngram->n()<<","<<(int)ngram->size() << ")" << endl;
@@ -696,7 +696,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
             
             if (linesize > 0) //no { on purpose! applies to next for loop
             for (unsigned char i = 0; ((i < l - n + 1) && (i < 256)); i++) {                
-                EncNGram * ngram = getencngram(i,n, line, linesize);  
+                EncNGram * ngram = getencngram(i,n, line, linesize, sentence);  
                                                 
 
                 //cout << "NGRAM("<<ngram->n()<<","<<(int)ngram->size() << ")" << endl;

@@ -101,16 +101,12 @@ EncNGram * EncNGram::slice(const int begin,const int length) const {
     return getencngram(begin, length, data, _size);
 }
 
-EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size) {
+EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size, const unsigned int linenum) {
     int currentindex = 0;
     int beginpos = 0;
     int endpos = -1;
     for (int i = 0; i < size; i++) {
         if (line[i] == 0) {
-        	if (i == 0) { //fix for encoding problem: 0 byte at beginning, 
-        		beginpos = i+1;
-        		continue;
-        	}
             currentindex++;
             if (currentindex == index) {
                 beginpos = i+1;
@@ -125,7 +121,8 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
     const char bytesize = (char) (endpos - beginpos + 1);    
     if (bytesize <= 0) {
         cerr << "INTERNAL ERROR getencgram(): yielding ngram with size <= 0! Not possible!" << " index="<<index << " n="<<n <<" size="<< (int) bytesize << " beginpos=" << beginpos << " endpos=" << endpos << " sentencesize=" << size << endl;
-        cerr << "DEBUG DATA DUMP: ";
+        if (linenum > 0) cerr << "OCCURRED ON LINE " << linenum << endl;
+        cerr << "ENCODED DATA DUMP FOR DEBUG (index:byte): ";
         for (int i = 0; i < size; i++) {
         	cerr << i << ':' << (int) line[i] << ' ';        	
         }

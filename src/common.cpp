@@ -1,5 +1,17 @@
 #include <common.h>
 
+
+std::string trim(const std::string &t, const std::string &ws) {
+    std::string str = t;
+    size_t found;
+    found = str.find_last_not_of(ws);
+    if (found != std::string::npos)
+        str.erase(found+1);
+    else
+        str.clear();            // str is all whitespace
+    return str;
+}
+
 std::string get_extension(const std::string& filename) {
     if(filename.find_last_of(".") != std::string::npos)
         return filename.substr(filename.find_last_of(".")+1);
