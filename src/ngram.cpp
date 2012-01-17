@@ -20,7 +20,7 @@ EncAnyGram::EncAnyGram() {
 EncAnyGram::EncAnyGram(const unsigned char* dataref, const char size) {
    //create a copy of the character data (will take less space than storing pointers anyhow!)
    if (size <= 0) {
-       cerr << "EncAnyGram: Data size must be > 0! Parameter says " << (int) size << "!" << endl;
+       cerr << "INTERNAL ERROR EncAnyGram(): Data size must be > 0! Parameter says " << (int) size << "!" << endl;
        exit(3);
    }
    _size = size;
@@ -34,8 +34,8 @@ EncAnyGram::EncAnyGram(const unsigned char* dataref, const char size) {
 EncAnyGram::EncAnyGram(const EncAnyGram& ref) {
     _size = ref.size();
     if (_size <= 0) {
-        cerr << "EncAnyGram: Data size must be > 0, reference n-gram has " << (int) _size << "!" << endl;
-        exit(3);    
+        cerr << "INTERNAL ERROR EncAnyGram(): Data size must be > 0, reference n-gram has " << (int) _size << "!" << endl;
+        exit(666);    
     }
     data = new unsigned char[_size];   
     for (int i = 0; i < _size; i++) {
@@ -95,8 +95,8 @@ const size_t EncAnyGram::hash() const {
 
 EncNGram * EncNGram::slice(const int begin,const int length) const {    
     if (length <= 0) {
-        cerr << "slice got length argument <= 0! Not possible!" << endl;
-        exit(3);
+        cerr << "INTERNAL ERROR EncNGram::slice(): slice got length argument <= 0! Not possible!" << endl;
+        exit(666);
     }
     return getencngram(begin, length, data, _size);
 }
@@ -124,8 +124,8 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
     }
     const char bytesize = (char) (endpos - beginpos + 1);    
     if (bytesize <= 0) {
-        cerr << "getencgram yields ngram with size <= 0! Not possible!" << " index="<<index << " n="<<n <<" size="<< (int) bytesize << " beginpos=" << beginpos << " endpos=" << endpos << " sentencesize=" << size << endl;
-        exit(3);
+        cerr << "INTERNAL ERROR getencgram(): yielding ngram with size <= 0! Not possible!" << " index="<<index << " n="<<n <<" size="<< (int) bytesize << " beginpos=" << beginpos << " endpos=" << endpos << " sentencesize=" << size << endl;
+        exit(666);
     }
     return new EncNGram(line + beginpos, bytesize);
 }
@@ -234,8 +234,8 @@ EncAnyGram & EncAnyGram::operator =(EncAnyGram other) { //(note: argument passed
 
 void EncAnyGram::writeasbinary(ostream * out) const {
     if (_size <= 0) {
-        cerr << "Writing skipgram with size <= 0! Not possible!" << endl;
-        exit(3);
+        cerr << "INTERNAL ERROR EncNGram::writeasbinary(): Writing skipgram with size <= 0! Not possible!" << endl;
+        exit(666);
     }
     out->write( &_size, sizeof(char) ); //data length
     out->write( (char*) data , (int) _size ); //data
@@ -247,8 +247,8 @@ void EncSkipGram::writeasbinary(ostream * out) const {
             out->write( skipsize + j , sizeof(char) );
     }
     if (_size <= 0) {
-        cerr << "Writing skipgram with size <= 0! Not possible!" << endl;
-        exit(3);
+        cerr << "INTERNAL ERROR EncSkipGram::writeasbinary(): Writing skipgram with size <= 0! Not possible!" << endl;
+        exit(666);
     }
     out->write( &_size, sizeof(char) ); //size
     out->write( (char*) data , (int) _size ); //data
@@ -317,9 +317,9 @@ EncSkipGram::EncSkipGram(const vector<EncNGram*> & dataref, const vector<int> & 
         }        
     }
     if ((char) skipref.size() != skipcount) {
-        cerr << "ENCSKIPGRAM ERROR: Skipgram contains " << (int) skipcount << " skips, but configuration specifies " << skipref.size() << endl;      
+        cerr << "INTERNAL ERROR: EncSkipGram(): Skipgram contains " << (int) skipcount << " skips, but configuration specifies " << skipref.size() << endl;      
         cerr << data <<endl;
-        exit(1);
+        exit(666);
     }    
 }
 
@@ -358,8 +358,8 @@ EncSkipGram::EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, cons
             
     _size = pregapsize + postgapsize + 2;
     if (_size <= 0) {
-        cerr << "EncSkipGram: Data size must be > 0!" << endl;
-        exit(3);    
+        cerr << "INTERNAL ERROR EncSkipGram(): Data size must be > 0! Got " << (int) _size << endl;
+        exit(666);    
     }
     data = new unsigned char[_size];    
     int cursor = 0;
@@ -489,8 +489,8 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
 EncNGram::EncNGram(istream * in) {
     in->read(&_size, sizeof(char));    
     if (_size <= 0) {
-        cerr << "EncNGram: data has to have size >0, " << (int) _size << " is not possible!" << endl;;
-        exit(5);
+        cerr << "INTERNAL ERROR: EncNGram(): data has to have size >0, " << (int) _size << " is not possible!" << endl;;
+        exit(666);
     }
     data = new unsigned char[_size];
     in->read((char*) data, (int) _size); //read data                                                
@@ -507,8 +507,8 @@ EncSkipGram::EncSkipGram(istream * in, const char gapcount) {
     }
     in->read(&_size, sizeof(char));
     if (_size <= 0) {
-        cerr << "EncSkipGram: data has to have size >0, read " << (int) _size << ", not possible!" << endl;;
-        exit(5);
+        cerr << "INTERNAL ERROR: EncSkipGram(): data has to have size >0, read " << (int) _size << ", not possible!" << endl;;
+        exit(666);
     }
     data = new unsigned char[_size];
     in->read((char*) data, (int) _size); //read data                                                
