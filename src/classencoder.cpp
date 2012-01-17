@@ -150,9 +150,9 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
   	        	const unsigned char * byterep = inttobytes(cls, length);
   	        	//cerr << "writing " << word << " as " << cls << " in " << length << " bytes" << endl;
   	        	OUT.write((const char *) byterep, length);
-  	        	delete byterep; 
-          	  }
-			 OUT.write(&zero, sizeof(char)); //write separator
+  	        	delete byterep;
+  	        	OUT.write(&zero, sizeof(char)); //write separator 
+          	  }			 
           }
       }
       OUT.write(&one, sizeof(char)); //newline          

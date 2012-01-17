@@ -107,7 +107,7 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
     int endpos = -1;
     for (int i = 0; i < size; i++) {
         if (line[i] == 0) {
-        	if (i == 0) { //fix for encoding problem: 0 byte at beginning, skip
+        	if (i == 0) { //fix for encoding problem: 0 byte at beginning, 
         		beginpos = i+1;
         		continue;
         	}
