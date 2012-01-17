@@ -100,11 +100,12 @@ class IndexedPatternModel: public ModelReader, public ModelWriter {
     bool DOFINALONLYSKIP; //= true;
 
     
-    int ngramtypecount;
-    int skipgramtypecount;
     
+    int ngramtypecount;
+    int skipgramtypecount;    
 
    public:
+
     unsigned long ngramtokencount;
     unsigned long skipgramtokencount; 
     
@@ -118,8 +119,8 @@ class IndexedPatternModel: public ModelReader, public ModelWriter {
     
     std::unordered_map< int,std::vector<EncNGram> > ngram_reverse_index;
     std::unordered_map< int,std::vector<EncSkipGram> > skipgram_reverse_index;
-        
-    IndexedPatternModel(const std::string & filename, bool DOREVERSEINDEX = false);
+           
+    IndexedPatternModel(const std::string & filename = "", bool DOREVERSEINDEX = false);
     IndexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOREVERSEINDEX = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
     
     int maxlength() const { return MAXLENGTH; }
@@ -256,8 +257,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     bool DELETEMODEL;
     
     void readrelations(std::istream * in,const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > &, bool ignore = false);
-    void writerelations(std::ostream * out, const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & );
-    
+    void writerelations(std::ostream * out, const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & );      
    public:
    
     IndexedPatternModel * model;
@@ -274,9 +274,11 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
 
    
     GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=false,bool DOXCOUNT=false); //compute entire model
-    GraphPatternModel(const std::string & graphmodelfilename, const std::string & patternmodelfilename) { 
-        DELETEMODEL = true; 
-        model = new IndexedPatternModel(patternmodelfilename);
+    GraphPatternModel(const std::string & graphmodelfilename, IndexedPatternModel * model = NULL) {
+    	if (model == NULL) { 
+        	DELETEMODEL = true;        
+	        model = new IndexedPatternModel();
+	    }
         readfile(graphmodelfilename); 
     }
     ~GraphPatternModel();
@@ -302,54 +304,40 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     void decode(ClassDecoder & classdecoder, std::ostream *NGRAMSOUT, std::ostream *SKIPGRAMSOUT);    
 };
 
-/*
-struct IndexedPatternModel {    
-    uint32_t count;
-    uint32_t xcount;
-    set<uint32_t> sentencerefs;
+
+class IndexCountData {
+	public:
+	 uint32_t xcount;
+	 std::multiset<uint32_t> sentences; //may occur multiple times in same sentence
 };
 
-class EnhancedCountPatternModel: public ModelReader {
-    // Read only model, reads graphpatternmodel in a simplified, less memory intensive representation for Co-occurrence alignment 
-    
-    public:
-     std::unordered_map<EncNGram,EnhancedCountData> ngrams;
-     std::unordered_map<EncSkipGram,EnhancedCountData> skipgrams;
-     EnhancedCountPatternModel(const std::string & filename); //read a graph pattern model as cooc pattern model
+class DoubleIndexedGraphPatternModel: public ModelReader {
+    // Read only model, reads graphpatternmodel in a simplified, less memory intensive representation optimised for alignment tasks 
+    private:
+     bool HASPARENTS;
+     bool HASCHILDREN;
+     bool HASXCOUNT;
      
-};
-*/
-
-/*
-
-class AlignmentModel {
-   public:
-    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignprob;    
-    void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
-
-};
-
-class EMAlignmentModel: public AlignmentModel {
-   public:    
-    EMAlignmentModel(IndexedPatternModel & sourcemodel, IndexedPatternModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001);        
-    //save(const std::string filename);
-};
-
-class CoocAlignmentModel: public AlignmentModel {
-   private:
-    double absthreshold;
-    double relthreshold;
-   public:
-    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignprob;    
-   
-    CoocAlignmentModel(IndexedPatternModel & sourcemodel, IndexedPatternModel & targetmodelconst, double absthreshold = 0,  const double relthreshold = 0);         
-   
-    double cooc( std::set<uint32_t> & sourceindex, std::set<uint32_t> & targetindex); 
-    int compute(const EncAnyGram * sourcegram, std::set<int> & sourceindex, IndexedPatternModel & targetmodel);
     
+     int ngramtypecount;
+     int skipgramtypecount;    
+     void readrelations(std::istream * in,const EncAnyGram*);
+    public:
+
+     unsigned long ngramtokencount;
+     unsigned long skipgramtokencount;  
+     std::unordered_map<const EncNGram, IndexCountData> ngrams;
+     std::unordered_map<const EncSkipGram,IndexCountData> skipgrams;
     
+     std::unordered_map<uint32_t,std::vector<const EncAnyGram*> > reverseindex;    
+     DoubleIndexedGraphPatternModel(const std::string & filename); //read a graph pattern model
+  
+     
+    virtual uint64_t id() { return 20; }
     
-    //void save(const std::string filename);
+    virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes);
+    virtual void readngram(std::istream * in, const EncNGram & ngram);
+    virtual void readskipgram(std::istream * in, const EncSkipGram & skipgram);
+    virtual void readfooter(std::istream * in) {};
 };
 
-*/

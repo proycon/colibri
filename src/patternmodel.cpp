@@ -373,7 +373,7 @@ IndexedPatternModel::IndexedPatternModel(const string & filename, bool DOREVERSE
     skipgramtypecount = 0;
     MAXLENGTH = 0;
     
-    readfile(filename);
+    if (!filename.empty()) readfile(filename);
 }
 
 void IndexedPatternModel::readngram(std::istream * f, const EncNGram & ngram) {
@@ -1217,6 +1217,7 @@ void GraphPatternModel::writeheader(std::ostream * out) {
 }
 
 void GraphPatternModel::readngram(std::istream * in, const EncNGram & ngram) {
+	model->readngram(in, ngram);   
     if (HASXCOUNT) {
         uint32_t _xcount;
         in->read((char*) &_xcount, sizeof(uint32_t));
@@ -1226,10 +1227,10 @@ void GraphPatternModel::readngram(std::istream * in, const EncNGram & ngram) {
 
     if (HASCHILDREN) 
         readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_children, !DOCHILDREN);    
-
 }
 
 void GraphPatternModel::readskipgram(std::istream * in, const EncSkipGram & skipgram) {
+	model->readskipgram(in,skipgram);
     if (HASXCOUNT) {
         uint32_t _xcount;
         in->read((char*) &_xcount, sizeof(uint32_t));
@@ -1238,13 +1239,13 @@ void GraphPatternModel::readskipgram(std::istream * in, const EncSkipGram & skip
     if (HASPARENTS) {
         readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_parents, !DOPARENTS);
     }
-
     if (HASCHILDREN) 
         readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_children, !DOCHILDREN);        
 }
 
 
 void GraphPatternModel::writengram(std::ostream * out, const EncNGram & ngram) {
+	model->writengram(out,ngram);
     if (DOXCOUNT) {
         uint32_t _xcount = xcount((const EncAnyGram*) &ngram);
         out->write( (char*) &_xcount, sizeof(uint32_t));
@@ -1254,20 +1255,21 @@ void GraphPatternModel::writengram(std::ostream * out, const EncNGram & ngram) {
           writerelations(out, (const EncAnyGram*) &ngram, rel_subsumption_parents);
         
     if (DOCHILDREN)  
-        writerelations(out, (const EncAnyGram*) &ngram, rel_subsumption_children);        
+        writerelations(out, (const EncAnyGram*) &ngram, rel_subsumption_children);
+        
+            
 }
 
-void GraphPatternModel::writeskipgram(std::ostream * out, const EncSkipGram & skipgram) {    
+void GraphPatternModel::writeskipgram(std::ostream * out, const EncSkipGram & skipgram) {
+	model->writeskipgram(out,skipgram);    
     if (DOXCOUNT) {
         uint32_t _xcount = xcount((const EncAnyGram*) &skipgram);
         out->write( (char*) &_xcount, sizeof(uint32_t));
     }
-
     if (DOPARENTS)  writerelations(out, (const EncAnyGram*) &skipgram, rel_subsumption_parents);
         
     if (DOCHILDREN)  
-        writerelations(out, (const EncAnyGram*) &skipgram, rel_subsumption_children);
-        
+        writerelations(out, (const EncAnyGram*) &skipgram, rel_subsumption_children);        
 }
 
 
@@ -1355,6 +1357,89 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, 
 
 }
 
+DoubleIndexedGraphPatternModel::DoubleIndexedGraphPatternModel(const std::string & filename) { //read a normal graph pattern model in another way optimised for Cooc alignment
+	readfile(filename);
+}
+
+
+void DoubleIndexedGraphPatternModel::readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes) {
+    in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
+    in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
+    in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
+    if (!HASXCOUNT) {
+    	cerr << "WARNING: No Xcount data in graph model! Aligners may rely on this and not function without!" << endl;
+    }
+}
+
+void DoubleIndexedGraphPatternModel::readrelations(std::istream * in, const EncAnyGram * anygram) {
+	//Read and ignore relations (we don't care about them but we do need to read them)
+    uint16_t count;
+    in->read((char*) &count,  sizeof(uint16_t));
+    char gapcount;
+    for (int i = 0; i < count; i++) {   
+       in->read(&gapcount, sizeof(char));
+       if (gapcount == 0) {
+        EncNGram ngram = EncNGram(in);
+       } else {
+        EncSkipGram skipgram = EncSkipGram( in, gapcount);
+       }           
+    }    
+}
+
+
+void DoubleIndexedGraphPatternModel::readngram(std::istream * in, const EncNGram & ngram) {
+	ngrams[ngram]; //will create the ngram if it does not exist yet in the hash
+	std::unordered_map<EncNGram,IndexCountData>::iterator iter = ngrams.find(ngram); //pointer to the ngram in the hash
+	const EncAnyGram * anygram = &iter->first;
+
+	ngramtypecount++;
+    uint32_t count;
+    in->read((char*) &count, sizeof(uint32_t)); //read occurrence count
+    ngramtokencount += count;    
+    for (int j = 0; j < count; j++) {
+        CorpusReference ref = CorpusReference(in); //read from file                
+        reverseindex[ref.sentence].push_back(anygram);
+    }	    
+    if (HASXCOUNT) {
+        uint32_t xcount;
+        in->read((char*) &xcount, sizeof(uint32_t));
+        ngrams[ngram].xcount = xcount;                   
+    }
+    if (HASPARENTS) readrelations(in, anygram); //read and ignore
+    if (HASCHILDREN) readrelations(in, anygram);  //read and ignore
+    //NOTE MAYBE TODO: make sure to update when GraphModel updates!    
+}
+
+void DoubleIndexedGraphPatternModel::readskipgram(std::istream * in, const EncSkipGram & skipgram) {
+	skipgrams[skipgram]; //will create the ngram if it does not exist yet in the hash
+	std::unordered_map<EncSkipGram,IndexCountData>::iterator iter = skipgrams.find(skipgram); //pointer to the skipgram in the hash
+	const EncAnyGram * anygram = &iter->first;
+
+    	  
+    skipgramtypecount++;
+    uint32_t count;
+    in->read((char*) &count, sizeof(uint32_t)); //read occurrence count            
+    skipgramtokencount += count;               
+    uint32_t skipcontentcount;
+    in->read((char*) &skipcontentcount, sizeof(uint32_t));   
+    for (int j = 0; j < skipcontentcount; j++) {                                
+        EncSkipGram skipcontent = EncSkipGram(in);  //also when !DOSKIPCONTENT, bytes have to be read
+        in->read((char*) &count, sizeof(uint32_t)); //read occurrence count                
+        for (int k = 0; k < count; k++) {
+            CorpusReference ref = CorpusReference(in); //read from file                
+        	reverseindex[ref.sentence].push_back(anygram);
+        }        
+    }    
+    if (HASXCOUNT) {
+        uint32_t xcount;
+        in->read((char*) &xcount, sizeof(uint32_t));
+        skipgrams[skipgram].xcount = xcount;    
+    }
+    if (HASPARENTS) readrelations(in, anygram);  //read and ignore
+    if (HASCHILDREN) readrelations(in, anygram);  //read and ignore
+    //NOTE MAYBE TODO: make sure to update when GraphModel updates!    
+}
+
 
 
 /*
@@ -1427,169 +1512,4 @@ void EncGramGraphModel::save(const string & filename) {
     
 }
 
-*/
-
-
-/*
-
-EMAlignmentModel::EMAlignmentModel(IndexedPatternModel & sourcemodel, IndexedPatternModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD) {
-    int round = 0;    
-    unsigned long c;
-    double totaldivergence = 0;
-    double prevavdivergence = 0;
-    bool converged = false;
-    
-    set<int> reverseindexkeys = sourcemodel.reverse_index_keys();
-            
-    do {       
-        round++; 
-        c = 0;
-        cerr << "  EM Round " << round << "... ";
-        //use reverse index to iterate over all sentences
-        for (set<int>::iterator iter = reverseindexkeys.begin(); iter != reverseindexkeys.end(); iter++) {
-            const int key = *iter;        
-            const int sourcegrams_size =  sourcemodel.reverse_index_size(key);
-            //vector<EncAnyGram*> sourcegrams = sourcemodel.reverse_index(key);
-            const int targetgrams_size =  targetmodel.reverse_index_size(key);
-            
-            if (targetgrams_size > 0 ) { //target model contains sentence?               
-                //vector<EncAnyGram*> targetgrams = targetmodel.reverse_index(key);  
-                cerr << key << ":" << sourcegrams_size << "x" << targetgrams_size << " ";
-
-                //compute sentencetotal for normalisation later in count step, sum_s(p(t|s))                                      
-                unordered_map<const EncAnyGram*, double> sentencetotal;                
-                for (int i = 0; i < targetgrams_size; i++) {    
-                    const EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
-                    for (int j = 0; j < sourcegrams_size; j++) {                                            
-                        const EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);                        
-                        sentencetotal[targetgram] += alignprob[sourcegram][targetgram]; //compute sum over all source conditions for a targetgram under consideration
-                    }
-                }               
-                
-                //collect counts (for evidence that a targetgram is aligned to a sourcegram)
-                std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > count;                
-                unordered_map<const EncAnyGram*, double> total;
-                for (int i = 0; i < targetgrams_size; i++) {    
-                    const EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
-                    for (int j = 0; j < sourcegrams_size; j++) {                                            
-                        const EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);                        
-                        const double countvalue = alignprob[sourcegram][targetgram] / sentencetotal[targetgram];
-                        count[sourcegram][targetgram] += countvalue;
-                        total[targetgram] += countvalue;
-                    }                    
-                }
-                
-                 
-                double prevtransprob;
-                //estimate new probabilities (normalised count is the new estimated probability)
-                for (int i = 0; i < targetgrams_size; i++) {    
-                    const EncAnyGram* targetgram = targetmodel.get_reverse_index_item(key,i);   
-                    for (int j = 0; j < sourcegrams_size; j++) {                                            
-                        const EncAnyGram* sourcegram = sourcemodel.get_reverse_index_item(key,j);
-                        
-                        prevtransprob = alignprob[sourcegram][targetgram];
-                        const double newtransprob = (double) count[sourcegram][targetgram] / total[targetgram];
-                        alignprob[sourcegram][targetgram] = newtransprob;                        
-                        
-                        //for computation of convergence
-                        const double divergence = abs(newtransprob - prevtransprob);
-                        cerr << " prevtransprob=" << prevtransprob << " ";
-                        cerr << " newtransprob=" << newtransprob << " ";
-                        cerr << " div=" << divergence << " ";
-                    
-                        totaldivergence += divergence;
-                        c++;
-                    }
-                }
-            }
-        }
-        const double avdivergence = (double) totaldivergence / c;
-        converged = (((round >= MAXROUNDS) || abs(avdivergence - prevavdivergence)) <= CONVERGEDTHRESHOLD);       
-        prevavdivergence = avdivergence;
-        cerr << " average divergence = " << avdivergence << ", alignprob size = " << alignprob.size() << endl;
-    } while (!converged);    
-}
-
-
-
-
-
-double CoocAlignmentModel::cooc( set<CorpusReference> & sourceindex, set<CorpusReference> & targetindex) {    
-    //Jaccard co-occurrence    
-    int intersectioncount = 0;    
-    
-    set<int>::iterator sourceiter = sourceindex.begin();    
-    set<int>::iterator targetiter = targetindex.begin();
-    
-    while ((sourceiter !=sourceindex.end()) && (targetiter!=targetindex.end())) {
-        if (sourceiter->sentence < targetiter->sentence) { 
-            sourceiter++;
-        } else if (targetiter->sentence < sourceiter->sentence) {
-            targetiter++;
-        } else {  //equal
-            intersectioncount++;
-            sourceiter++;
-            targetiter++;
-        }
-    }
-    const int unioncount = (sourceindex.size() + targetindex.size()) - intersectioncount; 
-    //cerr << "union=" << unioncount << " intersection=" << intersectioncount << " ";
-    return (double) intersectioncount / unioncount;
-}
-
-
-int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, set<int> & sourceindex, IndexedPatternModel & targetmodel) {        
-    int c = 0;
-    double bestcooc = 0;
-    for (set<int>::iterator iter2 = sourceindex.begin(); iter2 != sourceindex.end(); iter2++) {
-        const int sentencenumber = *iter2;        
-        const int targetgrams_size =  targetmodel.reverse_index_size(sentencenumber);    
-        c += targetgrams_size;
-        for (int i = 0; i < targetgrams_size; i++) {    
-            const EncAnyGram* targetgram = targetmodel.get_reverse_index_item(sentencenumber,i);  
-            set<int> * targetindices;
-            if (targetgram->gapcount() == 0) {
-               targetindices = &targetmodel.ngram_index[*( (EncNGram*) targetgram)];
-            } else {
-               targetindices = &targetmodel.skipgram_index[*( (EncSkipGram*) targetgram)];
-            }
-            
-            const double coocvalue = cooc(sourceindex, *targetindices);            
-            if ((relthreshold) && (coocvalue > bestcooc)) bestcooc = coocvalue;            
-            if (coocvalue >= absthreshold) {                
-                alignprob[sourcegram][targetgram] = coocvalue;
-            }
-        }
-        if (relthreshold) {
-            //TODO: prune based on relative threshold
-        }   
-    }    
-    return c;
-}
-
-CoocAlignmentModel::CoocAlignmentModel(EncGramModel & sourcemodel, EncGramModel & targetmodel, const double absthreshold, const double relthreshold) {
-    this->absthreshold = absthreshold;
-    this->relthreshold = relthreshold;
-    int c = 0;
-    for (unordered_map<EncNGram,NGramData >::iterator iter = sourcemodel.ngrams.begin();  iter != sourcemodel.ngrams.end(); iter++) {
-        cerr << ++c << " ";
-        compute(&iter->first, iter->second.refs, targetmodel);
-    }    
-    for (unordered_map<EncSkipGram,SkipGramData >::iterator iter = sourcemodel.skipgrams.begin();  iter != sourcemodel.skipgrams.end(); iter++) {
-        cerr << ++c << " ";
-        compute(&iter->first, iter->second.refs, targetmodel);
-    }            
-}
-    
-void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
-    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignprob.begin(); iter != alignprob.end(); iter++) {
-        const EncAnyGram* sourcegram = iter->first;
-        *OUT << sourcegram->decode(sourceclassdecoder) << "\t";
-        for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-            const EncAnyGram* targetgram = iter2->first;            
-            *OUT << targetgram->decode(targetclassdecoder) << "\t" << iter2->second << "\t";
-        }
-        *OUT << endl;
-    }
-}
 */

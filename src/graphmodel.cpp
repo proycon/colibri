@@ -11,12 +11,15 @@ using namespace std;
 
 
 void usage() {
-    cerr << "Syntax: graphmodel -f filename.indexedpatternmodel.colibri" << endl;        
-    cerr << "Constructs a graph model" << endl;    
+    cerr << "Syntax: graphmodel " << endl;        
+    cerr << "Constructs a graph model" << endl;
+    cerr << "\t-f filename.indexedpatternmodel.colibri		Indexed pattern model to load (required for building a graph model)" << endl;      
     cerr << "\t-P               Compute/load subsumption relations from children to parents (reverse of -C)" << endl;
     cerr << "\t-C               Compute/load subsumption relations from parents to children (reverse of -P)" << endl;
     cerr << "\t-X               Compute/load exclusive count" << endl;
-    cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced" << endl;
+    cerr << "\t------------------------------------------------------------------------------" << endl;
+    cerr << "\t-d filename.graphpatternmodel.colibri		Graph pattern model to load (for decoding an existing model, use with -c)" << endl;
+    cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced (use with -d)" << endl;
 }
 
 int main( int argc, char *argv[] ) {
@@ -64,8 +67,8 @@ int main( int argc, char *argv[] ) {
     
 
     
-    if (patternmodelfile.empty()) {
-            cerr << "ERROR: Need to specify -f corpusfile to compute pattern, or -f patternmodelfile -d graphmodelfile -c classfile to decode an existing model" << endl;
+    if (patternmodelfile.empty() && modelfile.empty()) {
+            cerr << "ERROR: Need to specify -f corpusfile to compute pattern, or -d graphmodelfile -c classfile to decode an existing model" << endl;
             usage();
             exit(2);
     }
@@ -111,10 +114,9 @@ int main( int argc, char *argv[] ) {
             graphmodel.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
         }        
     } else {
-        if (!classfile.empty()) {
-            
+        if (!classfile.empty()) {           
             cerr << "Loading graph model " << modelfile << endl;
-            GraphPatternModel graphmodel = GraphPatternModel(modelfile, patternmodelfile);        
+            GraphPatternModel graphmodel = GraphPatternModel(modelfile);        
         
             cerr << "Loading class decoder " << classfile << endl;
             ClassDecoder classdecoder = ClassDecoder(classfile);
