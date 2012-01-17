@@ -16,8 +16,8 @@ void usage() {
 int main( int argc, char *argv[] ) {    
     string classfile = "";
     string corpusfile = "";
-    int startline = 0;
-    int endline = 0; 
+    unsigned int start = 0;
+    unsigned int end = 0; 
      
     char c;    
     while ((c = getopt(argc, argv, "c:f:hs:e:")) != -1)
@@ -28,10 +28,16 @@ int main( int argc, char *argv[] ) {
             break;
         case 'f':
             corpusfile = optarg;
-            break;        
+            break;  
+        case 's':    
+        	start = atoi(optarg);
+        	break;
+       	case 'e':    
+        	end = atoi(optarg);
+        	break;        	  
         case 'h':
             usage();
-            exit(0);
+            exit(0);            
 		default:
             cerr << "Unknown option: -" <<  optopt << endl;
             abort ();
@@ -43,5 +49,5 @@ int main( int argc, char *argv[] ) {
     }
     
     ClassDecoder classdecoder = ClassDecoder(classfile);
-    classdecoder.decodefile(corpusfile);   
+    classdecoder.decodefile(corpusfile, start, end);   
 }
