@@ -332,6 +332,8 @@ class DoubleIndexedGraphPatternModel: public ModelReader {
      std::unordered_map<uint32_t,std::vector<const EncAnyGram*> > reverseindex;    
      DoubleIndexedGraphPatternModel(const std::string & filename); //read a graph pattern model
   
+     uint64_t types() const { return ngrams.size() + skipgrams.size(); }
+     uint64_t tokens() const { return ngramtokencount + skipgramtokencount; }
      
     virtual uint64_t id() { return 20; }
     

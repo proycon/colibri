@@ -2,10 +2,6 @@
 
 using namespace std;
 
-
-
-
-
 double CoocAlignmentModel::cooc( multiset<uint32_t> & sourceindex, multiset<uint32_t> & targetindex) {    
     //Jaccard co-occurrence    
     int intersectioncount = 0;    

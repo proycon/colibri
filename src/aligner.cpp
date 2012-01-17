@@ -1,15 +1,13 @@
-#include "ngram.h"
-#include <iostream>
-#include <unordered_map>
+#include "alignmodel.h"
 
 using namespace std;
 
 void usage() {
     cerr << "Aligner: aligner -s source-model -S source-class-file -t target-model -T target-class-file" << endl;
     cerr << "Options:" << endl;
-    cerr << "\t-s sourcemodelfile       Source model file" << endl;
+    cerr << "\t-s sourcemodelfile       Source graph model file (*.graphmodel.colibri)" << endl;
     cerr << "\t-S sourceclassfile       Source class file (for decoding)" << endl;
-    cerr << "\t-t targetmodelfile       Target model file" << endl;
+    cerr << "\t-t targetmodelfile       Target model file (*.graphmodel.colibri)"  << endl;
     cerr << "\t-T targetclassfile       Target class file (for decoding)" << endl;
     cerr << "\t-p pruning-threshold     Prune all alignments with a lower score than specified (0 <= x <= 1)" << endl;
     cerr << "\t-d                       Decode results" << endl;
@@ -62,21 +60,21 @@ int main( int argc, char *argv[] ) {
     ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    
     
     cerr << "Loading source model " << sourcemodelfile << endl;
-    EncGramModel sourcemodel = EncGramModel(sourcemodelfile,true,true,true);
+    DoubleIndexedGraphPatternModel sourcemodel = DoubleIndexedGraphPatternModel(sourcemodelfile);
     cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
-    cerr << "  Reverse index has " << sourcemodel.reverse_index_size() << " sentences" << endl;    
+    cerr << "  Reverse index has " << sourcemodel.reverseindex.size() << " sentences" << endl;    
     
     cerr << "Loading target model " << targetmodelfile << endl;
-    EncGramModel targetmodel = EncGramModel(targetmodelfile,true,true,true);
+    DoubleIndexedGraphPatternModel targetmodel = DoubleIndexedGraphPatternModel(targetmodelfile);
     cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
-    cerr << "  Reverse index has " << targetmodel.reverse_index_size() << " sentences" << endl;
+    cerr << "  Reverse index has " << targetmodel.reverseindex.size() << " sentences" << endl;
     
     cerr << "Computing alignment model..." << endl;
-    /*CoocAlignmentModel a = CoocAlignmentModel(sourcemodel,targetmodel, prunevalue);    
+    CoocAlignmentModel a = CoocAlignmentModel(sourcemodel,targetmodel, prunevalue);    
     if (DODECODE) {
         cerr << "Decoding..." << endl;
         a.decode(sourceclassdecoder, targetclassdecoder, &cout);    
-    }*/
-    EMAlignmentModel(sourcemodel,targetmodel,10000,0.001);    
+    }
+    //EMAlignmentModel(sourcemodel,targetmodel,10000,0.001);    
     
 }
