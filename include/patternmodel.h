@@ -340,4 +340,3 @@ class DoubleIndexedGraphPatternModel: public ModelReader {
     virtual void readskipgram(std::istream * in, const EncSkipGram & skipgram);
     virtual void readfooter(std::istream * in) {};
 };
-
