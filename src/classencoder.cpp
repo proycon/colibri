@@ -76,12 +76,13 @@ void ClassEncoder::build(const string & filename) {
        }       
         while (IN.good()) {
           string line;
-          getline(IN, line);     
-          line = trim(line, " \t");         
+          getline(IN, line);         
           int begin = 0;
           for (int i = 0; i < line.size(); i++) {
-              if ((line[i] == ' ') || (i == line.size() - 1)) {              
-              	  string word = string(line.begin() + begin, line.begin() + i);
+              if ((line[i] == ' ') || (i == line.size() - 1)) {
+              	  int offset = 0;
+              	  if (i == line.size() - 1) offset = 1;
+              	  string word = string(line.begin() + begin, line.begin() + i + offset);              	  
               	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " "))
               	  	freqlist[word]++;
               	  begin = i+ 1; 
@@ -134,11 +135,17 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
 	OUT.open(outputfilename.c_str(), ios::out | ios::binary);	
 	IN.open(inputfilename.c_str());
 	unsigned int linenum = 1;
+	bool empty = true;
 	while (IN.good()) {	
-      string line;
-      getline(IN, line);              
-      int begin = 0;
-      bool empty = true;
+      string line = "";
+      getline(IN, line);
+      if ((!empty) && (!IN.eof())) {      
+      	 OUT.write(&one, sizeof(char)); //newline          
+      	 OUT.write(&zero, sizeof(char)); //write separator
+      	 linenum++;      	 
+      }
+      empty = true;                   
+      int begin = 0;      
       for (int i = 0; i < line.length(); i++) {
       	  if ((line[i] == ' ') || (i == line.length() - 1)) {
           	  string word;
@@ -164,12 +171,7 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
           	  }			 
           }
       }
-      if (empty) {
-      	 cerr << "NOTICE: Line " << linenum << " is empty..." << endl;
-      }
-      OUT.write(&one, sizeof(char)); //newline          
-      OUT.write(&zero, sizeof(char)); //write separator          
-      linenum++;
+      
     }        
     cerr << "Encoded " << linenum << " lines" << endl;
 	IN.close();

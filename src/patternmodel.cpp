@@ -135,7 +135,11 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
         compute_multi_skips(gaps, vector<pair<int,int> >(), n);    
         
         
-        ifstream *IN =  new ifstream( corpusfile.c_str() );    
+        ifstream *IN =  new ifstream( corpusfile.c_str() );
+        if (!IN->good()) {
+        	cerr << "ERROR: Unable to open file " << corpusfile << endl;
+        	exit(5);
+        }    
         vector<unsigned int> words;
         while (IN->good()) {
             const int linesize = readline(IN, line, BUFFERSIZE );            
@@ -151,6 +155,9 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
             if (l >= 256) {
                 cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping!" << endl;
                 continue;
+           } else if (l == 0) {
+            	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping!" << endl;
+                continue;                
             }
             
             if (linesize > 0) //no { on purpose! applies to next for loop
@@ -676,7 +683,11 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
         
         unordered_map<const EncSkipGram,size_t> lastskipcontenthash; //0 if not seen yet , 1 if already verified, hash key otherwise
         
-        ifstream *IN =  new ifstream( corpusfile.c_str() );    
+        ifstream *IN =  new ifstream( corpusfile.c_str() );
+        if (!IN->good()) {
+        	cerr << "ERROR: Unable to open file " << corpusfile << endl;
+        	exit(5);
+        }        
         vector<unsigned int> words;
         while (IN->good()) {
             const int linesize = readline(IN, line, BUFFERSIZE );            
@@ -691,6 +702,9 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
             const int l = countwords(line, linesize);            
             if (l >= 256) {
                 cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping!" << endl;
+                continue;
+            } else if (l == 0) {
+            	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping!" << endl;
                 continue;
             }
             
