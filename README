@@ -32,13 +32,13 @@ If your corpus is not tokenised yet, you can use ucto (distributed seperately), 
  
  2) Invoke the pattern finder your encoded corpus. You can create either an indexed model or an unindexed model, the latter will consume significantly less memory as it does not retain an index to where ngrams/skipgrams occur in the corpus, it does not retain skip content either and is less configurable.
 
-  To make an indexed model:	
-	 patternfinder -f yourcorpus.clsenc -t 10 
+  To make an indexed model with skipgrams (-s):	
+	 patternfinder -f yourcorpus.clsenc -t 10 -s
 
-  To make an unindexed model (add -u)
-	 patternfinder -u -f yourcorpus.clsenc -t 10
+  To make an unindexed model (add -u) with skipgrams (-s):
+	 patternfinder -u -f yourcorpus.clsenc -t 10 -s
  
- (-t specified the pruning threshold in number of tokens per construction. See patternfinder -h for all options)
+ (-t specified the pruning threshold in number of tokens per construction. To omit skipgrams and do only n-grams, leave -s out. See patternfinder -h for all options)
 
  This results in an ngram/skipgram model yourcorpus.indexedpatternmodel.colibri or yourcorpus.unindexedpatternmodel.colibri .
  

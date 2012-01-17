@@ -59,7 +59,7 @@ int main( int argc, char *argv[] ) {
     }
     
     if (!DOCOOC) {
-    	cerr << "Error: No alignment method selected (add -C for Jaccard-based co-occurence)" << endl;
+    	cerr << "Error: No alignment method selected (add -C for Jaccard-based co-occurrence)" << endl;
     	usage();
     	exit(3);
     }

@@ -120,7 +120,7 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
     }
     const char bytesize = (char) (endpos - beginpos + 1);    
     if (bytesize <= 0) {
-        cerr << "getencgram yields ngram with size <= 0! Not possible!" << " index="<<index << " n="<<n <<" size="<< size << endl;
+        cerr << "getencgram yields ngram with size <= 0! Not possible!" << " index="<<index << " n="<<n <<" size="<< bytesize << " beginpos=" << beginpos << " endpos=" << endpos << " sentencesize=" << size << endl;
         exit(3);
     }
     return new EncNGram(line + beginpos, bytesize);
