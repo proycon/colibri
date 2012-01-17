@@ -125,6 +125,11 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
     const char bytesize = (char) (endpos - beginpos + 1);    
     if (bytesize <= 0) {
         cerr << "INTERNAL ERROR getencgram(): yielding ngram with size <= 0! Not possible!" << " index="<<index << " n="<<n <<" size="<< (int) bytesize << " beginpos=" << beginpos << " endpos=" << endpos << " sentencesize=" << size << endl;
+        cerr << "DEBUG DATA DUMP: ";
+        for (int i = 0; i < size; i++) {
+        	cerr << i << ':' << (int) line[i] << ' ';        	
+        }
+        cerr << endl;
         exit(13);
     }
     return new EncNGram(line + beginpos, bytesize);
