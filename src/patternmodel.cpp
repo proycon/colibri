@@ -121,6 +121,11 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
     unsigned char line[BUFFERSIZE];
 
 
+    if (MAXLENGTH > MAXN) {
+       	cerr << "FATAL ERROR: Maximum n-gram size " << MAXLENGTH << " exceeds the internal maximum MAXN=" << MAXN << endl;
+       	exit(14);
+    }
+
     for (int n = 1; n <= MAXLENGTH; n++) {
         cerr << "Counting " << n << "-grams" << endl;            
         
@@ -134,7 +139,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
         vector< vector< pair<int,int> > > gaps;
         compute_multi_skips(gaps, vector<pair<int,int> >(), n);    
         
-        
+            
         ifstream *IN =  new ifstream( corpusfile.c_str() );
         if (!IN->good()) {
         	cerr << "ERROR: Unable to open file " << corpusfile << endl;
@@ -190,7 +195,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                 
                 CorpusReference ref = CorpusReference(sentence,i);
                 if (ngrams[*ngram].refs.empty()) typecount[n]++;
-                ngrams[*ngram].refs.insert(ref);                        
+                ngrams[*ngram].refs.insert(ref);            
                 tokencount[n]++;            
 
                 if (DOSKIPGRAMS) {
@@ -399,8 +404,13 @@ void IndexedPatternModel::readngram(std::istream * f, const EncNGram & ngram, bo
     }
     if (!ignore)  {
     	ngramtokencount += ngrams[ngram].count();    
-    	if (ngram.n() > MAXLENGTH) MAXLENGTH = ngram.n();
-    	tokencount[ngram.n()] += ngrams[ngram].count();
+    	const char n = ngram.n();
+    	if (n > MAXN) {
+      		cerr << "FATAL ERROR: N-gram size " << n << " exceeds the internal maximum MAXN=" << MAXN << endl;
+	       	exit(14);
+    	}
+    	if (n > MAXLENGTH) MAXLENGTH = n;    	
+    	tokencount[n] += ngrams[ngram].count();
     }    
 }
 
@@ -413,7 +423,12 @@ void IndexedPatternModel::readskipgram(std::istream * f, const EncSkipGram & ski
      	skipgramtypecount++;
     	skipgrams[skipgram]._count = count; //assign
     	skipgramtokencount += count;
-    	skiptokencount[skipgram.n()] += count;
+    	const char n = skipgram.n();
+    	if (n > MAXN) {
+      		cerr << "FATAL ERROR: N-gram size " << n << " exceeds the internal maximum MAXN=" << MAXN << endl;
+	       	exit(14);
+    	}
+    	skiptokencount[n] += count;
     }            
     uint32_t skipcontentcount;
     f->read((char*) &skipcontentcount, sizeof(uint32_t));   
@@ -1237,30 +1252,37 @@ void GraphPatternModel::writeheader(std::ostream * out) {
 }
 
 void GraphPatternModel::readngram(std::istream * in, const EncNGram & ngram, bool ignore) {
-	model->readngram(in, ngram, !ignore && secondpass);   
+	cerr << "PREREAD secondpass=" << (int) secondpass << endl;
+	model->readngram(in, ngram, ignore || secondpass);
+	cerr << "POSTREAD" << endl;
     if (HASXCOUNT) {
         uint32_t _xcount;
         in->read((char*) &_xcount, sizeof(uint32_t));
-        if ((DOXCOUNT) && (secondpass) && (!ignore)) data_xcount[model->getkey((const EncAnyGram*) &ngram)] = _xcount;
+        cerr << "READ XCOUNT: " << (int) _xcount << endl;
+        if ((DOXCOUNT) && (secondpass) && (!ignore)) {
+        	cerr << "PROCESSING  XCOUNT" << endl;
+        	data_xcount[model->getkey((const EncAnyGram*) &ngram)] = _xcount;
+        	
+        }
     }
-    if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_parents, (!ignore && secondpass && !DOPARENTS));
+    if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_parents, (ignore || !secondpass || !DOPARENTS));
 
     if (HASCHILDREN) 
-        readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_children, (!ignore && secondpass && !DOCHILDREN));    
+        readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));    
 }
 
 void GraphPatternModel::readskipgram(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
-	model->readskipgram(in,skipgram, !ignore && secondpass);
+	model->readskipgram(in,skipgram, ignore || secondpass);
     if (HASXCOUNT) {
         uint32_t _xcount;
         in->read((char*) &_xcount, sizeof(uint32_t));
         if ((DOXCOUNT) && (secondpass) && (!ignore)) data_xcount[model->getkey((const EncAnyGram*) &skipgram)] = _xcount;
     }
     if (HASPARENTS) {
-        readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_parents, (!ignore && secondpass && !DOPARENTS));
+        readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_parents, (ignore || !secondpass || !DOPARENTS));
     }
     if (HASCHILDREN) 
-        readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_children, (!ignore && secondpass && !DOCHILDREN));        
+        readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));        
 }
 
 

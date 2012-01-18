@@ -2,6 +2,8 @@
 #include <cmath>
 #include <cstdint>
 
+const char MAXN = 20;
+
 class CorpusReference {
     /* Reference to a position in the corpus */
    public:
@@ -109,10 +111,10 @@ class IndexedPatternModel: public ModelReader, public ModelWriter {
     unsigned long ngramtokencount;
     unsigned long skipgramtokencount; 
     
-    int tokencount[10]; //relative token count
-    int skiptokencount[10];
-    int typecount[10]; //relative token count
-    int skiptypecount[10];   
+    int tokencount[MAXN]; //relative token count
+    int skiptokencount[MAXN];
+    int typecount[MAXN]; //relative token count
+    int skiptypecount[MAXN];   
    
     std::unordered_map<const EncNGram,NGramData > ngrams;
     std::unordered_map<const EncSkipGram,SkipGramData > skipgrams;    
@@ -189,10 +191,10 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter {
     unsigned long ngramtokencount;
     unsigned long skipgramtokencount; 
     
-    int tokencount[10]; //relative token count
-    int skiptokencount[10];
-    int typecount[10]; //relative token count
-    int skiptypecount[10];   
+    int tokencount[MAXN]; //relative token count
+    int skiptokencount[MAXN];
+    int typecount[MAXN]; //relative token count
+    int skiptypecount[MAXN];   
    
     std::unordered_map<const EncNGram,uint32_t > ngrams;
     std::unordered_map<const EncSkipGram,uint32_t > skipgrams;    
