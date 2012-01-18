@@ -64,8 +64,8 @@ class ModelReader {
    public:
     virtual uint64_t id() =0;
     virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore=false) =0;
-    virtual void readngram(std::istream * in, const EncNGram & ngram, bool ignore = false) =0;
-    virtual void readskipgram(std::istream * in, const EncSkipGram & skipgram, bool ignore = false) =0;
+    virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false) =0;
+    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false) =0;
     virtual void readfooter(std::istream * in, bool ignore = false) =0;    
     
     virtual void readfile(const std::string & filename);
@@ -76,9 +76,9 @@ class ModelWriter {
     virtual uint64_t id() =0;    
     virtual void writeheader(std::ostream * out) =0;
     virtual void writengrams(std::ostream * out) =0;
-    virtual void writengram(std::ostream * out, const EncNGram & ngram) =0;
+    virtual void writengramdata(std::ostream * out, const EncNGram & ngram) =0;
     virtual void writeskipgrams(std::ostream * out) =0;
-    virtual void writeskipgram(std::ostream * out, const EncSkipGram & skipgram) =0;
+    virtual void writeskipgramdata(std::ostream * out, const EncSkipGram & skipgram) =0;
     virtual void writefooter(std::ostream * out) =0;
     
     virtual uint64_t tokens() const =0;
@@ -149,16 +149,18 @@ class IndexedPatternModel: public ModelReader, public ModelWriter {
     
     virtual uint64_t id() { return 1; }
     virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore = false) {};
-    virtual void readngram(std::istream * in, const EncNGram & ngram, bool ignore = false);
-    virtual void readskipgram(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
+    virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
+    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};    
     
     virtual void writeheader(std::ostream * out) {};
     virtual void writengrams(std::ostream * out);
-    virtual void writengram(std::ostream * out, const EncNGram & ngram);
+    virtual void writengramdata(std::ostream * out, const EncNGram & ngram);
     virtual void writeskipgrams(std::ostream * out);
-    virtual void writeskipgram(std::ostream * out, const EncSkipGram & skipgram);
+    virtual void writeskipgramdata(std::ostream * out, const EncSkipGram & skipgram);
     virtual void writefooter(std::ostream * out) {}; 
+        
+    void writeanygram(const EncAnyGram * anygram, std::ostream * out); //write the anygram itself (not its data!)
         
     void save(const std::string & filename) { ModelWriter::writefile(filename); }
     
@@ -218,15 +220,15 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter {
     
     virtual uint64_t id() { return 0; }
     virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore = false) {};
-    virtual void readngram(std::istream * in, const EncNGram & ngram, bool ignore = false);
-    virtual void readskipgram(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
+    virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
+    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};    
     
     virtual void writeheader(std::ostream * out) {};
     virtual void writengrams(std::ostream * out);
-    virtual void writengram(std::ostream * out, const EncNGram & ngram);
+    virtual void writengramdata(std::ostream * out, const EncNGram & ngram);
     virtual void writeskipgrams(std::ostream * out);
-    virtual void writeskipgram(std::ostream * out, const EncSkipGram & skipgram);
+    virtual void writeskipgramdata(std::ostream * out, const EncSkipGram & skipgram);
     virtual void writefooter(std::ostream * out) {}; 
         
     void save(const std::string & filename) { ModelWriter::writefile(filename); }
@@ -315,14 +317,14 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     virtual uint64_t id() { return 20; }
     
     virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore = false);
-    virtual void readngram(std::istream * in, const EncNGram & ngram, bool ignore = false);
-    virtual void readskipgram(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
+    virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
+    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};    
     
     virtual void writeheader(std::ostream * out);
     virtual void writengrams(std::ostream * out);
-    virtual void writengram(std::ostream * out, const EncNGram & ngram);
-    virtual void writeskipgram(std::ostream * out, const EncSkipGram & skipgram);
+    virtual void writengramdata(std::ostream * out, const EncNGram & ngram);
+    virtual void writeskipgramdata(std::ostream * out, const EncSkipGram & skipgram);
     virtual void writeskipgrams(std::ostream * out);
     virtual void writefooter(std::ostream * out) {};    
     
@@ -363,7 +365,7 @@ class DoubleIndexedGraphPatternModel: public ModelReader {
     virtual uint64_t id() { return 20; }
     
     virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore = false);
-    virtual void readngram(std::istream * in, const EncNGram & ngram, bool ignore = false);
-    virtual void readskipgram(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
+    virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
+    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};
 };

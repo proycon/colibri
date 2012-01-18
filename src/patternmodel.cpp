@@ -71,11 +71,11 @@ void ModelReader::readfile(const string & filename) {
         if (gapcount == 0) {
             if (DEBUG)  cerr << "\tNGRAM";
             const EncNGram ngram = EncNGram(&f); //read from file            
-            readngram(&f, ngram);          
+            readngramdata(&f, ngram);          
         } else {
             if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
             const EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              
-            readskipgram(&f, skipgram);
+            readskipgramdata(&f, skipgram);
         }
         if (DEBUG)  cerr << endl;      //DEBUG  
     }
@@ -394,7 +394,7 @@ IndexedPatternModel::IndexedPatternModel(const string & filename, bool DOREVERSE
     if (!filename.empty()) readfile(filename);
 }
 
-void IndexedPatternModel::readngram(std::istream * f, const EncNGram & ngram, bool ignore) {
+void IndexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, bool ignore) {
     if (!ignore) ngramtypecount++;
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
@@ -422,7 +422,7 @@ void IndexedPatternModel::readngram(std::istream * f, const EncNGram & ngram, bo
 
 
 
-void IndexedPatternModel::readskipgram(std::istream * f, const EncSkipGram & skipgram, bool ignore) {
+void IndexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram & skipgram, bool ignore) {
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count            
     if (!ignore) {
@@ -448,7 +448,7 @@ void IndexedPatternModel::readskipgram(std::istream * f, const EncSkipGram & ski
     }    
 }
 
-void IndexedPatternModel::writengram(std::ostream * f, const EncNGram & ngram) {
+void IndexedPatternModel::writengramdata(std::ostream * f, const EncNGram & ngram) {
     const uint32_t c = ngrams[ngram].count();
     f->write( (char*) &c, sizeof(uint32_t) ); //occurrence count                                     
     for (set<CorpusReference>::iterator iter = ngrams[ngram].refs.begin(); iter != ngrams[ngram].refs.end(); iter++) {                    
@@ -464,12 +464,12 @@ void IndexedPatternModel::writengrams(std::ostream * f) {
     	f->write((char*) &check, sizeof(char));        
         f->write(&czero, sizeof(char)); //gapcount, always zero for ngrams
         iter->first.writeasbinary(f);
-        writengram(f, iter->first);       
+        writengramdata(f, iter->first);       
     }   
 }
 
 
-void IndexedPatternModel::writeskipgram(std::ostream * f, const EncSkipGram & skipgram) {
+void IndexedPatternModel::writeskipgramdata(std::ostream * f, const EncSkipGram & skipgram) {
     const uint32_t c  = skipgrams[skipgram].count();
     f->write( (char*) &c, sizeof(uint32_t) ); //occurrence count                         
     const uint32_t skipcontentcount = (uint32_t) skipgrams[skipgram].skipcontent.size();                        
@@ -486,7 +486,7 @@ void IndexedPatternModel::writeskipgrams(std::ostream * f) {
     for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {
     	f->write((char*) &check, sizeof(char));                                
         iter->first.writeasbinary(f);        
-        writeskipgram(f, iter->first);
+        writeskipgramdata(f, iter->first);
     }     
 }
 
@@ -675,6 +675,21 @@ void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT
     }
 
 }
+
+void IndexedPatternModel::writeanygram(const EncAnyGram * anygram,std::ostream * out) {
+	/*helper function to write an ngram or skipgram, provided it occurs in this model */
+	const char zero = 0;
+    const EncAnyGram * anygram2 = getkey(anygram); //find the anygram pointer as it appear in the model
+    if (!anygram2->isskipgram()) {
+    	//ngram
+    	out->write( (char*) &zero, sizeof(char)); //for ngrams
+    	((EncNGram*) anygram2)->writeasbinary(out);
+    } else {
+    	//skipgram
+    	((EncSkipGram*) anygram2)->writeasbinary(out);
+    }        
+}         
+        
 
 
 UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
@@ -944,7 +959,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & filename, bool DOREV
     readfile(filename);
 }
 
-void UnindexedPatternModel::readngram(std::istream * f, const EncNGram & ngram, bool ignore ) {    
+void UnindexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, bool ignore ) {    
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
     if (!ignore) {
@@ -958,7 +973,7 @@ void UnindexedPatternModel::readngram(std::istream * f, const EncNGram & ngram, 
 
 
 
-void UnindexedPatternModel::readskipgram(std::istream * f, const EncSkipGram & skipgram, bool ignore) {    
+void UnindexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram & skipgram, bool ignore) {    
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
     if (!ignore) {
@@ -969,7 +984,7 @@ void UnindexedPatternModel::readskipgram(std::istream * f, const EncSkipGram & s
 	}            
 }
 
-void UnindexedPatternModel::writengram(std::ostream * f, const EncNGram & ngram) {
+void UnindexedPatternModel::writengramdata(std::ostream * f, const EncNGram & ngram) {
     const uint32_t c = ngrams[ngram];
     f->write( (char*) &c, sizeof(uint32_t) ); //occurrence count                                       
 }
@@ -982,12 +997,12 @@ void UnindexedPatternModel::writengrams(std::ostream * f) {
     	f->write((char*) &check, sizeof(char)); //check        
         f->write(&czero, sizeof(char)); //gapcount, always zero for ngrams
         iter->first.writeasbinary(f);
-        writengram(f, iter->first);       
+        writengramdata(f, iter->first);       
     }   
 }
 
 
-void UnindexedPatternModel::writeskipgram(std::ostream * f, const EncSkipGram & skipgram) {
+void UnindexedPatternModel::writeskipgramdata(std::ostream * f, const EncSkipGram & skipgram) {
     const uint32_t c  = skipgrams[skipgram];
     f->write( (char*) &c, sizeof(uint32_t) ); //occurrence count                         
 }
@@ -998,7 +1013,7 @@ void UnindexedPatternModel::writeskipgrams(std::ostream * f) {
     for(unordered_map<EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {
     	f->write((char*) &check, sizeof(char)); //check                               
         iter->first.writeasbinary(f);        
-        writeskipgram(f, iter->first);
+        writeskipgramdata(f, iter->first);
     }     
 }
 
@@ -1247,10 +1262,11 @@ void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * any
     uint16_t count = relationhash[model->getkey(anygram)].size();
     out->write((char*) &count, sizeof(uint16_t));
     char gapcount;                       
-    for (unordered_set<const EncAnyGram*>::iterator iter = relationhash[model->getkey(anygram)].begin(); iter != relationhash[model->getkey(anygram)].end(); iter++) {    	
-        const EncAnyGram * anygram2 = model->getkey(*iter);
+    for (unordered_set<const EncAnyGram*>::iterator iter = relationhash[model->getkey(anygram)].begin(); iter != relationhash[model->getkey(anygram)].end(); iter++) {
+		model->writeanygram(*iter, out);
+        /*const EncAnyGram * anygram2 = model->getkey(*iter);
         if (!anygram2->isskipgram()) out->write( (char*) &zero, sizeof(char)); //for ngrams         
-        anygram2->writeasbinary(out);
+        ((EncSkipGram*) anygram2)->writeasbinary(out);*/
     }
 }
 
@@ -1267,8 +1283,8 @@ void GraphPatternModel::writeheader(std::ostream * out) {
     out->write((char*) &DOXCOUNT, sizeof(bool)); //1 byte, not 1 bit
 }
 
-void GraphPatternModel::readngram(std::istream * in, const EncNGram & ngram, bool ignore) {
-	model->readngram(in, ngram, ignore || secondpass);
+void GraphPatternModel::readngramdata(std::istream * in, const EncNGram & ngram, bool ignore) {
+	model->readngramdata(in, ngram, ignore || secondpass);
     if (HASXCOUNT) {
         uint32_t _xcount;
         in->read((char*) &_xcount, sizeof(uint32_t));
@@ -1283,8 +1299,8 @@ void GraphPatternModel::readngram(std::istream * in, const EncNGram & ngram, boo
         readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));
 }
 
-void GraphPatternModel::readskipgram(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
-	model->readskipgram(in,skipgram, ignore || secondpass);
+void GraphPatternModel::readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
+	model->readskipgramdata(in,skipgram, ignore || secondpass);
     if (HASXCOUNT) {
         uint32_t _xcount;
         in->read((char*) &_xcount, sizeof(uint32_t));
@@ -1298,8 +1314,8 @@ void GraphPatternModel::readskipgram(std::istream * in, const EncSkipGram & skip
 }
 
 
-void GraphPatternModel::writengram(std::ostream * out, const EncNGram & ngram) {
-	model->writengram(out,ngram);
+void GraphPatternModel::writengramdata(std::ostream * out, const EncNGram & ngram) {
+	model->writengramdata(out,ngram);
     if (DOXCOUNT) {
         uint32_t _xcount = xcount((const EncAnyGram*) &ngram);
         out->write( (char*) &_xcount, sizeof(uint32_t));
@@ -1314,8 +1330,8 @@ void GraphPatternModel::writengram(std::ostream * out, const EncNGram & ngram) {
             
 }
 
-void GraphPatternModel::writeskipgram(std::ostream * out, const EncSkipGram & skipgram) {
-	model->writeskipgram(out,skipgram);    
+void GraphPatternModel::writeskipgramdata(std::ostream * out, const EncSkipGram & skipgram) {
+	model->writeskipgramdata(out,skipgram);    
     if (DOXCOUNT) {
         uint32_t _xcount = xcount((const EncAnyGram*) &skipgram);
         out->write( (char*) &_xcount, sizeof(uint32_t));
@@ -1335,7 +1351,7 @@ void GraphPatternModel::writengrams(std::ostream * f) {
     	f->write((char*) &check, sizeof(char)); //check        
         f->write(&czero, sizeof(char)); //gapcount, always zero for ngrams
         iter->first.writeasbinary(f);
-        writengram(f, iter->first);       
+        writengramdata(f, iter->first);       
     }   
 }
 
@@ -1345,7 +1361,7 @@ void GraphPatternModel::writeskipgrams(std::ostream * f) {
     for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = model->skipgrams.begin(); iter !=  model->skipgrams.end(); iter++ ) {
     	f->write(&check, sizeof(char)); //gapcount, always zero for ngrams                                
         iter->first.writeasbinary(f);        
-        writeskipgram(f, iter->first);
+        writeskipgramdata(f, iter->first);
     }     
 }
 
@@ -1445,7 +1461,7 @@ void DoubleIndexedGraphPatternModel::readrelations(std::istream * in, const EncA
 }
 
 
-void DoubleIndexedGraphPatternModel::readngram(std::istream * in, const EncNGram & ngram, bool ignore) {
+void DoubleIndexedGraphPatternModel::readngramdata(std::istream * in, const EncNGram & ngram, bool ignore) {
 	ngrams[ngram]; //will create the ngram if it does not exist yet in the hash
 	std::unordered_map<EncNGram,IndexCountData>::iterator iter = ngrams.find(ngram); //pointer to the ngram in the hash
 	const EncAnyGram * anygram = &iter->first;
@@ -1471,7 +1487,7 @@ void DoubleIndexedGraphPatternModel::readngram(std::istream * in, const EncNGram
     //NOTE MAYBE TODO: make sure to update when GraphModel updates!    
 }
 
-void DoubleIndexedGraphPatternModel::readskipgram(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
+void DoubleIndexedGraphPatternModel::readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
 	skipgrams[skipgram]; //will create the ngram if it does not exist yet in the hash
 	std::unordered_map<EncSkipGram,IndexCountData>::iterator iter = skipgrams.find(skipgram); //pointer to the skipgram in the hash
 	const EncAnyGram * anygram = &iter->first;
