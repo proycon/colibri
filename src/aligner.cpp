@@ -53,7 +53,8 @@ int main( int argc, char *argv[] ) {
             abort ();
         }
         
-    if (sourcemodelfile.empty() || sourceclassfile.empty() || targetmodelfile.empty() || targetclassfile.empty()) {
+    if (sourcemodelfile.empty()  || targetmodelfile.empty()) {
+  	    cerr << "Error: Specify at least a source model, target model, and alignment method!" << endl;
         usage();
         exit(2);
     }
@@ -64,11 +65,7 @@ int main( int argc, char *argv[] ) {
     	exit(3);
     }
     
-    
-    cerr << "Loading source class decoder " << sourceclassfile << endl;
-    ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
-    cerr << "Loading target class decoder " << targetclassfile << endl;
-    ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    
+
     
     cerr << "Loading source model " << sourcemodelfile << endl;
     DoubleIndexedGraphPatternModel sourcemodel = DoubleIndexedGraphPatternModel(sourcemodelfile);
@@ -80,14 +77,30 @@ int main( int argc, char *argv[] ) {
     cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
     cerr << "  Reverse index has " << targetmodel.reverseindex.size() << " sentences" << endl;
     
+    
+    AlignmentModel * alignmodel = NULL;
+    
     if (DOCOOC) {
 		cerr << "Computing alignment model..." << endl;
-		CoocAlignmentModel alignmodel = CoocAlignmentModel(sourcemodel,targetmodel, prunevalue);    
-		if (DODECODE) {
-		    cerr << "Decoding..." << endl;
-		    alignmodel.decode(sourceclassdecoder, targetclassdecoder, &cout);    
-		}
+		alignmodel = new CoocAlignmentModel(sourcemodel,targetmodel, prunevalue);
+		cerr << "   Alignment matrix has " << alignmodel->alignprob.size() << " entries" << endl;
+	}
+	
+	
+	if ((!sourceclassfile.empty()) && (!targetclassfile.empty())) {
+		cerr << "Loading source class decoder " << sourceclassfile << endl;
+		ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
+	
+		cerr << "Loading target class decoder " << targetclassfile << endl;
+		ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
+	
+	    cerr << "Decoding..." << endl;
+	    alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);    
 	}	
+
+	if (alignmodel != NULL) {
+		delete alignmodel;
+	}
 	
     //EMAlignmentModel(sourcemodel,targetmodel,10000,0.001);    
     

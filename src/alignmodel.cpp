@@ -58,13 +58,10 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t
 CoocAlignmentModel::CoocAlignmentModel(DoubleIndexedGraphPatternModel & sourcemodel, DoubleIndexedGraphPatternModel & targetmodel, const double absthreshold, const double relthreshold) {
     this->absthreshold = absthreshold;
     this->relthreshold = relthreshold;
-    int c = 0;
     for (unordered_map<EncNGram,IndexCountData >::iterator iter = sourcemodel.ngrams.begin();  iter != sourcemodel.ngrams.end(); iter++) {
-        cerr << ++c << " ";
         compute(&iter->first, iter->second.sentences, targetmodel);
     }    
     for (unordered_map<EncSkipGram,IndexCountData >::iterator iter = sourcemodel.skipgrams.begin();  iter != sourcemodel.skipgrams.end(); iter++) {
-        cerr << ++c << " ";
         compute(&iter->first, iter->second.sentences, targetmodel);
     }            
 }
