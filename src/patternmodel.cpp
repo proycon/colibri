@@ -1208,13 +1208,11 @@ void GraphPatternModel::readrelations(std::istream * in, const EncAnyGram * anyg
 void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relationhash) {
     uint16_t count = relationhash[model->getkey(anygram)].size();
     out->write((char*) &count, sizeof(uint16_t));
-    char gapcount;
-    for (int i = 0; i < count; i++) {                        
-        for (unordered_set<const EncAnyGram*>::iterator iter = relationhash[model->getkey(anygram)].begin(); iter != relationhash[model->getkey(anygram)].end(); iter++) {
-            const EncAnyGram * anygram2 = *iter;
-            anygram2->writeasbinary(out);
-        }
-    }    
+    char gapcount;                       
+    for (unordered_set<const EncAnyGram*>::iterator iter = relationhash[model->getkey(anygram)].begin(); iter != relationhash[model->getkey(anygram)].end(); iter++) {
+        const EncAnyGram * anygram2 = *iter;
+        anygram2->writeasbinary(out);
+    }
 }
 
 
