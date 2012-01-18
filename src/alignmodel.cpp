@@ -29,6 +29,7 @@ double CoocAlignmentModel::cooc( multiset<uint32_t> & sourceindex, multiset<uint
 int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t> & sourceindex, DoubleIndexedGraphPatternModel & targetmodel) {        
     int c = 0;
     double bestcooc = 0;
+    //cerr << "Processing new construction" << endl;
     for (multiset<uint32_t>::iterator iter = sourceindex.begin(); iter != sourceindex.end(); iter++) {
         const uint32_t sentencenumber = *iter;
       	//cerr << "Reverseindex lookup: " << sentencenumber << endl;        
@@ -37,6 +38,7 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t
 			c += targetmodel.reverseindex[sentencenumber].size();
 			//cerr << "\tPatterns: " << targetmodel.reverseindex[sentencenumber].size() << endl;
 			for (vector<const EncAnyGram*>::iterator reviter = targetmodel.reverseindex[sentencenumber].begin(); reviter != targetmodel.reverseindex[sentencenumber].end(); reviter++) {
+					
 					const EncAnyGram* targetgram = *reviter;
 			        multiset<uint32_t> * targetindex;
 				    if (targetgram->gapcount() == 0) {
@@ -44,10 +46,11 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t
 				    } else {
 				       targetindex = &targetmodel.skipgrams[*( (EncSkipGram*) targetgram)].sentences;
 				    }				    
-				    const double coocvalue = cooc(sourceindex, *targetindex);            
+				    const double coocvalue = cooc(sourceindex, *targetindex);        
 				    if ((relthreshold) && (coocvalue > bestcooc)) bestcooc = coocvalue;            
-				    if (coocvalue >= absthreshold) {                
-				        alignprob[sourcegram][targetgram] = coocvalue;
+				    if (coocvalue >= absthreshold) {
+				    	//cerr << "\t\tRegistered cooc: " << coocvalue << endl;                
+				        alignprob[sourcegram][targetgram] = coocvalue;				       
 				    }
 			}				
 	        if (relthreshold) {

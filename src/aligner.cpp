@@ -83,7 +83,8 @@ int main( int argc, char *argv[] ) {
     if (DOCOOC) {
 		cerr << "Computing alignment model..." << endl;
 		alignmodel = new CoocAlignmentModel(sourcemodel,targetmodel, prunevalue);
-		cerr << "   Alignment matrix has " << alignmodel->alignprob.size() << " entries" << endl;
+		cerr << "   Found alignment targets for  " << alignmodel->alignprob.size() << " source constructions" << endl;
+		cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;		
 	}
 	
 	

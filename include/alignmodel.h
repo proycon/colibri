@@ -4,7 +4,14 @@ class AlignmentModel {
    public:
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignprob;    
     void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
-
+    
+    unsigned int totalsize() {
+    	unsigned int c = 0;
+    	for (std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> >::iterator iter = alignprob.begin(); iter != alignprob.end(); iter++) {
+    		c += iter->second.size();
+    	}
+    	return c;
+	}
 };
 
 /*class EMAlignmentModel: public AlignmentModel {
@@ -17,12 +24,10 @@ class CoocAlignmentModel: public AlignmentModel {
    private:
     double absthreshold;
     double relthreshold;
-   public:
-    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignprob;    
-   
+   public:   
     CoocAlignmentModel(DoubleIndexedGraphPatternModel & sourcemodel, DoubleIndexedGraphPatternModel & targetmodel, double absthreshold = 0,  const double relthreshold = 0);         
    
-    double cooc( std::multiset<uint32_t> & sourceindex, std::multiset<uint32_t> & targetindex); 
+    double cooc( std::multiset<uint32_t> & sourceindex, std::multiset<uint32_t> & targetindex); //multiset instead of vector cause we want the ordering to easily compute co-occurence 
     int compute(const EncAnyGram * sourcegram, std::multiset<uint32_t> & sourceindex, DoubleIndexedGraphPatternModel & targetmodel);
     
     

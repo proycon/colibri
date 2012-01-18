@@ -1474,7 +1474,6 @@ void DoubleIndexedGraphPatternModel::readngramdata(std::istream * in, const EncN
 	std::unordered_map<EncNGram,IndexCountData>::iterator iter = ngrams.find(ngram); //pointer to the ngram in the hash
 	const EncAnyGram * anygram = &iter->first;
 
-
     uint32_t count;
     in->read((char*) &count, sizeof(uint32_t)); //read occurrence count
 	if (!ignore) {
@@ -1483,7 +1482,10 @@ void DoubleIndexedGraphPatternModel::readngramdata(std::istream * in, const EncN
 	}        
     for (int j = 0; j < count; j++) {
         CorpusReference ref = CorpusReference(in); //read from file                
-        if (!ignore) reverseindex[ref.sentence].push_back(anygram);
+        if (!ignore) {
+        	ngrams[ngram].sentences.insert(ref.sentence);
+        	reverseindex[ref.sentence].push_back(anygram);
+        }
     }	    
     if (HASXCOUNT) {
         uint32_t xcount;
@@ -1500,8 +1502,7 @@ void DoubleIndexedGraphPatternModel::readskipgramdata(std::istream * in, const E
 	std::unordered_map<EncSkipGram,IndexCountData>::iterator iter = skipgrams.find(skipgram); //pointer to the skipgram in the hash
 	const EncAnyGram * anygram = &iter->first;
 
-    	  
-    
+    	     
     uint32_t count;
     in->read((char*) &count, sizeof(uint32_t)); //read occurrence count
     if (!ignore) {
@@ -1515,7 +1516,10 @@ void DoubleIndexedGraphPatternModel::readskipgramdata(std::istream * in, const E
         in->read((char*) &count, sizeof(uint32_t)); //read occurrence count                
         for (int k = 0; k < count; k++) {
             CorpusReference ref = CorpusReference(in); //read from file                
-        	if (!ignore) reverseindex[ref.sentence].push_back(anygram);
+        	if (!ignore) {
+        		skipgrams[skipgram].sentences.insert(ref.sentence);
+        		reverseindex[ref.sentence].push_back(anygram);
+        	}
         }        
     }    
     if (HASXCOUNT) {
