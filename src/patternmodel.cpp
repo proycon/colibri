@@ -383,13 +383,13 @@ IndexedPatternModel::IndexedPatternModel(const string & filename, bool DOREVERSE
     if (!filename.empty()) readfile(filename);
 }
 
-void IndexedPatternModel::readngram(std::istream * f, const EncNGram & ngram) {
-    ngramtypecount++;
+void IndexedPatternModel::readngram(std::istream * f, const EncNGram & ngram, bool ignore) {
+    if (!ignore) ngramtypecount++;
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
     for (int j = 0; j < count; j++) {
         CorpusReference ref = CorpusReference(f); //read from file
-        ngrams[ngram].refs.insert(ref);
+        if (!ignore) ngrams[ngram].refs.insert(ref);
         /*if (DOREVERSEINDEX) {
             bool found = false;
             for (int k = 0; k < ngram_reverse_index[index].size(); k++) if (ngram_reverse_index[index][k] == ngram) { found = true; break; };
@@ -397,20 +397,24 @@ void IndexedPatternModel::readngram(std::istream * f, const EncNGram & ngram) {
         }*/
                
     }
-    ngramtokencount += ngrams[ngram].count();    
-    if (ngram.n() > MAXLENGTH) MAXLENGTH = ngram.n();
-    tokencount[ngram.n()] += ngrams[ngram].count();
+    if (!ignore)  {
+    	ngramtokencount += ngrams[ngram].count();    
+    	if (ngram.n() > MAXLENGTH) MAXLENGTH = ngram.n();
+    	tokencount[ngram.n()] += ngrams[ngram].count();
+    }    
 }
 
 
 
-void IndexedPatternModel::readskipgram(std::istream * f, const EncSkipGram & skipgram) {
-    skipgramtypecount++;
+void IndexedPatternModel::readskipgram(std::istream * f, const EncSkipGram & skipgram, bool ignore) {
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count            
-    skipgrams[skipgram]._count = count; //assign
-    skipgramtokencount += count;
-    skiptokencount[skipgram.n()] += count;            
+    if (!ignore) {
+     	skipgramtypecount++;
+    	skipgrams[skipgram]._count = count; //assign
+    	skipgramtokencount += count;
+    	skiptokencount[skipgram.n()] += count;
+    }            
     uint32_t skipcontentcount;
     f->read((char*) &skipcontentcount, sizeof(uint32_t));   
     for (int j = 0; j < skipcontentcount; j++) {                                
@@ -418,7 +422,7 @@ void IndexedPatternModel::readskipgram(std::istream * f, const EncSkipGram & ski
         f->read((char*) &count, sizeof(uint32_t)); //read occurrence count                
         for (int k = 0; k < count; k++) {
             CorpusReference ref = CorpusReference(f); //read from file
-            skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
+            if (!ignore) skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
         }        
     }    
 }
@@ -915,25 +919,29 @@ UnindexedPatternModel::UnindexedPatternModel(const string & filename, bool DOREV
     readfile(filename);
 }
 
-void UnindexedPatternModel::readngram(std::istream * f, const EncNGram & ngram) {
-    ngramtypecount++;
+void UnindexedPatternModel::readngram(std::istream * f, const EncNGram & ngram, bool ignore ) {    
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
-    ngrams[ngram] = count;
-    ngramtokencount += count;    
-    if (ngram.n() > MAXLENGTH) MAXLENGTH = ngram.n();
-    tokencount[ngram.n()] += count;
+    if (!ignore) {
+    	ngramtypecount++;
+    	ngrams[ngram] = count;
+    	ngramtokencount += count;
+        if (ngram.n() > MAXLENGTH) MAXLENGTH = ngram.n();
+    	tokencount[ngram.n()] += count;
+    }
 }
 
 
 
-void UnindexedPatternModel::readskipgram(std::istream * f, const EncSkipGram & skipgram) {
-    skipgramtypecount++;
+void UnindexedPatternModel::readskipgram(std::istream * f, const EncSkipGram & skipgram, bool ignore) {    
     uint32_t count;
-    f->read((char*) &count, sizeof(uint32_t)); //read occurrence count            
-    skipgrams[skipgram] = count; //assign
-    skipgramtokencount += count;
-    skiptokencount[skipgram.n()] += count;            
+    f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
+    if (!ignore) {
+        skipgramtypecount++;    
+    	skipgrams[skipgram] = count; //assign
+	    skipgramtokencount += count;
+	    skiptokencount[skipgram.n()] += count;
+	}            
 }
 
 void UnindexedPatternModel::writengram(std::ostream * f, const EncNGram & ngram) {
@@ -1216,7 +1224,7 @@ void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * any
 }
 
 
-void GraphPatternModel::readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes) {
+void GraphPatternModel::readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore) {
     in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
     in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
     in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
@@ -1228,31 +1236,31 @@ void GraphPatternModel::writeheader(std::ostream * out) {
     out->write((char*) &DOXCOUNT, sizeof(bool)); //1 byte, not 1 bit
 }
 
-void GraphPatternModel::readngram(std::istream * in, const EncNGram & ngram) {
-	model->readngram(in, ngram);   
+void GraphPatternModel::readngram(std::istream * in, const EncNGram & ngram, bool ignore) {
+	model->readngram(in, ngram, !ignore && secondpass);   
     if (HASXCOUNT) {
         uint32_t _xcount;
         in->read((char*) &_xcount, sizeof(uint32_t));
-        data_xcount[model->getkey((const EncAnyGram*) &ngram)] = _xcount;
+        if ((DOXCOUNT) && (secondpass) && (!ignore)) data_xcount[model->getkey((const EncAnyGram*) &ngram)] = _xcount;
     }
-    if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_parents, !DOPARENTS);
+    if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_parents, (!ignore && secondpass && !DOPARENTS));
 
     if (HASCHILDREN) 
-        readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_children, !DOCHILDREN);    
+        readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_children, (!ignore && secondpass && !DOCHILDREN));    
 }
 
-void GraphPatternModel::readskipgram(std::istream * in, const EncSkipGram & skipgram) {
-	model->readskipgram(in,skipgram);
+void GraphPatternModel::readskipgram(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
+	model->readskipgram(in,skipgram, !ignore && secondpass);
     if (HASXCOUNT) {
         uint32_t _xcount;
         in->read((char*) &_xcount, sizeof(uint32_t));
-        data_xcount[model->getkey((const EncAnyGram*) &skipgram)] = _xcount;
+        if ((DOXCOUNT) && (secondpass) && (!ignore)) data_xcount[model->getkey((const EncAnyGram*) &skipgram)] = _xcount;
     }
     if (HASPARENTS) {
-        readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_parents, !DOPARENTS);
+        readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_parents, (!ignore && secondpass && !DOPARENTS));
     }
     if (HASCHILDREN) 
-        readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_children, !DOCHILDREN);        
+        readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_children, (!ignore && secondpass && !DOCHILDREN));        
 }
 
 
@@ -1374,7 +1382,7 @@ DoubleIndexedGraphPatternModel::DoubleIndexedGraphPatternModel(const std::string
 }
 
 
-void DoubleIndexedGraphPatternModel::readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes) {
+void DoubleIndexedGraphPatternModel::readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore) {
     in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
     in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
     in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
@@ -1399,39 +1407,45 @@ void DoubleIndexedGraphPatternModel::readrelations(std::istream * in, const EncA
 }
 
 
-void DoubleIndexedGraphPatternModel::readngram(std::istream * in, const EncNGram & ngram) {
+void DoubleIndexedGraphPatternModel::readngram(std::istream * in, const EncNGram & ngram, bool ignore) {
 	ngrams[ngram]; //will create the ngram if it does not exist yet in the hash
 	std::unordered_map<EncNGram,IndexCountData>::iterator iter = ngrams.find(ngram); //pointer to the ngram in the hash
 	const EncAnyGram * anygram = &iter->first;
 
-	ngramtypecount++;
+
     uint32_t count;
     in->read((char*) &count, sizeof(uint32_t)); //read occurrence count
-    ngramtokencount += count;    
+	if (!ignore) {
+		ngramtypecount++;
+		ngramtokencount += count;
+	}        
     for (int j = 0; j < count; j++) {
         CorpusReference ref = CorpusReference(in); //read from file                
-        reverseindex[ref.sentence].push_back(anygram);
+        if (!ignore) reverseindex[ref.sentence].push_back(anygram);
     }	    
     if (HASXCOUNT) {
         uint32_t xcount;
         in->read((char*) &xcount, sizeof(uint32_t));
-        ngrams[ngram].xcount = xcount;                   
+        if (!ignore) ngrams[ngram].xcount = xcount;                   
     }
     if (HASPARENTS) readrelations(in, anygram); //read and ignore
     if (HASCHILDREN) readrelations(in, anygram);  //read and ignore
     //NOTE MAYBE TODO: make sure to update when GraphModel updates!    
 }
 
-void DoubleIndexedGraphPatternModel::readskipgram(std::istream * in, const EncSkipGram & skipgram) {
+void DoubleIndexedGraphPatternModel::readskipgram(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
 	skipgrams[skipgram]; //will create the ngram if it does not exist yet in the hash
 	std::unordered_map<EncSkipGram,IndexCountData>::iterator iter = skipgrams.find(skipgram); //pointer to the skipgram in the hash
 	const EncAnyGram * anygram = &iter->first;
 
     	  
-    skipgramtypecount++;
+    
     uint32_t count;
-    in->read((char*) &count, sizeof(uint32_t)); //read occurrence count            
-    skipgramtokencount += count;               
+    in->read((char*) &count, sizeof(uint32_t)); //read occurrence count
+    if (!ignore) {
+    	skipgramtypecount++;            
+    	skipgramtokencount += count;
+    }               
     uint32_t skipcontentcount;
     in->read((char*) &skipcontentcount, sizeof(uint32_t));   
     for (int j = 0; j < skipcontentcount; j++) {                                
@@ -1439,13 +1453,13 @@ void DoubleIndexedGraphPatternModel::readskipgram(std::istream * in, const EncSk
         in->read((char*) &count, sizeof(uint32_t)); //read occurrence count                
         for (int k = 0; k < count; k++) {
             CorpusReference ref = CorpusReference(in); //read from file                
-        	reverseindex[ref.sentence].push_back(anygram);
+        	if (!ignore) reverseindex[ref.sentence].push_back(anygram);
         }        
     }    
     if (HASXCOUNT) {
         uint32_t xcount;
         in->read((char*) &xcount, sizeof(uint32_t));
-        skipgrams[skipgram].xcount = xcount;    
+        if (!ignore) skipgrams[skipgram].xcount = xcount;    
     }
     if (HASPARENTS) readrelations(in, anygram);  //read and ignore
     if (HASCHILDREN) readrelations(in, anygram);  //read and ignore
