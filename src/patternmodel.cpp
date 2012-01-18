@@ -1431,8 +1431,16 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, 
 
 }
 
+
+/****************************************************************************************************************************************/
+
 DoubleIndexedGraphPatternModel::DoubleIndexedGraphPatternModel(const std::string & filename) { //read a normal graph pattern model in another way optimised for Cooc alignment
+	ngramtokencount = 0;
+	skipgramtokencount = 0;
+	ngramtypecount = 0;
+	skipgramtypecount = 0;
 	readfile(filename);
+	
 }
 
 
@@ -1519,77 +1527,3 @@ void DoubleIndexedGraphPatternModel::readskipgramdata(std::istream * in, const E
     if (HASCHILDREN) readrelations(in, anygram);  //read and ignore
     //NOTE MAYBE TODO: make sure to update when GraphModel updates!    
 }
-
-
-
-/*
-EncGramGraphModel::EncGramGraphModel(const string & filename) {
-    ifstream f;
-    f.open(filename.c_str(), ios::in | ios::binary);
-    if (!f) {
-           cerr << "File does not exist: " << filename << endl;
-           exit(3);
-    }
-    
-    unsigned long supernodes;
-    f.read( (char*) &supernodes, sizeof(unsigned long));        
-    
-    for (int i = 0; i < supernodes; i++) {
-        char gapcount;
-        f.read(&gapcount, sizeof(char));
-        EncAnyGram * anygram;
-        if (gapcount == 0) {
-            anygram = new EncNGram(&f);
-        } else {
-            anygram = new EncSkipGram(&f, gapcount);
-        }
-        unsigned int relations;
-        f.read( (char*) &relations, sizeof(int));        
-        for (int j = 0; j < relations; j++) {
-            char gapcount2;
-            f.read(&gapcount2, sizeof(char));
-            EncAnyGram * anygram2;
-            if (gapcount2 == 0) {
-                anygram2 = new EncNGram(&f);
-            } else {
-                anygram2 = new EncSkipGram(&f, gapcount);
-            }
-            //rel_subsumption_children[anygram].insert(anygram2); //TODO: FIX!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            delete anygram2;
-        }
-        delete anygram;
-    }    
-    f.close();
-}
-
-void EncGramGraphModel::save(const string & filename) {
-    ofstream f;
-    f.open(filename.c_str(), ios::out | ios::binary);
-    
-    const char czero = 0;
-    const int zero = 0;
-    //const unsigned char check = 255;
-    const unsigned long supernodes = rel_subsumption_children.size();
-    
-    f.write( (char*) &supernodes, sizeof(unsigned long) );    
-    for(std::unordered_map<EncAnyGram,std::unordered_set<EncAnyGram> >::iterator iter = rel_subsumption_children.begin(); iter != rel_subsumption_children.end(); iter++ ) {        
-        const EncAnyGram * supergram = &(iter->first);
-        if (supergram->gapcount() == 0) {
-            f.write( &czero, sizeof(char));
-        }
-        supergram->writeasbinary(&f);
-        const int relations = iter->second.size();
-        f.write( (char*) &relations, sizeof(int) );        
-        for(std::unordered_set<EncAnyGram>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++ ) {            
-            const EncAnyGram * subgram = &(*iter2); //ugly, I know
-            if (subgram->gapcount() == 0) {
-                f.write( &czero, sizeof(char));
-            }
-            subgram->writeasbinary(&f);
-        }
-    }
-    f.close();
-    
-}
-
-*/

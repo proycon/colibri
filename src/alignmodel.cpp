@@ -30,9 +30,12 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t
     int c = 0;
     double bestcooc = 0;
     for (multiset<uint32_t>::iterator iter = sourceindex.begin(); iter != sourceindex.end(); iter++) {
-        const uint32_t sentencenumber = *iter;        
+        const uint32_t sentencenumber = *iter;
+      	//cerr << "Reverseindex lookup: " << sentencenumber << endl;        
 		if (targetmodel.reverseindex.count(sentencenumber) > 0) {
+			//cerr << "\tFound" << endl;
 			c += targetmodel.reverseindex[sentencenumber].size();
+			//cerr << "\tPatterns: " << targetmodel.reverseindex[sentencenumber].size() << endl;
 			for (vector<const EncAnyGram*>::iterator reviter = targetmodel.reverseindex[sentencenumber].begin(); reviter != targetmodel.reverseindex[sentencenumber].end(); reviter++) {
 					const EncAnyGram* targetgram = *reviter;
 			        multiset<uint32_t> * targetindex;
@@ -58,10 +61,15 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t
 CoocAlignmentModel::CoocAlignmentModel(DoubleIndexedGraphPatternModel & sourcemodel, DoubleIndexedGraphPatternModel & targetmodel, const double absthreshold, const double relthreshold) {
     this->absthreshold = absthreshold;
     this->relthreshold = relthreshold;
+    unsigned int c = 0;
     for (unordered_map<EncNGram,IndexCountData >::iterator iter = sourcemodel.ngrams.begin();  iter != sourcemodel.ngrams.end(); iter++) {
+    	c++;
+        if (c % 10000 == 0) cerr << "\t@" << c << endl;
         compute(&iter->first, iter->second.sentences, targetmodel);
     }    
     for (unordered_map<EncSkipGram,IndexCountData >::iterator iter = sourcemodel.skipgrams.begin();  iter != sourcemodel.skipgrams.end(); iter++) {
+    	c++;
+    	if (c % 10000 == 0) cerr << "\t@" << c << endl;
         compute(&iter->first, iter->second.sentences, targetmodel);
     }            
 }
