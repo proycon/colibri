@@ -276,18 +276,24 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
 
    
     GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=false,bool DOXCOUNT=false); //compute entire model
-    GraphPatternModel(const std::string & graphmodelfilename, IndexedPatternModel * model = NULL) {
-    	if (model == NULL) { 
-        	DELETEMODEL = true;        
-	        model = new IndexedPatternModel();
-	    } else {
-	    	//reading is done in two passes
-	    	secondpass = false;
-        	readfile(graphmodelfilename);
-        }
+    GraphPatternModel(const std::string & graphmodelfilename, IndexedPatternModel * model) {
+    	DELETEMODEL = false;        
+        this->model = model;
+        secondpass = true;
+    	readfile(graphmodelfilename);        
+    }
+    GraphPatternModel(const std::string & graphmodelfilename) {
+    	DELETEMODEL = true;
+    	model = new IndexedPatternModel();
+    	std::cerr << "Pass one, reading implied indexedpatternmodel..." << std::endl;
+    	//reading is done in two passes
+    	secondpass = false;
+    	readfile(graphmodelfilename);    
+        std::cerr << "Pass two, reading graph data..." << std::endl;
         secondpass = true;
         readfile(graphmodelfilename);
-    }
+    }    
+    
     ~GraphPatternModel();
     
     int xcount(const EncAnyGram* anygram); //exclusive count    
