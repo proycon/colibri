@@ -39,7 +39,6 @@ void NGramData::writeasbinary(ostream * out) const {
 
 void ModelReader::readfile(const string & filename) {
     const bool DEBUG = false;
-    
 
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
@@ -57,10 +56,17 @@ void ModelReader::readfile(const string & filename) {
     f.read( (char*) &totaltypes, sizeof(uint64_t)); 
     
     readheader(&f, totaltokens, totaltypes);
-    
+    unsigned char check;    
     for (int i = 0; i < totaltypes; i++) {           
         char gapcount;
         if (DEBUG) cerr << "\t@" << i;
+        f.read((char*) &check, sizeof(char));
+        if (check != 0xff) {
+        	cerr << "ERROR processing " + filename + " at construction " << i << " of " << totaltypes << ". Expected check-byte, got " << (int) check << endl;
+        	f.read(&gapcount, sizeof(char));
+        	cerr << "DEBUG: next byte should be gapcount, value=" << (int) gapcount << endl; 
+        	exit(13);        	
+        }
         f.read(&gapcount, sizeof(char));
         if (gapcount == 0) {
             if (DEBUG)  cerr << "\tNGRAM";
@@ -451,9 +457,11 @@ void IndexedPatternModel::writengram(std::ostream * f, const EncNGram & ngram) {
 }
 
 
-void IndexedPatternModel::writengrams(std::ostream * f) {    
+void IndexedPatternModel::writengrams(std::ostream * f) {
+	const unsigned char check = 0xff;    
     const char czero = 0;
-    for(unordered_map<EncNGram,NGramData>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {        
+    for(unordered_map<EncNGram,NGramData>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
+    	f->write((char*) &check, sizeof(char));        
         f->write(&czero, sizeof(char)); //gapcount, always zero for ngrams
         iter->first.writeasbinary(f);
         writengram(f, iter->first);       
@@ -473,8 +481,10 @@ void IndexedPatternModel::writeskipgram(std::ostream * f, const EncSkipGram & sk
 }
 
 
-void IndexedPatternModel::writeskipgrams(std::ostream * f) {                 
-    for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {                                
+void IndexedPatternModel::writeskipgrams(std::ostream * f) {
+	const unsigned char check = 0xff;                 
+    for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {
+    	f->write((char*) &check, sizeof(char));                                
         iter->first.writeasbinary(f);        
         writeskipgram(f, iter->first);
     }     
@@ -966,8 +976,10 @@ void UnindexedPatternModel::writengram(std::ostream * f, const EncNGram & ngram)
 
 
 void UnindexedPatternModel::writengrams(std::ostream * f) {    
+    const unsigned char check = 0xff;
     const char czero = 0;
-    for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {        
+    for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
+    	f->write((char*) &check, sizeof(char)); //check        
         f->write(&czero, sizeof(char)); //gapcount, always zero for ngrams
         iter->first.writeasbinary(f);
         writengram(f, iter->first);       
@@ -981,8 +993,10 @@ void UnindexedPatternModel::writeskipgram(std::ostream * f, const EncSkipGram & 
 }
 
 
-void UnindexedPatternModel::writeskipgrams(std::ostream * f) {             
-    for(unordered_map<EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {                               
+void UnindexedPatternModel::writeskipgrams(std::ostream * f) {
+	const unsigned char check = 0xff;             
+    for(unordered_map<EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {
+    	f->write((char*) &check, sizeof(char)); //check                               
         iter->first.writeasbinary(f);        
         writeskipgram(f, iter->first);
     }     
@@ -1314,9 +1328,11 @@ void GraphPatternModel::writeskipgram(std::ostream * out, const EncSkipGram & sk
 
 
 
-void GraphPatternModel::writengrams(std::ostream * f) {    
+void GraphPatternModel::writengrams(std::ostream * f) {
+	const unsigned char check = 0xff;    
     const char czero = 0;
-    for(unordered_map<EncNGram,NGramData>::iterator iter = model->ngrams.begin(); iter !=  model->ngrams.end(); iter++ ) {        
+    for(unordered_map<EncNGram,NGramData>::iterator iter = model->ngrams.begin(); iter !=  model->ngrams.end(); iter++ ) {
+    	f->write((char*) &check, sizeof(char)); //check        
         f->write(&czero, sizeof(char)); //gapcount, always zero for ngrams
         iter->first.writeasbinary(f);
         writengram(f, iter->first);       
@@ -1324,8 +1340,10 @@ void GraphPatternModel::writengrams(std::ostream * f) {
 }
 
 
-void GraphPatternModel::writeskipgrams(std::ostream * f) {                 
-    for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = model->skipgrams.begin(); iter !=  model->skipgrams.end(); iter++ ) {                                
+void GraphPatternModel::writeskipgrams(std::ostream * f) {
+	const char check = 0xff;                 
+    for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = model->skipgrams.begin(); iter !=  model->skipgrams.end(); iter++ ) {
+    	f->write(&check, sizeof(char)); //gapcount, always zero for ngrams                                
         iter->first.writeasbinary(f);        
         writeskipgram(f, iter->first);
     }     
