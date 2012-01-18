@@ -245,6 +245,10 @@ void EncAnyGram::writeasbinary(ostream * out) const {
 
 void EncSkipGram::writeasbinary(ostream * out) const {
     out->write( &skipcount, sizeof(char) ); //nr of gaps
+    if (skipcount > MAXSKIPS) {
+    	cerr << "INTERNAL ERROR EncSkipGram::writeasbinary(): Writing skipgram with skipcount > MAXSKIPS! (" << (int) skipcount << " > " << (int) MAXSKIPS << "). Not possible!" << endl;
+    	exit(13);
+    }
     for (int j = 0; j < skipcount; j++) { //skip configuration
             out->write( skipsize + j , sizeof(char) );
     }
@@ -319,7 +323,7 @@ EncSkipGram::EncSkipGram(const vector<EncNGram*> & dataref, const vector<int> & 
         }        
     }
     if ((char) skipref.size() != skipcount) {
-        cerr << "INTERNAL ERROR: EncSkipGram(): Skipgram contains " << (int) skipcount << " skips, but configuration specifies " << skipref.size() << endl;      
+        cerr << "INTERNAL ERROR: EncSkipGram(): Skipgram contains " << (int) skipcount << " skips, but configuration specifies " << (int) skipref.size() << endl;      
         cerr << data <<endl;
         exit(13);
     }    
@@ -468,6 +472,46 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
 
 
 
+	
+
+/*
+SkipConf::SkipConf( const  uint16_t value ) {
+	this->value = value;
+}
+
+SkipConf::SkipConf( const unsigned char * skipref, const char skipcount) {
+	value = 0;
+	if (skipcount > MAXSKIPS) {
+		cerr << "ERROR: Too many skips (" << skipcount << "), the maximum is " << MAXSKIPS << endl;
+	}
+	for (int i = 0; i < skipcount; i++) {
+		 if (skipref[i] >= MAXSKIPSIZE) {
+		 		cerr << "ERROR: Skip " <<  i+1 << " is oversized: " << (int) skipref[i] << "), the maximum is " << MAXSKIPSIZE << endl;
+		 }
+		 value = value | skipref[i] << i*4;
+	
+}
+
+char SkipConf:skipsize( const char index) {
+	char size = (value >> index*4) & 0xf; //shift and mask off
+	return (char) size; 
+}
+
+
+char SkipConf::count() {
+	if (value == 0) return 0;
+	char skipcount = 1;
+	for (int i = 1; i < MAXSKIPS; i++) {
+		if (value > pow(2,i*4)) {
+			skipcount++;
+		} else {
+			break;
+		}		
+	}
+	return skipcount;
+}
+*/
+
 
 /*size_t jenkinshash(unsigned char * data, char size) {
     //jenkins hash: http://en.wikipedia.org/wiki/Jenkins_hash_function
@@ -498,12 +542,16 @@ EncNGram::EncNGram(istream * in) {
     in->read((char*) data, (int) _size); //read data                                                
 }
 
-EncSkipGram::EncSkipGram(istream * in, const char gapcount) {
-    if (gapcount < 0) {
+EncSkipGram::EncSkipGram(istream * in, const char _skipcount) {
+    if (_skipcount < 0) {
         in->read(&skipcount, sizeof(char));
     } else {
-        skipcount = gapcount;
+        skipcount = _skipcount;
     }    
+     if (skipcount > MAXSKIPS) {
+    	cerr << "INTERNAL ERROR EncSkipGram::EncSkipGram(): Reading skipgram with skipcount > MAXSKIPS! (" << (int) skipcount << " > " << (int) MAXSKIPS << "). Not possible!" << endl;
+    	exit(13);
+    }
     for (int j = 0; j < skipcount; j++) {
         in->read(skipsize + j, sizeof(char)); //reads in skipref[j]                
     }
@@ -515,5 +563,3 @@ EncSkipGram::EncSkipGram(istream * in, const char gapcount) {
     data = new unsigned char[_size];
     in->read((char*) data, (int) _size); //read data                                                
 }
-
-

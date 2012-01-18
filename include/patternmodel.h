@@ -278,13 +278,23 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
 
    
     GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=false,bool DOXCOUNT=false); //compute entire model
-    GraphPatternModel(const std::string & graphmodelfilename, IndexedPatternModel * model) {
+    GraphPatternModel(const std::string & graphmodelfilename, IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=true,bool DOXCOUNT=true ) {
+        //do everything (provided that it exists in file)
+        this->DOPARENTS = DOPARENTS;
+        this->DOCHILDREN = DOCHILDREN;
+        this->DOXCOUNT = DOXCOUNT;
+        
     	DELETEMODEL = false;        
         this->model = model;
         secondpass = true;
     	readfile(graphmodelfilename);        
     }
-    GraphPatternModel(const std::string & graphmodelfilename) {
+    GraphPatternModel(const std::string & graphmodelfilename, bool DOPARENTS=true,bool DOCHILDREN=true,bool DOXCOUNT=true) {
+        //do everything (provided that it exists in file)
+        this->DOPARENTS = DOPARENTS;
+        this->DOCHILDREN = DOCHILDREN;
+        this->DOXCOUNT = DOXCOUNT;    
+    
     	DELETEMODEL = true;
     	model = new IndexedPatternModel();
     	std::cerr << "Pass one, reading implied indexedpatternmodel..." << std::endl;

@@ -1220,20 +1220,22 @@ void GraphPatternModel::readrelations(std::istream * in, const EncAnyGram * anyg
        in->read(&gapcount, sizeof(char));
        if (gapcount == 0) {
         EncNGram ngram = EncNGram(in);
-        if (!ignore) relationhash[model->getkey(anygram)].insert(model->getkey((EncAnyGram*) &ngram));
+        if ((!ignore) && (secondpass)) relationhash[model->getkey(anygram)].insert(model->getkey((EncAnyGram*) &ngram));
        } else {
         EncSkipGram skipgram = EncSkipGram( in, gapcount);
-        if (!ignore) relationhash[model->getkey(anygram)].insert(model->getkey((EncAnyGram*) &skipgram));
+        if ((!ignore) && (secondpass)) relationhash[model->getkey(anygram)].insert(model->getkey((EncAnyGram*) &skipgram));
        }           
     }    
 }
 
 void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relationhash) {
+	const unsigned char zero = 0;
     uint16_t count = relationhash[model->getkey(anygram)].size();
     out->write((char*) &count, sizeof(uint16_t));
     char gapcount;                       
     for (unordered_set<const EncAnyGram*>::iterator iter = relationhash[model->getkey(anygram)].begin(); iter != relationhash[model->getkey(anygram)].end(); iter++) {
         const EncAnyGram * anygram2 = *iter;
+        if ((anygram2->n()) == 0) out->write( (char*) &zero, sizeof(char)); //for ngrams         
         anygram2->writeasbinary(out);
     }
 }
@@ -1252,15 +1254,11 @@ void GraphPatternModel::writeheader(std::ostream * out) {
 }
 
 void GraphPatternModel::readngram(std::istream * in, const EncNGram & ngram, bool ignore) {
-	cerr << "PREREAD secondpass=" << (int) secondpass << endl;
 	model->readngram(in, ngram, ignore || secondpass);
-	cerr << "POSTREAD" << endl;
     if (HASXCOUNT) {
         uint32_t _xcount;
         in->read((char*) &_xcount, sizeof(uint32_t));
-        cerr << "READ XCOUNT: " << (int) _xcount << endl;
         if ((DOXCOUNT) && (secondpass) && (!ignore)) {
-        	cerr << "PROCESSING  XCOUNT" << endl;
         	data_xcount[model->getkey((const EncAnyGram*) &ngram)] = _xcount;
         	
         }
@@ -1268,7 +1266,7 @@ void GraphPatternModel::readngram(std::istream * in, const EncNGram & ngram, boo
     if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_parents, (ignore || !secondpass || !DOPARENTS));
 
     if (HASCHILDREN) 
-        readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));    
+        readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));
 }
 
 void GraphPatternModel::readskipgram(std::istream * in, const EncSkipGram & skipgram, bool ignore) {

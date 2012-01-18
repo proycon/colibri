@@ -10,7 +10,8 @@
 #include <iomanip> // contains setprecision()
 
 
-const int MAXSKIPS = 4;
+const char MAXSKIPS = 4; //Maximum number of skips - THESE NUMBERS CAN NOT BE CHANGED WITHOUT ALSO CHANGING THE SkipConf IMPLEMENTATION!
+const char MAXSKIPSIZE = 16; //Maximum length of each skip   - THESE NUMBERS CAN NOT BE CHANGED WITHOUT ALSO CHANGING THE SkipConf IMPLEMENTATION!
 
 
 class EncAnyGram {
@@ -73,13 +74,25 @@ class EncNGram: public EncAnyGram {
 
 EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size, const unsigned int linenum = 0);
 
-
+/*
+class SkipConf { //Skip configuration
+	public:
+	 uint16_t value;
+	 SkipConf(const uint16_t value);
+	 SkipConf(const unsigned char * skipref, const char skipcount);	 
+	 char count(); //returns number of skips
+	 char skipsize(const char index); //returns size of the specified skip
+};
+*/
  
  
 class EncSkipGram: public EncAnyGram {
     public:
       char skipsize[MAXSKIPS]; //4 bytes reserved for skip size
       char skipcount; //number of skips
+      
+      //SkipConf skipconf; //skip configuration (encoded in 16 bits, 4 bit per gap: max 4 gaps, max 16 spaces in a gap)
+      
       const char n() const;
       
       EncSkipGram(const std::vector<EncNGram*> & dataref, const std::vector<int> & skipref, bool initialskip = false, bool finalskip = false);
@@ -91,10 +104,16 @@ class EncSkipGram: public EncAnyGram {
       bool isskipgram() const { return (skipcount > 0); }
       
       const char gapcount() const {
-         return skipcount;
+      		return skipcount;
+         	//return skipconf.count();
       }
       const char gapsize(char i) const {
-            return skipsize[i]; //TODO: Add proper exceptions
+      		if (i >= MAXSKIPS) {
+      			std::cerr << "ERROR: Request for size of gap " << i << " exceed maximum amount of gaps" << std::endl;
+      			exit(14);
+      		}
+      		return skipsize[i]; 
+            //return skipconf.skipsize(); 
       }
       
       int parts(std::vector<EncNGram*> & container) const; //returns all consecutive parts
