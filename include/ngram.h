@@ -41,7 +41,12 @@ class EncAnyGram {
      //EncNGram * slice(const int begin,const int length) const;
     
      virtual bool isskipgram() const { 
-         return false; 
+         for (int i = 0; i < _size; i++) {
+         	if ((i == 0) && (data[i] == 0)) return true;
+         	if ((i == _size - 1) && (data[i] == 0)) return true;
+         	if ((i > 0) && (data[i] == 0) && (data[i-1] == 0)) return true;
+         }
+         return false;
      }
      virtual const char gapcount() const {
          return 0;
