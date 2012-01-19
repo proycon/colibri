@@ -1431,6 +1431,8 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool
 	skipgramtokencount = 0;
 	ngramtypecount = 0;
 	skipgramtypecount = 0;
+	ignoredtypes = 0;
+	ignoredtokens = 0;
 	readfile(filename);
 }
 
@@ -1474,7 +1476,7 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
 
     uint32_t count;
     vector<uint32_t> index;
-    uint32_t xcount;     
+    uint32_t xcount = 0;     
     
     in->read((char*) &count, sizeof(uint32_t)); //read occurrence count		
 	if (model_id != UNINDEXEDPATTERNMODEL) {	
@@ -1490,7 +1492,7 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
     //THRESHOLD CHECK STAGE - deciding whether to ignore based on unreached thresholds
     
 	if ((count < COUNTTHRESHOLD) || ((double) count / totaltypes < FREQTHRESHOLD)) ignore = true;
-	if ((HASXCOUNT) && ((xcount < XCOUNTTHRESHOLD) || ((double) (xcount / count) < XCOUNTRATIOTHRESHOLD) ) ) ignore = true;
+	if ((DOXCOUNT) && (HASXCOUNT) && ((xcount < XCOUNTTHRESHOLD) || ((double) (xcount / count) < XCOUNTRATIOTHRESHOLD) ) ) ignore = true;
 
     //STORAGE STAGE
     if (!ignore) {
@@ -1499,13 +1501,16 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
 		const EncAnyGram * anygram = &iter->first;	
 		ngramtypecount++;
 		ngramtokencount += count;
-		if (HASXCOUNT) ngrams[ngram].xcount = xcount;
+		ngrams[ngram].xcount = xcount; // 0 if n/a
 		if (!index.empty()) {			
 			for (vector<uint32_t>::iterator iter = index.begin(); iter != index.end(); iter++) {
 				ngrams[ngram].sentences.insert(*iter);
 		    	reverseindex[*iter].push_back(anygram);
 			}
 		}	
+	} else {
+		ignoredtypes++;
+		ignoredtokens += count;
 	}        	        
 }
 
@@ -1519,7 +1524,7 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
 	
     uint32_t count;
     uint32_t skipcontentcount;
-    uint32_t xcount;
+    uint32_t xcount = 0;
     vector<uint32_t> index;
     
     in->read((char*) &count, sizeof(uint32_t)); //read occurrence count
@@ -1543,7 +1548,7 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
     //THRESHOLD CHECK STAGE - deciding whether to ignore based on unreached thresholds
     
 	if ((count < COUNTTHRESHOLD) || ((double) count / totaltypes < FREQTHRESHOLD)) ignore = true;
-	if ((HASXCOUNT) && ((xcount < XCOUNTTHRESHOLD) || ((double) (xcount / count) < XCOUNTRATIOTHRESHOLD) ) ) ignore = true;
+	if ((DOXCOUNT) && (HASXCOUNT) && ((xcount < XCOUNTTHRESHOLD) || ((double) (xcount / count) < XCOUNTRATIOTHRESHOLD) ) ) ignore = true;
 	
      //STORAGE STAGE
     if (!ignore) {
@@ -1552,14 +1557,17 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
 		const EncAnyGram * anygram = &iter->first;
     	skipgramtypecount++;            
     	skipgramtokencount += count;
-    	skipgrams[skipgram].xcount = xcount;
+    	skipgrams[skipgram].xcount = xcount;  // 0 if n/a
 		if (!index.empty()) {			
 			for (vector<uint32_t>::iterator iter = index.begin(); iter != index.end(); iter++) {
 		    	skipgrams[skipgram].sentences.insert(*iter);
 		    	reverseindex[*iter].push_back(anygram);
 			}
 		}	    	
-    }               
+    } else {
+		ignoredtypes++;
+		ignoredtokens += count;
+	}   
     
         
 }

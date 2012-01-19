@@ -370,6 +370,8 @@ class SelectivePatternModel: public ModelReader {
     public:
      unsigned long ngramtokencount;
      unsigned long skipgramtokencount;  
+     unsigned long ignoredtypes;
+     unsigned long ignoredtokens;
      std::unordered_map<const EncNGram, IndexCountData> ngrams;
      std::unordered_map<const EncSkipGram,IndexCountData> skipgrams;
     
@@ -380,6 +382,9 @@ class SelectivePatternModel: public ModelReader {
      uint64_t tokens() const { return ngramtokencount + skipgramtokencount; }
      
     virtual uint64_t id() { return 0; }
+    
+    bool has_xcount() { return (HASXCOUNT); }
+    bool has_index() { return ((model_id != UNINDEXEDPATTERNMODEL)) ; }
     
     virtual void readheader(std::istream * in, bool ignore = false);
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
