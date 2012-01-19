@@ -1417,7 +1417,7 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, 
 
 /****************************************************************************************************************************************/
 
-SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool DOFORWARDINDEX,  bool DOREVERSEINDEX, bool DOXCOUNT, int COUNTTHRESHOLD, double FREQTHRESHOLD, double XCOUNTRATIOTHRESHOLD, int XCOUNTTHRESHOLD) { //read a normal graph pattern model in another way optimised for Cooc alignment
+SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool DOFORWARDINDEX,  bool DOREVERSEINDEX, bool DOXCOUNT, int COUNTTHRESHOLD, double FREQTHRESHOLD, double XCOUNTRATIOTHRESHOLD, int XCOUNTTHRESHOLD, bool DOSKIPGRAMS,  int MINLENGTH, int MAXLENGTH) { //read a normal graph pattern model in another way optimised for Cooc alignment
 	this->DOFORWARDINDEX = DOFORWARDINDEX;
 	this->DOREVERSEINDEX = DOREVERSEINDEX;
 	this->DOXCOUNT = DOXCOUNT;
@@ -1425,6 +1425,9 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool
 	this->FREQTHRESHOLD = FREQTHRESHOLD;
 	this->XCOUNTRATIOTHRESHOLD = XCOUNTRATIOTHRESHOLD;
 	this->XCOUNTTHRESHOLD = XCOUNTTHRESHOLD;
+	this->DOSKIPGRAMS = DOSKIPGRAMS;
+	this->MINLENGTH = MINLENGTH;
+	this->MAXLENGTH = MAXLENGTH;
 	
 
 	ngramtokencount = 0;
@@ -1471,6 +1474,8 @@ void SelectivePatternModel::readrelations(std::istream * in) {
 
 void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ngram, bool ignore) {
 	//NOTE MAYBE TODO: make sure to update when GraphModel updates!
+
+	if ((ngram.n() < MINLENGTH) || (ngram.n() > MAXLENGTH)) ignore = true;
 
 	//READ STAGE -- nothing permanently stored yet
 
@@ -1519,7 +1524,8 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
 void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
 	//NOTE MAYBE TODO: make sure to update when GraphModel updates!
 
-
+	if ( (!DOSKIPGRAMS) || (skipgram.n() < MINLENGTH) || (skipgram.n() > MAXLENGTH) ) ignore = true;
+	 
 	//READ STAGE -- nothing permanently stored yet
 	
     uint32_t count;

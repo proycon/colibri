@@ -362,7 +362,9 @@ class SelectivePatternModel: public ModelReader {
      double XCOUNTTHRESHOLD;
      int XCOUNTRATIOTHRESHOLD;
      
-    
+     int MINLENGTH;
+     int MAXLENGTH;
+     bool DOSKIPGRAMS;
     
      int ngramtypecount;
      int skipgramtypecount;    
@@ -376,7 +378,7 @@ class SelectivePatternModel: public ModelReader {
      std::unordered_map<const EncSkipGram,IndexCountData> skipgrams;
     
      std::unordered_map<uint32_t,std::vector<const EncAnyGram*> > reverseindex;    
-     SelectivePatternModel(const std::string & filename, bool DOFORWARDINDEX = true, bool DOREVERSEINDEX = true, bool DOXCOUNT = true, int COUNTTHRESHOLD = 0, double FREQTHRESHOLD = 0, double XCOUNTRATIOTHRESHOLD = 0, int XCOUNTTHRESHOLD = 0 ); //read a graph pattern model
+     SelectivePatternModel(const std::string & filename, bool DOFORWARDINDEX = true, bool DOREVERSEINDEX = true, bool DOXCOUNT = true, int COUNTTHRESHOLD = 0, double FREQTHRESHOLD = 0, double XCOUNTRATIOTHRESHOLD = 0, int XCOUNTTHRESHOLD = 0, bool DOSKIPGRAMS = true,  int MINLENGTH = 0, int MAXLENGTH=99); //read a graph pattern model
   
      uint64_t types() const { return ngrams.size() + skipgrams.size(); }
      uint64_t tokens() const { return ngramtokencount + skipgramtokencount; }

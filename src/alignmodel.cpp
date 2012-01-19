@@ -20,9 +20,17 @@ double CoocAlignmentModel::cooc( multiset<uint32_t> & sourceindex, multiset<uint
             targetiter++;
         }
     }
-    const int unioncount = (sourceindex.size() + targetindex.size()) - intersectioncount; 
-    //cerr << "union=" << unioncount << " intersection=" << intersectioncount << " ";
-    return (double) intersectioncount / unioncount;
+    
+    if (mode == JACCARD) {
+    	//cerr << "union=" << unioncount << " intersection=" << intersectioncount << " ";
+    	const int unioncount = (sourceindex.size() + targetindex.size()) - intersectioncount;
+    	return (double) intersectioncount / unioncount;
+    } else if (mode == DICE) {
+    	return (double) ((2*intersectioncount) / (sourceindex.size() + targetindex.size()));
+    } else {
+    	cerr << "ERROR: No valid co-occurence metric selected!  Unable to compute!" << endl;
+     	return 0;
+    }
 }
 
 
@@ -61,7 +69,8 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t
     return c;
 }
 
-CoocAlignmentModel::CoocAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double relthreshold) {
+CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double relthreshold) {
+    this->mode = mode;
     this->absthreshold = absthreshold;
     this->relthreshold = relthreshold;
     unsigned int c = 0;

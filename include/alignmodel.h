@@ -1,5 +1,11 @@
 #include <patternmodel.h>
 
+enum CoocMode {
+	NOCOOC = 0,
+	JACCARD = 1,
+	DICE = 2
+};
+
 class AlignmentModel {
    public:
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignprob;    
@@ -25,7 +31,8 @@ class CoocAlignmentModel: public AlignmentModel {
     double absthreshold;
     double relthreshold;
    public:   
-    CoocAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double absthreshold = 0,  const double relthreshold = 0);         
+    CoocMode mode;
+    CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double absthreshold = 0,  const double relthreshold = 0);         
    
     double cooc( std::multiset<uint32_t> & sourceindex, std::multiset<uint32_t> & targetindex); //multiset instead of vector cause we want the ordering to easily compute co-occurence 
     int compute(const EncAnyGram * sourcegram, std::multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel);

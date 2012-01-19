@@ -11,10 +11,11 @@ void usage() {
     cerr << "\t-T targetclassfile       Target class file (for decoding)" << endl;
     //cerr << "\t-d model                 Load and decode an existing model" << endl; //TODO
     //cerr << "\t-B                       Do a bi-directional alignment and compute intersection of results" << endl; //TODO
-    //cerr << "\t-l                       Minimum N length" << endl; //TODO
-    //cerr << "\t-L                       Maximum N length" << endl; //TODO
-    //cerr << "\t-N                       No skip-grams" << endl; //TODO
-    cerr << "\t-J                       Use Jaccard co-occurrence method" << endl;
+    cerr << "\t-l n                     Minimum N length" << endl; //TODO
+    cerr << "\t-L n                     Maximum N length" << endl; //TODO
+    cerr << "\t-N                       No skip-grams" << endl; //TODO
+    cerr << "\t-J                       Use Jaccard co-occurrence method (simplest)" << endl;
+    cerr << "\t-D                       Use Dice co-occurrence method" << endl;
     //cerr << "\t-E                       Use EM alignment method" << endl; //TODO
     cerr << "\t-p pruning-threshold     Prune all alignments with a lower score than specified (0 <= x <= 1)" << endl;
     cerr << "\t-o occurence-threshold   Consider only patterns occuring more than specified (absolute occurrence). Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
@@ -29,15 +30,18 @@ int main( int argc, char *argv[] ) {
     string sourceclassfile = "";
     string targetclassfile = "";
     double prunevalue = 0.8;
-    bool DOJACCARD = true;
+    CoocMode COOCMODE = NOCOOC;
     int COUNTTHRESHOLD = 0;
     int FREQTHRESHOLD = 0; 
     double XCOUNTTHRESHOLD = 0;
     double XCOUNTRATIOTHRESHOLD = 0;
     bool DOBIDIRECTIONAL = false;
+    int MINLENGTH = 0;
+    int MAXLENGTH = 99;
+    bool DOSKIPGRAMS = true;
     
     char c;    
-    while ((c = getopt(argc, argv, "s:S:t:T:p:Jo:F:x:X:B:")) != -1)
+    while ((c = getopt(argc, argv, "s:S:t:T:p:JDo:F:x:X:B:l:L:N")) != -1)
         switch (c)
         {
         case 'B':
@@ -47,7 +51,10 @@ int main( int argc, char *argv[] ) {
             prunevalue = atof(optarg);
             break;
         case 'J':
-            DOJACCARD = true;
+            COOCMODE = JACCARD;
+            break;
+        case 'D':
+            COOCMODE = DICE;
             break;
         case 's':
             sourcemodelfile = optarg;
@@ -73,6 +80,15 @@ int main( int argc, char *argv[] ) {
         case 'X':
             XCOUNTRATIOTHRESHOLD = atof(optarg);
             break;
+		case 'l':
+            MINLENGTH = atoi(optarg);
+            break;            
+		case 'L':
+            MAXLENGTH = atoi(optarg);
+            break;    
+        case 'N':
+            DOSKIPGRAMS = false;
+            break;   
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
             abort ();
@@ -84,22 +100,33 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
-    if (!DOJACCARD) {
-    	cerr << "Error: No alignment method selected (add -J for Jaccard-based co-occurrence)" << endl;
+    if (!COOCMODE) {
+    	cerr << "Error: No alignment method selected (select -J or -D)" << endl;
     	usage();
     	exit(3);
     }
     
     cerr << "Configuration: " << endl;
+    if (COOCMODE == JACCARD) {
+  		cerr << "\tCo-occcurrence metric : JACCARD (-J)" << endl;	
+    } else if (COOCMODE == DICE) {
+    	cerr << "\tCo-occcurrence metric : DICE (-D)" << endl;
+    }
     cerr << "\tPrune value       (-P): " << prunevalue << endl;
 	cerr << "\tCount threshold   (-o): " << COUNTTHRESHOLD << endl;
 	cerr << "\tFreq threshold    (-F): " << FREQTHRESHOLD << endl;
 	cerr << "\tXcount threshold  (-x): " << XCOUNTTHRESHOLD << endl;
-	cerr << "\tXcount ratio      (-X): " << XCOUNTRATIOTHRESHOLD << endl << endl;
+	cerr << "\tXcount ratio      (-X): " << XCOUNTRATIOTHRESHOLD << endl;
+	cerr << "\tMinimum N length  (-l): " << MINLENGTH << endl;
+	cerr << "\tMaximum N length  (-L): " << MAXLENGTH << endl;
+	if (!DOSKIPGRAMS) {
+		cerr << "\tSKIPGRAMS DISABLED! (-N)";
+	}
+	cerr << endl;
 	
     
     cerr << "Loading source model " << sourcemodelfile << endl;
-    SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD);
+    SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH);
     cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
     cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredtokens << " tokens due to set thresholds" << endl;
     if (sourcemodel.has_xcount()) {
@@ -115,7 +142,7 @@ int main( int argc, char *argv[] ) {
     }    
     
     cerr << "Loading target model " << targetmodelfile << endl;
-    SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD);
+    SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH);
     cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
     cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredtokens << " tokens due to set thresholds" << endl;
     if (targetmodel.has_xcount()) {
@@ -132,9 +159,9 @@ int main( int argc, char *argv[] ) {
     
     AlignmentModel * alignmodel = NULL;
     
-    if (DOJACCARD) {
+    if (COOCMODE) {
 		cerr << "Computing alignment model..." << endl;
-		alignmodel = new CoocAlignmentModel(sourcemodel,targetmodel, prunevalue);
+		alignmodel = new CoocAlignmentModel(COOCMODE, sourcemodel,targetmodel, prunevalue);
 		cerr << "   Found alignment targets for  " << alignmodel->alignprob.size() << " source constructions" << endl;
 		cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;		
 	}
