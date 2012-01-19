@@ -4,6 +4,13 @@
 
 const char MAXN = 20;
 
+
+enum ModelType {
+	UNINDEXEDPATTERNMODEL = 10, 
+    INDEXEDPATTERNMODEL = 20,
+    GRAPHPATTERNMODEL = 30,        
+};
+
 class CorpusReference {
     /* Reference to a position in the corpus */
    public:
@@ -61,9 +68,13 @@ class SkipGramData: public AnyGramData {
 };
 
 class ModelReader {
+   protected:
+    uint64_t model_id;
+    uint64_t totaltokens;
+    uint64_t totaltypes; 
    public:
     virtual uint64_t id() =0;
-    virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore=false) =0;
+    virtual void readheader(std::istream * in, bool ignore=false) =0;
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false) =0;
     virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false) =0;
     virtual void readfooter(std::istream * in, bool ignore = false) =0;    
@@ -96,8 +107,6 @@ class IndexedPatternModel: public ModelReader, public ModelWriter {
     int MINSKIPTYPES; //= 2;
     int MAXLENGTH; //= 8;
     bool DOSKIPGRAMS; //= false;
-    bool DOREVERSEINDEX; //= false;
-    bool DOSKIPCONTENT; //= false;
     bool DOINITIALONLYSKIP; //= true;
     bool DOFINALONLYSKIP; //= true;
 
@@ -122,8 +131,8 @@ class IndexedPatternModel: public ModelReader, public ModelWriter {
     std::unordered_map< int,std::vector<EncNGram> > ngram_reverse_index;
     std::unordered_map< int,std::vector<EncSkipGram> > skipgram_reverse_index;
            
-    IndexedPatternModel(const std::string & filename = "", bool DOREVERSEINDEX = false);
-    IndexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOREVERSEINDEX = false, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
+    IndexedPatternModel(const std::string & filename = "");
+    IndexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
     
     int maxlength() const { return MAXLENGTH; }
     
@@ -147,8 +156,8 @@ class IndexedPatternModel: public ModelReader, public ModelWriter {
     std::vector<EncAnyGram*> reverse_index(const int i);
     EncAnyGram* get_reverse_index_item(const int, const int);
     
-    virtual uint64_t id() { return 1; }
-    virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore = false) {};
+    virtual uint64_t id() { return INDEXEDPATTERNMODEL; }
+    virtual void readheader(std::istream * in, bool ignore = false) {};
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
     virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};    
@@ -179,8 +188,6 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter {
     int MINSKIPTYPES; //= 2;
     int MAXLENGTH; //= 8;
     bool DOSKIPGRAMS; //= false;
-    bool DOREVERSEINDEX; //= false;
-    bool DOSKIPCONTENT; //= false;
     bool DOINITIALONLYSKIP; //= true;
     bool DOFINALONLYSKIP; //= true;
 
@@ -201,7 +208,7 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter {
     std::unordered_map<const EncNGram,uint32_t > ngrams;
     std::unordered_map<const EncSkipGram,uint32_t > skipgrams;    
             
-    UnindexedPatternModel(const std::string & filename, bool DOREVERSEINDEX = false);
+    UnindexedPatternModel(const std::string & filename);
     UnindexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
     
     int maxlength() const { return MAXLENGTH; }
@@ -218,8 +225,8 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter {
     //int index_size() const;
 
     
-    virtual uint64_t id() { return 0; }
-    virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore = false) {};
+    virtual uint64_t id() { return UNINDEXEDPATTERNMODEL; }
+    virtual void readheader(std::istream * in,  bool ignore = false) {};
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
     virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};    
@@ -314,9 +321,9 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
         
     void save(const std::string & filename) { writefile(filename); }
     
-    virtual uint64_t id() { return 20; }
+    virtual uint64_t id() { return GRAPHPATTERNMODEL; }
     
-    virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore = false);
+    virtual void readheader(std::istream * in, bool ignore = false);
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
     virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};    
@@ -338,33 +345,43 @@ class IndexCountData {
 	 std::multiset<uint32_t> sentences; //may occur multiple times in same sentence
 };
 
-class DoubleIndexedGraphPatternModel: public ModelReader {
-    // Read only model, reads graphpatternmodel in a simplified, less memory intensive representation optimised for alignment tasks 
+class SelectivePatternModel: public ModelReader {
+    // Read only model, reads graphpatternmodel/indexedmodel/unindexedmodel in a simplified, selective, less memory intensive representation. For for example alignment tasks, supports double indexes if fed an indexed model, and exclusive counts if fed a graph model. Whilst offering more functionality, it is also limited in the sense that it does not offer the full representation the complete model does.
     private:
      bool HASPARENTS;
      bool HASCHILDREN;
      bool HASXCOUNT;
      
+     bool DOXCOUNT;
+     bool DOFORWARDINDEX;
+     bool DOREVERSEINDEX;
+     
+     
+     int COUNTTHRESHOLD;
+     double FREQTHRESHOLD;
+     double XCOUNTTHRESHOLD;
+     int XCOUNTRATIOTHRESHOLD;
+     
+    
     
      int ngramtypecount;
      int skipgramtypecount;    
-     void readrelations(std::istream * in,const EncAnyGram*);
+     void readrelations(std::istream * in);
     public:
-
      unsigned long ngramtokencount;
      unsigned long skipgramtokencount;  
      std::unordered_map<const EncNGram, IndexCountData> ngrams;
      std::unordered_map<const EncSkipGram,IndexCountData> skipgrams;
     
      std::unordered_map<uint32_t,std::vector<const EncAnyGram*> > reverseindex;    
-     DoubleIndexedGraphPatternModel(const std::string & filename); //read a graph pattern model
+     SelectivePatternModel(const std::string & filename, bool DOFORWARDINDEX = true, bool DOREVERSEINDEX = true, bool DOXCOUNT = true, int COUNTTHRESHOLD = 0, double FREQTHRESHOLD = 0, double XCOUNTRATIOTHRESHOLD = 0, int XCOUNTTHRESHOLD = 0 ); //read a graph pattern model
   
      uint64_t types() const { return ngrams.size() + skipgrams.size(); }
      uint64_t tokens() const { return ngramtokencount + skipgramtokencount; }
      
-    virtual uint64_t id() { return 20; }
+    virtual uint64_t id() { return 0; }
     
-    virtual void readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore = false);
+    virtual void readheader(std::istream * in, bool ignore = false);
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
     virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};

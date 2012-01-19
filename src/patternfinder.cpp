@@ -57,8 +57,6 @@ int main( int argc, char *argv[] ) {
     int MAXLENGTH = 8;
     bool DOSKIPGRAMS = false;
     bool DOINDEX = true;
-    bool DOREVERSEINDEX = false;
-    bool DOSKIPCONTENT = false;
     bool DOINITIALONLYSKIP = true;
     bool DOFINALONLYSKIP = true;
     //bool DOCOMPOSITIONALITY = false;
@@ -90,9 +88,6 @@ int main( int argc, char *argv[] ) {
             break;
         case 's':
             DOSKIPGRAMS = true;
-            break;
-        case 'L':
-            DOSKIPCONTENT = true;
             break;
         case 'o': 
             outputprefix = optarg;
@@ -145,7 +140,7 @@ int main( int argc, char *argv[] ) {
     	if (DOINDEX) {
     
 		    cerr << "Computing model on " << corpusfile << endl;
-		    IndexedPatternModel model = IndexedPatternModel(corpusfile, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS, MINSKIPTYPES, DOREVERSEINDEX ,DOINITIALONLYSKIP,DOFINALONLYSKIP);
+		    IndexedPatternModel model = IndexedPatternModel(corpusfile, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS, MINSKIPTYPES, DOINITIALONLYSKIP,DOFINALONLYSKIP);
 		        
 		    cerr << "Saving " << outputprefix << ".indexedpatternmodel.colibri"  << endl;
 		    const string outputfile = outputprefix + ".indexedpatternmodel.colibri";

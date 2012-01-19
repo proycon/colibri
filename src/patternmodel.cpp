@@ -5,10 +5,6 @@
 using namespace std;
 
 
-/*enum ModelType { 
-    INDEXEDPATTERNMODEL = 10,
-    GRAPHPATTERNMODEL = 20,
-}*/
 
 
 CorpusReference::CorpusReference(uint32_t sentence, unsigned char token) {
@@ -46,16 +42,12 @@ void ModelReader::readfile(const string & filename) {
        cerr << "File does not exist: " << filename << endl;
        exit(3);
     }
-    
-
-    uint64_t id = this->id();
-    f.read( (char*) &id, sizeof(uint64_t));        
-    uint64_t totaltokens;
+        
+    f.read( (char*) &model_id, sizeof(uint64_t));        
     f.read( (char*) &totaltokens, sizeof(uint64_t));        
-    uint64_t totaltypes;
     f.read( (char*) &totaltypes, sizeof(uint64_t)); 
     
-    readheader(&f, totaltokens, totaltypes);
+    readheader(&f);
     unsigned char check;    
     for (int i = 0; i < totaltypes; i++) {           
         char gapcount;
@@ -107,14 +99,12 @@ void ModelWriter::writefile(const string & filename) {
 }
 
 
-IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOREVERSEINDEX, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
+IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
     
     this->MAXLENGTH = MAXLENGTH;
     this->MINTOKENS = MINTOKENS;
     this->DOSKIPGRAMS = DOSKIPGRAMS;
     this->MINSKIPTOKENS = MINSKIPTOKENS;
-    this->DOREVERSEINDEX = DOREVERSEINDEX;
-    this->DOSKIPCONTENT = true;
     this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
     this->DOFINALONLYSKIP = DOFINALONLYSKIP;
     
@@ -337,9 +327,9 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
            for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {     
                if (iter->first.n() == n) {                          
                     bool pruneskipgram = false;
-                    if ((iter->second.count() < MINTOKENS) || ((DOSKIPCONTENT && iter->second.skipcontent.size() < MINSKIPTYPES)))  {
+                    if ((iter->second.count() < MINTOKENS) || ((iter->second.skipcontent.size() < MINSKIPTYPES)))  {
                         pruneskipgram = true;
-                    } else {             // if (DOSKIPCONTENT)
+                    } else {            
                         int prunedskiptokens = 0;
                         for(std::unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {
                             if (iter2->second.count() < MINSKIPTOKENS) {
@@ -373,17 +363,14 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
         skipgramtypecount += skiptypecount[n];
     }
 
-    if (DOREVERSEINDEX) {
-        //TODO: Compute reverse index        
-    }
+
         
 }
 
 
-IndexedPatternModel::IndexedPatternModel(const string & filename, bool DOREVERSEINDEX) {    
+IndexedPatternModel::IndexedPatternModel(const string & filename) {    
     const bool DEBUG = true;
-    this->DOREVERSEINDEX = DOREVERSEINDEX;
-    this->DOSKIPCONTENT = DOSKIPCONTENT;    
+      
     
     ngramtokencount = 0;
     skipgramtokencount = 0; 
@@ -439,7 +426,7 @@ void IndexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram &
     uint32_t skipcontentcount;
     f->read((char*) &skipcontentcount, sizeof(uint32_t));   
     for (int j = 0; j < skipcontentcount; j++) {                                
-        EncSkipGram skipcontent = EncSkipGram(f);  //also when !DOSKIPCONTENT, bytes have to be read
+        EncSkipGram skipcontent = EncSkipGram(f);  
         f->read((char*) &count, sizeof(uint32_t)); //read occurrence count                
         for (int k = 0; k < count; k++) {
             CorpusReference ref = CorpusReference(f); //read from file
@@ -698,8 +685,6 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
     this->MINTOKENS = MINTOKENS;
     this->DOSKIPGRAMS = DOSKIPGRAMS;
     this->MINSKIPTOKENS = MINSKIPTOKENS;
-    this->DOREVERSEINDEX = DOREVERSEINDEX;
-    this->DOSKIPCONTENT = true;
     this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
     this->DOFINALONLYSKIP = DOFINALONLYSKIP;
     
@@ -945,10 +930,8 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
 }
 
 
-UnindexedPatternModel::UnindexedPatternModel(const string & filename, bool DOREVERSEINDEX) {    
-    const bool DEBUG = true;
-    this->DOREVERSEINDEX = DOREVERSEINDEX;
-    this->DOSKIPCONTENT = DOSKIPCONTENT;    
+UnindexedPatternModel::UnindexedPatternModel(const string & filename) {    
+    const bool DEBUG = true;    
     
     ngramtokencount = 0;
     skipgramtokencount = 0; 
@@ -1271,7 +1254,7 @@ void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * any
 }
 
 
-void GraphPatternModel::readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore) {
+void GraphPatternModel::readheader(std::istream * in, bool ignore) {
     in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
     in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
     in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
@@ -1434,26 +1417,41 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, 
 
 /****************************************************************************************************************************************/
 
-DoubleIndexedGraphPatternModel::DoubleIndexedGraphPatternModel(const std::string & filename) { //read a normal graph pattern model in another way optimised for Cooc alignment
+SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool DOFORWARDINDEX,  bool DOREVERSEINDEX, bool DOXCOUNT, int COUNTTHRESHOLD, double FREQTHRESHOLD, double XCOUNTRATIOTHRESHOLD, int XCOUNTTHRESHOLD) { //read a normal graph pattern model in another way optimised for Cooc alignment
+	this->DOFORWARDINDEX = DOFORWARDINDEX;
+	this->DOREVERSEINDEX = DOREVERSEINDEX;
+	this->DOXCOUNT = DOXCOUNT;
+	this->COUNTTHRESHOLD = COUNTTHRESHOLD;
+	this->FREQTHRESHOLD = FREQTHRESHOLD;
+	this->XCOUNTRATIOTHRESHOLD = XCOUNTRATIOTHRESHOLD;
+	this->XCOUNTTHRESHOLD = XCOUNTTHRESHOLD;
+	
+
 	ngramtokencount = 0;
 	skipgramtokencount = 0;
 	ngramtypecount = 0;
 	skipgramtypecount = 0;
 	readfile(filename);
-	
 }
 
 
-void DoubleIndexedGraphPatternModel::readheader(std::istream * in, uint64_t & totaltokens, uint64_t & totaltypes, bool ignore) {
-    in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
-    in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
-    in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
-    if (!HASXCOUNT) {
-    	cerr << "WARNING: No Xcount data in graph model! Aligners may rely on this and not function without!" << endl;
-    }
+void SelectivePatternModel::readheader(std::istream * in, bool ignore) {
+	if (model_id == GRAPHPATTERNMODEL) { 
+    	in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
+	    in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
+	    in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
+	} else {
+		HASPARENTS = false;
+		HASCHILDREN = false;
+		HASXCOUNT = false;
+	}	
+	if ((model_id == UNINDEXEDPATTERNMODEL) && (DOFORWARDINDEX || DOREVERSEINDEX)) 
+	  cerr << "WARNING!!! You opted to load indexes but you the model you are loading is unindexed!" << endl;
+	if (!HASXCOUNT && DOXCOUNT) 
+	  cerr << "WARNING!!! You opted to load exclusive count data but you are loading does not contain this data! (Make sure to load a graphmodel generated with exclusive count data)" << endl;
 }
 
-void DoubleIndexedGraphPatternModel::readrelations(std::istream * in, const EncAnyGram * anygram) {
+void SelectivePatternModel::readrelations(std::istream * in) {
 	//Read and ignore relations (we don't care about them but we do need to read them)
     uint16_t count;
     in->read((char*) &count,  sizeof(uint16_t));
@@ -1469,65 +1467,99 @@ void DoubleIndexedGraphPatternModel::readrelations(std::istream * in, const EncA
 }
 
 
-void DoubleIndexedGraphPatternModel::readngramdata(std::istream * in, const EncNGram & ngram, bool ignore) {
-	ngrams[ngram]; //will create the ngram if it does not exist yet in the hash
-	std::unordered_map<EncNGram,IndexCountData>::iterator iter = ngrams.find(ngram); //pointer to the ngram in the hash
-	const EncAnyGram * anygram = &iter->first;
+void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ngram, bool ignore) {
+	//NOTE MAYBE TODO: make sure to update when GraphModel updates!
+
+	//READ STAGE -- nothing permanently stored yet
 
     uint32_t count;
-    in->read((char*) &count, sizeof(uint32_t)); //read occurrence count
-	if (!ignore) {
+    vector<uint32_t> index;
+    uint32_t xcount;     
+    
+    in->read((char*) &count, sizeof(uint32_t)); //read occurrence count		
+	if (model_id != UNINDEXEDPATTERNMODEL) {	
+		for (int j = 0; j < count; j++) {
+		    CorpusReference ref = CorpusReference(in); //read from file
+		    if (!ignore) index.push_back(ref.sentence);         
+		}
+	}    
+    if (HASXCOUNT) in->read((char*) &xcount, sizeof(uint32_t)); //read, process later
+    if (HASPARENTS) readrelations(in); //read and ignore
+    if (HASCHILDREN) readrelations(in);  //read and ignore
+    
+    //THRESHOLD CHECK STAGE - deciding whether to ignore based on unreached thresholds
+    
+	if ((count < COUNTTHRESHOLD) || ((double) count / totaltypes < FREQTHRESHOLD)) ignore = true;
+	if ((HASXCOUNT) && ((xcount < XCOUNTTHRESHOLD) || ((double) (xcount / count) < XCOUNTRATIOTHRESHOLD) ) ) ignore = true;
+
+    //STORAGE STAGE
+    if (!ignore) {
+		ngrams[ngram]; //will create the ngram if it does not exist yet in the hash
+		std::unordered_map<EncNGram,IndexCountData>::iterator iter = ngrams.find(ngram); //pointer to the ngram in the hash
+		const EncAnyGram * anygram = &iter->first;	
 		ngramtypecount++;
 		ngramtokencount += count;
-	}        
-    for (int j = 0; j < count; j++) {
-        CorpusReference ref = CorpusReference(in); //read from file                
-        if (!ignore) {
-        	ngrams[ngram].sentences.insert(ref.sentence);
-        	reverseindex[ref.sentence].push_back(anygram);
-        }
-    }	    
-    if (HASXCOUNT) {
-        uint32_t xcount;
-        in->read((char*) &xcount, sizeof(uint32_t));
-        if (!ignore) ngrams[ngram].xcount = xcount;                   
-    }
-    if (HASPARENTS) readrelations(in, anygram); //read and ignore
-    if (HASCHILDREN) readrelations(in, anygram);  //read and ignore
-    //NOTE MAYBE TODO: make sure to update when GraphModel updates!    
+		if (HASXCOUNT) ngrams[ngram].xcount = xcount;
+		if (!index.empty()) {			
+			for (vector<uint32_t>::iterator iter = index.begin(); iter != index.end(); iter++) {
+				ngrams[ngram].sentences.insert(*iter);
+		    	reverseindex[*iter].push_back(anygram);
+			}
+		}	
+	}        	        
 }
 
-void DoubleIndexedGraphPatternModel::readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
-	skipgrams[skipgram]; //will create the ngram if it does not exist yet in the hash
-	std::unordered_map<EncSkipGram,IndexCountData>::iterator iter = skipgrams.find(skipgram); //pointer to the skipgram in the hash
-	const EncAnyGram * anygram = &iter->first;
 
-    	     
+
+void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
+	//NOTE MAYBE TODO: make sure to update when GraphModel updates!
+
+
+	//READ STAGE -- nothing permanently stored yet
+	
     uint32_t count;
+    uint32_t skipcontentcount;
+    uint32_t xcount;
+    vector<uint32_t> index;
+    
     in->read((char*) &count, sizeof(uint32_t)); //read occurrence count
+    
+    if (model_id != UNINDEXEDPATTERNMODEL) {
+		in->read((char*) &skipcontentcount, sizeof(uint32_t));   
+		for (int j = 0; j < skipcontentcount; j++) {                                
+		    EncSkipGram skipcontent = EncSkipGram(in);  
+		    in->read((char*) &count, sizeof(uint32_t)); //read occurrence count                
+		    for (int k = 0; k < count; k++) {
+		        CorpusReference ref = CorpusReference(in); //read from file       
+		        if (!ignore) index.push_back(ref.sentence);            
+		    }        
+		}    
+	}
+    if (HASXCOUNT) in->read((char*) &xcount, sizeof(uint32_t));     
+    if (HASPARENTS) readrelations(in);  //read and ignore
+    if (HASCHILDREN) readrelations(in);  //read and ignore
+    
+    
+    //THRESHOLD CHECK STAGE - deciding whether to ignore based on unreached thresholds
+    
+	if ((count < COUNTTHRESHOLD) || ((double) count / totaltypes < FREQTHRESHOLD)) ignore = true;
+	if ((HASXCOUNT) && ((xcount < XCOUNTTHRESHOLD) || ((double) (xcount / count) < XCOUNTRATIOTHRESHOLD) ) ) ignore = true;
+	
+     //STORAGE STAGE
     if (!ignore) {
+    	skipgrams[skipgram]; //will create the ngram if it does not exist yet in the hash
+		std::unordered_map<EncSkipGram,IndexCountData>::iterator iter = skipgrams.find(skipgram); //pointer to the skipgram in the hash
+		const EncAnyGram * anygram = &iter->first;
     	skipgramtypecount++;            
     	skipgramtokencount += count;
+    	skipgrams[skipgram].xcount = xcount;
+		if (!index.empty()) {			
+			for (vector<uint32_t>::iterator iter = index.begin(); iter != index.end(); iter++) {
+		    	skipgrams[skipgram].sentences.insert(*iter);
+		    	reverseindex[*iter].push_back(anygram);
+			}
+		}	    	
     }               
-    uint32_t skipcontentcount;
-    in->read((char*) &skipcontentcount, sizeof(uint32_t));   
-    for (int j = 0; j < skipcontentcount; j++) {                                
-        EncSkipGram skipcontent = EncSkipGram(in);  //also when !DOSKIPCONTENT, bytes have to be read
-        in->read((char*) &count, sizeof(uint32_t)); //read occurrence count                
-        for (int k = 0; k < count; k++) {
-            CorpusReference ref = CorpusReference(in); //read from file                
-        	if (!ignore) {
-        		skipgrams[skipgram].sentences.insert(ref.sentence);
-        		reverseindex[ref.sentence].push_back(anygram);
-        	}
-        }        
-    }    
-    if (HASXCOUNT) {
-        uint32_t xcount;
-        in->read((char*) &xcount, sizeof(uint32_t));
-        if (!ignore) skipgrams[skipgram].xcount = xcount;    
-    }
-    if (HASPARENTS) readrelations(in, anygram);  //read and ignore
-    if (HASCHILDREN) readrelations(in, anygram);  //read and ignore
-    //NOTE MAYBE TODO: make sure to update when GraphModel updates!    
+    
+        
 }

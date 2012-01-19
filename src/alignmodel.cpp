@@ -26,7 +26,7 @@ double CoocAlignmentModel::cooc( multiset<uint32_t> & sourceindex, multiset<uint
 }
 
 
-int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t> & sourceindex, DoubleIndexedGraphPatternModel & targetmodel) {        
+int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel) {        
     int c = 0;
     double bestcooc = 0;
     //cerr << "Processing new construction" << endl;
@@ -61,7 +61,7 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t
     return c;
 }
 
-CoocAlignmentModel::CoocAlignmentModel(DoubleIndexedGraphPatternModel & sourcemodel, DoubleIndexedGraphPatternModel & targetmodel, const double absthreshold, const double relthreshold) {
+CoocAlignmentModel::CoocAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double relthreshold) {
     this->absthreshold = absthreshold;
     this->relthreshold = relthreshold;
     unsigned int c = 0;

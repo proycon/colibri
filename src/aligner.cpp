@@ -12,6 +12,10 @@ void usage() {
     cerr << "\t-p pruning-threshold     Prune all alignments with a lower score than specified (0 <= x <= 1)" << endl;
     cerr << "\t-C                       Use Jaccard co-occurrence method" << endl;
     cerr << "\t-d                       Decode results" << endl;
+    cerr << "\t-o occurence-threshold   Consider only patterns occuring more than specified (absolute occurrence). Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
+    cerr << "\t-F freq-threshold        Consider only patterns occuring more than specified (relative frequency of all patterns).  Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
+    cerr << "\t-x xcount-threshold      Consider only patterns with an *exclusive* count over this threshold" << endl;
+    cerr << "\t-X xcount-ratio          Consider only patterns with an *exclusivity ratio* over this threshold (between 0.0 [not exclusive] and 1.0 [entirely exclusive])" << endl;
 }
 
 int main( int argc, char *argv[] ) {
@@ -22,8 +26,13 @@ int main( int argc, char *argv[] ) {
     double prunevalue = 0.8;
     bool DOCOOC = true;
     bool DODECODE = false;
+    int COUNTTHRESHOLD = 0;
+    int FREQTHRESHOLD = 0; 
+    double XCOUNTTHRESHOLD = 0;
+    double XCOUNTRATIOTHRESHOLD = 0;
+    
     char c;    
-    while ((c = getopt(argc, argv, "s:S:t:T:p:dC")) != -1)
+    while ((c = getopt(argc, argv, "s:S:t:T:p:dCo:F:x:X:")) != -1)
         switch (c)
         {
         case 'p':
@@ -47,7 +56,19 @@ int main( int argc, char *argv[] ) {
             break;
         case 'T':
             targetclassfile = optarg;
-            break;        
+            break;
+        case 'o':
+            COUNTTHRESHOLD = atoi(optarg);
+            break;
+		case 'x':
+            XCOUNTTHRESHOLD = atoi(optarg);
+            break;
+		case 'F':
+            FREQTHRESHOLD = atof(optarg);
+            break;
+        case 'X':
+            XCOUNTRATIOTHRESHOLD = atof(optarg);
+            break;
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
             abort ();
@@ -68,12 +89,12 @@ int main( int argc, char *argv[] ) {
 
     
     cerr << "Loading source model " << sourcemodelfile << endl;
-    DoubleIndexedGraphPatternModel sourcemodel = DoubleIndexedGraphPatternModel(sourcemodelfile);
+    SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD);
     cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
     cerr << "  Reverse index has " << sourcemodel.reverseindex.size() << " sentences" << endl;    
     
     cerr << "Loading target model " << targetmodelfile << endl;
-    DoubleIndexedGraphPatternModel targetmodel = DoubleIndexedGraphPatternModel(targetmodelfile);
+    SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD);
     cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
     cerr << "  Reverse index has " << targetmodel.reverseindex.size() << " sentences" << endl;
     

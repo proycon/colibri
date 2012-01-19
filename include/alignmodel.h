@@ -25,10 +25,10 @@ class CoocAlignmentModel: public AlignmentModel {
     double absthreshold;
     double relthreshold;
    public:   
-    CoocAlignmentModel(DoubleIndexedGraphPatternModel & sourcemodel, DoubleIndexedGraphPatternModel & targetmodel, double absthreshold = 0,  const double relthreshold = 0);         
+    CoocAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double absthreshold = 0,  const double relthreshold = 0);         
    
     double cooc( std::multiset<uint32_t> & sourceindex, std::multiset<uint32_t> & targetindex); //multiset instead of vector cause we want the ordering to easily compute co-occurence 
-    int compute(const EncAnyGram * sourcegram, std::multiset<uint32_t> & sourceindex, DoubleIndexedGraphPatternModel & targetmodel);
+    int compute(const EncAnyGram * sourcegram, std::multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel);
     
     
     
