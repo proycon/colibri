@@ -76,12 +76,12 @@ CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & so
     unsigned int c = 0;
     for (unordered_map<EncNGram,IndexCountData >::iterator iter = sourcemodel.ngrams.begin();  iter != sourcemodel.ngrams.end(); iter++) {
     	c++;
-        if (c % 10000 == 0) cerr << "\t@" << c << endl;
+        if (c % 1000 == 0) cerr << "\t@" << c << endl;
         compute(&iter->first, iter->second.sentences, targetmodel);
     }    
     for (unordered_map<EncSkipGram,IndexCountData >::iterator iter = sourcemodel.skipgrams.begin();  iter != sourcemodel.skipgrams.end(); iter++) {
     	c++;
-    	if (c % 10000 == 0) cerr << "\t@" << c << endl;
+    	if (c % 1000 == 0) cerr << "\t@" << c << endl;
         compute(&iter->first, iter->second.sentences, targetmodel);
     }            
 }
