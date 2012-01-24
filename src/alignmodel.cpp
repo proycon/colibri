@@ -44,7 +44,7 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t
 		if (targetmodel.reverseindex.count(sentencenumber) > 0) {
 			if (DEBUG) cerr << "\t\t\tReverseindex for sentence " << sentencenumber << " yields " << targetmodel.reverseindex[sentencenumber].size() << " target-side patterns";
 			c += targetmodel.reverseindex[sentencenumber].size();
-			for (vector<const EncAnyGram*>::iterator reviter = targetmodel.reverseindex[sentencenumber].begin(); reviter != targetmodel.reverseindex[sentencenumber].end(); reviter++) {					
+			for (vector<const EncAnyGram*>::iterator reviter = targetmodel.reverseindex[sentencenumber].begin(); reviter != targetmodel.reverseindex[sentencenumber].end(); reviter++) {
 					const EncAnyGram* targetgram = *reviter;
 			        multiset<uint32_t> * targetindex;
 				    if (targetgram->gapcount() == 0) {
@@ -55,8 +55,10 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t
 				    const double coocvalue = cooc(sourceindex, *targetindex);        
 				    if ((relthreshold) && (coocvalue > bestcooc)) bestcooc = coocvalue;            
 				    if (coocvalue >= absthreshold) {
-				    	if (DEBUG) cerr << ".";                
+				    	if (DEBUG) cerr << "!";
 				        alignprob[sourcegram][targetgram] = coocvalue;				       
+				    } else {
+				    	if (DEBUG) cerr << ".";
 				    }
 			}				
 	        if (relthreshold) {
