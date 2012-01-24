@@ -154,7 +154,7 @@ int main( int argc, char *argv[] ) {
 		    cerr << "Saving " << outputprefix << ".indexedpatternmodel.colibri"  << endl;
 		    const string outputfile = outputprefix + ".indexedpatternmodel.colibri";
 		    model.save(outputfile);            
-		    cerr << "Loading class decoder " << classfile << endl;
+		    
 		    
 		    if (!classfile.empty()) {
 		        cerr << "Loading class decoder " << classfile << endl;
@@ -177,7 +177,7 @@ int main( int argc, char *argv[] ) {
 		    cerr << "Saving " << outputprefix << ".unindexedpatternmodel.colibri"  << endl;
 		    const string outputfile = outputprefix + ".unindexedpatternmodel.colibri";
 		    model.save(outputfile);            
-		    cerr << "Loading class decoder " << classfile << endl;
+		    
 		    
 		    if (!classfile.empty()) {
 		        cerr << "Loading class decoder " << classfile << endl;
