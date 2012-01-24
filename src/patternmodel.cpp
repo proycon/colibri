@@ -1124,6 +1124,11 @@ void UnindexedPatternModel::writeskipgrams(std::ostream * f) {
     }     
 }
 
+void UnindexedPatternModel::outputinstance(const EncAnyGram * anygram, CorpusReference ref, ClassDecoder & decoder) {
+	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << count(anygram) << "\t" << setprecision(numeric_limits<double>::digits10 + 1) << freq(anygram) << endl; 
+}
+
+
 
 bool UnindexedPatternModel::exists(const EncAnyGram* key) const {    
     if (key->gapcount() == 0) {
@@ -1151,8 +1156,6 @@ const EncAnyGram* UnindexedPatternModel::getkey(const EncAnyGram* key) {
         }        
     }
 }
-
-
 
 
 int UnindexedPatternModel::count(const EncAnyGram* key) {    
@@ -1183,11 +1186,6 @@ double UnindexedPatternModel::relfreq(const EncAnyGram* key) {
     }
     return 0;
 }
-
-void UnindexedPatternModel::outputinstance(const EncAnyGram * anygram, CorpusReference ref, ClassDecoder & decoder) {
-	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << count(anygram) << "\t" << setprecision(numeric_limits<double>::digits10 + 1) << freq(anygram) << endl; 
-}
-
 
 void UnindexedPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, ostream *SKIPGRAMSOUT) {
     const int grandtotal = ngramtokencount + skipgramtokencount;   
@@ -1634,6 +1632,7 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
 		const EncAnyGram * anygram = &iter->first;	
 		ngramtypecount++;
 		ngramtokencount += count;
+		ngrams[ngram].count = count; // 0 if n/a
 		ngrams[ngram].xcount = xcount; // 0 if n/a
 		if (!index.empty()) {			
 			for (vector<uint32_t>::iterator iter = index.begin(); iter != index.end(); iter++) {
@@ -1691,6 +1690,7 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
 		const EncAnyGram * anygram = &iter->first;
     	skipgramtypecount++;            
     	skipgramtokencount += count;
+    	skipgrams[skipgram].count = count; // 0 if n/a
     	skipgrams[skipgram].xcount = xcount;  // 0 if n/a
 		if (!index.empty()) {			
 			for (vector<uint32_t>::iterator iter = index.begin(); iter != index.end(); iter++) {
@@ -1704,4 +1704,78 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
 	}   
     
         
+}
+
+
+int SelectivePatternModel::count(const EncAnyGram* key) {    
+    if (key->gapcount() == 0) {        
+        if (ngrams.count(*( (EncNGram*) key)) > 0) return ngrams[*( (EncNGram*) key) ].count;
+    } else {
+        if (skipgrams.count(*( (EncSkipGram*) key) ) > 0) return skipgrams[*( (EncSkipGram*) key) ].count;   
+    }
+    return 0;
+}
+
+int SelectivePatternModel::xcount(const EncAnyGram* key) {    
+    if (key->gapcount() == 0) {        
+        if (ngrams.count(*( (EncNGram*) key)) > 0) return ngrams[*( (EncNGram*) key) ].xcount;
+    } else {
+        if (skipgrams.count(*( (EncSkipGram*) key) ) > 0) return skipgrams[*( (EncSkipGram*) key) ].xcount;   
+    }
+    return 0;
+}
+
+double SelectivePatternModel::xcountratio(const EncAnyGram* key) {    
+    if (key->gapcount() == 0) {        
+        if (ngrams.count(*( (EncNGram*) key)) > 0) return (double) ngrams[*( (EncNGram*) key) ].xcount / ngrams[*( (EncNGram*) key) ].count;
+    } else {
+        if (skipgrams.count(*( (EncSkipGram*) key) ) > 0) return (double) skipgrams[*( (EncSkipGram*) key) ].xcount / skipgrams[*( (EncSkipGram*) key) ].count;   
+    }
+    return 0;
+}
+
+
+
+double SelectivePatternModel::freq(const EncAnyGram* key) {    
+    if (key->gapcount() == 0) {        
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return (double) ngrams[*( (EncNGram*) key) ].count / tokens();
+    } else {
+        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return (double) skipgrams[ *( (EncSkipGram*) key)].count / tokens();
+    }
+    return 0;
+}
+
+
+/*set<int> * IndexedPatternModel::index(const EncAnyGram* key) {
+    if (key->gapcount() == 0) {        
+        if (ngram_index.count(*( (EncNGram*) key) ) > 0) return &ngram_index[*( (EncNGram*) key) ];
+    } else {
+        if (skipgram_index.count( *( (EncSkipGram*) key)) > 0) return &skipgram_index[ *( (EncSkipGram*) key)];
+    }
+}*/
+
+void SelectivePatternModel::outputinstance(const EncAnyGram * anygram, CorpusReference ref, ClassDecoder & decoder) {
+	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << count(anygram) << "\t";	
+	cout << "\t" << setprecision(numeric_limits<double>::digits10 + 1) << freq(anygram);
+	if (DOXCOUNT) cout << "\t" << xcount(anygram) << "\t" << xcountratio(anygram) << endl;
+	cout << endl;	
+}
+
+
+const EncAnyGram* SelectivePatternModel::getkey(const EncAnyGram* key) {
+    if (key->gapcount() == 0) {
+        std::unordered_map<const EncNGram,IndexCountData >::iterator iter = ngrams.find(*( (EncNGram*) key) );
+        if (iter != ngrams.end()) {
+            return &iter->first;
+        } else {
+            return NULL;
+        }
+    } else {
+        std::unordered_map<const EncSkipGram,IndexCountData >::iterator iter = skipgrams.find(*( (EncSkipGram*) key) );
+        if (iter != skipgrams.end()) {
+            return &iter->first;
+        } else {
+            return NULL;
+        }        
+    }
 }

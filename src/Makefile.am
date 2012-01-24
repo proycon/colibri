@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -I@top_srcdir@/include
 
-bin_PROGRAMS = classdecode classencode patternfinder graphmodel aligner
+bin_PROGRAMS = classdecode classencode patternfinder graphmodel aligner querier
 
 lib_LTLIBRARIES = libcolibri.la
 
@@ -33,10 +33,15 @@ aligner_LDADD = libcolibri.la
 aligner_SOURCES = aligner.cpp
 aligner_LDFLAGS = -static
 
-testskipgrams_CXXFLAGS = -Wall -std=c++0x
-testskipgrams_LDADD = libcolibri.la
-testskipgrams_SOURCES = testskipgrams.cpp
-testskipgrams_LDFLAGS = -static
+querier_CXXFLAGS = -Wall -std=c++0x
+querier_LDADD = libcolibri.la
+querier_SOURCES = querier.cpp
+querier_LDFLAGS = -static
+
+#testskipgrams_CXXFLAGS = -Wall -std=c++0x
+#testskipgrams_LDADD = libcolibri.la
+#testskipgrams_SOURCES = testskipgrams.cpp
+#testskipgrams_LDFLAGS = -static
 
 #lib_LTLIBRARIES = libcppnlp.la
 #libcppnlp_la_LDFLAGS = -version-info 1:0:0

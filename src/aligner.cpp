@@ -3,7 +3,7 @@
 using namespace std;
 
 void usage() {
-    cerr << "Aligner: aligner -J -s source-model -t target-model [-S source-class-file -T target-class-file]" << endl;
+    cerr << "Usage: aligner -J -s source-model -t target-model [-S source-class-file -T target-class-file]" << endl;
     cerr << "Options:" << endl;
     cerr << "\t-s sourcemodelfile       Source graph model file (*.graphmodel.colibri)" << endl;    
     cerr << "\t-t targetmodelfile       Target model file (*.graphmodel.colibri)"  << endl;

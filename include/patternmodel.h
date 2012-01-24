@@ -359,11 +359,12 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
 
 class IndexCountData {
 	public:
+	 uint32_t count;
 	 uint32_t xcount;
 	 std::multiset<uint32_t> sentences; //may occur multiple times in same sentence
 };
 
-class SelectivePatternModel: public ModelReader {
+class SelectivePatternModel: public ModelReader, public ModelQuerier {
     // Read only model, reads graphpatternmodel/indexedmodel/unindexedmodel in a simplified, selective, less memory intensive representation. For for example alignment tasks, supports double indexes if fed an indexed model, and exclusive counts if fed a graph model. Whilst offering more functionality, it is also limited in the sense that it does not offer the full representation the complete model does.
     private:
      bool HASPARENTS;
@@ -402,6 +403,14 @@ class SelectivePatternModel: public ModelReader {
      uint64_t tokens() const { return ngramtokencount + skipgramtokencount; }
      
     virtual uint64_t id() { return 0; }
+    
+    int maxlength() const { return MAXLENGTH; }
+    const EncAnyGram* getkey(const EncAnyGram* key);
+    int count(const EncAnyGram* key);
+    double freq(const EncAnyGram* key);    
+    int xcount(const EncAnyGram* key);
+    double xcountratio(const EncAnyGram* key);
+	void outputinstance(const EncAnyGram *, CorpusReference, ClassDecoder &);    
     
     bool has_xcount() { return (HASXCOUNT); }
     bool has_index() { return ((model_id != UNINDEXEDPATTERNMODEL)) ; }
