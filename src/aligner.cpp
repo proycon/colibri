@@ -11,7 +11,7 @@ void usage() {
     cerr << "\t-T targetclassfile       Target class file (for decoding)" << endl;
     //cerr << "\t-d model                 Load and decode an existing model" << endl; //TODO
     //cerr << "\t-B                       Do a bi-directional alignment and compute intersection of results" << endl; //TODO
-    cerr << "\t-l n                     Minimum N length" << endl; //TODO
+    	cerr << "\t-l n                     Minimum N length" << endl; //TODO
     cerr << "\t-L n                     Maximum N length" << endl; //TODO
     cerr << "\t-N                       No skip-grams" << endl; //TODO
     cerr << "\t-J                       Use Jaccard co-occurrence method (simplest)" << endl;

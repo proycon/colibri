@@ -126,6 +126,51 @@ vector<unsigned int> ClassEncoder::encodeseq(const vector<string> & seq) {
     return result;
 }
 
+int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer, int unknownclass) {
+	  int outputcursor = 0;
+      int begin = 0;      
+      for (int i = 0; i < line.length(); i++) {
+      	  if ((line[i] == ' ') || (i == line.length() - 1)) {
+          	  string word;
+          	  if (line[i] == ' ') {
+          	  	word  = string(line.begin() + begin, line.begin() + i);
+          	  } else {
+			   	word  = string(line.begin() + begin, line.begin() + i + 1);
+          	  }
+          	  begin = i+1;
+          	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
+          	    unsigned int cls;
+          	    if (classes.count(word) == 0) {
+          	    	if (unknownclass == 0) { 	
+  	        			cerr << "ERROR: Unknown word '" << word << "', does not occur in model" << endl;
+  	        			return 0;         
+	  	        	} else {
+	  	        		cerr << "WARNING: Unknown word '" << word << "', does not occur in model. Replacing with placeholder" << endl;
+	  	        		cls = unknownclass;	
+	  	        	}    	
+          	    } else {
+          	  		cls = classes[word];
+          	  	}
+          	  	int length = 0;
+  	        	const unsigned char * byterep = inttobytes(cls, length);
+  	        	if (length == 0) {
+  	        		cerr << "INTERNAL ERROR: Error whilst encoding '" << word << "' (class " << cls << "), length==0, not possible!" << endl;
+  	        		exit(13);
+  	        	}  	        		
+  	        	//cerr << "writing " << word << " as " << cls << " in " << length << " bytes" << endl;
+  	        	for (int j = 0; j < length; j++) {
+  	        		outputbuffer[outputcursor++] = byterep[j];
+  	        	}  	        	
+  	        	//OUT.write((const char *) byterep, length);
+  	        	delete byterep;
+  	        	outputbuffer[outputcursor++] = 0; //write separator
+  	        	//OUT.write(&zero, sizeof(char)); //write separator 
+          	  }			 
+          }
+      }
+      return outputcursor;
+}
+
 
 void ClassEncoder::encodefile(const std::string & inputfilename, const std::string & outputfilename) {
 	const char zero = 0;
@@ -134,16 +179,22 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
 	ifstream IN;
 	OUT.open(outputfilename.c_str(), ios::out | ios::binary);	
 	IN.open(inputfilename.c_str());
+	unsigned char outputbuffer[65536];
+	int outputsize = 0;
 	unsigned int linenum = 1;
 	bool empty = true;
 	while (IN.good()) {	
       string line = "";
       getline(IN, line);
-      if ((!empty) && (!IN.eof())) {      
+      if ((outputsize > 0) && (!IN.eof())) {      
       	 OUT.write(&one, sizeof(char)); //newline          
       	 OUT.write(&zero, sizeof(char)); //write separator
       	 linenum++;      	 
-      }
+      }           
+      outputsize = encodestring(line, outputbuffer);
+      if (outputsize > 0) OUT.write((const char *) outputbuffer, outputsize);                        
+    }
+      /*
       empty = true;                   
       int begin = 0;      
       for (int i = 0; i < line.length(); i++) {
@@ -157,6 +208,10 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
           	  begin = i+1;
           	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
           	    empty = false;
+          	    if (classes.count(word) == 0) {
+  	        		cerr << "ERROR: Unknown word '" << word << "', does not occur in model" << endl;
+  	        		exit(6);          	    	
+          	    }
           	  	unsigned int cls = classes[word];
           	  	int length = 0;
   	        	const unsigned char * byterep = inttobytes(cls, length);
@@ -171,8 +226,11 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
           	  }			 
           }
       }
-      
-    }        
+     */     
+        
+    
+    
+        
     cerr << "Encoded " << linenum << " lines" << endl;
 	IN.close();
 	OUT.close();

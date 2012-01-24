@@ -99,6 +99,127 @@ void ModelWriter::writefile(const string & filename) {
 }
 
 
+ModelQuerier::ModelQuerier() {
+	for (int n = 1; n <= MAXN; n++) {
+    	compute_multi_skips(gapconf[n], vector<pair<int,int> >(), n);
+    }
+}
+
+std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerier::getpatterns(const unsigned char * data, const unsigned char datasize, bool doskipgrams, uint32_t linenum) {
+	
+	std::vector<pair<const EncAnyGram*, CorpusReference> > patterns;
+
+	//extract all patterns in an input string
+	if (maxlength() > MAXN) {
+       	cerr << "FATAL ERROR: Maximum n-gram size " << maxlength() << " exceeds the internal maximum MAXN=" << MAXN << endl;
+       	exit(14);
+    }    
+    
+	const int l = countwords(data, datasize);
+	for (int begin = 0; begin <= l; begin++) {
+		for (int length = 1; (length <= maxlength()) && (begin+length <= l);  length++) {
+			EncNGram * ngram = getencngram(begin,length, data, datasize);
+			const EncAnyGram * anygram =  ngram;			
+			if (count(anygram) > 0) {
+				patterns.push_back( make_pair<const EncAnyGram*,CorpusReference>(getkey(anygram), CorpusReference(linenum, (char) begin) ) ); //stores the actual pointer used by the model
+				if (doskipgrams) {
+					//TODO: make more efficient for complete models that are guaranteed not to prune sub-parts
+				
+					//iterate over all gap configurations
+					const int n = ngram->n();
+					for (size_t j = 0; j < gapconf[n].size(); j++) {
+						//iterate over all gaps
+
+                        vector<EncNGram*> subngrams;
+                        vector<int> skipref;
+                        bool initialskip = false;
+                        bool finalskip = false;
+                        int cursor = 0;
+                        bool docount = true;    
+                        int oc = 0;             
+
+                        
+                    	//Iterate over all gaps in this configuration    
+                        for (size_t k = 0; k < gapconf[n][j].size(); k++) {                                                        
+                            const int begin = gapconf[n][j][k].first;  
+                            const int length = gapconf[n][j][k].second;                        
+                            //cerr << begin << ';' << length << ';' << n << endl;
+                            skipref.push_back( length); 
+                            if (k == 0) {
+                                initialskip = (begin == 0);
+                            }                            
+                            if (begin > cursor) {
+                                EncNGram * subngram = ngram->slice(cursor,begin-cursor);
+                                subngrams.push_back(subngram);                                                               
+                                /*oc = count((const EncAnyGram *) subngram);
+                                if (oc) oc = ngrams[*subngram].count();
+                                if ((((oc == 0)) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS)) ))    {
+                                    docount = false;
+                                    break;
+                                }*/
+                            }
+                            cursor = begin + length;
+                        }
+                        if (cursor < n) {
+                            EncNGram * subngram = ngram->slice(cursor,n-cursor);
+                            subngrams.push_back(subngram);
+                            /*oc = ngrams.count(*subngram);
+                            if (oc) oc = ngrams[*subngram].count();
+                            if (((oc == 0)) || ((MINSKIPTOKENS > 1) && (MINSKIPTOKENS >= MINTOKENS) && (oc < MINSKIPTOKENS)) )  {
+                                docount = false;
+                                break;
+                            }*/
+                        } else {
+                            finalskip = true;
+                        }
+                        if (initialskip && finalskip && skipref.size() <= 1) docount = false; //the whole n-gram is a skip, discard
+                        if (docount) {
+                            EncSkipGram skipgram = EncSkipGram(subngrams, skipref, initialskip, finalskip);
+                            const EncAnyGram * anygram2 = &skipgram;			
+							if (count(anygram2) > 0) {
+								patterns.push_back( make_pair<const EncAnyGram*,CorpusReference>(getkey(anygram2), CorpusReference(linenum, (char) begin)) ); //stores the actual pointer used by the model
+							}			
+						}
+						for (size_t k = 0; k < subngrams.size(); k++) {
+                            delete subngrams[k];
+                        }
+					}
+				}
+			} else {
+				//if this pattern doesn't occur, we could break because longer patterns won't occur either in most models, but this is not always the case, so we don't break
+				//TODO: make more efficient for complete models that are guaranteed not to prune sub-parts								
+			}
+			delete ngram;
+		}
+	}
+	return patterns;
+}
+
+void ModelQuerier::querier(ClassEncoder & encoder, ClassDecoder & decoder, bool exact, bool repeat) {
+	unsigned char buffer[65536];
+	uint32_t linenum = 0;
+    std::string line;
+    do {
+    	linenum++;
+    	cout << ">> "; 
+    	getline(cin,line);    	
+    	if (!line.empty()) {
+			int buffersize = encoder.encodestring(line, buffer);
+			if (exact) {
+				//TODO
+			} else {    	
+				vector<pair<const EncAnyGram*, CorpusReference> > patterns = getpatterns(buffer,buffersize, true, linenum);
+				for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = patterns.begin(); iter != patterns.end(); iter++) {
+					const EncAnyGram * anygram = iter->first;
+					const CorpusReference ref = iter->second;
+					outputinstance(anygram, ref, decoder);
+				} 
+			}
+		}
+    } while (!cin.eof() && (repeat));		
+}
+
+
 IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
     
     this->MAXLENGTH = MAXLENGTH;
@@ -564,7 +685,9 @@ double IndexedPatternModel::relfreq(const EncAnyGram* key) {
     }
 }*/
 
-
+void IndexedPatternModel::outputinstance(const EncAnyGram * anygram, CorpusReference ref, ClassDecoder & decoder) {
+	cout << ref.sentence << ':' << ref.token << "\t" << anygram->decode(decoder) << "\t" << count(anygram) << "\t" << freq(anygram) << endl; 
+}
 
 
 std::set<int> IndexedPatternModel::reverse_index_keys() {

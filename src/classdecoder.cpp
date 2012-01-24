@@ -47,7 +47,37 @@ vector<string> ClassDecoder::decodeseq(const vector<int> & seq) {
         result.push_back( classes[seq[i]] ); 
     return result;
 }
-
+/*
+string decodestring(const unsigned char * data, unsigned char datasize) {
+	string output = ""; 
+    unsigned char buffer[10];
+    bool eol = true;
+    int n = 0;
+	for (int i = 0; i < datasize; i++) {
+		unsigned char c = data[i];
+		buffer[n] = c;
+        if (c == 0) {
+            //cout << "N: " << n << endl;
+            const unsigned int cls = bytestoint(buffer, n);  
+            if (cls == 1) {
+            	output += "\n";
+            	eol = true;
+                linenumber++;            
+            } else if (classes.count(cls)) {
+                //cout << cls << ' ';
+                if (!eol) output +=  " ";
+                output += classes[cls];
+                eol = false;
+             } else if (cls != 0) {
+             	cerr <<  "ERROR: Unknown class, unable to resolve: " << cls << endl;
+				exit(5);
+            }
+            n = 0;
+        } else {
+            n++;
+        }
+	}
+} */
 
 
 void ClassDecoder::decodefile(const string & filename, unsigned int start, unsigned int end) {

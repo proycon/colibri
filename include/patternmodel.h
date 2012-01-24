@@ -1,6 +1,8 @@
 #include <ngram.h>
+#include "classencoder.h"
 #include <cmath>
 #include <cstdint>
+#include <map>
 
 const char MAXN = 20;
 
@@ -83,6 +85,7 @@ class ModelReader {
 };
 
 class ModelWriter {
+
    public:
     virtual uint64_t id() =0;    
     virtual void writeheader(std::ostream * out) =0;
@@ -97,10 +100,21 @@ class ModelWriter {
     virtual void writefile(const std::string & filename);
 };
 
+class ModelQuerier {
+     std::map<int, std::vector< std::vector< std::pair<int,int> > > > gapconf;
+	public:
+	 ModelQuerier();
+	 virtual const EncAnyGram * getkey(const EncAnyGram * anygram) =0;
+	 virtual int maxlength() const =0;
+	 virtual int count(const EncAnyGram * anygram) =0;
+	 virtual double freq(const EncAnyGram * anygram) =0;
+	 virtual void outputinstance(const EncAnyGram *, CorpusReference, ClassDecoder &) =0;	 	 
+	 std::vector<std::pair<const EncAnyGram*, CorpusReference> > getpatterns(const unsigned char * data, const unsigned char datasize, bool doskipgrams=true, uint32_t linenum=0); 
+	 void querier(ClassEncoder & encoder, ClassDecoder & decoder, bool exact = false,bool repeat = true);	 	  
+};
 
 
-
-class IndexedPatternModel: public ModelReader, public ModelWriter {    
+class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQuerier {    
    private:
     int MINTOKENS; // = 2;
     int MINSKIPTOKENS; // = 2;
@@ -147,6 +161,9 @@ class IndexedPatternModel: public ModelReader, public ModelWriter {
     double relfreq(const EncAnyGram* key);        
     //std::set<int> * index(const EncAnyGram* key);    
     //int index_size() const;
+    
+    void outputinstance(const EncAnyGram *, CorpusReference, ClassDecoder &);	 	 
+
     
     /* Reverse SENTENCE index */
     std::set<int> reverse_index_keys(); 

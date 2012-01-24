@@ -12,7 +12,9 @@ class ClassEncoder {
     void build(const std::string & filename); //build a class from this dataset
     
     
-    std::vector<unsigned int> encodeseq(const std::vector<std::string> & seq);
+    
+    std::vector<unsigned int> encodeseq(const std::vector<std::string> & seq); //not really used yet
+    int encodestring(const std::string & line, unsigned char * outputbuffer, int unknownclass=0);
     void encodefile(const std::string &, const std::string &);
     void save(const std::string & filename);
     
