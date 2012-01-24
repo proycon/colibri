@@ -201,7 +201,7 @@ void ModelQuerier::querier(ClassEncoder & encoder, ClassDecoder & decoder, bool 
     std::string line;
     do {
     	linenum++;
-    	cout << ">> "; 
+    	cout << linenum << ">> "; 
     	getline(cin,line);    	
     	if (!line.empty()) {
 			int buffersize = encoder.encodestring(line, buffer);
@@ -659,9 +659,9 @@ int IndexedPatternModel::count(const EncAnyGram* key) {
 
 double IndexedPatternModel::freq(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
-        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ].count() / tokens();
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return (double) ngrams[*( (EncNGram*) key) ].count() / tokens();
     } else {
-        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return skipgrams[ *( (EncSkipGram*) key)].count() / tokens();
+        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return (double) skipgrams[ *( (EncSkipGram*) key)].count() / tokens();
     }
     return 0;
 }
@@ -669,9 +669,9 @@ double IndexedPatternModel::freq(const EncAnyGram* key) {
 
 double IndexedPatternModel::relfreq(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
-        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ].count() / tokencount[key->n()];
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return (double) ngrams[*( (EncNGram*) key) ].count() / tokencount[key->n()];
     } else {
-        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return skipgrams[ *( (EncSkipGram*) key)].count() / skiptokencount[key->n()];
+        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return (double) skipgrams[ *( (EncSkipGram*) key)].count() / skiptokencount[key->n()];
     }
     return 0;
 }
@@ -686,8 +686,9 @@ double IndexedPatternModel::relfreq(const EncAnyGram* key) {
 }*/
 
 void IndexedPatternModel::outputinstance(const EncAnyGram * anygram, CorpusReference ref, ClassDecoder & decoder) {
-	cout << ref.sentence << ':' << ref.token << "\t" << anygram->decode(decoder) << "\t" << count(anygram) << "\t" << freq(anygram) << endl; 
+	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << count(anygram) << "\t" << setprecision(numeric_limits<double>::digits10 + 1) << freq(anygram) << endl; 
 }
+
 
 
 std::set<int> IndexedPatternModel::reverse_index_keys() {
@@ -1166,9 +1167,9 @@ int UnindexedPatternModel::count(const EncAnyGram* key) {
 
 double UnindexedPatternModel::freq(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
-        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ] / tokens();
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return (double) ngrams[*( (EncNGram*) key) ] / tokens();
     } else {
-        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return skipgrams[ *( (EncSkipGram*) key)] / tokens();
+        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return (double) skipgrams[ *( (EncSkipGram*) key)] / tokens();
     }
     return 0;
 }
@@ -1176,11 +1177,15 @@ double UnindexedPatternModel::freq(const EncAnyGram* key) {
 
 double UnindexedPatternModel::relfreq(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
-        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ] / tokencount[key->n()];
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return (double) ngrams[*( (EncNGram*) key) ] / tokencount[key->n()];
     } else {
-        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return skipgrams[ *( (EncSkipGram*) key)] / skiptokencount[key->n()];
+        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return (double) skipgrams[ *( (EncSkipGram*) key)] / skiptokencount[key->n()];
     }
     return 0;
+}
+
+void UnindexedPatternModel::outputinstance(const EncAnyGram * anygram, CorpusReference ref, ClassDecoder & decoder) {
+	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << count(anygram) << "\t" << setprecision(numeric_limits<double>::digits10 + 1) << freq(anygram) << endl; 
 }
 
 

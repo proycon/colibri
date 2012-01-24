@@ -197,7 +197,7 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
 };
 
 
-class UnindexedPatternModel: public ModelReader, public ModelWriter {
+class UnindexedPatternModel: public ModelReader, public ModelWriter, public ModelQuerier {
    /* unindexed model */    
    private:
     int MINTOKENS; // = 2;
@@ -241,6 +241,7 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter {
     //std::set<int> * index(const EncAnyGram* key);    
     //int index_size() const;
 
+	void outputinstance(const EncAnyGram *, CorpusReference, ClassDecoder &);
     
     virtual uint64_t id() { return UNINDEXEDPATTERNMODEL; }
     virtual void readheader(std::istream * in,  bool ignore = false) {};
