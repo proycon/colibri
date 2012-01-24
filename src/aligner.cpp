@@ -22,6 +22,7 @@ void usage() {
     cerr << "\t-F freq-threshold        Consider only patterns occuring more than specified (relative frequency of all patterns).  Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
     cerr << "\t-x xcount-threshold      Consider only patterns with an *exclusive* count over this threshold" << endl;
     cerr << "\t-X xcount-ratio          Consider only patterns with an *exclusivity ratio* over this threshold (between 0.0 [not exclusive] and 1.0 [entirely exclusive])" << endl;
+    cerr << "\t-V				        Verbose debugging output" << endl;
 }
 
 int main( int argc, char *argv[] ) {
@@ -39,9 +40,10 @@ int main( int argc, char *argv[] ) {
     int MINLENGTH = 0;
     int MAXLENGTH = 99;
     bool DOSKIPGRAMS = true;
+    bool DODEBUG = false;
     
     char c;    
-    while ((c = getopt(argc, argv, "s:S:t:T:p:JDo:F:x:X:B:l:L:N")) != -1)
+    while ((c = getopt(argc, argv, "s:S:t:T:p:JDo:F:x:X:B:l:L:NV")) != -1)
         switch (c)
         {
         case 'B':
@@ -89,6 +91,9 @@ int main( int argc, char *argv[] ) {
         case 'N':
             DOSKIPGRAMS = false;
             break;   
+        case 'V':
+        	DODEBUG = true;
+        	break;
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
             abort ();
@@ -161,7 +166,7 @@ int main( int argc, char *argv[] ) {
     
     if (COOCMODE) {
 		cerr << "Computing alignment model..." << endl;
-		alignmodel = new CoocAlignmentModel(COOCMODE, sourcemodel,targetmodel, prunevalue);
+		alignmodel = new CoocAlignmentModel(COOCMODE, sourcemodel,targetmodel, prunevalue, 0, DODEBUG);
 		cerr << "   Found alignment targets for  " << alignmodel->alignprob.size() << " source constructions" << endl;
 		cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;		
 	}

@@ -38,15 +38,13 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t
     int c = 0;
     double bestcooc = 0;
     //cerr << "Processing new construction" << endl;
+    if (DEBUG) cerr << "\t\tForward index yields " << sourceindex.size() << " sentence references" << endl;
     for (multiset<uint32_t>::iterator iter = sourceindex.begin(); iter != sourceindex.end(); iter++) {
         const uint32_t sentencenumber = *iter;
-      	//cerr << "Reverseindex lookup: " << sentencenumber << endl;        
 		if (targetmodel.reverseindex.count(sentencenumber) > 0) {
-			//cerr << "\tFound" << endl;
+			if (DEBUG) cerr << "\t\t\tReverseindex for sentence " << sentencenumber << " yields " << targetmodel.reverseindex[sentencenumber].size() << " target-side patterns";
 			c += targetmodel.reverseindex[sentencenumber].size();
-			//cerr << "\tPatterns: " << targetmodel.reverseindex[sentencenumber].size() << endl;
-			for (vector<const EncAnyGram*>::iterator reviter = targetmodel.reverseindex[sentencenumber].begin(); reviter != targetmodel.reverseindex[sentencenumber].end(); reviter++) {
-					
+			for (vector<const EncAnyGram*>::iterator reviter = targetmodel.reverseindex[sentencenumber].begin(); reviter != targetmodel.reverseindex[sentencenumber].end(); reviter++) {					
 					const EncAnyGram* targetgram = *reviter;
 			        multiset<uint32_t> * targetindex;
 				    if (targetgram->gapcount() == 0) {
@@ -57,31 +55,33 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t
 				    const double coocvalue = cooc(sourceindex, *targetindex);        
 				    if ((relthreshold) && (coocvalue > bestcooc)) bestcooc = coocvalue;            
 				    if (coocvalue >= absthreshold) {
-				    	//cerr << "\t\tRegistered cooc: " << coocvalue << endl;                
+				    	if (DEBUG) cerr << ".";                
 				        alignprob[sourcegram][targetgram] = coocvalue;				       
 				    }
 			}				
 	        if (relthreshold) {
             //TODO: prune based on relative threshold
 	        }   
+	        if (DEBUG) cerr << endl;
 	    }			        
     }    
     return c;
 }
 
-CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double relthreshold) {
+CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double relthreshold, bool DEBUG) {
     this->mode = mode;
     this->absthreshold = absthreshold;
     this->relthreshold = relthreshold;
+    this->DEBUG = DEBUG;
     unsigned int c = 0;
     for (unordered_map<EncNGram,IndexCountData >::iterator iter = sourcemodel.ngrams.begin();  iter != sourcemodel.ngrams.end(); iter++) {
     	c++;
-        if (c % 1000 == 0) cerr << "\t@" << c << endl;
+        if ((c % 1000 == 0) || (DEBUG)) cerr << "\t@" << c << " (ngram)" << endl;
         compute(&iter->first, iter->second.sentences, targetmodel);
     }    
     for (unordered_map<EncSkipGram,IndexCountData >::iterator iter = sourcemodel.skipgrams.begin();  iter != sourcemodel.skipgrams.end(); iter++) {
     	c++;
-    	if (c % 1000 == 0) cerr << "\t@" << c << endl;
+    	if ((c % 1000 == 0) || (DEBUG)) cerr << "\t@" << c << " (skipgram)" << endl;
         compute(&iter->first, iter->second.sentences, targetmodel);
     }            
 }
