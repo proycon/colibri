@@ -2,12 +2,12 @@
 
 using namespace std;
 
-double CoocAlignmentModel::cooc( multiset<uint32_t> & sourceindex, multiset<uint32_t> & targetindex) {    
+double CoocAlignmentModel::cooc( const multiset<uint32_t> & sourceindex, const multiset<uint32_t> & targetindex) {    
     //Jaccard co-occurrence    
     int intersectioncount = 0;    
     
-    multiset<uint32_t>::iterator sourceiter = sourceindex.begin();    
-    multiset<uint32_t>::iterator targetiter = targetindex.begin();
+    multiset<uint32_t>::const_iterator sourceiter = sourceindex.begin();    
+    multiset<uint32_t>::const_iterator targetiter = targetindex.begin();
     
     while ((sourceiter !=sourceindex.end()) && (targetiter!=targetindex.end())) {
         if (*sourceiter < *targetiter) { 
@@ -34,7 +34,7 @@ double CoocAlignmentModel::cooc( multiset<uint32_t> & sourceindex, multiset<uint
 }
 
 
-int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel) {        
+int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel) {        
     int c = 0;
     double bestcooc = 0;
     //cerr << "Processing new construction" << endl;
