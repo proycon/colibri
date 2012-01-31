@@ -2,10 +2,19 @@
 
 using namespace std;
 
-double CoocAlignmentModel::cooc( const multiset<uint32_t> & sourceindex, const multiset<uint32_t> & targetindex) {    
+double CoocAlignmentModel::cooc( const multiset<uint32_t> & sourceindex, const multiset<uint32_t> & targetindex, const double threshold) {    
     //Jaccard co-occurrence    
     int intersectioncount = 0;    
-    
+  	
+  	if ((threshold > 0) && (mode == JACCARD)) {
+  		//pre-computation, computing best possible cooc score based on set sizes only, return 0 when threshold not attained, saving processing time (especially on large sets)
+  		if (sourceindex.size() <= targetindex.size()) {  		
+  			if (((double) sourceindex.size() /  targetindex.size() ) < threshold) return 0;
+  		} else {
+  			if (((double) targetindex.size() / sourceindex.size() ) < threshold) return 0;
+  		} 	
+  	}  
+  
     multiset<uint32_t>::const_iterator sourceiter = sourceindex.begin();    
     multiset<uint32_t>::const_iterator targetiter = targetindex.begin();
     
@@ -64,7 +73,7 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<ui
 		    } else {
 		       targetindex = &targetmodel.skipgrams[*( (EncSkipGram*) targetgram)].sentences;
 		    }				    
-		    const double coocvalue = cooc(sourceindex, *targetindex);        
+		    const double coocvalue = cooc(sourceindex, *targetindex, absthreshold);        
 		    if ((relthreshold) && (coocvalue > bestcooc)) bestcooc = coocvalue;            
 		    if (coocvalue >= absthreshold) {
 		    	//if (DEBUG) cerr << "!";
