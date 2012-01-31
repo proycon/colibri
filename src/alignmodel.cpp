@@ -37,36 +37,42 @@ double CoocAlignmentModel::cooc( const multiset<uint32_t> & sourceindex, const m
 int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel) {        
     int c = 0;
     double bestcooc = 0;
+	unordered_set<const EncAnyGram *> targetpatterns;
     //cerr << "Processing new construction" << endl;
     if (DEBUG) cerr << "\t\tForward index yields " << sourceindex.size() << " sentence references" << endl;
-    for (multiset<uint32_t>::iterator iter = sourceindex.begin(); iter != sourceindex.end(); iter++) {
+    for (multiset<uint32_t>::const_iterator iter = sourceindex.begin(); iter != sourceindex.end(); iter++) {
         const uint32_t sentencenumber = *iter;
 		if (targetmodel.reverseindex.count(sentencenumber) > 0) {
 			if (DEBUG) cerr << "\t\t\tReverseindex for sentence " << sentencenumber << " yields " << targetmodel.reverseindex[sentencenumber].size() << " target-side patterns";
-			c += targetmodel.reverseindex[sentencenumber].size();
-			for (vector<const EncAnyGram*>::iterator reviter = targetmodel.reverseindex[sentencenumber].begin(); reviter != targetmodel.reverseindex[sentencenumber].end(); reviter++) {
-					const EncAnyGram* targetgram = *reviter;
-			        multiset<uint32_t> * targetindex;
-				    if (targetgram->gapcount() == 0) {
-				       targetindex = &targetmodel.ngrams[*( (EncNGram*) targetgram)].sentences;
-				    } else {
-				       targetindex = &targetmodel.skipgrams[*( (EncSkipGram*) targetgram)].sentences;
-				    }				    
-				    const double coocvalue = cooc(sourceindex, *targetindex);        
-				    if ((relthreshold) && (coocvalue > bestcooc)) bestcooc = coocvalue;            
-				    if (coocvalue >= absthreshold) {
-				    	if (DEBUG) cerr << "!";
-				        alignprob[sourcegram][targetgram] = coocvalue;				       
-				    } else {
-				    	if (DEBUG) cerr << ".";
-				    }
-			}				
-	        if (relthreshold) {
-            //TODO: prune based on relative threshold
-	        }   
-	        if (DEBUG) cerr << endl;
-	    }			        
-    }    
+			for (vector<const EncAnyGram*>::const_iterator reviter = targetmodel.reverseindex[sentencenumber].begin(); reviter != targetmodel.reverseindex[sentencenumber].end(); reviter++) {
+				const EncAnyGram* targetgram = *reviter;
+				targetpatterns.insert(targetgram);
+			}
+		}
+    }
+    c += targetpatterns.size();
+	if (DEBUG) cerr << "\t\tGathered " << targetpatterns.size() << " target-side patterns for given source pattern, computing co-occurence...";
+	for (unordered_set<const EncAnyGram *>::const_iterator iter2 = targetpatterns.begin(); iter2 != targetpatterns.end(); iter2++) {
+			const EncAnyGram* targetgram = *iter2;
+	        multiset<uint32_t> * targetindex;
+		    if (targetgram->gapcount() == 0) {
+		       targetindex = &targetmodel.ngrams[*( (EncNGram*) targetgram)].sentences;
+		    } else {
+		       targetindex = &targetmodel.skipgrams[*( (EncSkipGram*) targetgram)].sentences;
+		    }				    
+		    const double coocvalue = cooc(sourceindex, *targetindex);        
+		    if ((relthreshold) && (coocvalue > bestcooc)) bestcooc = coocvalue;            
+		    if (coocvalue >= absthreshold) {
+		    	if (DEBUG) cerr << "!";
+		        alignprob[sourcegram][targetgram] = coocvalue;				       
+		    } else {
+		    	if (DEBUG) cerr << ".";
+		    }
+	}				
+    if (relthreshold) {
+    //TODO: prune based on relative threshold
+    }   
+    if (DEBUG) cerr << endl;
     return c;
 }
 
