@@ -43,9 +43,9 @@ double CoocAlignmentModel::cooc( const multiset<uint32_t> & sourceindex, const m
 }
 
 
-int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel) {        
-    int c = 0;
-    int found = 0;
+unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel) {        
+   
+    unsigned int found = 0;
     double bestcooc = 0;
     uint32_t prevsentencenumber = 0;
 	unordered_set<const EncAnyGram *> targetpatterns;
@@ -63,7 +63,6 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<ui
 		}
 		prevsentencenumber = sentencenumber;
     }
-    c += targetpatterns.size();
 	if (DEBUG) cerr << "\t\tGathered " << targetpatterns.size() << " target-side patterns for given source pattern, computing co-occurence..." << endl;
 	for (unordered_set<const EncAnyGram *>::const_iterator iter2 = targetpatterns.begin(); iter2 != targetpatterns.end(); iter2++) {
 			const EncAnyGram* targetgram = *iter2;
@@ -85,7 +84,7 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<ui
     //TODO: prune based on relative threshold
     }   
     if (DEBUG) cerr << "\t\t" << found << " alignments found" << endl;
-    return c;
+    return found;
 }
 
 CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double relthreshold, bool DEBUG) {
@@ -94,15 +93,16 @@ CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & so
     this->relthreshold = relthreshold;
     this->DEBUG = DEBUG;
     unsigned int c = 0;
+    unsigned int found = 0;
     for (unordered_map<EncNGram,IndexCountData >::iterator iter = sourcemodel.ngrams.begin();  iter != sourcemodel.ngrams.end(); iter++) {
     	c++;
-        if ((c % 1000 == 0) || (DEBUG)) cerr << "\t@" << c << " (ngram)" << endl;
-        compute(&iter->first, iter->second.sentences, targetmodel);
+        if ((c % 1000 == 0) || (DEBUG)) cerr << "\t@" << c << " (ngram) -- " << found << " alignment possibilities thus-far" << endl;
+        found += compute(&iter->first, iter->second.sentences, targetmodel);
     }    
     for (unordered_map<EncSkipGram,IndexCountData >::iterator iter = sourcemodel.skipgrams.begin();  iter != sourcemodel.skipgrams.end(); iter++) {
     	c++;
-    	if ((c % 1000 == 0) || (DEBUG)) cerr << "\t@" << c << " (skipgram)" << endl;
-        compute(&iter->first, iter->second.sentences, targetmodel);
+    	if ((c % 1000 == 0) || (DEBUG)) cerr << "\t@" << c << " (skipgram) -- " << found << " alignment possibilities thus-far" << endl;
+        found += compute(&iter->first, iter->second.sentences, targetmodel);
     }            
 }
     
