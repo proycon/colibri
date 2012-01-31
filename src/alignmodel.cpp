@@ -38,11 +38,13 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<ui
     int c = 0;
     int found = 0;
     double bestcooc = 0;
+    uint32_t prevsentencenumber = 0;
 	unordered_set<const EncAnyGram *> targetpatterns;
     //cerr << "Processing new construction" << endl;
     if (DEBUG) cerr << "\t\tForward index yields " << sourceindex.size() << " sentence references" << endl;
     for (multiset<uint32_t>::const_iterator iter = sourceindex.begin(); iter != sourceindex.end(); iter++) {
-        const uint32_t sentencenumber = *iter;
+        const uint32_t sentencenumber = *iter;        
+        if (sentencenumber == prevsentencenumber) continue;
 		if (targetmodel.reverseindex.count(sentencenumber) > 0) {
 			if (DEBUG) cerr << "\t\t\tReverseindex for sentence " << sentencenumber << " yields " << targetmodel.reverseindex[sentencenumber].size() << " target-side patterns" << endl;
 			for (vector<const EncAnyGram*>::const_iterator reviter = targetmodel.reverseindex[sentencenumber].begin(); reviter != targetmodel.reverseindex[sentencenumber].end(); reviter++) {
@@ -50,6 +52,7 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<ui
 				targetpatterns.insert(targetgram);
 			}
 		}
+		prevsentencenumber = sentencenumber;
     }
     c += targetpatterns.size();
 	if (DEBUG) cerr << "\t\tGathered " << targetpatterns.size() << " target-side patterns for given source pattern, computing co-occurence..." << endl;
