@@ -36,6 +36,7 @@ double CoocAlignmentModel::cooc( const multiset<uint32_t> & sourceindex, const m
 
 int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel) {        
     int c = 0;
+    int found = 0;
     double bestcooc = 0;
 	unordered_set<const EncAnyGram *> targetpatterns;
     //cerr << "Processing new construction" << endl;
@@ -43,7 +44,7 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<ui
     for (multiset<uint32_t>::const_iterator iter = sourceindex.begin(); iter != sourceindex.end(); iter++) {
         const uint32_t sentencenumber = *iter;
 		if (targetmodel.reverseindex.count(sentencenumber) > 0) {
-			if (DEBUG) cerr << "\t\t\tReverseindex for sentence " << sentencenumber << " yields " << targetmodel.reverseindex[sentencenumber].size() << " target-side patterns";
+			if (DEBUG) cerr << "\t\t\tReverseindex for sentence " << sentencenumber << " yields " << targetmodel.reverseindex[sentencenumber].size() << " target-side patterns" << endl;
 			for (vector<const EncAnyGram*>::const_iterator reviter = targetmodel.reverseindex[sentencenumber].begin(); reviter != targetmodel.reverseindex[sentencenumber].end(); reviter++) {
 				const EncAnyGram* targetgram = *reviter;
 				targetpatterns.insert(targetgram);
@@ -51,7 +52,7 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<ui
 		}
     }
     c += targetpatterns.size();
-	if (DEBUG) cerr << "\t\tGathered " << targetpatterns.size() << " target-side patterns for given source pattern, computing co-occurence...";
+	if (DEBUG) cerr << "\t\tGathered " << targetpatterns.size() << " target-side patterns for given source pattern, computing co-occurence..." << endl;
 	for (unordered_set<const EncAnyGram *>::const_iterator iter2 = targetpatterns.begin(); iter2 != targetpatterns.end(); iter2++) {
 			const EncAnyGram* targetgram = *iter2;
 	        multiset<uint32_t> * targetindex;
@@ -63,16 +64,15 @@ int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<ui
 		    const double coocvalue = cooc(sourceindex, *targetindex);        
 		    if ((relthreshold) && (coocvalue > bestcooc)) bestcooc = coocvalue;            
 		    if (coocvalue >= absthreshold) {
-		    	if (DEBUG) cerr << "!";
+		    	//if (DEBUG) cerr << "!";
+		    	found++;
 		        alignprob[sourcegram][targetgram] = coocvalue;				       
-		    } else {
-		    	if (DEBUG) cerr << ".";
 		    }
 	}				
     if (relthreshold) {
     //TODO: prune based on relative threshold
     }   
-    if (DEBUG) cerr << endl;
+    if (DEBUG) cerr << "\t\t" << found << " alignments found" << endl;
     return c;
 }
 
