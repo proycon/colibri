@@ -46,7 +46,7 @@ double CoocAlignmentModel::cooc( const multiset<uint32_t> & sourceindex, const m
 unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel) {        
    
     unsigned int found = 0;
-    double bestcooc = 0;
+    double totalcooc = 0;
     uint32_t prevsentencenumber = 0;
 	unordered_set<const EncAnyGram *> targetpatterns;
     //cerr << "Processing new construction" << endl;
@@ -64,42 +64,48 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
 		prevsentencenumber = sentencenumber;
     }
 	if (DEBUG) cerr << "\t\tGathered " << targetpatterns.size() << " target-side patterns for given source pattern, computing co-occurence..." << endl;
-	for (unordered_set<const EncAnyGram *>::const_iterator iter2 = targetpatterns.begin(); iter2 != targetpatterns.end(); iter2++) {
-			const EncAnyGram* targetgram = *iter2;
+	for (unordered_set<const EncAnyGram *>::const_iterator iter = targetpatterns.begin(); iter != targetpatterns.end(); iter++) {
+			const EncAnyGram* targetgram = *iter;
 	        multiset<uint32_t> * targetindex;
 		    if (targetgram->gapcount() == 0) {
 		       targetindex = &targetmodel.ngrams[*( (EncNGram*) targetgram)].sentences;
 		    } else {
 		       targetindex = &targetmodel.skipgrams[*( (EncSkipGram*) targetgram)].sentences;
 		    }				    
-		    const double coocvalue = cooc(sourceindex, *targetindex, absthreshold);        
-		    if ((relthreshold) && (coocvalue > bestcooc)) bestcooc = coocvalue;            
+		    const double coocvalue = cooc(sourceindex, *targetindex, absthreshold);                    
 		    if (coocvalue >= absthreshold) {
-		    	//if (DEBUG) cerr << "!";
+		    	//prune based on absolute co-occurence value
 		    	found++;
-		        alignprob[sourcegram][targetgram] = coocvalue;				       
-		    }
+		        alignmatrix[sourcegram][targetgram] = coocvalue;
+		        totalcooc += coocvalue;				       
+		    }		    
 	}				
-    if (relthreshold) {
-    //TODO: prune based on relative threshold
+    if ((totalcooc > 0) && (probthreshold > 0)) {
+    	//prune based on probability threshold
+    	for (std::unordered_map<const EncAnyGram*, double>::const_iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
+    		if (((double) iter->second / totalcooc) < probthreshold) {
+    			alignmatrix[sourcegram].erase(iter->first);
+    			found--;
+    		} 
+    	}    
     }   
     if (DEBUG) cerr << "\t\t" << found << " alignments found" << endl;
     return found;
 }
 
-CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double relthreshold, bool DEBUG) {
+CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double probthreshold, bool DEBUG) {
     this->mode = mode;
     this->absthreshold = absthreshold;
-    this->relthreshold = relthreshold;
+    this->probthreshold = probthreshold;
     this->DEBUG = DEBUG;
     unsigned int c = 0;
     unsigned int found = 0;
-    for (unordered_map<EncNGram,IndexCountData >::iterator iter = sourcemodel.ngrams.begin();  iter != sourcemodel.ngrams.end(); iter++) {
+    for (unordered_map<EncNGram,IndexCountData >::const_iterator iter = sourcemodel.ngrams.begin();  iter != sourcemodel.ngrams.end(); iter++) {
     	c++;
         if ((c % 1000 == 0) || (DEBUG)) cerr << "\t@" << c << " (ngram) -- " << found << " alignment possibilities thus-far" << endl;
         found += compute(&iter->first, iter->second.sentences, targetmodel);
     }    
-    for (unordered_map<EncSkipGram,IndexCountData >::iterator iter = sourcemodel.skipgrams.begin();  iter != sourcemodel.skipgrams.end(); iter++) {
+    for (unordered_map<EncSkipGram,IndexCountData >::const_iterator iter = sourcemodel.skipgrams.begin();  iter != sourcemodel.skipgrams.end(); iter++) {
     	c++;
     	if ((c % 1000 == 0) || (DEBUG)) cerr << "\t@" << c << " (skipgram) -- " << found << " alignment possibilities thus-far" << endl;
         found += compute(&iter->first, iter->second.sentences, targetmodel);
@@ -107,7 +113,7 @@ CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & so
 }
     
 void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
-    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignprob.begin(); iter != alignprob.end(); iter++) {
+    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
         const EncAnyGram* sourcegram = iter->first;
         *OUT << sourcegram->decode(sourceclassdecoder) << "\t";
         for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {

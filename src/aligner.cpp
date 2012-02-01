@@ -11,13 +11,14 @@ void usage() {
     cerr << "\t-T targetclassfile       Target class file (for decoding)" << endl;
     //cerr << "\t-d model                 Load and decode an existing model" << endl; //TODO
     //cerr << "\t-B                       Do a bi-directional alignment and compute intersection of results" << endl; //TODO
-    	cerr << "\t-l n                     Minimum N length" << endl; //TODO
+	cerr << "\t-l n                     Minimum N length" << endl; //TODO
     cerr << "\t-L n                     Maximum N length" << endl; //TODO
     cerr << "\t-N                       No skip-grams" << endl; //TODO
     cerr << "\t-J                       Use Jaccard co-occurrence method (simplest)" << endl;
     cerr << "\t-D                       Use Dice co-occurrence method" << endl;
     //cerr << "\t-E                       Use EM alignment method" << endl; //TODO
-    cerr << "\t-p pruning-threshold     Prune all alignments with a lower score than specified (0 <= x <= 1)" << endl;
+    cerr << "\t-p pruning-threshold     Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1)" << endl;
+    cerr << "\t-P probability-threshold Prune all alignments with an alignment probability lower than specified (0 <= x <= 1)" << endl;
     cerr << "\t-o occurence-threshold   Consider only patterns occuring more than specified (absolute occurrence). Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
     cerr << "\t-F freq-threshold        Consider only patterns occuring more than specified (relative frequency of all patterns).  Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
     cerr << "\t-x xcount-threshold      Consider only patterns with an *exclusive* count over this threshold" << endl;
@@ -30,7 +31,8 @@ int main( int argc, char *argv[] ) {
     string targetmodelfile = "";
     string sourceclassfile = "";
     string targetclassfile = "";
-    double prunevalue = 0.8;
+    double coocprunevalue = 0.0;
+    double probprunevalue = 0.8;
     CoocMode COOCMODE = NOCOOC;
     int COUNTTHRESHOLD = 0;
     int FREQTHRESHOLD = 0; 
@@ -43,15 +45,18 @@ int main( int argc, char *argv[] ) {
     bool DODEBUG = false;
     
     char c;    
-    while ((c = getopt(argc, argv, "s:S:t:T:p:JDo:F:x:X:B:l:L:NV")) != -1)
+    while ((c = getopt(argc, argv, "s:S:t:T:p:P:JDo:F:x:X:B:l:L:NV")) != -1)
         switch (c)
         {
         case 'B':
         	DOBIDIRECTIONAL = true;
         	break;
         case 'p':
-            prunevalue = atof(optarg);
+            coocprunevalue = atof(optarg);
             break;
+        case 'P':
+            probprunevalue = atof(optarg);
+            break;            
         case 'J':
             COOCMODE = JACCARD;
             break;
@@ -117,7 +122,8 @@ int main( int argc, char *argv[] ) {
     } else if (COOCMODE == DICE) {
     	cerr << "\tCo-occcurrence metric : DICE (-D)" << endl;
     }
-    cerr << "\tPrune value       (-P): " << prunevalue << endl;
+    cerr << "\tCo-oc prune value (-p): " << coocprunevalue << endl;
+    cerr << "\tAlig. prob prune  (-P): " << probprunevalue << endl;
 	cerr << "\tCount threshold   (-o): " << COUNTTHRESHOLD << endl;
 	cerr << "\tFreq threshold    (-F): " << FREQTHRESHOLD << endl;
 	cerr << "\tXcount threshold  (-x): " << XCOUNTTHRESHOLD << endl;
@@ -166,8 +172,8 @@ int main( int argc, char *argv[] ) {
     
     if (COOCMODE) {
 		cerr << "Computing alignment model..." << endl;
-		alignmodel = new CoocAlignmentModel(COOCMODE, sourcemodel,targetmodel, prunevalue, 0, DODEBUG);
-		cerr << "   Found alignment targets for  " << alignmodel->alignprob.size() << " source constructions" << endl;
+		alignmodel = new CoocAlignmentModel(COOCMODE, sourcemodel,targetmodel, coocprunevalue, probprunevalue, DODEBUG);
+		cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 		cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;		
 	}
 	

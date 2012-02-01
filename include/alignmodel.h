@@ -11,14 +11,14 @@ class AlignmentModel {
     bool DEBUG;
    public:
     AlignmentModel() { DEBUG = false; }
-    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignprob;    
+    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignmatrix;    
     void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
     void enabledebug() { DEBUG = true; }
     
     
     unsigned int totalsize() {
     	unsigned int c = 0;
-    	for (std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> >::iterator iter = alignprob.begin(); iter != alignprob.end(); iter++) {
+    	for (std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
     		c += iter->second.size();
     	}
     	return c;
@@ -33,8 +33,8 @@ class AlignmentModel {
 
 class CoocAlignmentModel: public AlignmentModel {
    private:
-    double absthreshold;
-    double relthreshold;
+    double absthreshold; //cooc threshold
+    double probthreshold;
    public:   
     CoocMode mode;
     CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double absthreshold = 0,  const double relthreshold = 0, bool DEBUG = false);         
