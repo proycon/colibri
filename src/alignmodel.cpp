@@ -50,7 +50,7 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
     unsigned int found = 0;
     unsigned int prunedabs = 0;
     unsigned int prunedprob = 0;
-    //double totalcooc = 0;
+    double totalcooc = 0;
     uint32_t prevsentencenumber = 0;
 	unordered_set<const EncAnyGram *> targetpatterns;
     //cerr << "Processing new construction" << endl;
@@ -84,12 +84,12 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
 		    } else {
 		    	prunedabs++;
 		    }
-		    //totalcooc += coocvalue;				
+		    totalcooc += coocvalue;				
 	}				
-    if (found > 0) {
+    if (totalcooc > 0) {
     	//normalisation and pruning step (based on probability threshold)
     	for (std::unordered_map<const EncAnyGram*, double>::const_iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
-    		const double alignprob = (double) iter->second / found;
+    		const double alignprob = (double) iter->second / totalcooc;
 			if (alignprob < probthreshold) {
 				//prune
     			alignmatrix[sourcegram].erase(iter->first);
