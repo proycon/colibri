@@ -46,6 +46,8 @@ double CoocAlignmentModel::cooc( const multiset<uint32_t> & sourceindex, const m
 unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel) {        
    
     unsigned int found = 0;
+    unsigned int prunedabs = 0;
+    unsigned int prunedprob = 0;
     double totalcooc = 0;
     uint32_t prevsentencenumber = 0;
 	unordered_set<const EncAnyGram *> targetpatterns;
@@ -78,7 +80,9 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
 		    	found++;
 		        alignmatrix[sourcegram][targetgram] = coocvalue;
 		        totalcooc += coocvalue;				       
-		    }		    
+		    } else {
+		    	prunedabs++;
+		    }
 	}				
     if ((totalcooc > 0) && (probthreshold > 0)) {
     	//prune based on probability threshold
@@ -86,11 +90,12 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
     		if (((double) iter->second / totalcooc) < probthreshold) {
     			alignmatrix[sourcegram].erase(iter->first);
     			found--;
+    			prunedprob++;
     		}    		
     	}   
     	if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram); 
     }   
-    if (DEBUG) cerr << "\t\t" << found << " alignments found" << endl;
+    if (DEBUG) cerr << "\t\t" << found << " alignments found (after pruning " << prunedabs << " on co-occurence value and " << prunedprob << " on alignment probability)" << endl;
     return found;
 }
 
