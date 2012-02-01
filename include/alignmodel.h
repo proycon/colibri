@@ -37,9 +37,10 @@ class CoocAlignmentModel: public AlignmentModel {
     double absthreshold; //cooc threshold
     double probthreshold;
     bool normalize;
+    bool bestonly;
    public:   
     CoocMode mode;
-    CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double absthreshold = 0,  const double relthreshold = 0, bool DONORM = true, bool DEBUG = false);         
+    CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double absthreshold = 0,  const double relthreshold = 0, bool BESTONLY = false, bool DONORM = true, bool DEBUG = false);         
    
     double cooc( const std::multiset<uint32_t> & sourceindex, const std::multiset<uint32_t> & targetindex,  const double threshold = 0); //multiset instead of vector cause we want the ordering to easily compute co-occurence 
     unsigned int compute(const EncAnyGram * sourcegram, const std::multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel);

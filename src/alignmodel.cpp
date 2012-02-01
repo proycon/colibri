@@ -51,6 +51,7 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
     unsigned int prunedabs = 0;
     unsigned int prunedprob = 0;
     double totalcooc = 0;
+    double bestcooc = 0;
     uint32_t prevsentencenumber = 0;
 	unordered_set<const EncAnyGram *> targetpatterns;
     //cerr << "Processing new construction" << endl;
@@ -85,15 +86,17 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
 		    	prunedabs++;
 		    }
 		    totalcooc += coocvalue;				
+		    if (coocvalue > bestcooc) bestcooc = coocvalue;
+		    
 	}				
-    if ((totalcooc > 0) && (normalize || probthreshold > 0)) {
+    if ((totalcooc > 0) && (normalize || bestonly || probthreshold > 0)) {
     	//normalisation and pruning step (based on probability threshold)
     	for (std::unordered_map<const EncAnyGram*, double>::const_iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
     		const double alignprob = (double) iter->second / totalcooc;
-			if (alignprob < probthreshold) {
+			if ((alignprob < probthreshold) || (bestonly && iter->second < bestcooc)) {
 				//prune
     			alignmatrix[sourcegram].erase(iter->first);
-    			prunedprob++;
+    			prunedprob++;    			
     		} else if (normalize) {
     			//normalise
     			alignmatrix[sourcegram][iter->first] = alignprob;
@@ -105,11 +108,12 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
     return found - prunedprob;
 }
 
-CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double probthreshold, bool normalize, bool DEBUG) {
+CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double probthreshold, bool bestonly, bool normalize, bool DEBUG) {
     this->mode = mode;
     this->absthreshold = absthreshold;
     this->probthreshold = probthreshold;
     this->normalize = normalize;
+    this->bestonly = bestonly;
     this->DEBUG = DEBUG;
     unsigned int c = 0;
     unsigned int found = 0;
