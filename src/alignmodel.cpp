@@ -86,7 +86,7 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
 		    }
 		    totalcooc += coocvalue;				
 	}				
-    if (totalcooc > 0) {
+    if ((totalcooc > 0) && (normalize || probthreshold > 0)) {
     	//normalisation and pruning step (based on probability threshold)
     	for (std::unordered_map<const EncAnyGram*, double>::const_iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
     		const double alignprob = (double) iter->second / totalcooc;
@@ -94,7 +94,7 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
 				//prune
     			alignmatrix[sourcegram].erase(iter->first);
     			prunedprob++;
-    		} else {
+    		} else if (normalize) {
     			//normalise
     			alignmatrix[sourcegram][iter->first] = alignprob;
     		}    		    		 
@@ -105,10 +105,11 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
     return found - prunedprob;
 }
 
-CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double probthreshold, bool DEBUG) {
+CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double probthreshold, bool normalize, bool DEBUG) {
     this->mode = mode;
     this->absthreshold = absthreshold;
     this->probthreshold = probthreshold;
+    this->normalize = normalize;
     this->DEBUG = DEBUG;
     unsigned int c = 0;
     unsigned int found = 0;
