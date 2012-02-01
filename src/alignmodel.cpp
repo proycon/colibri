@@ -128,10 +128,14 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
         const EncAnyGram* sourcegram = iter->first;
         *OUT << sourcegram->decode(sourceclassdecoder) << "\t";
+        map<double, const EncAnyGram*> sorted;        
         for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-            const EncAnyGram* targetgram = iter2->first;            
-            *OUT << targetgram->decode(targetclassdecoder) << "\t" << iter2->second << "\t";
+        	sorted[-1 * iter2->second] = iter2->first;            
         }
+        for (map<double, const EncAnyGram*>::iterator iter2 = sorted.begin(); iter2 != sorted.end(); iter2++) {
+			const EncAnyGram* targetgram = iter2->second;            
+            *OUT << targetgram->decode(targetclassdecoder) << "\t" << (-1 * iter2->first) << "\t";
+        }            
         *OUT << endl;
     }
 }
