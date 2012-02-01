@@ -379,7 +379,7 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
      int COUNTTHRESHOLD;
      double FREQTHRESHOLD;
      double XCOUNTTHRESHOLD;
-     int XCOUNTRATIOTHRESHOLD;
+     double XCOUNTRATIOTHRESHOLD;
      
      int MINLENGTH;
      int MAXLENGTH;

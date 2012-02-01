@@ -3,7 +3,8 @@
 enum CoocMode {
 	NOCOOC = 0,
 	JACCARD = 1,
-	DICE = 2
+	DICE = 2,
+	QUICK = 3,
 };
 
 class AlignmentModel {

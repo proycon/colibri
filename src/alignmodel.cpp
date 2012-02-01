@@ -76,7 +76,7 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
 		    }				    
 		    const double coocvalue = cooc(sourceindex, *targetindex, absthreshold);                    
 		    if (coocvalue >= absthreshold) {
-		    	//prune based on absolute co-occurence value
+		    	//prune based on absolute co-occurrence value
 		    	found++;
 		        alignmatrix[sourcegram][targetgram] = coocvalue;
 		        totalcooc += coocvalue;				       
@@ -87,16 +87,16 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
     if ((totalcooc > 0) && (probthreshold > 0)) {
     	//prune based on probability threshold
     	for (std::unordered_map<const EncAnyGram*, double>::const_iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
-    		if (((double) iter->second / totalcooc) < probthreshold) {
+    		const double alignprob = (double) iter->second / totalcooc;
+    		if (alignprob < probthreshold) {
     			alignmatrix[sourcegram].erase(iter->first);
-    			found--;
     			prunedprob++;
     		}    		
     	}   
     	if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram); 
     }   
-    if (DEBUG) cerr << "\t\t" << found << " alignments found (after pruning " << prunedabs << " on co-occurence value and " << prunedprob << " on alignment probability)" << endl;
-    return found;
+    if (DEBUG) cerr << "\t\t" << (found - prunedabs) << " alignments found (after pruning " << prunedabs << " on co-occurence value and " << prunedprob << " on alignment probability)" << endl;
+    return found - prunedabs;
 }
 
 CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double probthreshold, bool DEBUG) {

@@ -155,7 +155,7 @@ int main( int argc, char *argv[] ) {
     cerr << "Loading target model " << targetmodelfile << endl;
     SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH);
     cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
-    cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredtokens << " tokens due to set thresholds" << endl;
+    cerr << "  Ignored " << targetmodel.ignoredtypes << " types, " << targetmodel.ignoredtokens << " tokens due to set thresholds" << endl;
     if (targetmodel.has_xcount()) {
     	cerr << "  Exclusive count available? YES" << endl;
     } else {

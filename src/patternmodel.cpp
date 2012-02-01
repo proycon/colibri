@@ -1623,7 +1623,7 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
     //THRESHOLD CHECK STAGE - deciding whether to ignore based on unreached thresholds
     
 	if ((count < COUNTTHRESHOLD) || ((double) count / totaltypes < FREQTHRESHOLD)) ignore = true;
-	if ((DOXCOUNT) && (HASXCOUNT) && ((xcount < XCOUNTTHRESHOLD) || ((double) (xcount / count) < XCOUNTRATIOTHRESHOLD) ) ) ignore = true;
+	if ((DOXCOUNT) && (HASXCOUNT) && ((xcount < XCOUNTTHRESHOLD) || (( (double) xcount / count) < XCOUNTRATIOTHRESHOLD) ) ) ignore = true;
 
     //STORAGE STAGE
     if (!ignore) {
