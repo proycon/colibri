@@ -5,25 +5,25 @@ using namespace std;
 void usage() {
     cerr << "Usage: aligner -J -s source-model -t target-model [-S source-class-file -T target-class-file]" << endl;
     cerr << "Options:" << endl;
-    cerr << "\t-s sourcemodelfile       Source graph model file (*.graphmodel.colibri)" << endl;    
-    cerr << "\t-t targetmodelfile       Target model file (*.graphmodel.colibri)"  << endl;
-    cerr << "\t-S sourceclassfile       Source class file (for decoding)" << endl;
-    cerr << "\t-T targetclassfile       Target class file (for decoding)" << endl;
+    cerr << "\t-s sourcemodelfile        Source graph model file (*.graphmodel.colibri)" << endl;    
+    cerr << "\t-t targetmodelfile        Target model file (*.graphmodel.colibri)"  << endl;
+    cerr << "\t-S sourceclassfile        Source class file (for decoding)" << endl;
+    cerr << "\t-T targetclassfile        Target class file (for decoding)" << endl;
     //cerr << "\t-d model                 Load and decode an existing model" << endl; //TODO
     //cerr << "\t-B                       Do a bi-directional alignment and compute intersection of results" << endl; //TODO
-	cerr << "\t-l n                     Minimum N length" << endl; //TODO
-    cerr << "\t-L n                     Maximum N length" << endl; //TODO
-    cerr << "\t-N                       No skip-grams" << endl; //TODO
-    cerr << "\t-J                       Use Jaccard co-occurrence method (simplest)" << endl;
-    cerr << "\t-D                       Use Dice co-occurrence method" << endl;
-    //cerr << "\t-E                       Use EM alignment method" << endl; //TODO
-    cerr << "\t-p pruning-threshold     Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1)" << endl;
-    cerr << "\t-P probability-threshold Prune all alignments with an alignment probability lower than specified (0 <= x <= 1)" << endl;
-    cerr << "\t-o occurence-threshold   Consider only patterns occuring more than specified (absolute occurrence). Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
-    cerr << "\t-F freq-threshold        Consider only patterns occuring more than specified (relative frequency of all patterns).  Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
-    cerr << "\t-x xcount-threshold      Consider only patterns with an *exclusive* count over this threshold" << endl;
-    cerr << "\t-X xcount-ratio          Consider only patterns with an *exclusivity ratio* over this threshold (between 0.0 [not exclusive] and 1.0 [entirely exclusive])" << endl;
-    cerr << "\t-V				        Verbose debugging output" << endl;
+	cerr << "\t-l n                      Minimum N length" << endl; //TODO
+    cerr << "\t-L n                      Maximum N length" << endl; //TODO
+    cerr << "\t-N                        No skip-grams" << endl; //TODO
+    cerr << "\t-J                        Use Jaccard co-occurrence method (simplest)" << endl;
+    cerr << "\t-D                        Use Dice co-occurrence method" << endl;
+    //cerr << "\t-E                       Use EM alignment method" << endl; //TODO    
+    cerr << "\t-P probability-threshold  Prune all alignments with an alignment probability lower than specified (0 <= x <= 1)" << endl;
+    cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
+    cerr << "\t-o occurence-threshold    Consider only patterns occuring more than specified (absolute occurrence). Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
+    cerr << "\t-F freq-threshold         Consider only patterns occuring more than specified (relative frequency of all patterns).  Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
+    cerr << "\t-x xcount-threshold       Consider only patterns with an *exclusive* count over this threshold" << endl;
+    cerr << "\t-X xcount-ratio           Consider only patterns with an *exclusivity ratio* over this threshold (between 0.0 [not exclusive] and 1.0 [entirely exclusive])" << endl;
+    cerr << "\t-V				         Verbose debugging output" << endl;
 }
 
 int main( int argc, char *argv[] ) {
@@ -122,8 +122,8 @@ int main( int argc, char *argv[] ) {
     } else if (COOCMODE == DICE) {
     	cerr << "\tCo-occcurrence metric : DICE (-D)" << endl;
     }
-    cerr << "\tCo-oc prune value (-p): " << coocprunevalue << endl;
     cerr << "\tAlig. prob prune  (-P): " << probprunevalue << endl;
+    cerr << "\tCo-oc prune value (-p): " << coocprunevalue << endl;    
 	cerr << "\tCount threshold   (-o): " << COUNTTHRESHOLD << endl;
 	cerr << "\tFreq threshold    (-F): " << FREQTHRESHOLD << endl;
 	cerr << "\tXcount threshold  (-x): " << XCOUNTTHRESHOLD << endl;

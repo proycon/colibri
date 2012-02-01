@@ -2,16 +2,18 @@
 
 using namespace std;
 
-double CoocAlignmentModel::cooc( const multiset<uint32_t> & sourceindex, const multiset<uint32_t> & targetindex, const double threshold) {    
+double CoocAlignmentModel::cooc( const multiset<uint32_t> & sourceindex, const multiset<uint32_t> & targetindex, const double heurthreshold) {    
     //Jaccard co-occurrence    
     int intersectioncount = 0;    
   	
-  	if ((threshold > 0) && (mode == JACCARD)) {
-  		//pre-computation, computing best possible cooc score based on set sizes only, return 0 when threshold not attained, saving processing time (especially on large sets)
+  	if ((heurthreshold > 0) && (mode == JACCARD)) {
+  		//pre-computation, computing best possible cooc score based on set sizes only, when heuristic threshold not attained, saving processing time on computation (especially on large sets) and simply return the highest possibly attainable score (never above the given threshold)
   		if (sourceindex.size() <= targetindex.size()) {  		
-  			if (((double) sourceindex.size() /  targetindex.size() ) < threshold) return 0;
+  			const double coocheur = (double) sourceindex.size() /  targetindex.size();
+  			if (coocheur < heurthreshold) return coocheur;
   		} else {
-  			if (((double) targetindex.size() / sourceindex.size() ) < threshold) return 0;
+  			const double coocheur = (double) targetindex.size() /  sourceindex.size();
+  			if (coocheur < heurthreshold) return coocheur;
   		} 	
   	}  
   
@@ -79,19 +81,23 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
 		    	//prune based on absolute co-occurrence value
 		    	found++;
 		        alignmatrix[sourcegram][targetgram] = coocvalue;
-		        totalcooc += coocvalue;				       
 		    } else {
 		    	prunedabs++;
 		    }
+		    totalcooc += coocvalue;				
 	}				
-    if ((totalcooc > 0) && (probthreshold > 0)) {
-    	//prune based on probability threshold
+    if (totalcooc > 0) {
+    	//normalisation and pruning step (based on probability threshold)
     	for (std::unordered_map<const EncAnyGram*, double>::const_iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
     		const double alignprob = (double) iter->second / totalcooc;
-    		if (alignprob < probthreshold) {
+			if (alignprob < probthreshold) {
+				//prune
     			alignmatrix[sourcegram].erase(iter->first);
     			prunedprob++;
-    		}    		
+    		} else {
+    			//normalise
+    			alignmatrix[sourcegram][iter->first] = alignprob;
+    		}    		    		 
     	}   
     	if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram); 
     }   
