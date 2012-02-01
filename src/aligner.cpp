@@ -32,7 +32,7 @@ int main( int argc, char *argv[] ) {
     string sourceclassfile = "";
     string targetclassfile = "";
     double coocprunevalue = 0.0;
-    double probprunevalue = 0.8;
+    double probprunevalue = 0.0;
     CoocMode COOCMODE = NOCOOC;
     int COUNTTHRESHOLD = 0;
     int FREQTHRESHOLD = 0; 

@@ -86,8 +86,9 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
     		if (((double) iter->second / totalcooc) < probthreshold) {
     			alignmatrix[sourcegram].erase(iter->first);
     			found--;
-    		} 
-    	}    
+    		}    		
+    	}   
+    	if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram); 
     }   
     if (DEBUG) cerr << "\t\t" << found << " alignments found" << endl;
     return found;
