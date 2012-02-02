@@ -49,7 +49,7 @@ int main( int argc, char *argv[] ) {
     bool BESTONLY = false;
     
     char c;    
-    while ((c = getopt(argc, argv, "s:S:t:T:p:P:JDo:F:x:X:Bl:L:NV")) != -1)
+    while ((c = getopt(argc, argv, "s:S:t:T:p:P:JDo:F:x:X:Bl:L:NVZ")) != -1)
         switch (c)
         {
         case 'B':
