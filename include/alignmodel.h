@@ -26,11 +26,6 @@ class AlignmentModel {
 	}
 };
 
-/*class EMAlignmentModel: public AlignmentModel {
-   public:    
-    EMAlignmentModel(IndexedPatternModel & sourcemodel, IndexedPatternModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001);        
-    //save(const std::string filename);
-};*/
 
 class CoocAlignmentModel: public AlignmentModel {
    private:
@@ -45,7 +40,13 @@ class CoocAlignmentModel: public AlignmentModel {
     double cooc( const std::multiset<uint32_t> & sourceindex, const std::multiset<uint32_t> & targetindex,  const double threshold = 0); //multiset instead of vector cause we want the ordering to easily compute co-occurence 
     unsigned int compute(const EncAnyGram * sourcegram, const std::multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel);
     
-    
-    
+
     //void save(const std::string filename);
+};
+
+
+class EMAlignmentModel: public AlignmentModel {
+   public:    
+    EMAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001);        
+    //save(const std::string filename);
 };
