@@ -147,7 +147,7 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
 
 
 
-EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD) {
+EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, bool DEBUG) {
     int round = 0;    
     unsigned long c;
     double totaldivergence = 0;
@@ -192,7 +192,7 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, Selectiv
 		            }
 		       
 
-		             
+
 		            double prevtransprob;
 		            //estimate new probabilities (normalised count is the new estimated probability)
 		            for (vector<const EncAnyGram*>::const_iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {
@@ -206,9 +206,11 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, Selectiv
 		                    
 		                    //for computation of convergence
 		                    const double divergence = abs(newtransprob - prevtransprob);
-		                    cerr << " prevtransprob=" << prevtransprob << " ";
-		                    cerr << " newtransprob=" << newtransprob << " ";
-		                    cerr << " div=" << divergence << " ";
+		                    if (DEBUG) {
+				                cerr << " prevtransprob=" << prevtransprob << " ";
+				                cerr << " newtransprob=" << newtransprob << " ";
+				                cerr << " div=" << divergence << " ";
+		                    }
 		                
 		                    totaldivergence += divergence;
 		                    c++;

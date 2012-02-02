@@ -16,7 +16,7 @@ void usage() {
     cerr << "\t-N                        No skip-grams" << endl; //TODO
     cerr << "\t-J                        Use Jaccard co-occurrence method (simplest)" << endl;
     cerr << "\t-D                        Use Dice co-occurrence method" << endl;
-    //cerr << "\t-E                       Use EM alignment method" << endl; //TODO
+    cerr << "\t-E                        Use EM alignment method" << endl;
     cerr << "\t-B                        Best alignment only" << endl;    
     cerr << "\t-P probability-threshold  Prune all alignments with an alignment probability lower than specified (0 <= x <= 1)" << endl;    
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
@@ -24,8 +24,10 @@ void usage() {
     cerr << "\t-F freq-threshold         Consider only patterns occuring more than specified (relative frequency of all patterns).  Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
     cerr << "\t-x xcount-threshold       Consider only patterns with an *exclusive* count over this threshold" << endl;
     cerr << "\t-X xcount-ratio           Consider only patterns with an *exclusivity ratio* over this threshold (between 0.0 [not exclusive] and 1.0 [entirely exclusive])" << endl;
-    cerr << "\t-Z				         No normalisation; return actual co-occurence scores instead of probabilities" << endl;
+    cerr << "\t-Z				         Do normalisation; return probabilities instead of co-occurrence scores" << endl;
     cerr << "\t-V				         Verbose debugging output" << endl;
+    cerr << "\t-I				         Maximum number of iterations (for EM method, default: 10000)" << endl;
+    cerr << "\t-v				         Convergence value (for EM method, default: 0.001)" << endl;
 }
 
 int main( int argc, char *argv[] ) {
@@ -36,6 +38,7 @@ int main( int argc, char *argv[] ) {
     double coocprunevalue = 0.0;
     double probprunevalue = 0.0;
     CoocMode COOCMODE = NOCOOC;
+    bool DO_EM = false;
     int COUNTTHRESHOLD = 0;
     int FREQTHRESHOLD = 0; 
     double XCOUNTTHRESHOLD = 0;
@@ -45,11 +48,14 @@ int main( int argc, char *argv[] ) {
     int MAXLENGTH = 99;
     bool DOSKIPGRAMS = true;
     bool DODEBUG = false;
-    bool DONORM = true;
+    bool DONORM = false;
     bool BESTONLY = false;
+    int MAXROUNDS = 10000;
+    double CONVERGENCE = 0.001;
+    
     
     char c;    
-    while ((c = getopt(argc, argv, "s:S:t:T:p:P:JDo:F:x:X:Bl:L:NVZ")) != -1)
+    while ((c = getopt(argc, argv, "s:S:t:T:p:P:JDo:F:x:X:Bl:L:NVZEI:v:")) != -1)
         switch (c)
         {
         case 'B':
@@ -67,6 +73,9 @@ int main( int argc, char *argv[] ) {
         case 'D':
             COOCMODE = DICE;
             break;
+        case 'E':
+        	DO_EM = true;
+        	break;
         case 's':
             sourcemodelfile = optarg;
             break;
@@ -104,7 +113,7 @@ int main( int argc, char *argv[] ) {
         	DODEBUG = true;
         	break;
         case 'Z':
-        	DONORM = false;
+        	DONORM = true;
         	break;        	
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
@@ -117,20 +126,22 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
-    if (!COOCMODE) {
+    if ((!DO_EM) && (!COOCMODE)) {
     	cerr << "Error: No alignment method selected (select -J or -D)" << endl;
     	usage();
     	exit(3);
     }
     
     cerr << "Configuration: " << endl;
-    if (COOCMODE == JACCARD) {
-  		cerr << "\tCo-occcurrence metric : JACCARD (-J)" << endl;	
+    if (DO_EM) {
+    	cerr << "\tEM-alignment" << endl;
+    } else if (COOCMODE == JACCARD) {
+		cerr << "\tCo-occurrence metric : JACCARD (-J)" << endl;	
     } else if (COOCMODE == DICE) {
-    	cerr << "\tCo-occcurrence metric : DICE (-D)" << endl;
-    }
+			cerr << "\tCo-occurrence metric : DICE (-D)" << endl;
+	}
     cerr << "\tAlig. prob prune  (-P): " << probprunevalue << endl;
-    cerr << "\tCo-oc prune value (-p): " << coocprunevalue << endl;    
+    if (DO_EM) cerr << "\tCo-oc prune value (-p): " << coocprunevalue << endl;    
 	cerr << "\tCount threshold   (-o): " << COUNTTHRESHOLD << endl;
 	cerr << "\tFreq threshold    (-F): " << FREQTHRESHOLD << endl;
 	cerr << "\tXcount threshold  (-x): " << XCOUNTTHRESHOLD << endl;
@@ -140,8 +151,8 @@ int main( int argc, char *argv[] ) {
 	if (!DOSKIPGRAMS) {
 		cerr << "\tSKIPGRAMS DISABLED! (-N)";
 	}
-	if (!DONORM) {
-		cerr << "\tSKIPGRAMS DISABLED! (-N)";
+	if (DONORM) {
+		cerr << "\tNormalisation enabled (-Z)";
 	}
 	cerr << endl;
 	
@@ -180,7 +191,12 @@ int main( int argc, char *argv[] ) {
     
     AlignmentModel * alignmodel = NULL;
     
-    if (COOCMODE) {
+    if (DO_EM) {
+		cerr << "Computing alignment model..." << endl;
+		alignmodel = new EMAlignmentModel(sourcemodel,targetmodel, MAXROUNDS,  CONVERGENCE, DODEBUG);
+		cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
+		cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;	    
+    } else if (COOCMODE) {
 		cerr << "Computing alignment model..." << endl;
 		alignmodel = new CoocAlignmentModel(COOCMODE, sourcemodel,targetmodel, coocprunevalue, probprunevalue, BESTONLY, DONORM, DODEBUG);
 		cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
