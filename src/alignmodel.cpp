@@ -150,12 +150,11 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
 EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, bool DEBUG) {
     int round = 0;    
     unsigned long c;
-    double totaldivergence = 0;
     double prevavdivergence = 0;
     bool converged = false;
     
     //initialise uniformly
-    cerr << "  Initialisation step";
+    cerr << "  Initialisation step" << endl; 
     for ( unordered_map<uint32_t,std::vector<const EncAnyGram*> >::const_iterator reviter_source = sourcemodel.reverseindex.begin(); reviter_source != sourcemodel.reverseindex.end(); reviter_source++) {
     	uint32_t sentence = reviter_source->first;
 		const vector<const EncAnyGram*> * sourcepatterns = &reviter_source->second;
@@ -177,7 +176,7 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, Selectiv
             
     do {       
         round++; 
-        c = 0;
+        c = 0;        
         cerr << "  EM Round " << round << "... ";
         
 		std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > count;                
@@ -211,13 +210,14 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, Selectiv
 		                    const double countvalue = alignmatrix[sourcegram][targetgram] / sentencetotal[targetgram];
 		                    count[sourcegram][targetgram] += countvalue;
 		                    total[sourcegram] += countvalue;
-		                }                    
+		                }
 		            }
 		       
         		}	
 		} //end loop over corpus
 		
         double prevtransprob;                
+        double totaldivergence = 0;
         //MAXIMISATION STEP: improved model  update probability estimates (Maximum Likelihood Estimation) (normalised count is the new estimated probability)
         for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
         	const EncAnyGram * sourcegram = sourceiter->first;
@@ -228,7 +228,7 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, Selectiv
                 const double newtransprob = (double) count[sourcegram][targetgram] / total[sourcegram];
                 alignmatrix[sourcegram][targetgram] = newtransprob;
                 
-                 //for computation of convergence
+                //for computation of convergence
                 const double divergence = abs(newtransprob - prevtransprob);
                 if (DEBUG) {/*
 	                cerr << " prevtransprob=" << prevtransprob << " ";
@@ -241,9 +241,9 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, Selectiv
         }
 		
         const double avdivergence = (double) totaldivergence / c;
-        converged = (((round >= MAXROUNDS) || abs(avdivergence - prevavdivergence)) <= CONVERGEDTHRESHOLD);       
+        converged = (((round >= MAXROUNDS) || abs(avdivergence - prevavdivergence)) <= CONVERGEDTHRESHOLD);               
+        cerr << "average divergence = " << avdivergence << ", delta with prev divergence = " << abs(avdivergence - prevavdivergence) << ", alignprob size = " << alignmatrix.size() << endl;
         prevavdivergence = avdivergence;
-        cerr << " average divergence = " << avdivergence << ", alignprob size = " << alignmatrix.size() << endl;
     } while (!converged);    
 }
 
