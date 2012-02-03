@@ -47,6 +47,6 @@ class CoocAlignmentModel: public AlignmentModel {
 
 class EMAlignmentModel: public AlignmentModel {
    public:    
-    EMAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, bool DEBUG = false);        
+    EMAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, bool BESTONLY = false, bool DEBUG = false);        
     //save(const std::string filename);
 };

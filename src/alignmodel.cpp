@@ -147,7 +147,7 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
 
 
 
-EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, bool DEBUG) {
+EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, double probthreshold, bool bestonly, bool DEBUG) {
     int round = 0;    
     unsigned long c;
     double prevavdivergence = 0;
@@ -242,9 +242,23 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, Selectiv
 		
         const double avdivergence = (double) totaldivergence / c;
         converged = ((round >= MAXROUNDS) || abs(avdivergence - prevavdivergence) <= CONVERGEDTHRESHOLD);               
-        cerr << "average divergence = " << avdivergence << ", delta with prev divergence = " << abs(avdivergence - prevavdivergence) << " > " << CONVERGEDTHRESHOLD << ", alignprob size = " << alignmatrix.size() << endl;
+        cerr << "   average divergence = " << avdivergence << ", delta with prev divergence = " << abs(avdivergence - prevavdivergence) << " > " << CONVERGEDTHRESHOLD << ", alignprob size = " << alignmatrix.size() << endl;
         prevavdivergence = avdivergence;
     } while (!converged);    
+    
+    if ((probthreshold > 0) || (bestonly)) {
+		cerr << "  Pruning stage... ";
+		for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
+			const EncAnyGram * sourcegram = sourceiter->first;
+			for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
+				const EncAnyGram * targetgram = targetiter->first;
+				if (targetiter->second < probthreshold) {
+					alignmatrix[sourcegram].erase(targetgram);
+				}
+			}
+			if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram);
+		}    
+    }
 }
 
 
