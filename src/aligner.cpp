@@ -3,31 +3,37 @@
 using namespace std;
 
 void usage() {
-    cerr << "Usage: aligner -J -s source-model -t target-model [-S source-class-file -T target-class-file]" << endl;
-    cerr << "Options:" << endl;
+    cerr << "Usage: aligner [-J|-D|-E] -s source-model -t target-model [-S source-class-file -T target-class-file]" << endl;
+    cerr << " Input:" << endl;
     cerr << "\t-s sourcemodelfile        Source graph model file (*.graphmodel.colibri)" << endl;    
     cerr << "\t-t targetmodelfile        Target model file (*.graphmodel.colibri)"  << endl;
     cerr << "\t-S sourceclassfile        Source class file (for decoding)" << endl;
     cerr << "\t-T targetclassfile        Target class file (for decoding)" << endl;
     //cerr << "\t-d model                 Load and decode an existing model" << endl; //TODO
     //cerr << "\t-B                       Do a bi-directional alignment and compute intersection of results" << endl; //TODO
-	cerr << "\t-l n                      Minimum N length" << endl; //TODO
-    cerr << "\t-L n                      Maximum N length" << endl; //TODO
-    cerr << "\t-N                        No skip-grams" << endl; //TODO
+    cerr << " Alignment method (choose one):" << endl;
     cerr << "\t-J                        Use Jaccard co-occurrence method (simplest)" << endl;
     cerr << "\t-D                        Use Dice co-occurrence method" << endl;
     cerr << "\t-E                        Use EM alignment method" << endl;
-    cerr << "\t-B                        Best alignment only" << endl;    
-    cerr << "\t-P probability-threshold  Prune all alignments with an alignment probability lower than specified (0 <= x <= 1)" << endl;    
+    cerr << "\t-B                        Best alignment only" << endl;
+    cerr << " Generic alignment options:" << endl;    
+    cerr << "\t-V				         Verbose debugging output" << endl;
+    cerr << " Co-occurrence alignment options:" << endl;       
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
+    cerr << "\t-Z				         Do normalisation; return probabilities instead of co-occurrence scores" << endl;   
+    cerr << " EM Alignment Options:" << endl;
+    cerr << "\t-P probability-threshold  Prune all alignments with an alignment probability lower than specified (0 <= x <= 1)" << endl;
+    cerr << "\t-I				         Maximum number of iterations (for EM method, default: 10000)" << endl;
+    cerr << "\t-v				         Convergence value (for EM method, default: 0.001)" << endl;
+    cerr << " Input filtering:" << endl;
     cerr << "\t-o occurence-threshold    Consider only patterns occuring more than specified (absolute occurrence). Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
     cerr << "\t-F freq-threshold         Consider only patterns occuring more than specified (relative frequency of all patterns).  Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
     cerr << "\t-x xcount-threshold       Consider only patterns with an *exclusive* count over this threshold" << endl;
     cerr << "\t-X xcount-ratio           Consider only patterns with an *exclusivity ratio* over this threshold (between 0.0 [not exclusive] and 1.0 [entirely exclusive])" << endl;
-    cerr << "\t-Z				         Do normalisation; return probabilities instead of co-occurrence scores" << endl;
-    cerr << "\t-V				         Verbose debugging output" << endl;
-    cerr << "\t-I				         Maximum number of iterations (for EM method, default: 10000)" << endl;
-    cerr << "\t-v				         Convergence value (for EM method, default: 0.001)" << endl;
+    cerr << "\t-l n                      Minimum N length" << endl; 
+    cerr << "\t-L n                      Maximum N length" << endl; 
+    cerr << "\t-N                        No skip-grams" << endl; 
+
 }
 
 int main( int argc, char *argv[] ) {
@@ -193,7 +199,7 @@ int main( int argc, char *argv[] ) {
     
     if (DO_EM) {
 		cerr << "Computing alignment model..." << endl;
-		alignmodel = new EMAlignmentModel(sourcemodel,targetmodel, MAXROUNDS,  CONVERGENCE, DODEBUG);
+		alignmodel = new EMAlignmentModel(sourcemodel,targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
 		cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 		cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;	    
     } else if (COOCMODE) {

@@ -250,10 +250,17 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, Selectiv
 		cerr << "  Pruning stage... ";
 		for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
 			const EncAnyGram * sourcegram = sourceiter->first;
+			double best = 0;
 			for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
 				const EncAnyGram * targetgram = targetiter->first;
 				if (targetiter->second < probthreshold) {
 					alignmatrix[sourcegram].erase(targetgram);
+				} else if (bestonly && targetiter->second > best) best = targetiter->second;
+			}
+			if (bestonly) {
+				for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
+					const EncAnyGram * targetgram = targetiter->first;
+					if (targetiter->second < best) alignmatrix[sourcegram].erase(targetgram);
 				}
 			}
 			if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram);
