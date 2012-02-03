@@ -241,8 +241,8 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, Selectiv
         }
 		
         const double avdivergence = (double) totaldivergence / c;
-        converged = (((round >= MAXROUNDS) || abs(avdivergence - prevavdivergence)) <= CONVERGEDTHRESHOLD);               
-        cerr << "average divergence = " << avdivergence << ", delta with prev divergence = " << abs(avdivergence - prevavdivergence) << ", alignprob size = " << alignmatrix.size() << endl;
+        converged = ((round >= MAXROUNDS) || abs(avdivergence - prevavdivergence) <= CONVERGEDTHRESHOLD);               
+        cerr << "average divergence = " << avdivergence << ", delta with prev divergence = " << abs(avdivergence - prevavdivergence) << " > " << CONVERGEDTHRESHOLD << ", alignprob size = " << alignmatrix.size() << endl;
         prevavdivergence = avdivergence;
     } while (!converged);    
 }
