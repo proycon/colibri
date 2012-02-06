@@ -14,10 +14,11 @@ void usage() {
     cerr << " Alignment method (choose one):" << endl;
     cerr << "\t-J                        Use Jaccard co-occurrence method (simplest)" << endl;
     cerr << "\t-D                        Use Dice co-occurrence method" << endl;
-    cerr << "\t-E                        Use EM alignment method" << endl;
-    cerr << "\t-B                        Best alignment only" << endl;
+    cerr << "\t-E                        Use EM alignment method" << endl;    
     cerr << " Generic alignment options:" << endl;    
     cerr << "\t-V				         Verbose debugging output" << endl;
+    cerr << "\t-b                        Best alignment only" << endl;
+    cerr << "\t-B probability-threshold  Compute bidirectional alignment (intersection), using given probability threshold" << endl;
     cerr << " Co-occurrence alignment options:" << endl;       
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
     cerr << "\t-Z				         Do normalisation; return probabilities instead of co-occurrence scores" << endl;   
@@ -50,6 +51,7 @@ int main( int argc, char *argv[] ) {
     double XCOUNTTHRESHOLD = 0;
     double XCOUNTRATIOTHRESHOLD = 0;
     bool DOBIDIRECTIONAL = false;
+    double bidirprobthreshold = 0.0;
     int MINLENGTH = 0;
     int MAXLENGTH = 99;
     bool DOSKIPGRAMS = true;
@@ -61,10 +63,14 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt(argc, argv, "s:S:t:T:p:P:JDo:F:x:X:Bl:L:NVZEI:v:")) != -1)
+    while ((c = getopt(argc, argv, "s:S:t:T:p:P:JDo:F:x:X:B:bl:L:NVZEI:v:")) != -1)
         switch (c)
         {
         case 'B':
+        	bidirprobthreshold = atof(optarg);
+        	DOBIDIRECTIONAL = true;
+        	break;
+        case 'b':
         	BESTONLY = true;
         	break;
         case 'p':
@@ -160,6 +166,9 @@ int main( int argc, char *argv[] ) {
 	if (DONORM) {
 		cerr << "\tNormalisation enabled (-Z)";
 	}
+	if (DOBIDIRECTIONAL) {
+		cerr << "\tBidirectional alignment enabled (-B)";
+	}
 	cerr << endl;
 	
     
@@ -201,12 +210,30 @@ int main( int argc, char *argv[] ) {
 		cerr << "Computing alignment model..." << endl;
 		alignmodel = new EMAlignmentModel(sourcemodel,targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
 		cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
-		cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;	    
+		cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
+		
+		if (DOBIDIRECTIONAL) {
+			cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
+			AlignmentModel reversealignmodel = EMAlignmentModel(targetmodel,sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
+			cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
+			cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;
+			cerr << "Computing intersection of both alignment models..." << endl;
+			alignmodel->intersect(&reversealignmodel, bidirprobthreshold);
+		}	    
     } else if (COOCMODE) {
 		cerr << "Computing alignment model..." << endl;
 		alignmodel = new CoocAlignmentModel(COOCMODE, sourcemodel,targetmodel, coocprunevalue, probprunevalue, BESTONLY, DONORM, DODEBUG);
 		cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
-		cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;		
+		cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
+		
+		if (DOBIDIRECTIONAL) {
+			cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
+			AlignmentModel reversealignmodel = CoocAlignmentModel(COOCMODE, targetmodel,sourcemodel, coocprunevalue, probprunevalue, BESTONLY, DONORM, DODEBUG);
+			cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
+			cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;
+			cerr << "Computing intersection of both alignment models..." << endl;
+			alignmodel->intersect(&reversealignmodel, bidirprobthreshold);	
+		}	    				
 	}
 	
 	
