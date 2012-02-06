@@ -24,6 +24,9 @@ class AlignmentModel {
     	}
     	return c;
 	}
+	
+	void intersect(AlignmentModel * reversemodel, double probthreshold = 0); //Compute intersection with reverse model
+	
 };
 
 
