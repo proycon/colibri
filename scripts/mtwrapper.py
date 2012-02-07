@@ -231,11 +231,12 @@ if __name__ == "__main__":
         usage()
         sys.exit(2)
         
-        
-    print """#! /usr/bin/env python
+    settingsfile = workdir + '/mt-' + corpusname + '.py'
+    f = codecs.open(settingsfile,'w','utf-8')
+    f.write("""#! /usr/bin/env python
 # -*- coding: utf8 -*-#     
     
-from pynlpl.mt.wrapper import MTWrapper
+from mtwrapper import MTWrapper
 
 mtwrapper = MTWrapper()
     
@@ -264,8 +265,10 @@ mtwrapper.BUILD_MOSES_PHRASETABLE = True
 #mtwrapper.PATH_MOSES = ""
 
 mtwrapper.start()
-    """ % (corpusname, workdir, sourcecorpusfile, targetcorpusfile, sourcelang, targetlang)
-
+    """ % (corpusname, workdir, sourcecorpusfile, targetcorpusfile, sourcelang, targetlang))
+    f.close()
+    os.chown(settingsfile, 0754)
+    os.system('vim ' + settingsfile)    
 
 
 
