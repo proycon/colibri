@@ -36,9 +36,12 @@ class MTWrapper(object):
         self.PATH_PLAIN2SNT = self.findpath('plain2snt.out')                
         self.PATH_MOSES = self.findpath('moses')
         self.PATH_SRILM = self.findpath('ngram-count')   
+        
+        #default options
         self.MKCLS_OPTIONS = '-m2 -C50' 
         self.GIZA_OPTIONS = '-p0 0.98'
         self.SRILM_OPTIONS = '-order 3 -interpolate -kndiscount'
+        self.UCTO_OPTIONS = '-m -n'
 
     def findpath(self, name):
         for path in os.environ['PATH'].split(':'):
@@ -78,6 +81,10 @@ class MTWrapper(object):
             sane = False
         if not self.TRAINTARGETCORPUS:
             print >>sys.stderr,red("Configuration error: TRAINTARGETCORPUS not specified!")
+            sane = False
+            
+        if (self.TOKENIZE_SOURCECORPUS or self.TOKENIZE_TARGETCORPUS) and (not self.PATH_UCTO or not os.path.isfile(self.PATH_UCTO)):
+            print >>sys.stderr,red("Dependency error: ucto not found (PATH_UCTO=" + self.PATH_UCTO + ")")
             sane = False
             
             
@@ -143,6 +150,16 @@ class MTWrapper(object):
         if not self.check_common(): return False
         if not self.check_train(): return False
         
+        if self.TOKENIZE_SOURCECORPUS:
+            if not self.tokenize_sourcecorpus():
+                print >>sys.stderr, bold(red("Tokenizing source corpus failed. Aborting"))    
+                return False
+    
+        if self.TOKENIZE_TARGETCORPUS:
+            if not self.tokenize_targetcorpus():
+                print >>sys.stderr, bold(red("Tokenizing target corpus failed. Aborting"))    
+                return False    
+        
         if self.BUILD_GIZA_WORDALIGNMENT:
             if not self.build_giza_wordalignment():
                 print >>sys.stderr, bold(red("Building GIZA++ Wordalignment failed. Aborting"))    
@@ -191,13 +208,15 @@ class MTWrapper(object):
             os.symlink(self.TRAINTARGETCORPUS, self.gettargetfilename('txt') )
         return True        
         
+        
+    #---------------------------------- Methods for building sub-parts ----------------------------
+        
     def build_giza_wordalignment(self):
         if not self.runcmd(self.PATH_PLAIN2SNT + ' ' + self.getsourcefilename('txt') + ' ' + self.gettargetfilename('txt'),'giza-plain2snt', self.getsourcefilename('vcb'), self.gettargetfilename('vcb'), self.getsntfilename() ): return False
         if not self.runcmd(self.PATH_MKCLS + ' -p' + self.getsourcefilename('txt') + ' ' + self.MKCLS_OPTIONS + ' -V' + self.getsourcefilename('vcb.classes') + ' opt','giza-mkcls-source', self.getsourcefilename('vcb.classes')): return False
-        if not self.runcmd(self.PATH_MKCLS + '-p' + self.gettargetfilename('txt') +  ' ' + self.MKCLS_OPTIONS  + ' -V' + self.gettargetfilename('vcb.classes') + ' opt','giza-mkcls-target', self.gettargetfilename('vcb.classes')): return False       
+        if not self.runcmd(self.PATH_MKCLS + ' -p' + self.gettargetfilename('txt') +  ' ' + self.MKCLS_OPTIONS  + ' -V' + self.gettargetfilename('vcb.classes') + ' opt','giza-mkcls-target', self.gettargetfilename('vcb.classes')): return False       
         if not self.runcmd(self.PATH_GIZA + ' -S ' + self.getsourcefilename('vcb') + ' -T ' + self.gettargetfilename('vcb') + ' -C ' + self.getsntfilename() + ' ' + self.GIZA_OPTIONS + ' -o ' + self.getgizafilename(),'giza', self.getsntfilename() + '.A3.final'): return False
-        return True
-        #GIZA++ -S ${sourcelang}.vcb -T ${targetlang}.vcb -C "${sourcelang}_${targetlang}.snt" -p0 0.98 -o "${sourcelang}-${targetlang}"
+        return True        
 
     def build_srilm_targetmodel(self):
         if not self.runcmd(self.PATH_SRILM + ' ' + self.SRILM_OPTIONS + ' -text ' + self.gettargetfilename('txt') + ' -lm ' + self.gettargetfilename('lm'),'srilm-targetmodel', self.gettargetfilename('lm')): return False
@@ -205,7 +224,33 @@ class MTWrapper(object):
     def build_srilm_sourcemodel(self):
         if not self.runcmd(self.PATH_SRILM + ' ' + self.SRILM_OPTIONS + ' -text ' + self.getsourcefilename('txt') + ' -lm ' + self.getsourcefilename('lm'),'srilm-sourcemodel', self.getsourcefilename('lm')): return False        
 
+    def tokenize_sourcecorpus(self):
+        if not os.path.exists(self.getsourcefilename('notok')):
+            os.rename( os.path.exists(self.getsourcefilename('txt')), os.path.exists(self.getsourcefilename('notok') ) )
+        if not self.runcmd(self.PATH_UCTO + ' ' + self.UCTO_OPTIONS +  ' -L' + self.SOURCELANG +  ' ' + self.getsourcefilename('notok') + ' ' + self.getsourcefilename('tok'),'tokenize-sourcecorpus', self.getsourcefilename('tok')): return False    
+        if os.path.exists(self.getsourcefilename('tok')):
+            try:
+                os.unlink(self.getsourcefilename('txt'))
+            except:
+                pass
+            os.symlink( self.getsourcefilename('tok'), self.getsourcefilename('txt') )
+        return True
+            
+    def tokenize_targetcorpus(self):
+        if not os.path.exists(self.gettargetfilename('notok')):
+            os.rename( os.path.exists(self.gettargetfilename('txt')), os.path.exists(self.gettargetfilename('notok') ) )
+        if not self.runcmd(self.PATH_UCTO + ' ' + self.UCTO_OPTIONS +  ' -L' + self.SOURCELANG +  ' ' + self.gettargetfilename('notok') + ' ' + self.gettargetfilename('tok'),'tokenize-sourcecorpus', self.gettargetfilename('tok')): return False    
+        if os.path.exists(self.gettargetfilename('tok')):
+            try:
+                os.unlink(self.gettargetfilename('txt'))
+            except:
+                pass
+            os.symlink( self.gettargetfilename('tok'), self.gettargetfilename('txt') )
+        return True
+        
+
     def build_moses_phrasetable(self):
+        
         pass            
     
 def usage():
@@ -289,12 +334,13 @@ mtwrapper.BUILD_MOSES_PHRASETABLE = True
 #mtwrapper.PATH_GIZA = ""
 #mtwrapper.PATH_PLAIN2SNT = ""                
 #mtwrapper.PATH_MOSES = ""
+#mtwrapper.PATH_SRILM = "" #path to ngram-count from SRILM
 
 #Options for building word alignments
 #mtwrapper.MKCLS_OPTIONS = '-m2 -C50' 
 #mtwrapper.GIZA_OPTIONS = '-p0 0.98'
 
-#Options for building language models
+#Options for building language models with SRILM
 #mtwrapper.SRILM_OPTIONS = '-order 3 -interpolate -kndiscount'
 
 mtwrapper.start()
