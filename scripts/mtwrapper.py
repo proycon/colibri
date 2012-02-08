@@ -5,6 +5,7 @@ import sys
 import os
 import subprocess
 import getopt
+import codecs
 
 
 class MTWrapper(object):
