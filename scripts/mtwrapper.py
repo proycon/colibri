@@ -29,18 +29,22 @@ class MTWrapper(object):
         self.BUILD_GIZA_WORDALIGNMENT_REV = False #Reverse word-alignment
         self.BUILD_GIZA_WORDALIGNMENT_COOC = False
         self.BUILD_MOSES_SYMAL = True #Symmetrise word alignments
-        self.BUILD_MOSES_PHRASETABLE = False
+        self.BUILD_MOSES_WORDTRANSTABLE = True #Extract word translation table
+        self.BUILD_MOSES_PHRASEEXTRACT = True  #Phrase extraction
+        self.BUILD_MOSES_PHRASESCORE = True  #Phrase scoring
+        self.BUILD_MOSES_PHRASETRANSTABLE = False
         
-        #defaults
+        #defaultsP
         self.PATH_UCTO = self.findpath('ucto')      
         self.PATH_TIMBL = self.findpath('timbl')
-        self.PATH_MKCLS = self.findpath('mkcls')
+        self.PATH_GIZA_MKCLS = self.findpath('mkcls')
         self.PATH_GIZA = self.findpath('GIZA++')
-        self.PATH_PLAIN2SNT = self.findpath('plain2snt.out')
+        self.PATH_GIZA_PLAIN2SNT = self.findpath('plain2snt.out')
         self.PATH_GIZA_SNT2COOC = self.findpath('snt2cooc.out')                
         self.PATH_MOSES = self.findpath('moses')
         self.PATH_MOSES_GIZA2BAL = self.findpath('giza2bal.pl')
         self.PATH_MOSES_SYMAL = self.findpath('symal')
+        self.PATH_MOSES_WORDTRANSTABLE =  self.findpath('moses-lexicalextractiontable.py')
         self.PATH_SRILM = self.findpath('ngram-count')   
         
         #default options
@@ -97,28 +101,34 @@ class MTWrapper(object):
             sane = False
             
         
-        if self.BUILD_MOSES_PHRASETABLE:
+        if self.BUILD_MOSES_PHRASETRANSTABLE:
             if not self.BUILD_MOSES_SYMAL:
-                print >>sys.stderr,yellow("Configuration update: BUILD_GIZA_SYMAL automatically enabled because BUILD_MOSES_PHRASETABLE is too")
+                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_WORDTRANSTABLE automatically enabled because BUILD_MOSES_PHRASETABLE is too")
+                self.BUILD_MOSES_WORDTRANSTABLE = True
+                
+        
+        if self.BUILD_MOSES_WORDTRANSTABLE:
+            if not self.BUILD_MOSES_SYMAL:
+                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_SYMAL automatically enabled because BUILD_MOSES_WORDTRANSTABLE is too")
                 self.BUILD_MOSES_SYMAL = True
+        
                 
         if self.BUILD_MOSES_SYMAL:            
             if not self.BUILD_GIZA_WORDALIGNMENT:
                 print >>sys.stderr,yellow("Configuration update: BUILD_GIZA_WORDALIGNMENT automatically enabled because BUILD_MOSES_SYMAL is too")
                 self.BUILD_GIZA_WORDALIGNMENT = True
-            if not self.BUILD_GIZA_WORDALIGNMENT:
+            if not self.BUILD_GIZA_WORDALIGNMENT_REV:
                 print >>sys.stderr,yellow("Configuration update: BUILD_GIZA_WORDALIGNMENT_REV automatically enabled because BUILD_MOSES_SYMAL is too")
-                self.BUILD_GIZA_WORDALIGNMENT = True                
-            
+                self.BUILD_GIZA_WORDALIGNMENT_REV = True                            
 
             if not self.PATH_MOSES_GIZA2BAL or not os.path.isfile(self.PATH_MOSES_GIZA2BAL):
                 sane = False
-                print >>sys.stderr,red("Dependency error: giza2ba.pl (part of Moses) not found (PATH_MOSES_GIZA2BAL=" + self.PATH_MOSES_GIZA2BAL + ")")
+                print >>sys.stderr,red("Dependency error: giza2bal.pl (provided by Moses) not found (PATH_MOSES_GIZA2BAL=" + self.PATH_MOSES_GIZA2BAL + ")")
                
             
             if not self.PATH_MOSES_SYMAL or not os.path.isfile(self.PATH_MOSES_SYMAL):
                 sane = False
-                print >>sys.stderr,red("Dependency error: Symal (part of Moses) not found (PATH_MOSES_SYMAL=" + self.PATH_MOSES_SYMAL + ")")
+                print >>sys.stderr,red("Dependency error: symal (provided by Moses) not found (PATH_MOSES_SYMAL=" + self.PATH_MOSES_SYMAL + ")")
                
             if not self.PATH_MOSES or not os.path.isfile(self.PATH_MOSES):
                 sane = False
@@ -126,11 +136,14 @@ class MTWrapper(object):
                 
         if self.BUILD_GIZA_WORDALIGNMENT and (not self.PATH_GIZA or not os.path.isfile(self.PATH_GIZA)): 
             print >>sys.stderr,red("Dependency error: GIZA++ not found (PATH_GIZA=" + self.PATH_GIZA + ")")
-        if self.BUILD_GIZA_WORDALIGNMENT and (not self.PATH_PLAIN2SNT or not os.path.isfile(self.PATH_PLAIN2SNT)): 
-            print >>sys.stderr,red("Dependency error: plain2snt.out (provided by GIZA++) not found (PATH_PLAIN2SNT=" + self.PATH_PLAIN2SNT + ")")            
+        if self.BUILD_GIZA_WORDALIGNMENT and (not self.PATH_GIZA_PLAIN2SNT or not os.path.isfile(self.PATH_GIZA_PLAIN2SNT)): 
+            print >>sys.stderr,red("Dependency error: plain2snt.out (provided by GIZA++) not found (PATH_GIZA_PLAIN2SNT=" + self.PATH_GIZA_PLAIN2SNT + ")")            
             sane = False
-        if self.BUILD_GIZA_WORDALIGNMENT and (not self.PATH_MKCLS or not os.path.isfile(self.PATH_MKCLS)): 
-            print >>sys.stderr,red("Dependency error: mkcls (provided by GIZA++) not found (PATH_MKCLS=" + self.PATH_MKCLS + ")")            
+        if self.BUILD_GIZA_WORDALIGNMENT_COOC and (not self.PATH_GIZA_SNT2COOC or not os.path.isfile(self.PATH_GIZA_SNT2COOC)): 
+            print >>sys.stderr,red("Dependency error: snt2cooc.out (provided by GIZA++) not found (PATH_GIZA_SNT2COOC=" + self.PATH_GIZA_SNT2COOC + ")")            
+            sane = False                        
+        if self.BUILD_GIZA_WORDALIGNMENT and (not self.PATH_GIZA_MKCLS or not os.path.isfile(self.PATH_GIZA_MKCLS)): 
+            print >>sys.stderr,red("Dependency error: mkcls (provided by GIZA++) not found (PATH_GIZA_MKCLS=" + self.PATH_GIZA_MKCLS + ")")            
             sane = False                            
         if (self.BUILD_SRILM_TARGETMODEL or self.BUILD_SRILM_SOURCEMODEL) and (not self.PATH_SRILM or not os.path.isfile(self.PATH_SRILM)):
             print >>sys.stderr,red("Dependency error: ngram-count (provided by SRILM) not found (PATH_SRILM=" + self.PATH_SRILM + ")")
@@ -145,14 +158,14 @@ class MTWrapper(object):
     def gettargetfilename(self, extension):
         return self.WORKDIR + self.CORPUSNAME + '-' + self.TARGETLANG + '.' + extension
     
-    def gets2tfilename(self, extension, longform =False):
+    def gets2tfilename(self, extension='', longform =False):
         s = self.WORKDIR + self.CORPUSNAME + '-' + self.SOURCELANG 
         if longform: s += '_' + self.CORPUSNAME 
         s += '-' + self.TARGETLANG 
         if extension: s += '.' + extension
         return s
     
-    def gett2sfilename(self, extension,longform=False):
+    def gett2sfilename(self, extension='',longform=False):
         s = self.WORKDIR + self.CORPUSNAME + '-' + self.TARGETLANG 
         if longform: s += '_' + self.CORPUSNAME 
         s += '-' + self.SOURCELANG 
@@ -199,7 +212,8 @@ class MTWrapper(object):
         if self.BUILD_GIZA_WORDALIGNMENT_REV and not self.build_giza_wordalignment_rev(): return False    
         
         if self.BUILD_MOSES_SYMAL and not self.build_moses_symal(): return False
-        if self.BUILD_MOSES_PHRASETABLE and not self.build_moses_phrasetable(): return False
+        if self.BUILD_MOSES_WORDTRANSTABLE and not self.build_moses_wordtranstable(): return False
+        if self.BUILD_MOSES_PHRASETRANSTABLE and not self.build_moses_phrasetable(): return False
         return True    
 
         
@@ -238,18 +252,18 @@ class MTWrapper(object):
     #---------------------------------- Methods for building sub-parts ----------------------------
         
     def build_giza_wordalignment(self):
-        if not self.runcmd(self.PATH_PLAIN2SNT + ' ' + self.getsourcefilename('txt') + ' ' + self.gettargetfilename('txt'),'GIZA++ Input Preparation', self.getsourcefilename('vcb'), self.gettargetfilename('vcb'), self.gets2tfilename('snt',longform=True) ): return False
+        if not self.runcmd(self.PATH_GIZA_PLAIN2SNT + ' ' + self.getsourcefilename('txt') + ' ' + self.gettargetfilename('txt'),'GIZA++ Input Preparation', self.getsourcefilename('vcb'), self.gettargetfilename('vcb'), self.gets2tfilename('snt',longform=True) ): return False
         if not self.runcmd(self.PATH_GIZA_SNT2COOC + ' ' + self.gettargetfilename('vcb') + ' ' + self.getsourcefilename('vcb') + ' ' + self.getsourcefilename('txt') + ' > ' + self.gets2tfilename('cooc'), 'GIZA++ Co-occurrence output',  self.gets2tfilename('cooc')): return False
-        if not self.runcmd(self.PATH_MKCLS + ' -p' + self.getsourcefilename('txt') + ' ' + self.MKCLS_OPTIONS + ' -V' + self.getsourcefilename('vcb.classes') + ' opt','GIZA++ Word Categoriser for source corpus', self.getsourcefilename('vcb.classes')): return False
-        if not self.runcmd(self.PATH_MKCLS + ' -p' + self.gettargetfilename('txt') +  ' ' + self.MKCLS_OPTIONS  + ' -V' + self.gettargetfilename('vcb.classes') + ' opt','GIZA++ Word Categoriser for target corpus', self.gettargetfilename('vcb.classes')): return False       
+        if not self.runcmd(self.PATH_GIZA_MKCLS + ' -p' + self.getsourcefilename('txt') + ' ' + self.MKCLS_OPTIONS + ' -V' + self.getsourcefilename('vcb.classes') + ' opt','GIZA++ Word Categoriser for source corpus', self.getsourcefilename('vcb.classes')): return False
+        if not self.runcmd(self.PATH_GIZA_MKCLS + ' -p' + self.gettargetfilename('txt') +  ' ' + self.MKCLS_OPTIONS  + ' -V' + self.gettargetfilename('vcb.classes') + ' opt','GIZA++ Word Categoriser for target corpus', self.gettargetfilename('vcb.classes')): return False       
         if not self.runcmd(self.PATH_GIZA + ' -S ' + self.getsourcefilename('vcb') + ' -T ' + self.gettargetfilename('vcb') + ' -C ' +  self.gets2tfilename('snt',longform=True) + ' ' + self.GIZA_OPTIONS + ' -o ' + self.gets2tfilename(),'GIZA++ Word Alignment',  self.gets2tfilename('A3.final') ): return False
         return True        
 
     def build_giza_wordalignment_rev(self):
-        if not self.runcmd(self.PATH_PLAIN2SNT + ' ' + self.gettargetfilename('txt') + ' ' + self.getsourcefilename('txt'),'GIZA++ Input Preparation (reversed))', self.getsourcefilename('vcb'), self.gettargetfilename('vcb'), self.gett2sfilename('snt',longform=True) ): return False
+        if not self.runcmd(self.PATH_GIZA_PLAIN2SNT + ' ' + self.gettargetfilename('txt') + ' ' + self.getsourcefilename('txt'),'GIZA++ Input Preparation (reversed))', self.getsourcefilename('vcb'), self.gettargetfilename('vcb'), self.gett2sfilename('snt',longform=True) ): return False
         if not self.runcmd(self.PATH_GIZA_SNT2COOC + ' ' + self.getsourcefilename('vcb') + ' ' + self.gettargetfilename('vcb') + ' ' + self.gettargetfilename('txt') + ' > ' + self.gett2sfilename('cooc'), 'GIZA++ Co-occurrence output (reversed)',  self.gett2sfilename('cooc')): return False        
-        if not self.runcmd(self.PATH_MKCLS + ' -p' + self.getsourcefilename('txt') + ' ' + self.MKCLS_OPTIONS + ' -V' + self.getsourcefilename('vcb.classes') + ' opt','GIZA++ Word Categoriser for source corpus (reversed)', self.getsourcefilename('vcb.classes')): return False
-        if not self.runcmd(self.PATH_MKCLS + ' -p' + self.gettargetfilename('txt') +  ' ' + self.MKCLS_OPTIONS  + ' -V' + self.gettargetfilename('vcb.classes') + ' opt','GIZA++ Word Categoriser for target corpus (reversed)', self.gettargetfilename('vcb.classes')): return False       
+        if not self.runcmd(self.PATH_GIZA_MKCLS + ' -p' + self.getsourcefilename('txt') + ' ' + self.MKCLS_OPTIONS + ' -V' + self.getsourcefilename('vcb.classes') + ' opt','GIZA++ Word Categoriser for source corpus (reversed)', self.getsourcefilename('vcb.classes')): return False
+        if not self.runcmd(self.PATH_GIZA_MKCLS + ' -p' + self.gettargetfilename('txt') +  ' ' + self.MKCLS_OPTIONS  + ' -V' + self.gettargetfilename('vcb.classes') + ' opt','GIZA++ Word Categoriser for target corpus (reversed)', self.gettargetfilename('vcb.classes')): return False       
         if not self.runcmd(self.PATH_GIZA + ' -S ' + self.gettargetfilename('vcb') + ' -T ' + self.getsourcefilename('vcb') + ' -C ' +  self.gett2sfilename('snt',longform=True) + ' ' + self.GIZA_OPTIONS + ' -o ' + self.gett2sfilename(),'GIZA++ Word Alignment (reversed)',  self.gett2sfilename('A3.final') ): return False
         return True        
 
@@ -286,10 +300,12 @@ class MTWrapper(object):
 
     def build_moses_symal(self):
         if not self.runcmd(self.PATH_MOSES_GIZA2BAL + ' -d ' + self.gett2sfilename('A3.final') + ' -i ' + self.gets2tfilename('A3.final') + ' > ' + self.gets2tfilename('bal'),'Data preparation for Symmetric Aligner', self.gets2tfilename('bal')): return False
-        if not self.runcmd(self.PATH_MOSES_SYMAL + ' ' + self.MOSES_SYMAL_OPTIONS + ' < ' + self.gets2tfilename('bal') + ' > '  + self.gets2tfilename('symal'), 'Moses Symmetric Alignment',self.gets2tfilename('symal')): return False 
+        if not self.runcmd(self.PATH_MOSES_SYMAL + ' ' + self.SYMAL_OPTIONS + ' < ' + self.gets2tfilename('bal') + ' > '  + self.gets2tfilename('symal'), 'Moses Symmetric Alignment',self.gets2tfilename('symal')): return False 
         return True        
     
-    
+    def build_moses_wordtranstable(self):
+        if not self.runcmd(self.PATH_MOSES_WORDTRANSTABLE + ' ' + self.getsourcefilename('txt') + ' ' + self.gettargetfilename('txt') + ' ' + self.gets2tfilename('bal')  + ' ' + self.gets2tfilename(),'Build of Lexical Translation Table', self.gets2tfilename('s2t'), self.gets2tfilename('t2s')): return False 
+        return True
     
     def build_moses_phrasetable(self):
         #TODO
@@ -369,7 +385,7 @@ mtwrapper.BUILD_GIZA_WORDALIGNMENT = True
 mtwrapper.BUILD_GIZA_WORDALIGNMENT_REV = False #Reverse word-alignment
 mtwrapper.BUILD_GIZA_WORDALIGNMENT_COOC = False #Produce co-occurrence files?
 mtwrapper.BUILD_MOSES_SYMAL = True #Symmetrize word alignments
-mtwrapper.BUILD_MOSES_PHRASETABLE = True
+mtwrapper.BUILD_MOSES_PHRASETRANSTABLE = True
 
 
 #Paths
@@ -377,7 +393,7 @@ mtwrapper.BUILD_MOSES_PHRASETABLE = True
 #mtwrapper.PATH_TIMBL = ""
 #mtwrapper.PATH_MKCLS = ""
 #mtwrapper.PATH_GIZA = ""
-#mtwrapper.PATH_PLAIN2SNT = ""                
+#mtwrapper.PATH_GIZA_PLAIN2SNT = ""                
 #mtwrapper.PATH_MOSES = ""
 #mtwrapper.PATH_SRILM = "" #path to ngram-count from SRILM
 
