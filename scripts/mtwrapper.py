@@ -35,8 +35,10 @@ class MTWrapper(object):
         self.PATH_GIZA = self.findpath('GIZA++')
         self.PATH_PLAIN2SNT = self.findpath('plain2snt.out')                
         self.PATH_MOSES = self.findpath('moses')
-
-
+        self.PATH_SRILM = self.findpath('ngram-count')   
+        self.MKCLS_OPTIONS = '-m2 -C50' 
+        self.GIZA_OPTIONS = '-p0 0.98'
+        self.SRILM_OPTIONS = '-order 3 -interpolate -kndiscount'
 
     def findpath(self, name):
         for path in os.environ['PATH'].split(':'):
@@ -93,7 +95,9 @@ class MTWrapper(object):
         if self.BUILD_GIZA_WORDALIGNMENT and (not self.PATH_MKCLS or not os.path.isfile(self.PATH_MKCLS)): 
             print >>sys.stderr,red("Dependency error: mkcls (provided by GIZA++) not found (PATH_MKCLS=" + self.PATH_MKCLS + ")")            
             sane = False                            
-        
+        if (self.BUILD_SRILM_TARGETMODEL or self.BUILD_SRILM_SOURCEMODEL) and (not self.PATH_SRILM or not os.path.isfile(self.PATH_SRILM)):
+            print >>sys.stderr,red("Dependency error: ngram-count (provided by SRILM) not found (PATH_SRILM=" + self.PATH_SRILM + ")")
+            sane = False
         return sane
     
     
@@ -143,6 +147,18 @@ class MTWrapper(object):
             if not self.build_giza_wordalignment():
                 print >>sys.stderr, bold(red("Building GIZA++ Wordalignment failed. Aborting"))    
                 return False
+    
+    
+        if self.BUILD_SRILM_TARGETMODEL:
+            if not self.build_srilm_targetmodel():
+                print >>sys.stderr, bold(red("Building SRILM Target-language Model failed. Aborting"))    
+                return False            
+    
+        if self.BUILD_SRILM_SOURCEMODEL:
+            if not self.build_srilm_sourcemodel():
+                print >>sys.stderr, bold(red("Building SRILM Source-language Model failed. Aborting"))    
+                return False                
+    
         
     def runcmd(self, cmd, name, *outputfiles, **kwargs):
         if 'successcodes' in kwargs:
@@ -177,11 +193,17 @@ class MTWrapper(object):
         
     def build_giza_wordalignment(self):
         if not self.runcmd(self.PATH_PLAIN2SNT + ' ' + self.getsourcefilename('txt') + ' ' + self.gettargetfilename('txt'),'giza-plain2snt', self.getsourcefilename('vcb'), self.gettargetfilename('vcb'), self.getsntfilename() ): return False
-        if not self.runcmd(self.PATH_MKCLS + ' -m2 -p' + self.getsourcefilename('txt') + ' -c50 -V' + self.getsourcefilename('vcb.classes') + ' opt','giza-mkcls-source', self.getsourcefilename('vcb.classes')): return False
-        if not self.runcmd(self.PATH_MKCLS + ' -m2 -p' + self.gettargetfilename('txt') + ' -c50 -V' + self.gettargetfilename('vcb.classes') + ' opt','giza-mkcls-target', self.gettargetfilename('vcb.classes')): return False       
-        if not self.runcmd(self.PATH_GIZA + ' -S ' + self.getsourcefilename('vcb') + ' -T ' + self.gettargetfilename('vcb') + ' -C ' + self.getsntfilename() + ' -p0 0.98 -o ' + self.getgizafilename(),'giza', self.getsntfilename() + '.A3.final'): return False
+        if not self.runcmd(self.PATH_MKCLS + ' -p' + self.getsourcefilename('txt') + ' ' + self.MKCLS_OPTIONS + ' -V' + self.getsourcefilename('vcb.classes') + ' opt','giza-mkcls-source', self.getsourcefilename('vcb.classes')): return False
+        if not self.runcmd(self.PATH_MKCLS + '-p' + self.gettargetfilename('txt') +  ' ' + self.MKCLS_OPTIONS  + ' -V' + self.gettargetfilename('vcb.classes') + ' opt','giza-mkcls-target', self.gettargetfilename('vcb.classes')): return False       
+        if not self.runcmd(self.PATH_GIZA + ' -S ' + self.getsourcefilename('vcb') + ' -T ' + self.gettargetfilename('vcb') + ' -C ' + self.getsntfilename() + ' ' + self.GIZA_OPTIONS + ' -o ' + self.getgizafilename(),'giza', self.getsntfilename() + '.A3.final'): return False
         return True
         #GIZA++ -S ${sourcelang}.vcb -T ${targetlang}.vcb -C "${sourcelang}_${targetlang}.snt" -p0 0.98 -o "${sourcelang}-${targetlang}"
+
+    def build_srilm_targetmodel(self):
+        if not self.runcmd(self.PATH_SRILM + ' ' + self.SRILM_OPTIONS + ' -text ' + self.gettargetfilename('txt') + ' -lm ' + self.gettargetfilename('lm'),'srilm-targetmodel', self.gettargetfilename('lm')): return False
+        
+    def build_srilm_sourcemodel(self):
+        if not self.runcmd(self.PATH_SRILM + ' ' + self.SRILM_OPTIONS + ' -text ' + self.getsourcefilename('txt') + ' -lm ' + self.getsourcefilename('lm'),'srilm-sourcemodel', self.getsourcefilename('lm')): return False        
 
     def build_moses_phrasetable(self):
         pass            
@@ -241,6 +263,8 @@ from mtwrapper import MTWrapper
 
 mtwrapper = MTWrapper()
     
+#Primary configuration
+    
 mtwrapper.CORPUSNAME = "%s"
 mtwrapper.WORKDIR = "%s"
 
@@ -257,13 +281,21 @@ mtwrapper.BUILD_SRILM_TARGETMODEL = True
 mtwrapper.BUILD_GIZA_WORDALIGNMENT = True
 mtwrapper.BUILD_MOSES_PHRASETABLE = True
 
-#defaults
+
+#Paths
 #mtwrapper.PATH_UCTO = ""      
 #mtwrapper.PATH_TIMBL = ""
 #mtwrapper.PATH_MKCLS = ""
 #mtwrapper.PATH_GIZA = ""
 #mtwrapper.PATH_PLAIN2SNT = ""                
 #mtwrapper.PATH_MOSES = ""
+
+#Options for building word alignments
+#mtwrapper.MKCLS_OPTIONS = '-m2 -C50' 
+#mtwrapper.GIZA_OPTIONS = '-p0 0.98'
+
+#Options for building language models
+#mtwrapper.SRILM_OPTIONS = '-order 3 -interpolate -kndiscount'
 
 mtwrapper.start()
     """ % (corpusname, workdir, sourcecorpusfile, targetcorpusfile, sourcelang, targetlang))
