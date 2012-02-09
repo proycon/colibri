@@ -34,7 +34,7 @@ class MTWrapper(object):
         self.BUILD_MOSES_PHRASESCORE = True  #Phrase scoring
         self.BUILD_MOSES_PHRASETRANSTABLE = False
         
-        #defaultsP
+        #defaults
         self.PATH_UCTO = self.findpath('ucto')      
         self.PATH_TIMBL = self.findpath('timbl')
         self.PATH_GIZA_MKCLS = self.findpath('mkcls')
@@ -42,19 +42,22 @@ class MTWrapper(object):
         self.PATH_GIZA_PLAIN2SNT = self.findpath('plain2snt.out')
         self.PATH_GIZA_SNT2COOC = self.findpath('snt2cooc.out')                
         self.PATH_MOSES = self.findpath('moses')
-        self.PATH_MOSES_GIZA2BAL = self.findpath('giza2bal.pl')
+        self.PATH_MOSES_GIZA2BAL = self.findpath('scripts/giza2bal.pl')
         self.PATH_MOSES_SYMAL = self.findpath('symal')
-        self.PATH_MOSES_WORDTRANSTABLE =  self.findpath('moses-lexicalextractiontable.py')
+        self.PATH_MOSES_WORDTRANSTABLE =  self.findpath('scripts/moses-lexicalextractiontable.py')
+        self.PATH_MOSES_PHRASEEXTRACT = self.findpath('scripts/extract')
         self.PATH_SRILM = self.findpath('ngram-count')   
         
         #default options
         self.MKCLS_OPTIONS = '-m2 -C50' 
         self.GIZA_OPTIONS = '-p0 0.98 -m1 5 -m2 0 -m3 3 -m4 3 -nsmooth 4 -model4smoothfactor 0.4'
         #self.GIZA_OPTIONS = '-p0 0.98 -m1 5 -m2 0 -m3 0 -m4 0 -nsmooth 4 -hmmiterations 5 -hmmdumpfrequency -5'
-        self.SRILM_OPTIONS = '-order 3 -interpolate -kndiscount'
+        self.SRILM_OPTIONS = '-order 3 -interpolate -kndiscount' #trigram model
         self.UCTO_OPTIONS = '-m -n'
         self.SYMAL_OPTIONS = "-alignment=grow -diagonal=yes -final=yes -both=no" #alignment: union/intersect/grow/srctotgt/tgttosrc ,  diagonal: yes|no , -final: yes|no , -both: yes|no 
-        
+        self.PHRASEEXTRACT_MAX_PHRASE_LENGTH = 7
+        self.PHRASEEXTRACT_REORDERING_FLAGS = "" #default distance-based reordering
+        #" --model wbe-mslr --model phrase-mslr --model hier-mslr" #Maximum lexical reordering
 
     def findpath(self, name):
         for path in os.environ['PATH'].split(':'):
@@ -213,6 +216,7 @@ class MTWrapper(object):
         
         if self.BUILD_MOSES_SYMAL and not self.build_moses_symal(): return False
         if self.BUILD_MOSES_WORDTRANSTABLE and not self.build_moses_wordtranstable(): return False
+        if self.BUILD_MOSES_PHRASEEXTRACT and not self.build_moses_phraseextrac(): return False
         if self.BUILD_MOSES_PHRASETRANSTABLE and not self.build_moses_phrasetable(): return False
         return True    
 
@@ -307,6 +311,25 @@ class MTWrapper(object):
         if not self.runcmd(self.PATH_MOSES_WORDTRANSTABLE + ' ' + self.getsourcefilename('txt') + ' ' + self.gettargetfilename('txt') + ' ' + self.gets2tfilename('bal')  + ' ' + self.gets2tfilename(),'Build of Lexical Translation Table', self.gets2tfilename('s2t'), self.gets2tfilename('t2s')): return False 
         return True
     
+    def build_moses_phraseextract(self):        
+        #TODO: Support for EPPEX and Hierchical rule extraction and reordering models     
+        if not self.runcmd(self.PATH_MOSES_PHRASEEXTRACT + ' ' + self.getsourcefilename('txt') + ' ' + self.gettargetfilename('txt') + ' ' + self.gets2tfilename('phraseextract') + ' ' + str(self.PHRASEEXTRACT_MAX_PHRASE_LENGTH) + ' orientation ' + self.PHRASEEXTRACT_REORDERING_FLAGS ,'Phrase Extraction', self.gets2tfilename('phraseextract')): return False 
+        return True        
+    
+    def build_moses_phrasescore(self):
+        if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('s2t') + ' > ' +  self.gets2tfilename('s2t.sorted'),'Sorting Lexical Translation Table (source->target)',  self.gets2tfilename('s2t.sorted') ): return False
+        if not self.runcmd('LC_ALL=C sort ' + self.gett2sfilename('t2s') + ' > ' +  self.gett2sfilename('t2s.sorted'),'Sorting Lexical Translation Table (target->source)',  self.gets2tfilename('t2s.sorted') ): return False
+        
+        self.PHRASESCORE_OPTIONS= '' #--Hierarchical --WordAlignment (--Inverse)
+        
+        if not self.runcmd(self.PATH_MOSES_PHRASESCORE + ' ' + self.gets2tfilename('phraseextract') + ' ' +  self.gets2tfilename('s2t.sorted') + ' ' + self.gets2tfilename('.halfphrasescore') + ' ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (source->target)', self.gets2tfilename('.halfphrasescore') )        
+        if not self.runcmd(self.PATH_MOSES_PHRASESCORE + ' ' + self.gett2sfilename('phraseextract') + ' '  + self.gets2tfilename('t2s.sorted') + ' ' + self.gett2sfilename('.halfphrasescore') + ' --Inverse ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (target->source)', self.gett2sfilename('.halfphrasescore') )        
+        if not self.runcmd('LC_ALL=C sort ' + self.gett2sfilename('halfphrasescore') + ' > ' +  self.gett2sfilename('halfphrasescore.sorted'),'Sorting Inverse Table',  self.gets2tfilename('halfphrasescore.sorted') ): return False        
+        if not self.runcmd(self.PATH_MOSES_PHRASESCORE_CONSOLIDATE + ' ' + self.gets2tfilename('.halfphrasescore') + ' ' + self.gett2sfilename('.halfphrasescore.sorted') + ' ' + self.gets2tfilename('.phrasetable') + ' ' + self.PHRASESCORE_OPTIONS, 'Consolidating two phrase table halves', self.gets2tfilename('.halfphrasescore') )
+        return True
+        
+        
+        
     def build_moses_phrasetable(self):
         #TODO
         return True
