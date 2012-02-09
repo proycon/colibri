@@ -31,8 +31,8 @@ class MTWrapper(object):
         self.BUILD_MOSES_SYMAL = True #Symmetrise word alignments
         self.BUILD_MOSES_WORDTRANSTABLE = True #Extract word translation table
         self.BUILD_MOSES_PHRASEEXTRACT = True  #Phrase extraction
-        self.BUILD_MOSES_PHRASESCORE = True  #Phrase scoring
-        self.BUILD_MOSES_PHRASETRANSTABLE = False
+        self.BUILD_MOSES_PHRASETRANSTABLE = True  #Phrase scoring (this will make a phrase table!)
+        #self.BUILD_MOSES_PHRASETRANSTABLE = False
         
         #defaults
         self.PATH_UCTO = self.findpath('ucto')      
@@ -44,8 +44,10 @@ class MTWrapper(object):
         self.PATH_MOSES = self.findpath('moses')
         self.PATH_MOSES_GIZA2BAL = self.findpath('scripts/giza2bal.pl')
         self.PATH_MOSES_SYMAL = self.findpath('symal')
-        self.PATH_MOSES_WORDTRANSTABLE =  self.findpath('scripts/moses-lexicalextractiontable.py')
-        self.PATH_MOSES_PHRASEEXTRACT = self.findpath('scripts/extract')
+        self.PATH_MOSES_WORDTRANSTABLE = self.findpath('scripts/moses-lexicalextractiontable.py')
+        self.PATH_MOSES_PHRASEEXTRACT = self.findpath('scripts/training/phrase-extract/extract')
+        self.PATH_MOSES_PHRASEEXTRACT_CONSOLIDATE = self.findpath('scripts/training/phrase-extract/consolidate')
+        self.PATH_MOSES_PHRASEEXTRACT_SCORE = self.findpath('scripts/training/phrase-extract/score')        
         self.PATH_SRILM = self.findpath('ngram-count')   
         
         #default options
@@ -103,10 +105,14 @@ class MTWrapper(object):
             print >>sys.stderr,red("Dependency error: ucto not found (PATH_UCTO=" + self.PATH_UCTO + ")")
             sane = False
             
-        
         if self.BUILD_MOSES_PHRASETRANSTABLE:
+            if not self.BUILD_MOSES_PHRASEEXTRACT:
+                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASEEXTRACT automatically enabled because BUILD_MOSES_PHRASECORE is too")
+                self.BUILD_MOSES_PHRASEEXTRACT = True        
+        
+        if self.BUILD_MOSES_PHRASEEXTRACT:
             if not self.BUILD_MOSES_SYMAL:
-                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_WORDTRANSTABLE automatically enabled because BUILD_MOSES_PHRASETABLE is too")
+                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_WORDTRANSTABLE automatically enabled because BUILD_MOSES_PHRASEEXTRACT is too")
                 self.BUILD_MOSES_WORDTRANSTABLE = True
                 
         
@@ -216,8 +222,8 @@ class MTWrapper(object):
         
         if self.BUILD_MOSES_SYMAL and not self.build_moses_symal(): return False
         if self.BUILD_MOSES_WORDTRANSTABLE and not self.build_moses_wordtranstable(): return False
-        if self.BUILD_MOSES_PHRASEEXTRACT and not self.build_moses_phraseextrac(): return False
-        if self.BUILD_MOSES_PHRASETRANSTABLE and not self.build_moses_phrasetable(): return False
+        if self.BUILD_MOSES_PHRASEEXTRACT and not self.build_moses_phraseextract(): return False
+        if self.BUILD_MOSES_PHRASETRANSTABLE and not self.build_moses_phrasescore(): return False
         return True    
 
         
@@ -317,22 +323,26 @@ class MTWrapper(object):
         return True        
     
     def build_moses_phrasescore(self):
+        #TODO: IMplement memscore alternative?
         if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('s2t') + ' > ' +  self.gets2tfilename('s2t.sorted'),'Sorting Lexical Translation Table (source->target)',  self.gets2tfilename('s2t.sorted') ): return False
         if not self.runcmd('LC_ALL=C sort ' + self.gett2sfilename('t2s') + ' > ' +  self.gett2sfilename('t2s.sorted'),'Sorting Lexical Translation Table (target->source)',  self.gets2tfilename('t2s.sorted') ): return False
         
         self.PHRASESCORE_OPTIONS= '' #--Hierarchical --WordAlignment (--Inverse)
         
-        if not self.runcmd(self.PATH_MOSES_PHRASESCORE + ' ' + self.gets2tfilename('phraseextract') + ' ' +  self.gets2tfilename('s2t.sorted') + ' ' + self.gets2tfilename('.halfphrasescore') + ' ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (source->target)', self.gets2tfilename('.halfphrasescore') )        
-        if not self.runcmd(self.PATH_MOSES_PHRASESCORE + ' ' + self.gett2sfilename('phraseextract') + ' '  + self.gets2tfilename('t2s.sorted') + ' ' + self.gett2sfilename('.halfphrasescore') + ' --Inverse ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (target->source)', self.gett2sfilename('.halfphrasescore') )        
+        if not self.runcmd(self.PATH_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract') + ' ' +  self.gets2tfilename('s2t.sorted') + ' ' + self.gets2tfilename('.halfphrasescore') + ' ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (source->target)', self.gets2tfilename('.halfphrasescore') ): return False        
+        if not self.runcmd(self.PATH_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gett2sfilename('phraseextract') + ' '  + self.gets2tfilename('t2s.sorted') + ' ' + self.gett2sfilename('.halfphrasescore') + ' --Inverse ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (target->source)', self.gett2sfilename('.halfphrasescore') ): return False        
         if not self.runcmd('LC_ALL=C sort ' + self.gett2sfilename('halfphrasescore') + ' > ' +  self.gett2sfilename('halfphrasescore.sorted'),'Sorting Inverse Table',  self.gets2tfilename('halfphrasescore.sorted') ): return False        
-        if not self.runcmd(self.PATH_MOSES_PHRASESCORE_CONSOLIDATE + ' ' + self.gets2tfilename('.halfphrasescore') + ' ' + self.gett2sfilename('.halfphrasescore.sorted') + ' ' + self.gets2tfilename('.phrasetable') + ' ' + self.PHRASESCORE_OPTIONS, 'Consolidating two phrase table halves', self.gets2tfilename('.halfphrasescore') )
+        if not self.runcmd(self.PATH_MOSES_PHRASEEXTRACT_CONSOLIDATE + ' ' + self.gets2tfilename('.halfphrasescore') + ' ' + self.gett2sfilename('.halfphrasescore.sorted') + ' ' + self.gets2tfilename('.phrasetable') + ' ' + self.PHRASESCORE_OPTIONS, 'Consolidating two phrase table halves', self.gets2tfilename('.halfphrasescore') ): return False
         return True
         
+    def build_moses_reorderingmodel(self):
+        #TODO, skipped for now
+        return False
+    
+    def build_moses_generationmodel(self):
+        #TODO, skipped for now
+        return False
         
-        
-    def build_moses_phrasetable(self):
-        #TODO
-        return True
     
 def usage():
     print >>sys.stderr,"mtwrapper.py -- MT wrapper - Outputs a MT wrapper script (python)"
