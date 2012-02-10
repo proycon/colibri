@@ -31,7 +31,7 @@ class MTWrapper(object):
             ('PATH_SRILM', '','Base directory where SRILM is installed'),
             ('PATH_GIZA', '','Base directory where GIZA++ is installed'),
             ('EXEC_UCTO', '','Path to ucto binary'),
-            ('EXEC_TIMBL', '','Path to timbl binary'),
+            ('EXEC_SRILM', 'ngram-count','Path to ngram-count (SRILM)'),
             ('EXEC_TIMBL', '','Path to timbl binary'),
             ('EXEC_GIZA_MKCLS', '','Path to mkcls (part of GIZA++)'),
             ('EXEC_GIZA', '','Path to GIZA++ binary'),
@@ -70,6 +70,14 @@ class MTWrapper(object):
                 del kwargs[key]
             else:
                 setattr(self,key,default)
+                
+        self.EXEC_MOSES_GIZA2BAL = self.findpath(self.EXEC_MOSES_GIZA2BAL,self.PATH_MOSES)
+        self.EXEC_MOSES_SYMAL = self.findpath(self.EXEC_MOSES_SYMAL,self.PATH_MOSES)
+        self.EXEC_MOSES_WORDTRANSTABLE = self.findpath(self.EXEC_MOSES_WORDTRANSTABLE,self.PATH_MOSES)
+        self.EXEC_MOSES_PHRASEEXTRACT = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT,self.PATH_MOSES)
+        self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE,self.PATH_MOSES)
+        self.EXEC_MOSES_PHRASEEXTRACT_SCORE = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT_SCORE,self.PATH_MOSES)
+        
         
         for key in kwargs:
             print >>sys.stderr, "Unknown configuration directive: " + key
@@ -78,11 +86,13 @@ class MTWrapper(object):
         
         
 
-    def findpath(self, name):
+    def findpath(self, name, basepath = ''):                        
         for path in os.environ['PATH'].split(':'):
             if os.path.exists(path + '/' + name) and not os.path.isdir(path + '/' + name):
                 print >>sys.stderr, green("Found " + name + " in " + path)
                 return path + '/' + name
+        if basepath: 
+            return basepath + '/' + name    
         return ""
 
     def check_common(self):
