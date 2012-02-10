@@ -30,13 +30,14 @@ class MTWrapper(object):
             ('PATH_MOSES', '','Base directory where Moses is installed'),
             ('PATH_SRILM', '','Base directory where SRILM is installed'),
             ('PATH_GIZA', '','Base directory where GIZA++ is installed'),
-            ('EXEC_UCTO', '','Path to ucto binary'),
+            ('PATH_COLIBRI', '','Base directory where COLIBRI is installed'),
+            ('EXEC_UCTO', 'ucto','Path to ucto binary'),
             ('EXEC_SRILM', 'ngram-count','Path to ngram-count (SRILM)'),
-            ('EXEC_TIMBL', '','Path to timbl binary'),
-            ('EXEC_GIZA_MKCLS', '','Path to mkcls (part of GIZA++)'),
-            ('EXEC_GIZA', '','Path to GIZA++ binary'),
-            ('EXEC_GIZA_PLAIN2SNT', '','Path to plain2snt.out (part of GIZA++)'),
-            ('EXEC_GIZA_SNT2COOC', '','Path to snt2cooc.out (part of GIZA++)'),
+            ('EXEC_TIMBL', 'timbl','Path to timbl binary'),
+            ('EXEC_GIZA_MKCLS', 'mkcls','Path to mkcls (part of GIZA++)'),
+            ('EXEC_GIZA', 'GIZA++','Path to GIZA++ binary'),
+            ('EXEC_GIZA_PLAIN2SNT', 'plain2snt.out','Path to plain2snt.out (part of GIZA++)'),
+            ('EXEC_GIZA_SNT2COOC', 'snt2cooc.out','Path to snt2cooc.out (part of GIZA++)'),
             ('EXEC_MOSES_GIZA2BAL', 'scripts/symal/giza2bal.pl', ''),
             ('EXEC_MOSES_SYMAL', 'scripts/symal/symal', ''),
             ('EXEC_MOSES_WORDTRANSTABLE','scripts/moses-lexicalextractiontable.py',''),
@@ -51,7 +52,7 @@ class MTWrapper(object):
             ('PHRASEEXTRACT_MAX_PHRASE_LENGTH',7,''),
             ('PHRASEEXTRACT_REORDERING_FLAGS','',''), 
         #" --model wbe-mslr --model phrase-mslr --model hier-mslr" #Maximum lexical reordering
-        ]
+    ]
 
     
     def parsekwargs(self, key, default, **kwargs):
@@ -73,7 +74,7 @@ class MTWrapper(object):
                 
         self.EXEC_MOSES_GIZA2BAL = self.findpath(self.EXEC_MOSES_GIZA2BAL,self.PATH_MOSES)
         self.EXEC_MOSES_SYMAL = self.findpath(self.EXEC_MOSES_SYMAL,self.PATH_MOSES)
-        self.EXEC_MOSES_WORDTRANSTABLE = self.findpath(self.EXEC_MOSES_WORDTRANSTABLE,self.PATH_MOSES)
+        self.EXEC_MOSES_WORDTRANSTABLE = self.findpath(self.EXEC_MOSES_WORDTRANSTABLE,self.PATH_COLIBRI)
         self.EXEC_MOSES_PHRASEEXTRACT = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT,self.PATH_MOSES)
         self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE,self.PATH_MOSES)
         self.EXEC_MOSES_PHRASEEXTRACT_SCORE = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT_SCORE,self.PATH_MOSES)
