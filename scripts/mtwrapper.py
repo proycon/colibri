@@ -447,7 +447,7 @@ if __name__ == "__main__":
             f.write(",\n")
     f.write(")\nmtwrapper.start()\n")
     f.close()
-    os.chown(settingsfile, 0754)
+    os.chmod(settingsfile, 0754)
     os.system('vim ' + settingsfile)    
 
 
