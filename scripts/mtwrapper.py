@@ -281,9 +281,15 @@ class MTWrapper(object):
         
     def init(self):
         if not os.path.exists(self.getsourcefilename('txt')):
-            os.symlink(self.TRAINSOURCECORPUS, self.getsourcefilename('txt') )
+            try:
+                os.symlink(self.TRAINSOURCECORPUS, self.getsourcefilename('txt') )
+            except:
+                pass
         if not os.path.exists(self.gettargetfilename('txt')):
-            os.symlink(self.TRAINTARGETCORPUS, self.gettargetfilename('txt') )
+            try:
+                os.symlink(self.TRAINTARGETCORPUS, self.gettargetfilename('txt') )
+            except:
+                pass
         return True        
         
         
