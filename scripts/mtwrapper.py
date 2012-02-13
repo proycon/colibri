@@ -45,7 +45,7 @@ class MTWrapper(object):
             ('EXEC_MOSES_PHRASEEXTRACT','scripts/training/phrase-extract/extract',''),
             ('EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE','scripts/training/phrase-extract/consolidate',''),
             ('EXEC_MOSES_PHRASEEXTRACT_SCORE','scripts/training/phrase-extract/score',''),
-            ('MKCLS_OPTIONS','-m2 -C50',''),
+            ('MKCLS_OPTIONS','-m2 -c50',''),
             ('GIZA_OPTIONS','-p0 0.98 -m1 5 -m2 0 -m3 3 -m4 3 -nsmooth 4 -model4smoothfactor 0.4',''),
             ('SRILM_OPTIONS','-order 3 -interpolate -kndiscount',''),
             ('UCTO_OPTIONS','-m -n',''),
