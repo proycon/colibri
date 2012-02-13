@@ -54,7 +54,7 @@ def get_lexical(sourcecorpusfilename, targetcorpusfilename, symalfilename, outpu
                 total_source[sourcewords[source]] += 1
                 total_target[targetwords[target]] += 1
                 
-                if not source in word_translation: word_translation[source] = defaultdict(int)
+                if not sourcewords[source] in word_translation: word_translation[sourcewords[source]] = defaultdict(int)
                 word_translation[sourcewords[source]][targetwords[target]] += 1
     
     
