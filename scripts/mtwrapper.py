@@ -76,7 +76,8 @@ class MTWrapper(object):
         
         self.EXEC_GIZA = self.findpath(self.EXEC_GIZA,self.PATH_GIZA)
         self.EXEC_GIZA_PLAIN2SNT = self.findpath(self.EXEC_GIZA_PLAIN2SNT,self.PATH_GIZA)
-        self.EXEC_GIZA_SNT2COOC = self.findpath(self.EXEC_GIZA_SNT2COOC, self.PATH_GIZA)        
+        self.EXEC_GIZA_SNT2COOC = self.findpath(self.EXEC_GIZA_SNT2COOC, self.PATH_GIZA)
+        self.EXEC_GIZA_MKCLS = self.findpath(self.EXEC_GIZA_MKCLS, self.PATH_GIZA)        
         self.EXEC_MOSES = self.findpath(self.EXEC_MOSES,self.PATH_MOSES)        
         self.EXEC_MOSES_GIZA2BAL = self.findpath(self.EXEC_MOSES_GIZA2BAL,self.PATH_MOSES)
         self.EXEC_MOSES_SYMAL = self.findpath(self.EXEC_MOSES_SYMAL,self.PATH_MOSES)
