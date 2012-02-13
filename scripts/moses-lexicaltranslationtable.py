@@ -38,7 +38,11 @@ def get_lexical(sourcecorpusfilename, targetcorpusfilename, symalfilename, outpu
         target_aligned = defaultdict(int)    
     
         for alignmentpoint in alignmentpoints:
-            source, target = alignmentpoint.split('-',1) 
+            try:
+                source, target = alignmentpoint.split('-',1)
+            except: 
+                print >>sys.stderr,"ERROR: Expected source-target pair, got '" + alignmentpoint + "' in " + symalfilename
+                sys.exit(2)
             if source >= len(sourcewords) or target >= len(targetwords):
                 print >>sys.stderr,"WARNING: Alignment point " + str(source) + '-' + str(target) +  " is out of range, ignoring"
             else: 
