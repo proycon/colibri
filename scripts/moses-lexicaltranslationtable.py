@@ -61,7 +61,7 @@ def get_lexical(sourcecorpusfilename, targetcorpusfilename, symalfilename, outpu
             if i in source_aligned:
                 continue
             else:
-                if not source in word_translation: word_translation[source] = defaultdict(int)
+                if not sourceword in word_translation: word_translation[sourceword] = defaultdict(int)
                 word_translation[sourceword][None] += 1            
                 total_source[sourceword] += 1
                 total_target[None] += 1
