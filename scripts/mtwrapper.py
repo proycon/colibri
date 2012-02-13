@@ -451,7 +451,7 @@ if __name__ == "__main__":
         if isinstance(default, str) or isinstance(default,  unicode):            
             f.write("    " + key + "=\"" + default + "\"")
         else:
-            f.write("    " + key + "=\"" + str(default) + "\"")
+            f.write("    " + key + "=" + str(default))
             
         if help:
             f.write(", #" + help + "\n")
