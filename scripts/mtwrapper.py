@@ -41,7 +41,7 @@ class MTWrapper(object):
             ('EXEC_MOSES', 'moses','Path to Moses binary'),
             ('EXEC_MOSES_GIZA2BAL', 'scripts/training/symal/giza2bal.pl', ''),
             ('EXEC_MOSES_SYMAL', 'scripts/training/symal/symal', ''),
-            ('EXEC_MOSES_WORDTRANSTABLE','scripts/moses-lexicalextractiontable.py',''),
+            ('EXEC_MOSES_WORDTRANSTABLE','scripts/moses-lexicaltranslationtable.py',''),
             ('EXEC_MOSES_PHRASEEXTRACT','scripts/training/phrase-extract/extract',''),
             ('EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE','scripts/training/phrase-extract/consolidate',''),
             ('EXEC_MOSES_PHRASEEXTRACT_SCORE','scripts/training/phrase-extract/score',''),
