@@ -16,7 +16,7 @@ def get_lexical(sourcecorpusfilename, targetcorpusfilename, symalfilename, outpu
     word_translation = {None: defaultdict(int) }
     
     while True:
-        symalline = symalfile.read()
+        symalline = symalfile.readline()
         if not symalline: 
             break
         try:
@@ -30,9 +30,9 @@ def get_lexical(sourcecorpusfilename, targetcorpusfilename, symalfilename, outpu
             print >>sys.stderr,"ERROR: Premature end of " + targetcorpusfilename
             break
     
-        sourcewords = sourceline.strip().split(' ')
-        targetwords = targetline.strip().split(' ')
-        alignmentpoints = symalline.strip().split(' ')
+        sourcewords = sourceline.strip(' \n\t\r').split(' ')
+        targetwords = targetline.strip(' \n\t\r').split(' ')
+        alignmentpoints = symalline.strip(' \n\t\r').split(' ')
     
         source_aligned = defaultdict(int)
         target_aligned = defaultdict(int)    
