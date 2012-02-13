@@ -355,7 +355,7 @@ class MTWrapper(object):
         return True        
     
     def build_moses_wordtranstable(self):
-        if not self.runcmd(self.EXEC_MOSES_WORDTRANSTABLE + ' ' + self.getsourcefilename('txt') + ' ' + self.gettargetfilename('txt') + ' ' + self.gets2tfilename('bal')  + ' ' + self.gets2tfilename(),'Build of Lexical Translation Table', self.gets2tfilename('s2t'), self.gets2tfilename('t2s')): return False 
+        if not self.runcmd(self.EXEC_MOSES_WORDTRANSTABLE + ' ' + self.getsourcefilename('txt') + ' ' + self.gettargetfilename('txt') + ' ' + self.gets2tfilename('symal')  + ' ' + self.gets2tfilename(),'Build of Lexical Translation Table', self.gets2tfilename('s2t'), self.gets2tfilename('t2s')): return False 
         return True
     
     def build_moses_phraseextract(self):        
