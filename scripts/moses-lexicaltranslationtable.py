@@ -20,12 +20,12 @@ def get_lexical(sourcecorpusfilename, targetcorpusfilename, symalfilename, outpu
         if not symalline: 
             break
         try:
-            sourceline = targetfile.read()
+            sourceline = targetfile.readline()
         except:
             print >>sys.stderr,"ERROR: Premature end of " + targetcorpusfilename
             break
         try:
-            targetline = targetfile.read()
+            targetline = targetfile.readline()
         except:
             print >>sys.stderr,"ERROR: Premature end of " + targetcorpusfilename
             break
