@@ -350,7 +350,7 @@ class MTWrapper(object):
         
 
     def build_moses_symal(self):
-        if not self.runcmd(self.EXEC_MOSES_GIZA2BAL + ' -d ' + self.gett2sfilename('A3.final') + ' -i ' + self.gets2tfilename('A3.final') + ' > ' + self.gets2tfilename('bal'),'Data preparation for Symmetric Aligner', self.gets2tfilename('bal')): return False
+        if not self.runcmd(self.EXEC_MOSES_GIZA2BAL + ' -i ' + self.gett2sfilename('A3.final') + ' -d ' + self.gets2tfilename('A3.final') + ' > ' + self.gets2tfilename('bal'),'Data preparation for Symmetric Aligner', self.gets2tfilename('bal')): return False
         if not self.runcmd(self.EXEC_MOSES_SYMAL + ' ' + self.SYMAL_OPTIONS + ' < ' + self.gets2tfilename('bal') + ' > '  + self.gets2tfilename('symal'), 'Moses Symmetric Alignment',self.gets2tfilename('symal')): return False 
         return True        
     
