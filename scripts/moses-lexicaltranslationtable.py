@@ -46,7 +46,7 @@ def get_lexical(sourcecorpusfilename, targetcorpusfilename, symalfilename, outpu
                 print >>sys.stderr,"ERROR: Expected source-target pair, got '" + alignmentpoint + "' in " + symalfilename
                 sys.exit(2)
             if source >= len(sourcewords) or target >= len(targetwords):
-                print >>sys.stderr,"WARNING: Alignment point " + str(source) + '-' + str(target) +  " is out of range, ignoring"
+                print >>sys.stderr,"WARNING: Alignment point " + str(source) + '-' + str(target) +  " is out of range ("+str(len(sourcewords))+"-"+str(len(targetwords))+ "), ignoring"
             else: 
                 source_aligned[source] += 1
                 target_aligned[target] += 1
