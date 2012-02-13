@@ -40,6 +40,8 @@ def get_lexical(sourcecorpusfilename, targetcorpusfilename, symalfilename, outpu
         for alignmentpoint in alignmentpoints:
             try:
                 source, target = alignmentpoint.split('-',1)
+                source = int(source)
+                target = int(target)
             except: 
                 print >>sys.stderr,"ERROR: Expected source-target pair, got '" + alignmentpoint + "' in " + symalfilename
                 sys.exit(2)
