@@ -38,6 +38,7 @@ class MTWrapper(object):
             ('EXEC_GIZA', 'GIZA++','Path to GIZA++ binary'),
             ('EXEC_GIZA_PLAIN2SNT', 'plain2snt.out','Path to plain2snt.out (part of GIZA++)'),
             ('EXEC_GIZA_SNT2COOC', 'snt2cooc.out','Path to snt2cooc.out (part of GIZA++)'),
+            ('EXEC_MOSES', 'moses','Path to Moses binary'),
             ('EXEC_MOSES_GIZA2BAL', 'scripts/symal/giza2bal.pl', ''),
             ('EXEC_MOSES_SYMAL', 'scripts/symal/symal', ''),
             ('EXEC_MOSES_WORDTRANSTABLE','scripts/moses-lexicalextractiontable.py',''),
@@ -71,7 +72,12 @@ class MTWrapper(object):
                 del kwargs[key]
             else:
                 setattr(self,key,default)
-                
+        
+        
+        self.EXEC_GIZA = self.findpath(self.EXEC_GIZA,self.PATH_GIZA)
+        self.EXEC_GIZA_PLAIN2SNT = self.findpath(self.EXEC_GIZA_PLAIN2SNT,self.PATH_GIZA)
+        self.EXEC_GIZA_SNT2COOC = self.findpath(self.EXEC_GIZA_SNT2COOC, self.PATH_GIZA)        
+        self.EXEC_MOSES = self.findpath(self.EXEC_MOSES,self.PATH_MOSES)        
         self.EXEC_MOSES_GIZA2BAL = self.findpath(self.EXEC_MOSES_GIZA2BAL,self.PATH_MOSES)
         self.EXEC_MOSES_SYMAL = self.findpath(self.EXEC_MOSES_SYMAL,self.PATH_MOSES)
         self.EXEC_MOSES_WORDTRANSTABLE = self.findpath(self.EXEC_MOSES_WORDTRANSTABLE,self.PATH_COLIBRI)
