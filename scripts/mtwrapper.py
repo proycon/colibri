@@ -197,10 +197,10 @@ class MTWrapper(object):
     
 
     def getsourcefilename(self, extension):
-        return self.WORKDIR + self.CORPUSNAME + '-' + self.SOURCELANG + '.' + extension
+        return self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '.' + extension
 
     def gettargetfilename(self, extension):
-        return self.WORKDIR + self.CORPUSNAME + '-' + self.TARGETLANG + '.' + extension
+        return self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.TARGETLANG + '.' + extension
     
     def gets2tfilename(self, extension='', longform =False):
         s = self.WORKDIR + self.CORPUSNAME + '-' + self.SOURCELANG 
