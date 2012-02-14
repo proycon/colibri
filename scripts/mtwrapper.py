@@ -290,7 +290,7 @@ class MTWrapper(object):
                 if os.path.exists(outputfile):                
                     print >>sys.stderr, green("Produced output file " + outputfile)
                 else:
-                    print >>sys.stderr, bold(red("Expected output file " + outputfile, ", not produced!"))
+                    print >>sys.stderr, bold(red("Expected output file " + outputfile+ ", not produced!"))
                     error = True
             if error: 
                 return False    
