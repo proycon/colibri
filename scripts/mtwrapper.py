@@ -51,8 +51,8 @@ class MTWrapper(object):
             ('UCTO_OPTIONS','-m -n',''),
             ('SYMAL_OPTIONS','-alignment=grow -diagonal=yes -final=yes -both=no',''), #-hmmiterations 5 -hmmdumpfrequency -5'
             ('PHRASEEXTRACT_MAX_PHRASE_LENGTH',7,''),
-            ('PHRASEEXTRACT_REORDERING_FLAGS','',''), 
-        #" --model wbe-mslr --model phrase-mslr --model hier-mslr" #Maximum lexical reordering
+            ('PHRASEEXTRACT_REORDERING_FLAGS','',''), #" --model wbe-mslr --model phrase-mslr --model hier-mslr" #Maximum lexical reordering 
+            ('PHRASESCORE_OPTIONS', '',''), #--Hierarchical --WordAlignment (--Inverse)        
     ]
 
     
@@ -350,7 +350,7 @@ class MTWrapper(object):
         
 
     def build_moses_symal(self):
-        if not self.runcmd(self.EXEC_MOSES_GIZA2BAL + ' -i ' + self.gett2sfilename('A3.final') + ' -d ' + self.gets2tfilename('A3.final') + ' > ' + self.gets2tfilename('bal'),'Data preparation for Symmetric Aligner', self.gets2tfilename('bal')): return False
+        if not self.runcmd(self.EXEC_MOSES_GIZA2BAL + ' -d ' + self.gett2sfilename('A3.final') + ' -i ' + self.gets2tfilename('A3.final') + ' > ' + self.gets2tfilename('bal'),'Data preparation for Symmetric Aligner', self.gets2tfilename('bal')): return False
         if not self.runcmd(self.EXEC_MOSES_SYMAL + ' ' + self.SYMAL_OPTIONS + ' < ' + self.gets2tfilename('bal') + ' > '  + self.gets2tfilename('symal'), 'Moses Symmetric Alignment',self.gets2tfilename('symal')): return False 
         return True        
     
@@ -359,21 +359,24 @@ class MTWrapper(object):
         return True
     
     def build_moses_phraseextract(self):        
-        #TODO: Support for EPPEX and Hierchical rule extraction and reordering models     
-        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT + ' ' + self.getsourcefilename('txt') + ' ' + self.gettargetfilename('txt') + ' ' + self.gets2tfilename('phraseextract') + ' ' + str(self.PHRASEEXTRACT_MAX_PHRASE_LENGTH) + ' orientation ' + self.PHRASEEXTRACT_REORDERING_FLAGS ,'Phrase Extraction', self.gets2tfilename('phraseextract')): return False 
+        #TODO: Support for EPPEX and Hierchical rule extraction and reordering models
+        cmd = self.EXEC_MOSES_PHRASEEXTRACT + ' ' + self.gettargetfilename('txt') + ' ' + self.getsourcefilename('txt') + ' ' + self.gets2tfilename('symal') + ' ' + self.gets2tfilename('phraseextract') + ' ' + str(self.PHRASEEXTRACT_MAX_PHRASE_LENGTH)
+        if self.PHRASEEXTRACT_REORDERING_FLAGS: cmd += ' orientation ' + self.PHRASEEXTRACT_REORDERING_FLAGS
+        if not self.runcmd(cmd ,'Phrase Extraction', self.gets2tfilename('phraseextract')): return False 
         return True        
     
     def build_moses_phrasescore(self):
         #TODO: IMplement memscore alternative?
         if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('s2t') + ' > ' +  self.gets2tfilename('s2t.sorted'),'Sorting Lexical Translation Table (source->target)',  self.gets2tfilename('s2t.sorted') ): return False
-        if not self.runcmd('LC_ALL=C sort ' + self.gett2sfilename('t2s') + ' > ' +  self.gett2sfilename('t2s.sorted'),'Sorting Lexical Translation Table (target->source)',  self.gets2tfilename('t2s.sorted') ): return False
+        if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('t2s') + ' > ' +  self.gett2sfilename('t2s.sorted'),'Sorting Lexical Translation Table (target->source)',  self.gets2tfilename('t2s.sorted') ): return False
         
-        self.PHRASESCORE_OPTIONS= '' #--Hierarchical --WordAlignment (--Inverse)
         
-        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract') + ' ' +  self.gets2tfilename('s2t.sorted') + ' ' + self.gets2tfilename('.halfphrasescore') + ' ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (source->target)', self.gets2tfilename('.halfphrasescore') ): return False        
-        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gett2sfilename('phraseextract') + ' '  + self.gets2tfilename('t2s.sorted') + ' ' + self.gett2sfilename('.halfphrasescore') + ' --Inverse ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (target->source)', self.gett2sfilename('.halfphrasescore') ): return False        
-        if not self.runcmd('LC_ALL=C sort ' + self.gett2sfilename('halfphrasescore') + ' > ' +  self.gett2sfilename('halfphrasescore.sorted'),'Sorting Inverse Table',  self.gets2tfilename('halfphrasescore.sorted') ): return False        
-        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE + ' ' + self.gets2tfilename('.halfphrasescore') + ' ' + self.gett2sfilename('.halfphrasescore.sorted') + ' ' + self.gets2tfilename('.phrasetable') + ' ' + self.PHRASESCORE_OPTIONS, 'Consolidating two phrase table halves', self.gets2tfilename('.halfphrasescore') ): return False
+        
+        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract') + ' ' +  self.gets2tfilename('s2t.sorted') + ' ' + self.gets2tfilename('.sourcehalf') + ' ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (source->target)', self.gets2tfilename('.sourcehalf') ): return False        
+        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract') + ' '  + self.gets2tfilename('t2s.sorted') + ' ' + self.gets2tfilename('.targethalf') + ' --Inverse ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (target->source)', self.gett2sfilename('.targethalf') ): return False        
+        if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('targethalf') + ' > ' +  self.gett2sfilename('targethalf.sorted'),'Sorting Inverse Table',  self.gets2tfilename('targethalf.sorted') ): return False
+                
+        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE + ' ' + self.gets2tfilename('.sourcehalf') + ' ' + self.gets2tfilename('.targethalf.sorted') + ' ' + self.gets2tfilename('.phrasetable') + ' ' + self.PHRASESCORE_OPTIONS, 'Consolidating two phrase table halves', self.gets2tfilename('.phrasetable') ): return False
         return True
         
     def build_moses_reorderingmodel(self):
