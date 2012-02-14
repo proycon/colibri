@@ -284,6 +284,16 @@ class MTWrapper(object):
         else:
            print >>sys.stderr, bold(red("Runtime error from " + name + '(return code ' + str(r) + ')'))
            return False
+        if outputfiles:
+            error = False
+            for outputfile in outputfiles:
+                if os.path.exists(outputfile):                
+                    print >>sys.stderr, green("Produced output file " + outputfile)
+                else:
+                    print >>sys.stderr, bold(red("Expected output file " + outputfile, ", not produced!"))
+                    error = True
+            if error: 
+                return False    
         return True
         
     def init(self):
