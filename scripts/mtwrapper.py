@@ -378,9 +378,8 @@ class MTWrapper(object):
     def build_moses_phrasescore(self):
         #TODO: IMplement memscore alternative?
         if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('s2t') + ' > ' +  self.gets2tfilename('s2t.sorted'),'Sorting Lexical Translation Table (source->target)',  self.gets2tfilename('s2t.sorted') ): return False
-        if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('t2s') + ' > ' +  self.gett2sfilename('t2s.sorted'),'Sorting Lexical Translation Table (target->source)',  self.gets2tfilename('t2s.sorted') ): return False
-        
-        
+        if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('t2s') + ' > ' +  self.gets2tfilename('t2s.sorted'),'Sorting Lexical Translation Table (target->source)',  self.gets2tfilename('t2s.sorted') ): return False
+                
         
         if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract') + ' ' +  self.gets2tfilename('s2t.sorted') + ' ' + self.gets2tfilename('.sourcehalf') + ' ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (source->target)', self.gets2tfilename('.sourcehalf') ): return False        
         if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract') + ' '  + self.gets2tfilename('t2s.sorted') + ' ' + self.gets2tfilename('.targethalf') + ' --Inverse ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (target->source)', self.gett2sfilename('.targethalf') ): return False        
