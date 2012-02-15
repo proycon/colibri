@@ -264,9 +264,9 @@ class MTWrapper(object):
             for filename in glob.glob(self.WORKDIR + '/' + mask):
                 try:
                     os.unlink(filename)
-                    print >>sys.stderr, green("Removed " + name)
+                    print >>sys.stderr, green("Removed " + filename)
                 except:
-                    print >>sys.stderr, bold(red("Unable to remove " + name))
+                    print >>sys.stderr, bold(red("Unable to remove " + filename))
                     
             
     def starttrain(self):                
