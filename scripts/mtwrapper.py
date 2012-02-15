@@ -6,6 +6,7 @@ import os
 import subprocess
 import getopt
 import codecs
+import glob
 
 
 class MTWrapper(object):
@@ -221,6 +222,7 @@ class MTWrapper(object):
     def usage(self):
         print >>sys.stderr,"Usage: " + os.path.basename(sys.argv[0]) + ' [command]'
         print >>sys.stderr,"Commands:"
+        print >>sys.stderr,"\tclean [all|giza|moses|colibri]  Clean generated files"
         print >>sys.stderr,"\ttrain                           Train the MT system"      
         #print >>sys.stderr,"\tclean [all|moses|giza|srilm]    Clean data"
 
@@ -233,12 +235,39 @@ class MTWrapper(object):
             sys.exit(2)
         if cmd == 'train':
             self.starttrain()
+        elif cmd == 'clean':
+            targets = sys.argv[2:]
+            self.clean(targets)
         elif cmd == 'help' or cmd == '-h':
             self.usage()
         else:
             print >>sys.stderr,"Error, no such command: " + cmd
             self.usage()
             sys.exit(2)
+            
+    def clean(self, targets):            
+        if not targets:
+            print >>sys.stderr,"Nothing to clean, please specify one or more targets: all, giza, moses, colibri, srilm"
+            sys.exit(2)        
+        
+        if 'giza' in targets or 'all' in targets:
+            self.cleanfiles('*.final', '*.vcb','*.snt','*.classes','*.classes.cats','*.gizacfg','*.Decoder.config','*.perp','*.cooc')
+        if 'moses' in targets or 'all' in targets:
+            self.cleanfiles('*.bal', '*.symal','*.s2t','*.s2t.sorted','*.t2s','*.t2s','*.sorted','*.phrasetable', '*.phraseextract', '*.phraseextract.inv','*.half')
+        if 'srilm' in targets or 'all' in targets:
+            self.cleanfiles('*.final', '*.vcb','*.snt','*.classes','*.classes.cats','*.gizacfg','*.Decoder.config','*.perp','*.cooc')
+        if 'colibri' in targets or 'all' in targets:
+            self.cleanfiles('*.colibri')
+            
+    def cleanfiles(self, *args):
+        for mask in args:
+            for filename in glob.glob(self.WORKDIR + '/' + mask):
+                try:
+                    os.unlink(filename)
+                    print >>sys.stderr, green("Removed " + name)
+                except:
+                    print >>sys.stderr, bold(red("Unable to remove " + name))
+                    
             
     def starttrain(self):                
         self.init()
