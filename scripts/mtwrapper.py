@@ -14,9 +14,11 @@ class MTWrapper(object):
             ('WORKDIR','','Full path to the working directory that holds all data for the system'),
             ('CORPUSNAME', '','The name of the corpus (without language codes)'),
             ('TRAINSOURCECORPUS', '','The file containing to the source-language part of the parallel corpus used for training, one sentence per line'),
-            ('TRAINTARGETCORPUS', '','The file containing to the taret-language part of the parallel corpus used for training, one sentence per line'),
+            ('TRAINTARGETCORPUS', '','The file containing to the target-language part of the parallel corpus used for training, one sentence per line'),
             ('SOURCELANG', '','A language code identifying the source language'),
             ('TARGETLANG', '','A language code identifying the target language'),
+            ('DEVSOURCECORPUS', '','The file containing to the source-language part of the parallel corpus used for parameter tuning, one sentence per line'),
+            ('DEVTARGETCORPUS', '','The file containing to the target-language part of the parallel corpus used for parameter tuning, one sentence per line'),            
             ('TOKENIZE_SOURCECORPUS', False,''),
             ('TOKENIZE_TARGETCORPUS', False,''),
             ('BUILD_SRILM_SOURCEMODEL',False,'Build a source-language model'),
@@ -28,6 +30,8 @@ class MTWrapper(object):
             ('BUILD_MOSES_WORDTRANSTABLE', False,'Build lexical translation table'),
             ('BUILD_MOSES_PHRASEEXTRACT', False,'Extract phrases'),
             ('BUILD_MOSES_PHRASETRANSTABLE', False,'Build phrase translation table'),
+            ('BUILD_MOSES', False,'Build moses configuration, necessary for decoding using moses'),
+            ('BUILD_MOSES_MERT', False,'Do Minimum Error Rate Training for Moses (on development set)'),            
             ('PATH_MOSES', '','Base directory where Moses is installed'),
             ('PATH_SRILM', '','Base directory where SRILM is installed'),
             ('PATH_GIZA', '','Base directory where GIZA++ is installed'),
@@ -48,7 +52,8 @@ class MTWrapper(object):
             ('EXEC_MOSES_PHRASEEXTRACT_SCORE','scripts/training/phrase-extract/score',''),
             ('MKCLS_OPTIONS','-m2 -c50',''),
             ('GIZA_OPTIONS','-p0 0.98 -m1 5 -m2 0 -m3 3 -m4 3 -nsmooth 4 -model4smoothfactor 0.4',''),
-            ('SRILM_OPTIONS','-order 3 -interpolate -kndiscount',''),
+            ('SRILM_ORDER',3,'N-gram size for language model'),
+            ('SRILM_OPTIONS','-interpolate -kndiscount','Further SRILM options (do not use -order here, use SRILM_ORDER instead)'),
             ('UCTO_OPTIONS','-m -n',''),
             ('SYMAL_OPTIONS','-alignment=grow -diagonal=yes -final=yes -both=no',''), #-hmmiterations 5 -hmmdumpfrequency -5'
             ('PHRASEEXTRACT_MAX_PHRASE_LENGTH',7,''),
@@ -140,6 +145,11 @@ class MTWrapper(object):
         if (self.TOKENIZE_SOURCECORPUS or self.TOKENIZE_TARGETCORPUS) and (not self.EXEC_UCTO or not os.path.isfile(self.EXEC_UCTO)):
             print >>sys.stderr,red("Dependency error: ucto not found (EXEC_UCTO=" + self.EXEC_UCTO + ")")
             sane = False
+
+        if self.BUILD_MOSES_:
+            if not self.BUILD_MOSES_PHRASETRANSTABLE:
+                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_MOSES is too")
+                self.BUILD_MOSES_PHRASETRANSTABLE = True                 
             
         if self.BUILD_MOSES_PHRASETRANSTABLE:
             if not self.BUILD_MOSES_PHRASEEXTRACT:
@@ -223,8 +233,9 @@ class MTWrapper(object):
         print >>sys.stderr,"Usage: " + os.path.basename(sys.argv[0]) + ' [command]'
         print >>sys.stderr,"Commands:"
         print >>sys.stderr,"\tclean [all|giza|moses|colibri]  Clean generated files"
-        print >>sys.stderr,"\ttrain                           Train the MT system"      
-        #print >>sys.stderr,"\tclean [all|moses|giza|srilm]    Clean data"
+        print >>sys.stderr,"\ttrain                           Train the MT system"
+        print >>sys.stderr,"\ttest                            Test the MT system"      
+        
 
 
     def start(self):        
@@ -253,9 +264,9 @@ class MTWrapper(object):
         if 'giza' in targets or 'all' in targets:
             self.cleanfiles('*.final', '*.vcb','*.snt','*.classes','*.classes.cats','*.gizacfg','*.Decoder.config','*.perp','*.cooc')
         if 'moses' in targets or 'all' in targets:
-            self.cleanfiles('*.bal', '*.symal','*.s2t','*.s2t.sorted','*.t2s','*.t2s','*.sorted','*.phrasetable', '*.phraseextract', '*.phraseextract.inv','*.half')
+            self.cleanfiles('*.bal', '*.symal','*.s2t','*.s2t.sorted','*.t2s','*.t2s','*.sorted','*.phrasetable', '*.phraseextract', '*.phraseextract.inv','*.half','moses.ini')
         if 'srilm' in targets or 'all' in targets:
-            self.cleanfiles('*.final', '*.vcb','*.snt','*.classes','*.classes.cats','*.gizacfg','*.Decoder.config','*.perp','*.cooc')
+            self.cleanfiles('*.srilm')
         if 'colibri' in targets or 'all' in targets:
             self.cleanfiles('*.colibri')
             
@@ -288,15 +299,15 @@ class MTWrapper(object):
         if self.BUILD_MOSES_WORDTRANSTABLE and not self.build_moses_wordtranstable(): return False
         if self.BUILD_MOSES_PHRASEEXTRACT and not self.build_moses_phraseextract(): return False
         if self.BUILD_MOSES_PHRASETRANSTABLE and not self.build_moses_phrasescore(): return False
+        
+        #TODO: Moses reordering model and generation model
+        
+        if self.BUILD_MOSES and not self.build_moses(): return False
+        
         return True    
 
-        
-    def runcmd(self, cmd, name, *outputfiles, **kwargs):
-        if 'successcodes' in kwargs:
-            successcodes = kwargs['successcodes']
-        else:
-            successcodes = [0]
-        print >>sys.stderr, "----------------------------------------------------"
+
+    def header(self,name,*outputfiles, **kwargs):
         if outputfiles:
             skip = True
             for outputfile in outputfiles:
@@ -305,9 +316,19 @@ class MTWrapper(object):
                     break                                
             if skip:
                 print >>sys.stderr, bold(yellow("Skipping " + name))  + " (output files already present)"
-                return True        
-        print >>sys.stderr, bold(white("Calling " + name)) + ": " + cmd        
-        r = subprocess.call(cmd, shell=True)
+                return False        
+        if 'cmd' in kwargs:
+            print >>sys.stderr, bold(white("Calling " + name)) + ": " + kwargs['cmd']            
+        else:
+            print >>sys.stderr, bold(white("Calling " + name))
+        return True
+            
+            
+    def footer(self, name, r, *outputfiles, **kwargs):
+        if 'successcodes' in kwargs:
+            successcodes = kwargs['successcodes']
+        else:
+            successcodes = [0]
         if r in successcodes:
            print >>sys.stderr, bold(green("Finished " + name))
         else:
@@ -323,7 +344,13 @@ class MTWrapper(object):
                     error = True
             if error: 
                 return False    
-        return True
+        return True            
+        
+    def runcmd(self, cmd, name, *outputfiles, **kwargs):        
+        print >>sys.stderr, "----------------------------------------------------"
+        if not self.header(name,*outputfiles, cmd=cmd): return True  
+        r = subprocess.call(cmd, shell=True)
+        return self.footer(name, r, *outputfiles,**kwargs)
         
     def init(self):
         if not os.path.exists(self.getsourcefilename('txt')):
@@ -358,10 +385,10 @@ class MTWrapper(object):
         return True        
 
     def build_srilm_targetmodel(self):
-        if not self.runcmd(self.EXEC_SRILM + ' ' + self.SRILM_OPTIONS + ' -text ' + self.gettargetfilename('txt') + ' -lm ' + self.gettargetfilename('lm'),'SRILM Target-language Model', self.gettargetfilename('lm')): return False
+        if not self.runcmd(self.EXEC_SRILM + ' -order ' + str(self.SRILM_ORDER) + ' ' + self.SRILM_OPTIONS + ' -text ' + self.gettargetfilename('txt') + ' -lm ' + self.gettargetfilename('srilm'),'SRILM Target-language Model', self.gettargetfilename('srilm')): return False
         
     def build_srilm_sourcemodel(self):
-        if not self.runcmd(self.EXEC_SRILM + ' ' + self.SRILM_OPTIONS + ' -text ' + self.getsourcefilename('txt') + ' -lm ' + self.getsourcefilename('lm'),'SRILM Source-language Model', self.getsourcefilename('lm')): return False        
+        if not self.runcmd(self.EXEC_SRILM +' -order ' + str(self.SRILM_ORDER) + ' ' + self.SRILM_OPTIONS + ' -text ' + self.getsourcefilename('txt') + ' -lm ' + self.getsourcefilename('srilm'),'SRILM Source-language Model', self.getsourcefilename('srilm')): return False        
 
     def tokenize_sourcecorpus(self):
         if not os.path.exists(self.getsourcefilename('notok')):
@@ -429,6 +456,30 @@ class MTWrapper(object):
     def build_moses_generationmodel(self):
         #TODO, skipped for now
         return False
+        
+    def build_moses(self):
+        outputfiles = ['moses.ini']
+        if not self.header('Build Moses Configuration',*outputfiles): return True
+        f = open('moses.ini','w')
+        f.write('#Moses INI, produced by mtwrapper.py\n')
+        f.write('[input-factors]\n')
+        f.write('0\n\n')
+        f.write('[mapping]\n')
+        f.write('T 0\n\n') 
+        f.write('# translation tables: source-factors, target-factors, number of scores, file\n')
+        f.write('[ttable-file]\n')
+        if self.BUILD_MOSES_PHRASETABLE:
+            f.write('0 0 5 ' + self.gets2tfilename('phrasetable') + '\n\n')
+        f.write('[lmodel-file]\n')
+        if self.BUILD_SRILM_TARGETMODEL:
+            f.write('0 0 ' + str(self.SRILM_ORDER) + ' ' + self.gettargetfilename('srilm') + '\n\n')
+        f.write('[ttable-limit]\n20\n\n')
+        f.write('[weight-d]\n1\n\n')
+        f.write('[weight-l]\n1\n\n')
+        f.write('[weight-t]\n1\n\n')
+        f.write('[weight-w]\n0\n\n')        
+        f.close()
+        return self.footer('Build Moses Configuration', 0, *outputfiles)
         
     
 def usage():
