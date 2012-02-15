@@ -146,7 +146,7 @@ class MTWrapper(object):
             print >>sys.stderr,red("Dependency error: ucto not found (EXEC_UCTO=" + self.EXEC_UCTO + ")")
             sane = False
 
-        if self.BUILD_MOSES_:
+        if self.BUILD_MOSES:
             if not self.BUILD_MOSES_PHRASETRANSTABLE:
                 print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_MOSES is too")
                 self.BUILD_MOSES_PHRASETRANSTABLE = True                 
