@@ -149,7 +149,10 @@ class MTWrapper(object):
         if self.BUILD_MOSES:
             if not self.BUILD_MOSES_PHRASETRANSTABLE:
                 print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_MOSES is too")
-                self.BUILD_MOSES_PHRASETRANSTABLE = True                 
+                self.BUILD_MOSES_PHRASETRANSTABLE = True
+            if not self.BUILD_SRILM_TARGETMODEL:                 
+                print >>sys.stderr,yellow("Configuration update: BUILD_SRILM_TARGETMODEL automatically enabled because BUILD_MOSES is too")
+                self.BUILD_SRILM_TARGETMODEL = True
             
         if self.BUILD_MOSES_PHRASETRANSTABLE:
             if not self.BUILD_MOSES_PHRASEEXTRACT:
@@ -468,7 +471,7 @@ class MTWrapper(object):
         f.write('T 0\n\n') 
         f.write('# translation tables: source-factors, target-factors, number of scores, file\n')
         f.write('[ttable-file]\n')
-        if self.BUILD_MOSES_PHRASETABLE:
+        if self.BUILD_MOSES_PHRASETRANSTABLE:
             f.write('0 0 5 ' + self.gets2tfilename('phrasetable') + '\n\n')
         f.write('[lmodel-file]\n')
         if self.BUILD_SRILM_TARGETMODEL:
