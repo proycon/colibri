@@ -18,7 +18,7 @@ class MTWrapper(object):
             ('SOURCELANG', '','A language code identifying the source language'),
             ('TARGETLANG', '','A language code identifying the target language'),
             ('DEVSOURCECORPUS', '','The file containing to the source-language part of the parallel corpus used for parameter tuning, one sentence per line'),
-            ('DEVTARGETCORPUS', '','The file containing to the target-language part of the parallel corpus used for parameter tuning, one sentence per line'),            
+            ('DEVTARGETCORPUS', '','The file containing to the target-language part of the parallel corpus used for parameter tuning, one sentence per line. Used as reference in parameter tuning.'),           
             ('TOKENIZE_SOURCECORPUS', False,''),
             ('TOKENIZE_TARGETCORPUS', False,''),
             ('BUILD_SRILM_SOURCEMODEL',False,'Build a source-language model'),
@@ -50,6 +50,7 @@ class MTWrapper(object):
             ('EXEC_MOSES_PHRASEEXTRACT','scripts/training/phrase-extract/extract',''),
             ('EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE','scripts/training/phrase-extract/consolidate',''),
             ('EXEC_MOSES_PHRASEEXTRACT_SCORE','scripts/training/phrase-extract/score',''),
+            ('EXEC_MOSES_MERT','scripts/training/mert-moses.pl',''),
             ('MKCLS_OPTIONS','-m2 -c50',''),
             ('GIZA_OPTIONS','-p0 0.98 -m1 5 -m2 0 -m3 3 -m4 3 -nsmooth 4 -model4smoothfactor 0.4',''),
             ('SRILM_ORDER',3,'N-gram size for language model'),
@@ -93,6 +94,10 @@ class MTWrapper(object):
         self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE,self.PATH_MOSES)
         self.EXEC_MOSES_PHRASEEXTRACT_SCORE = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT_SCORE,self.PATH_MOSES)
         
+        if self.PATH_MOSES:
+            self.PATH_MOSES_MERT = self.PATH_MOSES + '/mert'
+        else:        
+            self.PATH_MOSES_MERT = ''            
         
         for key in kwargs:
             print >>sys.stderr, "Unknown configuration directive: " + key
@@ -146,6 +151,20 @@ class MTWrapper(object):
         if (self.TOKENIZE_SOURCECORPUS or self.TOKENIZE_TARGETCORPUS) and (not self.EXEC_UCTO or not os.path.isfile(self.EXEC_UCTO)):
             print >>sys.stderr,red("Dependency error: ucto not found (EXEC_UCTO=" + self.EXEC_UCTO + ")")
             sane = False
+
+        if self.BUILD_MOSES_MERT:
+            if not self.BUILD_MOSES: 
+                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES automatically enabled because BUILD_MOSES_MERT is too")
+                self.BUILD_MOSES = True
+            if not self.DEVSOURCECORPUS or not os.path.exists(self.DEVSOURCECORPUS):
+                sane = False
+                print >>sys.stderr,red("Configuration error: DEVSOURCECORPUS not found! Required for BUILD_MOSES_MERT !")
+            if not self.DEVTARGETCORPUS or not os.path.exists(self.DEVTARGETCORPUS):
+                sane = False
+                print >>sys.stderr,red("Configuration error: DEVTARGETCORPUS not found! Required for BUILD_MOSES_MERT !")
+            if not self.PATH_MOSES_MERT or not os.path.isdir(self.PATH_MOSES_MERT):
+                sane = False
+                print >>sys.stderr,red("PATH_MOSES_MERT not found, please set PATH_MOSES !")
 
         if self.BUILD_MOSES:
             if not self.BUILD_MOSES_PHRASETRANSTABLE:
@@ -312,6 +331,7 @@ class MTWrapper(object):
 
 
     def header(self,name,*outputfiles, **kwargs):
+        print >>sys.stderr, "----------------------------------------------------"
         if outputfiles:
             skip = True
             for outputfile in outputfiles:
@@ -351,7 +371,6 @@ class MTWrapper(object):
         return True            
         
     def runcmd(self, cmd, name, *outputfiles, **kwargs):        
-        print >>sys.stderr, "----------------------------------------------------"
         if not self.header(name,*outputfiles, cmd=cmd): return True  
         r = subprocess.call(cmd, shell=True)
         return self.footer(name, r, *outputfiles,**kwargs)
@@ -486,7 +505,10 @@ class MTWrapper(object):
         f.write('[weight-w]\n0\n\n')        
         f.close()
         return self.footer('Build Moses Configuration', 0, *outputfiles)
-        
+    
+    def build_moses_mert(self):            
+        if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' moses.ini'): return False 
+        return True
     
 def usage():
     print >>sys.stderr,"mtwrapper.py -- MT wrapper - Outputs a MT wrapper script (python)"
