@@ -79,7 +79,8 @@ class MTWrapper(object):
             else:
                 setattr(self,key,default)
         
-        
+        self.EXEC_TIMBL = self.findpath(self.EXEC_TIMBL)
+        self.EXEC_SRILM = self.findpath(self.EXEC_SRILM,self.PATH_SRILM)
         self.EXEC_GIZA = self.findpath(self.EXEC_GIZA,self.PATH_GIZA)
         self.EXEC_GIZA_PLAIN2SNT = self.findpath(self.EXEC_GIZA_PLAIN2SNT,self.PATH_GIZA)
         self.EXEC_GIZA_SNT2COOC = self.findpath(self.EXEC_GIZA_SNT2COOC, self.PATH_GIZA)
