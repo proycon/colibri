@@ -390,9 +390,11 @@ class MTWrapper(object):
 
     def build_srilm_targetmodel(self):
         if not self.runcmd(self.EXEC_SRILM + ' -order ' + str(self.SRILM_ORDER) + ' ' + self.SRILM_OPTIONS + ' -text ' + self.gettargetfilename('txt') + ' -lm ' + self.gettargetfilename('srilm'),'SRILM Target-language Model', self.gettargetfilename('srilm')): return False
+        return True
         
     def build_srilm_sourcemodel(self):
-        if not self.runcmd(self.EXEC_SRILM +' -order ' + str(self.SRILM_ORDER) + ' ' + self.SRILM_OPTIONS + ' -text ' + self.getsourcefilename('txt') + ' -lm ' + self.getsourcefilename('srilm'),'SRILM Source-language Model', self.getsourcefilename('srilm')): return False        
+        if not self.runcmd(self.EXEC_SRILM +' -order ' + str(self.SRILM_ORDER) + ' ' + self.SRILM_OPTIONS + ' -text ' + self.getsourcefilename('txt') + ' -lm ' + self.getsourcefilename('srilm'),'SRILM Source-language Model', self.getsourcefilename('srilm')): return False
+        return True        
 
     def tokenize_sourcecorpus(self):
         if not os.path.exists(self.getsourcefilename('notok')):
