@@ -406,12 +406,17 @@ class MTWrapper(object):
     
     def build_moses_phrasescore(self):
         #TODO: IMplement memscore alternative?
-        if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('s2t') + ' > ' +  self.gets2tfilename('s2t.sorted'),'Sorting Lexical Translation Table (source->target)',  self.gets2tfilename('s2t.sorted') ): return False
-        if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('t2s') + ' > ' +  self.gets2tfilename('t2s.sorted'),'Sorting Lexical Translation Table (target->source)',  self.gets2tfilename('t2s.sorted') ): return False
+        
+        #if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('s2t') + ' > ' +  self.gets2tfilename('s2t.sorted'),'Sorting Lexical Translation Table (source->target)',  self.gets2tfilename('s2t.sorted') ): return False
+        #if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('t2s') + ' > ' +  self.gets2tfilename('t2s.sorted'),'Sorting Lexical Translation Table (target->source)',  self.gets2tfilename('t2s.sorted') ): return False
+        
+        if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('phraseextract') + ' > ' +  self.gets2tfilename('phraseextract.sorted'),'Sorting Extracted Phrases (source->target)',  self.gets2tfilename('phraseextract.sorted') ): return False
+        if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('phraseextract.inv') + ' > ' +  self.gets2tfilename('phraseextract.inv.sorted'),'Sorting Extracted Phrases Table (target->source)',  self.gets2tfilename('phraseextract.inv.sorted') ): return False
                 
         
-        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract') + ' ' +  self.gets2tfilename('s2t.sorted') + ' ' + self.gets2tfilename('half.s2t') + ' ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (source->target)', self.gets2tfilename('half.s2t') ): return False        
-        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract') + ' '  + self.gets2tfilename('t2s.sorted') + ' ' + self.gets2tfilename('half.t2s') + ' --Inverse ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (target->source)', self.gets2tfilename('half.t2s') ): return False        
+        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract.sorted') + ' ' +  self.gets2tfilename('s2t') + ' ' + self.gets2tfilename('half.s2t') + ' ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (source->target)', self.gets2tfilename('half.s2t') ): return False        
+        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract.inv.sorted') + ' '  + self.gets2tfilename('t2s') + ' ' + self.gets2tfilename('half.t2s') + ' --Inverse ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (target->source)', self.gets2tfilename('half.t2s') ): return False        
+        
         if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('half.t2s') + ' > ' +  self.gets2tfilename('half.t2s.sorted'),'Sorting Inverse Table',  self.gets2tfilename('half.t2s.sorted') ): return False
                 
         if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE + ' ' + self.gets2tfilename('half.s2t') + ' ' + self.gets2tfilename('half.t2s.sorted') + ' ' + self.gets2tfilename('phrasetable') + ' ' + self.PHRASESCORE_OPTIONS, 'Consolidating two phrase table halves', self.gets2tfilename('phrasetable') ): return False
