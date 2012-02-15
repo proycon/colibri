@@ -57,6 +57,7 @@ class MTWrapper(object):
             ('SRILM_OPTIONS','-interpolate -kndiscount','Further SRILM options (do not use -order here, use SRILM_ORDER instead)'),
             ('UCTO_OPTIONS','-m -n',''),
             ('SYMAL_OPTIONS','-alignment=grow -diagonal=yes -final=yes -both=no',''), #-hmmiterations 5 -hmmdumpfrequency -5'
+            ('MOSES_MERT_OPTIONS','','See http://www.statmt.org/moses/?n=FactoredTraining.Tuning'),
             ('PHRASEEXTRACT_MAX_PHRASE_LENGTH',7,''),
             ('PHRASEEXTRACT_REORDERING_FLAGS','',''), #" --model wbe-mslr --model phrase-mslr --model hier-mslr" #Maximum lexical reordering 
             ('PHRASESCORE_OPTIONS', '',''), #--Hierarchical --WordAlignment (--Inverse)        
@@ -138,6 +139,27 @@ class MTWrapper(object):
             print >>sys.stderr,red("Configuration error: TARGETLANG not specified!")
             sane = False
         return sane
+
+
+    def check_run(self):        
+        if self.BUILD_MOSES:
+            if not self.EXEC_MOSES or not os.path.isfile(self.EXEC_MOSES):
+                print >>sys.stderr,bold(red("Error: Moses not found!"))
+                return False
+            elif not os.path.exists(self.WORKDIR + '/moses.ini'):
+                print >>sys.stderr,bold(red("Error: No Moses configuration found. Did you forget to train the system first?"))
+                return False
+            elif not os.path.exists(self.WORKDIR + '/' + self.gets2tfilename('phrasetable')):
+                print >>sys.stderr,bold(red("Error: No Moses phrasetable found. Did you forget to train the system first?"))
+                return False
+        else:
+            print >>sys.stderr,bold(red("Error: System is not runnable, no MT decoder enabled"))
+            return False
+        return True
+    
+    def check_test(self):
+        #TODO: Implement
+        return True
 
     def check_train(self):
         sane = True                            
@@ -255,11 +277,13 @@ class MTWrapper(object):
     def usage(self):
         print >>sys.stderr,"Usage: " + os.path.basename(sys.argv[0]) + ' [command]'
         print >>sys.stderr,"Commands:"
-        print >>sys.stderr,"\tclean [all|giza|moses|colibri]  Clean generated files"
         print >>sys.stderr,"\ttrain                           Train the MT system"
-        print >>sys.stderr,"\ttest                            Test the MT system"      
-        
-
+        print >>sys.stderr,"\trun <inputfile> [options]       Run the MT system on the specified input file"
+        print >>sys.stderr,"\t\t-t                            Tokenise the input file"
+        print >>sys.stderr,"\t\t-o <outputfile>               Output file (default: stdout)"        
+        print >>sys.stderr,"\ttest <inputfile> <reference>    Evaluate the MT system on the specified input file and reference file (one sentence per line)"                                
+        print >>sys.stderr,"\tclean [all|giza|moses|colibri]  Clean generated files"
+        print >>sys.stderr,"\tbranch <new-directory>          Create a new branch based on this project (files are symlinked instead of copied)"
 
     def start(self):        
         try:
@@ -268,16 +292,61 @@ class MTWrapper(object):
             self.usage()
             sys.exit(2)
         if cmd == 'train':
-            self.starttrain()
+            if not self.starttrain():
+                sys.exit(1)                
         elif cmd == 'clean':
             targets = sys.argv[2:]
-            self.clean(targets)
+            if not self.clean(targets):
+                sys.exit(1)
+        elif cmd == 'run':
+            try:
+                inputfile = sys.argv[2]
+            except:
+                print >>sys.stderr, "ERROR: Expected: run <inputfile>"                
+                self.usage()
+                sys.exit(2)
+            try:
+                opts, args = getopt.getopt(sys.argv[3:], "to:")
+            except getopt.GetoptError, err:
+                # print help information and exit:
+                print str(err) # will print something like "option -a not recognized"
+                self.usage()
+                sys.exit(2)
+                
+            outputfile = 'output.txt'
+            tokenise = False             
+            for o, a in opts:
+                if o == "-t":
+                    tokenise = True
+                elif o in ("-o", "--output"):
+                    outputfile = a
+                else:
+                    assert False, "unhandled option"
+            
+            if self.run(inputfile, outputfile, tokenise):
+                os.system('cat ' + outputfile)                
+            else:
+                print >>sys.stderr, "An error occurred whilst trying to run the system" 
+                sys.exit(1)
+    
+        elif cmd == 'branch':          
+            
+            #TODO: IMplement
+            raise NotImplemented
+            
+        elif cmd == 'test':            
+            
+            if not self.test(inputfile): 
+                sys.exit(1)
+                
         elif cmd == 'help' or cmd == '-h':
             self.usage()
         else:
             print >>sys.stderr,"Error, no such command: " + cmd
             self.usage()
             sys.exit(2)
+        
+        sys.exit(0)
             
     def clean(self, targets):            
         if not targets:
@@ -292,16 +361,19 @@ class MTWrapper(object):
             self.cleanfiles('*.srilm')
         if 'colibri' in targets or 'all' in targets:
             self.cleanfiles('*.colibri')
+        return True
             
     def cleanfiles(self, *args):
+        ok = True
         for mask in args:
             for filename in glob.glob(self.WORKDIR + '/' + mask):
                 try:
                     os.unlink(filename)
                     print >>sys.stderr, green("Removed " + filename)
                 except:
+                    ok = False
                     print >>sys.stderr, bold(red("Unable to remove " + filename))
-                    
+        return ok
             
     def starttrain(self):                
         self.init()
@@ -507,8 +579,38 @@ class MTWrapper(object):
         return self.footer('Build Moses Configuration', 0, *outputfiles)
     
     def build_moses_mert(self):            
-        if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' moses.ini'): return False 
+        if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' moses.ini'): return False 
         return True
+    
+    def run(self, inputfile, outputfile='output.txt', tokenise=False):        
+        if tokenise and (not self.EXEC_UCTO or not os.path.isfile(self.EXEC_UCTO)):
+            print >>sys.stderr,red("Error: Ucto not found! Unable to tokenise!" )
+            return False
+        
+        if not self.check_common(): return False
+        if not self.check_run(): return False
+        
+        if not os.path.isfile(inputfile):
+            print >>sys.stderr,red("Error: Input file " + inputfile + " not found!" )
+            return False
+    
+                
+        if tokenise:        
+            if not self.runcmd(self.EXEC_UCTO + ' -n -L' + self.SOURCELANG +  ' ' + inputfile + ' ' + 'input.txt','Tokenisation of Input File'): return False                                        
+        else:
+            os.symlink(inputfile, 'input.txt' )
+        
+        if not self.runmoses(): return False
+        
+        os.rename('output.txt',outputfile)        
+        return True
+    
+    def runmoses(self):
+        if not self.runcmd(self.EXEC_MOSES + ' -f moses.ini < input.txt > output.txt','Moses Decoder'): return False
+        return True 
+            
+        
+        
     
 def usage():
     print >>sys.stderr,"mtwrapper.py -- MT wrapper - Outputs a MT wrapper script (python)"
