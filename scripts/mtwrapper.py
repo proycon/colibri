@@ -7,12 +7,45 @@ import subprocess
 import getopt
 import codecs
 import glob
+from pynlpl.evaluation import filesampler
 
+def bold(s):
+   CSI="\x1B["
+   return CSI+"1m" + s + CSI + "0m"
+   
+def white(s):
+   CSI="\x1B["
+   return CSI+"37m" + s + CSI + "0m"   
+
+
+def red(s):
+   CSI="\x1B["
+   return CSI+"31m" + s + CSI + "0m"
+   
+def green(s):
+   CSI="\x1B["
+   return CSI+"32m" + s + CSI + "0m"   
+
+
+def yellow(s):
+   CSI="\x1B["
+   return CSI+"33m" + s + CSI + "0m"   
+
+   
+def blue(s):
+   CSI="\x1B["
+   return CSI+"34m" + s + CSI + "0m"   
+   
+
+def magenta(s):
+   CSI="\x1B["
+   return CSI+"35m" + s + CSI + "0m"   
 
 class MTWrapper(object):
     defaults = [
             ('WORKDIR','','Full path to the working directory that holds all data for the system'),
             ('CORPUSNAME', '','The name of the corpus (without language codes)'),
+            ('EXPERIMENTNAME', '','A unique name for this experiment (optional)'),
             ('SOURCELANG', '','A language code identifying the source language'),
             ('TARGETLANG', '','A language code identifying the target language'),
             ('TRAINSOURCECORPUS', '','The file containing to the source-language part of the parallel corpus used for training, one sentence per line'),
@@ -418,6 +451,10 @@ class MTWrapper(object):
             self.cleanfiles('*.srilm')
         if 'colibri' in targets or 'all' in targets:
             self.cleanfiles('*.colibri')
+        if 'test' in targets or 'all' in targets:
+            self.cleanfiles('output.txt','*.score')
+        if 'score' in targets or 'all' in targets:
+            self.cleanfiles('*.score')
         return True
             
     def cleanfiles(self, *args):
@@ -853,6 +890,7 @@ class MTWrapper(object):
             return False
         return True
 
+   
 
 
 
@@ -861,26 +899,31 @@ def usage():
     print >>sys.stderr,"mtwrapper.py -- MT wrapper - Outputs a MT wrapper script (python)"
     print >>sys.stderr,"Mandatory Input:"
     print >>sys.stderr,"\t-n <name>         Name of the corpus [MANDATORY!]"
-    print >>sys.stderr,"\t-s <file>         Corpus in source language"
-    print >>sys.stderr,"\t-t <file>         Corpus in target language"
+    print >>sys.stderr,"\t-s <file>         Corpus in source language (for training)"
+    print >>sys.stderr,"\t-t <file>         Corpus in target language (for training)"
     print >>sys.stderr,"\t-S <code>         Source language (iso-639-1 or 3)"
     print >>sys.stderr,"\t-T <code>         Target language (iso-639-1 or 3)"
     print >>sys.stderr,"\t-w <dir>          Work directory (by default: current dir)"
-    
-    
+    print >>sys.stderr,"Optional Input:"
+    print >>sys.stderr,"\t--testset=n          Extract a random sample of n lines as test set, and exclude from training"
+    print >>sys.stderr,"\t--devset=n           Extract a random sample of n lines as development set, and exclude from training"
+    #print >>sys.stderr,"\t--trainset=n         Restrict the training set to a random sample of n lines"
+
 if __name__ == "__main__":        
     
-    workdir = os.getcwd()
+    
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hs:t:S:T:n:w:")
+        opts, args = getopt.getopt(sys.argv[1:], "hs:t:S:T:n:x:w:", ['testset=','devset=','trainset='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
         sys.exit(2)
 
-    sourcecorpusfile = targetcorpusfile = sourcelang = targetlang = corpusname = workdir = ""
-
+    sourcecorpusfile = targetcorpusfile = sourcelang = targetlang = corpusname = expname = workdir = ""
+    devsourcecorpusfile = devtargetcorpusfile = testsourcecorpusfile = testtargetcorpusfile = ""
+    trainset = testset = devset = 0
+    
 
     for o, a in opts:
         if o == '-s':
@@ -893,23 +936,95 @@ if __name__ == "__main__":
             targetlang = a        
         elif o == '-n':
             corpusname = a
+        elif o == '-x':
+            expname = a
         elif o == '-w':
             workdir = a
+        elif o == '-d':
+            parentdir = a
+        elif o == '--testset=':
+            testset = int(a)
+        elif o == '--devset=':
+            devset = int(a)            
+        elif o == '--trainset=':
+            trainset = int(a)            
         else:
             usage()
             sys.exit(0)
     
-    if not corpusname:
+    if not corpusname or not sourcelang or not targetlang:
         usage()
         sys.exit(2)
         
-    settingsfile = workdir + '/mt-' + corpusname + '.py'
+    if workdir and not os.path.isdir(workdir):            
+        print>>sys.stderr, "Creating work directory " + workdir
+        os.mkdir(workdir)
+    elif workdir:
+        print>>sys.stderr, yellow("WARNING: work directory " +  workdir + " already exists! Press ENTER to continue or ctrl-C to abort")
+        raw_input()
+    elif parentdir:
+        if not os.path.isdir(parentdir):
+            print>>sys.stderr, "Creating parent directory " + parentdir
+            os.mkdir(parentdir)
+        workdir = parentdir + '/' + corpusname + '-' + sourcelang + '-' + targetlang
+        if expname: workdir += '-' + expname
+        if workdir and not os.path.isdir(workdir):            
+            print>>sys.stderr, "Creating work directory " + workdir
+            os.mkdir(workdir)
+        elif workdir:
+            print>>sys.stderr, yellow("WARNING: work directory " +  workdir + " already exists! Press ENTER to continue or ctrl-C to abort")
+            raw_input()
+    else:
+        workdir = os.getcwd()        
+        
+    if testset or devset:
+        if not sourcecorpusfile or not targetcorpusfile:
+            print>>sys.stderr, "Error: You need to specify -s and -t on the command line!"
+        filesampler([sourcecorpusfile, targetcorpusfile],  testset, devset, workdir )
+        
+        #rename files
+        oldfile = workdir + '/' + os.path.basename(sourcecorpusfile) + '.dev' 
+        if os.path.exists(oldfile): 
+            os.rename(oldfile, workdir + '/' + corpusname + '-' + sourcelang + '-dev.txt')
+            devsourcecorpusfile = workdir + '/' + corpusname + '-' + sourcelang + '-dev.txt'
+        
+        oldfile = workdir + '/' + os.path.basename(targetcorpusfile) + '.dev' 
+        if os.path.exists(oldfile): 
+            os.rename(oldfile, workdir + '/'+ corpusname + '-' + targetlang + '-dev.txt')
+            devtargetcorpusfile = workdir + '/' +corpusname + '-' + targetlang + '-dev.txt'
+
+        oldfile = workdir + '/' + os.path.basename(sourcecorpusfile) + '.test' 
+        if os.path.exists(oldfile): 
+            os.rename(oldfile, workdir + '/' +corpusname + '-' + sourcelang + '-test.txt')
+            testsourcecorpusfile = workdir + '/' +corpusname + '-' + sourcelang + '-test.txt'
+        
+        oldfile = workdir + '/' + os.path.basename(targetcorpusfile) + '.test' 
+        if os.path.exists(oldfile): 
+            os.rename(oldfile, workdir + '/' + corpusname + '-' + targetlang + '-test.txt')
+            testtargetcorpusfile = workdir + '/' + corpusname + '-' + targetlang + '-test.txt'
+        
+        oldfile = workdir + '/' + os.path.basename(sourcecorpusfile) + '.train' 
+        if os.path.exists(oldfile): 
+            os.rename(oldfile, workdir + '/' + corpusname + '-' + sourcelang + '-train.txt')
+            sourcecorpusfile = workdir + '/' + corpusname + '-' + sourcelang + '-train.txt'
+        
+        oldfile = workdir + '/' + os.path.basename(targetcorpusfile) + '.train' 
+        if os.path.exists(oldfile):
+            os.rename(oldfile, workdir + '/' + corpusname + '-' + targetlang + '-train.txt')
+            targetcorpusfile = workdir + '/' + corpusname + '-' + targetlang + '-train.txt'
+                
+    if expname:
+        settingsfile = workdir + '/mt-' + corpusname + '-' + sourcelang + '-' + targetlang + '-' + expname + '.py'
+    else:
+        settingsfile = workdir + '/mt-' + corpusname + '-' + sourcelang + '-' + targetlang + '.py'
     f = codecs.open(settingsfile,'w','utf-8')
     f.write("#! /usr/bin/env python\n# -*- coding: utf8 -*-#\n\nfrom mtwrapper import MTWrapper\n")
     f.write("mtwrapper = MTWrapper(\n")
     for key, default, help in MTWrapper.defaults:            
         if key == 'CORPUSNAME': 
             default = corpusname
+        if key == 'EXPERIMENTNAME': 
+            default = expname
         elif key == 'WORKDIR':
             default = workdir
         elif key == 'TRAINSOURCECORPUS':
@@ -920,6 +1035,15 @@ if __name__ == "__main__":
             default = sourcelang
         elif key == 'TARGETLANG':
             default = targetlang
+        elif key == 'TESTSOURCECORPUS':
+            default = testsourcecorpusfile
+        elif key == 'TESTTARGETCORPUS':
+            default = testtargetcorpusfile            
+        elif key == 'DEVSOURCECORPUS':
+            default = devsourcecorpusfile
+        elif key == 'DEVTARGETCORPUS':
+            default = devtargetcorpusfile
+            
         
         if isinstance(default, str) or isinstance(default,  unicode):            
             f.write("    " + key + "=\"" + default + "\"")
@@ -937,35 +1061,4 @@ if __name__ == "__main__":
 
 
 
-def bold(s):
-   CSI="\x1B["
-   return CSI+"1m" + s + CSI + "0m"
-   
-def white(s):
-   CSI="\x1B["
-   return CSI+"37m" + s + CSI + "0m"   
-
-
-def red(s):
-   CSI="\x1B["
-   return CSI+"31m" + s + CSI + "0m"
-   
-def green(s):
-   CSI="\x1B["
-   return CSI+"32m" + s + CSI + "0m"   
-
-
-def yellow(s):
-   CSI="\x1B["
-   return CSI+"33m" + s + CSI + "0m"   
-
-   
-def blue(s):
-   CSI="\x1B["
-   return CSI+"34m" + s + CSI + "0m"   
-   
-
-def magenta(s):
-   CSI="\x1B["
-   return CSI+"35m" + s + CSI + "0m"   
 
