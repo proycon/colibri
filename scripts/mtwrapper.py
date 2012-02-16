@@ -36,6 +36,7 @@ class MTWrapper(object):
             ('PATH_SRILM', '','Base directory where SRILM is installed'),
             ('PATH_GIZA', '','Base directory where GIZA++ is installed'),
             ('PATH_COLIBRI', '','Base directory where COLIBRI is installed'),
+            ('PATH_MATREX','','Base directory for Matrex evaluation scripts'),
             ('EXEC_UCTO', 'ucto','Path to ucto binary'),
             ('EXEC_SRILM', 'ngram-count','Path to ngram-count (SRILM)'),
             ('EXEC_TIMBL', 'timbl','Path to timbl binary'),
@@ -51,6 +52,13 @@ class MTWrapper(object):
             ('EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE','scripts/training/phrase-extract/consolidate',''),
             ('EXEC_MOSES_PHRASEEXTRACT_SCORE','scripts/training/phrase-extract/score',''),
             ('EXEC_MOSES_MERT','scripts/training/mert-moses.pl',''),
+            ('EXEC_MATREX_SGMIZE','eval/sgmize.py',''),
+            ('EXEC_MATREX_WER','eval/WER_v01.pl',''),
+            ('EXEC_MATREX_PER','eval/PER_v01.pl',''),
+            ('EXEC_MATREX_BLEU','eval/bleu_v04.pl',''),
+            ('EXEC_MATREX_METEOR','meteor-0.6/meteor.pl',''),
+            ('EXEC_MATREX_MTEVAL','mteval-v11b.pl','NIST and BLEU'),
+            ('EXEC_MATREX_TER','tercom.jar',''),
             ('MKCLS_OPTIONS','-m2 -c50',''),
             ('GIZA_OPTIONS','-p0 0.98 -m1 5 -m2 0 -m3 3 -m4 3 -nsmooth 4 -model4smoothfactor 0.4',''),
             ('SRILM_ORDER',3,'N-gram size for language model'),
@@ -94,6 +102,12 @@ class MTWrapper(object):
         self.EXEC_MOSES_PHRASEEXTRACT = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT,self.PATH_MOSES)
         self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE,self.PATH_MOSES)
         self.EXEC_MOSES_PHRASEEXTRACT_SCORE = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT_SCORE,self.PATH_MOSES)
+        self.EXEC_MATREX_WER = self.findpath(self.EXEC_MATREX_WER, self.PATH_MATREX)
+        self.EXEC_MATREX_PER = self.findpath(self.EXEC_MATREX_PER, self.PATH_MATREX)
+        self.EXEC_MATREX_BLEU = self.findpath(self.EXEC_MATREX_BLEU, self.PATH_MATREX)
+        self.EXEC_MATREX_METEOR = self.findpath(self.EXEC_MATREX_METEOR, self.PATH_MATREX)
+        self.EXEC_MATREX_MTEVAL = self.findpath(self.EXEC_MATREX_MTEVAL, self.PATH_MATREX)
+        self.EXEC_MATREX_TER = self.findpath(self.EXEC_MATREX_TER, self.PATH_MATREX)
         
         if self.PATH_MOSES:
             self.PATH_MOSES_MERT = self.PATH_MOSES + '/mert'
@@ -158,7 +172,12 @@ class MTWrapper(object):
         return True
     
     def check_test(self):
-        #TODO: Implement
+        if not self.EXEC_MATREX_SGMIZE:
+            print >>sys.stderr,bold(red("Error: EXEC_MATREX_SGMIZE not found, set PATH_MATREX"))
+            return False            
+        if not (self.EXEC_MATREX_WER or self.EXEC_MATREX_PER or self.EXEC_MATREX_BLEU or self.EXEC_MATREX_MTEVAL or self.EXEC_MATREX_METEOR or self.EXEC_MATREX_TER):
+            print >>sys.stderr,bold(red("Error: No evaluation scripts found, set at least one of EXEC_MATREX_* and PATH_MATREX"))
+            return False            
         return True
 
     def check_train(self):
@@ -277,13 +296,13 @@ class MTWrapper(object):
     def usage(self):
         print >>sys.stderr,"Usage: " + os.path.basename(sys.argv[0]) + ' [command]'
         print >>sys.stderr,"Commands:"
-        print >>sys.stderr,"\ttrain                           Train the MT system"
-        print >>sys.stderr,"\trun <inputfile> [options]       Run the MT system on the specified input file"
-        print >>sys.stderr,"\t\t-t                            Tokenise the input file"
-        print >>sys.stderr,"\t\t-o <outputfile>               Output file (default: stdout)"        
-        print >>sys.stderr,"\ttest <inputfile> <reference>    Evaluate the MT system on the specified input file and reference file (one sentence per line)"                                
-        print >>sys.stderr,"\tclean [all|giza|moses|colibri]  Clean generated files"
-        print >>sys.stderr,"\tbranch <new-directory>          Create a new branch based on this project (files are symlinked instead of copied)"
+        print >>sys.stderr,"\ttrain                            Train the MT system"
+        print >>sys.stderr,"\trun <inputfile> [options]        Run the MT system on the specified input file"
+        print >>sys.stderr,"\t\t-t                             Tokenise the input file"
+        print >>sys.stderr,"\t\t-o <outputfile>                Output file (default: stdout)"        
+        print >>sys.stderr,"\ttest <inputfile> <referencefile> Evaluate the MT system on the specified input file and reference file (one sentence per line)"                                
+        print >>sys.stderr,"\tclean [all|giza|moses|colibri]   Clean generated files"
+        print >>sys.stderr,"\tbranch <new-directory>           Create a new branch based on this project (files are symlinked instead of copied)"
 
     def start(self):        
         try:
@@ -334,9 +353,15 @@ class MTWrapper(object):
             #TODO: IMplement
             raise NotImplemented
             
-        elif cmd == 'test':            
+        elif cmd == 'test':                        
+            try:
+                inputfile = sys.argv[2]
+                referencefile = sys.argv[3]
+            except:
+                self.usage()
+                sys.exit(2)
             
-            if not self.test(inputfile): 
+            if not self.test(inputfile, referencefile): 
                 sys.exit(1)
                 
         elif cmd == 'help' or cmd == '-h':
@@ -609,8 +634,178 @@ class MTWrapper(object):
         if not self.runcmd(self.EXEC_MOSES + ' -f moses.ini < input.txt > output.txt','Moses Decoder'): return False
         return True 
             
+    
+    def test(self, sourcefile, reffile):
+        if not self.check_common(): return False
+        if not self.check_run(): return False
+        if not self.check_test(): return False
+        
+        if not os.path.isfile(sourcefile):
+            print >>sys.stderr,red("Error: Source file " + sourcefile + " not found!" )
+            return False        
+             
+        if not os.path.isfile(reffile):
+            print >>sys.stderr,red("Error: Reference file " + reffile + " not found!" )
+            return False        
+        
+        if not self.run(sourcefile):
+            return False
+    
+        targetfile = 'output.txt'
+    
+        if not os.path.isfile(targetfile):
+            print >>sys.stderr,red("Error: Output file " + targetfile + " not found!" )
+            return False    
+     
+        self.header('Converting source to XML for evaluation')
+        r = self.xmlize(sourcefile)
+        sourcexml = sourcefile + '.xml'
+        if not self.footer('Converting source to XML for evaluation',int(not r), sourcexml): return False
+        self.header('Converting reference to XML for evaluation')
+        r = self.xmlize(reffile)
+        refxml = reffile + '.xml'
+        if not self.footer('Converting reference to XML for evaluation',int(not r),refxml): return False
+        self.header('Converting output to XML for evaluation')
+        r = self.xmlize(targetfile)
+        targetxml = targetfile + '.xml'
+        if not self.footer('Converting output to XML for evaluation',int(not r),targetxml): return False        
         
         
+        self.per = 0
+        self.wer = 0
+        self.bleu = 0
+        self.meteor = 0
+        self.nist = 0
+        self.ter = 0        
+        
+        
+        errors = False
+        if self.EXEC_MATREX_BLEU and os.path.exists(self.EXEC_MATREX_BLEU):
+            if not self.runcmd(self.EXEC_MATREX_BLEU + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + ' -ci > ' + 'bleu.score',  'Computing BLEU score'): errors = True
+            if not errors:
+                try:
+                    f = open(self.WORKDIR + '/blue.score')
+                    for line in f:
+                        if line[0:9] == "BLEUr1n4,":
+                             self.bleu = float(line[10:].strip())
+                             print >>sys.stderr,"BLUE score: ", self.blue
+                    f.close()
+                except:                
+                    print >>sys.stderr, red("Error reading blue.score")
+                    errors = True            
+        else:
+            print >>sys.stderr, yellow("Skipping BLEU (no script found)")
+            
+        if self.EXEC_MATREX_WER and os.path.exists(self.EXEC_MATREX_WER):
+            if not self.runcmd(self.EXEC_MATREX_WER + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + '  > ' + 'wer.score', 'Computing WER score'): errors = True
+            if not errors:
+                try:
+                    f = open(self.WORKDIR + '/wer.score')
+                    for line in f:
+                        if line[0:11] == "WER score =":
+                             self.wer = float(line[12:20].strip())
+                             print >>sys.stderr,"WER score: ", self.wer
+                    f.close()
+                except:                
+                    print >>sys.stderr, red("Error reading wer.score")
+                    errors = True     
+        else:
+            print >>sys.stderr, yellow("Skipping WER (no script found)")
+     
+        if self.EXEC_MATREX_PER and os.path.exists(self.EXEC_MATREX_PER):
+            if not self.runcmd(self.EXEC_MATREX_PER + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + '  > ' + 'per.score',  'Computing PER score'): errors = True
+            if not errors:
+                try:
+                    f = open(self.WORKDIR + '/per.score')
+                    for line in f:
+                        if line[0:11] == "PER score =":
+                             self.per = float(line[12:20].strip())
+                             print >>sys.stderr,"PER score: ", self.per
+                    f.close()
+                except:                
+                    print >>sys.stderr, red("Error reading per.score")
+                    errors = True                     
+        else:
+            print >>sys.stderr, yellow("Skipping PER (no script found)")
+        
+        if self.EXEC_MATREX_METEOR and os.path.exists(self.EXEC_MATREX_METEOR):
+            if not self.runcmd('perl -I ' + os.path.dirname(self.EXEC_MATREX_METEOR) + ' ' + self.EXEC_MATREX_METEOR + " -s " + self.CORPUSNAME + " -r " + refxml + ' -t ' + targetxml + ' --modules "exact"  > ' + 'meteor.score',  'Computing METEOR score'): errors = True
+            if not errors:
+                try:
+                    f = open(self.WORKDIR + '/meteor.score')
+                    for line in f:
+                        if line[0:6] == "Score:":
+                             self.meteor = float(line[7:].strip())
+                             print >>sys.stderr,"METEOR score: ", self.meteor
+                    f.close()
+                except:                
+                    print >>sys.stderr, red("Error reading meteor.score")
+                    errors = True                      
+        else:
+            print >>sys.stderr, yellow("Skipping METEOR (no script found)")
+
+        if self.EXEC_MATREX_MTEVAL and os.path.exists(self.EXEC_MATREX_MTEVAL):
+            if not self.runcmd(self.EXEC_MATREX_MTEVAL + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml +  '  > ' + 'mteval.score',  'Computing NIST & BLEU scores'): errors = True
+            if not errors:
+                try:
+                    f = open(self.WORKDIR + '/mteval.score')
+                    for line in f:
+                        if line[0:12] == "NIST score =":
+                            self.nist = float(line[13:21].strip())
+                        if line[21:33] == "BLEU score =":
+                            if self.blue > 0:
+                                self.blue = float(line[34:40].strip())
+                                print >>sys.stderr,"BLUE score: ", self.blue
+                            else:
+                                print >>sys.stderr,"BLUE score (not stored): ", float(line[10:].strip())
+                    f.close()
+                except:                
+                    print >>sys.stderr, red("Error reading mteval.score")
+                    errors = True                   
+        else:
+            print >>sys.stderr, yellow("Skipping MTEVAL (BLEU & NIST) (no script found)")
+     
+        if self.EXEC_MATREX_TER and os.path.exists(self.EXEC_MATREX_TER):
+            if not self.runcmd(self.EXEC_MATREX_TER + " -r " + refxml + ' -h ' + targetxml + '  > ' + 'ter.score',  'Computing TER score'): errors = True
+            if not errors:
+                try:
+                    f = open(self.WORKDIR + '/ter.score')
+                    for line in f:
+                        if line[0:10] == "Total TER:":
+                             self.meteor = float(line[11:].strip().split(' ')[0])
+                             print >>sys.stderr,"TER score: ", self.meteor
+                    f.close()
+                except:                
+                    print >>sys.stderr, red("Error reading ter.score")
+                    errors = True    
+        else:
+            print >>sys.stderr, yellow("Skipping TER (no script found)")     
+     
+     
+        return not errors
+    
+    
+    def xmlize(self, inputfile, type='tst'):
+        assert type in ('tst','ref')
+        try:        
+            fin = open(inputfile,'r')
+            fout = open(inputfile + '.xml','w')
+            fout.write( "<" + type + "set setid=\"mteval\" srclang=\"" + self.SOURCELANG + "\" trglang=\"" + self.TARGETLANG + "\">\n")
+            fout.write("<DOC docid=\"" + inputfile + "\" sysid=\"" + self.CORPUSNAME + "\">\n")
+            for linenum, line in enumerate(fin):
+                fout.write("<seg id=\"" + str(linenum+1) + "\">\n")
+                fout.write(line.strip())
+                fout.write("</seg>\n")    
+            fout.write("</DOC>\n</" + type + "set>")       
+            fout.close()
+            fin.close()
+        except IOError:
+            return False
+        return True
+
+
+
+
     
 def usage():
     print >>sys.stderr,"mtwrapper.py -- MT wrapper - Outputs a MT wrapper script (python)"
