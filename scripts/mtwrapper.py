@@ -13,10 +13,12 @@ class MTWrapper(object):
     defaults = [
             ('WORKDIR','','Full path to the working directory that holds all data for the system'),
             ('CORPUSNAME', '','The name of the corpus (without language codes)'),
-            ('TRAINSOURCECORPUS', '','The file containing to the source-language part of the parallel corpus used for training, one sentence per line'),
-            ('TRAINTARGETCORPUS', '','The file containing to the target-language part of the parallel corpus used for training, one sentence per line'),
             ('SOURCELANG', '','A language code identifying the source language'),
             ('TARGETLANG', '','A language code identifying the target language'),
+            ('TRAINSOURCECORPUS', '','The file containing to the source-language part of the parallel corpus used for training, one sentence per line'),
+            ('TRAINTARGETCORPUS', '','The file containing to the target-language part of the parallel corpus used for training, one sentence per line'),
+            ('TESTSOURCECORPUS', '','The file containing to the source-language part of the parallel corpus used for testing, one sentence per line'),
+            ('TESTTARGETCORPUS', '','The file containing to the target-language part of the parallel corpus used as reference for testing.'),
             ('DEVSOURCECORPUS', '','The file containing to the source-language part of the parallel corpus used for parameter tuning, one sentence per line'),
             ('DEVTARGETCORPUS', '','The file containing to the target-language part of the parallel corpus used for parameter tuning, one sentence per line. Used as reference in parameter tuning.'),           
             ('TOKENIZE_SOURCECORPUS', False,''),
@@ -296,13 +298,14 @@ class MTWrapper(object):
     def usage(self):
         print >>sys.stderr,"Usage: " + os.path.basename(sys.argv[0]) + ' [command]'
         print >>sys.stderr,"Commands:"
-        print >>sys.stderr,"\ttrain                            Train the MT system"
-        print >>sys.stderr,"\trun <inputfile> [options]        Run the MT system on the specified input file"
-        print >>sys.stderr,"\t\t-t                             Tokenise the input file"
-        print >>sys.stderr,"\t\t-o <outputfile>                Output file (default: stdout)"        
-        print >>sys.stderr,"\ttest <inputfile> <referencefile> Evaluate the MT system on the specified input file and reference file (one sentence per line)"                                
-        print >>sys.stderr,"\tclean [all|giza|moses|colibri]   Clean generated files"
-        print >>sys.stderr,"\tbranch <new-directory>           Create a new branch based on this project (files are symlinked instead of copied)"
+        print >>sys.stderr,"\ttrain                              Train the MT system"
+        print >>sys.stderr,"\trun <inputfile> [options]          Run the MT system on the specified input file"
+        print >>sys.stderr,"\t\t-t                               Tokenise the input file"
+        print >>sys.stderr,"\t\t-o <outputfile>                  Output file (default: stdout)"        
+        print >>sys.stderr,"\ttest <inputfile> <referencefile>   Run and evaluate the MT system on the specified input file and reference file (one sentence per line). If <inputfile> and <referencefile> are not given, the default test files from the system configuration are used."                               
+        print >>sys.stderr,"\tscore <inputfile> <referencefile>  Like test, but work on a pre-run system, does  not run the translation again."                   
+        print >>sys.stderr,"\tclean [all|giza|moses|colibri|score]    Clean generated files"
+        print >>sys.stderr,"\tbranch <new-directory>             Create a new branch based on this project (files are symlinked instead of copied)"
 
     def start(self):        
         try:
@@ -354,14 +357,43 @@ class MTWrapper(object):
             raise NotImplemented
             
         elif cmd == 'test':                        
-            try:
+            if len(sys.argv) == 4:
                 inputfile = sys.argv[2]
                 referencefile = sys.argv[3]
-            except:
+            elif len(sys.argv) == 2:
+                if not self.TESTSOURCECORPUS or not os.path.exists(self.TESTSOURCECORPUS):
+                    print >>sys.stderr, bold(red("No predefined default test corpus set for input (set TESTSOURCECORPUS) or specify on command line"))
+                    sys.exit(2)
+                if not self.TESTTARGETCORPUS or not os.path.exists(self.TESTTARGETCORPUS):
+                    print >>sys.stderr, bold(red("No predefined default test corpus set for reference (set TESTSOURCECORPUS and TESTTARGETCORPUS) or specify on command line "))
+                    sys.exit(2)                    
+                inputfile = self.TESTSOURCECORPUS                
+                referencefile = self.TESTTARGETCORPUS                
+            else:
                 self.usage()
                 sys.exit(2)
             
             if not self.test(inputfile, referencefile): 
+                sys.exit(1)
+
+        elif cmd == 'score':                        
+            if len(sys.argv) == 4:
+                inputfile = sys.argv[2]
+                referencefile = sys.argv[3]
+            elif len(sys.argv) == 2:
+                if not self.TESTSOURCECORPUS or not os.path.exists(self.TESTSOURCECORPUS):
+                    print >>sys.stderr, bold(red("No predefined default test corpus set for input (set TESTSOURCECORPUS) or specify on command line"))
+                    sys.exit(2)
+                if not self.TESTTARGETCORPUS or not os.path.exists(self.TESTTARGETCORPUS):
+                    print >>sys.stderr, bold(red("No predefined default test corpus set for reference (set TESTSOURCECORPUS and TESTTARGETCORPUS) or specify on command line "))
+                    sys.exit(2)                    
+                inputfile = self.TESTSOURCECORPUS                
+                referencefile = self.TESTTARGETCORPUS                
+            else:
+                self.usage()
+                sys.exit(2)
+            
+            if not self.test(inputfile, referencefile,'output.txt'): 
                 sys.exit(1)
                 
         elif cmd == 'help' or cmd == '-h':
@@ -635,24 +667,7 @@ class MTWrapper(object):
         return True 
             
     
-    def test(self, sourcefile, reffile):
-        if not self.check_common(): return False
-        if not self.check_run(): return False
-        if not self.check_test(): return False
-        
-        if not os.path.isfile(sourcefile):
-            print >>sys.stderr,red("Error: Source file " + sourcefile + " not found!" )
-            return False        
-             
-        if not os.path.isfile(reffile):
-            print >>sys.stderr,red("Error: Reference file " + reffile + " not found!" )
-            return False        
-        
-        if not self.run(sourcefile):
-            return False
-    
-        targetfile = 'output.txt'
-    
+    def score(self, sourcefile, reffile, targetfile):
         if not os.path.isfile(targetfile):
             print >>sys.stderr,red("Error: Output file " + targetfile + " not found!" )
             return False    
@@ -781,8 +796,29 @@ class MTWrapper(object):
         else:
             print >>sys.stderr, yellow("Skipping TER (no script found)")     
      
-     
         return not errors
+    
+    def test(self, sourcefile, reffile):
+        if not self.check_common(): return False
+        if not self.check_run(): return False
+        if not self.check_test(): return False
+        
+        if not os.path.isfile(sourcefile):
+            print >>sys.stderr,red("Error: Source file " + sourcefile + " not found!" )
+            return False        
+             
+        if not os.path.isfile(reffile):
+            print >>sys.stderr,red("Error: Reference file " + reffile + " not found!" )
+            return False        
+        
+        if not self.run(sourcefile):
+            return False
+    
+        targetfile = 'output.txt'
+        if not self.score(sourcefile,reffile,targetfile):
+            return False
+        
+        return True
     
     
     def xmlize(self, inputfile, type='tst'):
