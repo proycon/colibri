@@ -66,12 +66,15 @@ class MTWrapper(object):
             ('BUILD_MOSES_PHRASEEXTRACT', False,'Extract phrases'),
             ('BUILD_MOSES_PHRASETRANSTABLE', False,'Build phrase translation table'),
             ('BUILD_MOSES', False,'Build moses configuration, necessary for decoding using moses'),
-            ('BUILD_MOSES_MERT', False,'Do Minimum Error Rate Training for Moses (on development set)'),            
+            ('BUILD_MOSES_MERT', False,'Do Minimum Error Rate Training for Moses (on development set)'),          
+            ('BUILD_PBMBMT', False, 'Build model for Phrase-Based Memory-based Machine Translation'),   
+            ('BUILD_PBMBMT_PARAMSEARCH', False, 'Do parameter optimisation for PBMBMT using wrapped progressive sampling'),
             ('PATH_MOSES', '','Base directory where Moses is installed'),
             ('PATH_SRILM', '','Base directory where SRILM is installed'),
             ('PATH_GIZA', '','Base directory where GIZA++ is installed'),
             ('PATH_COLIBRI', '','Base directory where COLIBRI is installed'),
             ('PATH_MATREX','','Base directory for Matrex evaluation scripts'),
+            ('PATH_PBMBMT','','Base directory to PBMBMT'),
             ('EXEC_UCTO', 'ucto','Path to ucto binary'),
             ('EXEC_SRILM', 'ngram-count','Path to ngram-count (SRILM)'),
             ('EXEC_TIMBL', 'timbl','Path to timbl binary'),
@@ -87,13 +90,14 @@ class MTWrapper(object):
             ('EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE','scripts/training/phrase-extract/consolidate',''),
             ('EXEC_MOSES_PHRASEEXTRACT_SCORE','scripts/training/phrase-extract/score',''),
             ('EXEC_MOSES_MERT','scripts/training/mert-moses.pl',''),
-            ('EXEC_MATREX_SGMIZE','eval/sgmize.py',''),
             ('EXEC_MATREX_WER','eval/WER_v01.pl',''),
             ('EXEC_MATREX_PER','eval/PER_v01.pl',''),
             ('EXEC_MATREX_BLEU','eval/bleu_v04.pl',''),
             ('EXEC_MATREX_METEOR','meteor-0.6/meteor.pl',''),
             ('EXEC_MATREX_MTEVAL','mteval-v11b.pl','NIST and BLEU'),
             ('EXEC_MATREX_TER','tercom.jar',''),
+            ('EXEC_PBMBMT_DECODER','pbmbmt-decode',''),
+            ('EXEC_PBMBMT_INSTANCEGENERATOR','instancegenerator.py',''),
             ('MKCLS_OPTIONS','-m2 -c50',''),
             ('GIZA_OPTIONS','-p0 0.98 -m1 5 -m2 0 -m3 3 -m4 3 -nsmooth 4 -model4smoothfactor 0.4',''),
             ('SRILM_ORDER',3,'N-gram size for language model'),
@@ -103,7 +107,13 @@ class MTWrapper(object):
             ('MOSES_MERT_OPTIONS','','See http://www.statmt.org/moses/?n=FactoredTraining.Tuning'),
             ('PHRASEEXTRACT_MAX_PHRASE_LENGTH',7,''),
             ('PHRASEEXTRACT_REORDERING_FLAGS','',''), #" --model wbe-mslr --model phrase-mslr --model hier-mslr" #Maximum lexical reordering 
-            ('PHRASESCORE_OPTIONS', '',''), #--Hierarchical --WordAlignment (--Inverse)        
+            ('PHRASESCORE_OPTIONS', '',''), #--Hierarchical --WordAlignment (--Inverse)
+            ('PBMBMT_PHRASETABLE','','Use the following pre-existing phrase-table (rather than depending on Moses to create one from scratch)'),
+            ('PBMBMT_GIZAALIGNMENT','','Use the following pre-existing GIZA Word Alignment (rather than depending on GIZA++ to create one from scratch)'),
+            ('PBMBMT_INSTANCEGENERATOR_OPTIONS','--nfeatleft=1 --nfeatright=1','Options for PBMBMT instance generator'),
+            ('PBMBMT_DECODER_OPTIONS','','Options for PBMBMT Decoder (do not include --srilm=, will be added automatically if BUILD_SRILM_TARGETMODEL is enabled)'),
+            ('PBMBMT_TIMBL_OPTIONS','-k 1 -a4','Timbl options (+v+db+di is added automatically). See Timbl -h'),
+              
     ]
 
     
@@ -201,15 +211,15 @@ class MTWrapper(object):
             elif not os.path.exists(self.WORKDIR + '/' + self.gets2tfilename('phrasetable')):
                 print >>sys.stderr,bold(red("Error: No Moses phrasetable found. Did you forget to train the system first?"))
                 return False
+        elif self.BUILD_PBMBMT:
+            #TODO: implement
+            return False
         else:
             print >>sys.stderr,bold(red("Error: System is not runnable, no MT decoder enabled"))
             return False
         return True
     
     def check_test(self):
-        if not self.EXEC_MATREX_SGMIZE:
-            print >>sys.stderr,bold(red("Error: EXEC_MATREX_SGMIZE not found, set PATH_MATREX"))
-            return False            
         if not (self.EXEC_MATREX_WER or self.EXEC_MATREX_PER or self.EXEC_MATREX_BLEU or self.EXEC_MATREX_MTEVAL or self.EXEC_MATREX_METEOR or self.EXEC_MATREX_TER):
             print >>sys.stderr,bold(red("Error: No evaluation scripts found, set at least one of EXEC_MATREX_* and PATH_MATREX"))
             return False            
@@ -243,12 +253,51 @@ class MTWrapper(object):
                 print >>sys.stderr,red("PATH_MOSES_MERT not found, please set PATH_MOSES !")
 
         if self.BUILD_MOSES:
+            if self.BUILD_PBMBMT:
+                print >>sys.stderr,red("Configuration error: Ambiguous selection of MT system: Select only one of BUILD_MOSES or BUILD_PBMBMT")
+                sane = False
             if not self.BUILD_MOSES_PHRASETRANSTABLE:
                 print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_MOSES is too")
                 self.BUILD_MOSES_PHRASETRANSTABLE = True
             if not self.BUILD_SRILM_TARGETMODEL:                 
                 print >>sys.stderr,yellow("Configuration update: BUILD_SRILM_TARGETMODEL automatically enabled because BUILD_MOSES is too")
                 self.BUILD_SRILM_TARGETMODEL = True
+            if not self.EXEC_MOSES or not os.path.isfile(self.EXEC_MOSES):
+                sane = False
+                print >>sys.stderr,red("Moses not found! Set EXEC_MOSES or PATH_MOSES !")                
+                
+                
+                
+        if self.BUILD_PBMBMT:
+            if not self.PBMBMT_PHRASETABLE and not self.BUILD_MOSES_PHRASETABLE:
+                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_PBMBMT is enabled and no pre-existing phrasetable is set (PBMBMT_PHRASETABLE)")
+            if not self.PBMBMT_GIZAALIGNMENT and not self.BUILD_GIZA_WORDALIGNMENT:
+                print >>sys.stderr,yellow("Configuration update: BUILD_GIZA_WORDALIGNMENT automatically enabled because BUILD_PBMBMT is enabled and no pre-existing word alignment file is set (PBMBMT_GIZAALIGNMENT)")                
+            if self.PBMBMT_PHRASETABLE:
+                if not os.path.isfile(self.PBMBMT_PHRASETABLE):
+                    print >>sys.stderr,yellow("Configuration error: PBMBMT_PHRASETABLE does not exist!")
+                    sane = False
+                else:
+                    os.symlink(self.PBMBMT_PHRASETABLE, self.gets2tfilename('phrasetable'))
+            if self.PBMBMT_GIZAALIGNMENT: 
+                if not os.path.isfile(self.PBMBMT_GIZAALIGNMENT):
+                    print >>sys.stderr,yellow("Configuration error: PBMBMT_GIZAALIGNMENT does not exist!")
+                    sane = False
+                else:
+                    os.symlink(self.PBMBMT_GIZAALIGNMENT, self.gets2tfilename('A3.final'))
+            if not self.EXEC_PBMBMT_DECODER or not os.path.isfile(self.EXEC_PBMBMT_DECODER):
+                sane = False
+                print >>sys.stderr,red("PBMBMT decoder not found! Set EXEC_PBMBMT_DECODER or PATH_PBMBMT !")                
+            if not self.EXEC_PBMBMT_INSTANCEGENERATOR or not os.path.isfile(self.EXEC_PBMBMT_INSTANCEGENERATOR):
+                sane = False
+                print >>sys.stderr,red("PBMBMT instance generator not found! Set EXEC_PBMBMT_DECODER or PATH_PBMBMT !")
+            if not self.EXEC_TIMBL or not os.path.isfile(self.EXEC_TIMBL):
+                sane = False
+                print >>sys.stderr,red("TiMBL was not found, but is required for PBMBMT! Set EXEC_TIMBL or PATH_TIMBL !")
+
+
+
+          
             
         if self.BUILD_MOSES_PHRASETRANSTABLE:
             if not self.BUILD_MOSES_PHRASEEXTRACT:
@@ -284,9 +333,7 @@ class MTWrapper(object):
                 sane = False
                 print >>sys.stderr,red("Dependency error: symal (provided by Moses) not found (EXEC_MOSES_SYMAL=" + self.EXEC_MOSES_SYMAL + ")")
                
-            if not self.EXEC_MOSES or not os.path.isfile(self.EXEC_MOSES):
-                sane = False
-                print >>sys.stderr,red("Dependency error: Moses not found (EXEC_MOSES=" + self.EXEC_MOSES + ")")
+            
                 
         if self.BUILD_GIZA_WORDALIGNMENT and (not self.EXEC_GIZA or not os.path.isfile(self.EXEC_GIZA)): 
             print >>sys.stderr,red("Dependency error: GIZA++ not found (EXEC_GIZA=" + self.EXEC_GIZA + ")")
@@ -493,6 +540,8 @@ class MTWrapper(object):
         
         if self.BUILD_MOSES and not self.build_moses(): return False
         
+        if self.BUILD_PBMBMT and not self.build_pbmbmt(): return False
+        
         return True    
 
 
@@ -676,6 +725,14 @@ class MTWrapper(object):
         if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' moses.ini'): return False 
         return True
     
+    def build_pbmbmt(self):
+        #TODO: implement
+        if not self.runcmd(self.EXEC_PBMBMT_INSTANCEGENERATOR + ' --train=' +  self.gets2tfilename('A3.final') + ' -p ' + self.gets2tfilename('phrasetable') + ' ' + self.PBMBMT_INSTANCEGENERATOR_OPTIONS,'Extracting Training Instances for PBMBMT', self.gets2tfilename('train.111.0x0.inst') ): return False
+        
+        
+        
+        return False
+    
     def run(self, inputfile, outputfile='output.txt', tokenise=False):        
         if tokenise and (not self.EXEC_UCTO or not os.path.isfile(self.EXEC_UCTO)):
             print >>sys.stderr,red("Error: Ucto not found! Unable to tokenise!" )
@@ -698,11 +755,14 @@ class MTWrapper(object):
         
         os.rename('output.txt',outputfile)        
         return True
+
+
     
     def runmoses(self):
         if not self.runcmd(self.EXEC_MOSES + ' -f moses.ini < input.txt > output.txt','Moses Decoder'): return False
         return True 
             
+
     
     def score(self, sourcefile, reffile, targetfile):
         if not os.path.isfile(targetfile):
