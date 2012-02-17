@@ -996,13 +996,14 @@ def usage():
     print >>sys.stderr,"\t--testset=n          Extract a random sample of n lines as test set, and exclude from training"
     print >>sys.stderr,"\t--devset=n           Extract a random sample of n lines as development set, and exclude from training"
     print >>sys.stderr,"\t--trainset=n         Restrict the training set to a random sample of n lines"
+    print >>sys.stderr,"\t-i <dirs>         Colon-separated directories where python can find non-standard modules"
 
 if __name__ == "__main__":        
     
     
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hs:t:S:T:n:x:w:d:", ['testset=','devset=','trainset='])
+        opts, args = getopt.getopt(sys.argv[1:], "hs:t:S:T:n:x:w:d:i:", ['testset=','devset=','trainset='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -1011,7 +1012,7 @@ if __name__ == "__main__":
     sourcecorpusfile = targetcorpusfile = sourcelang = targetlang = corpusname = expname = workdir = ""
     devsourcecorpusfile = devtargetcorpusfile = testsourcecorpusfile = testtargetcorpusfile = ""
     trainset = testset = devset = 0
-    
+    includedirs = []
 
     for o, a in opts:
         if o == '-s':
@@ -1030,6 +1031,8 @@ if __name__ == "__main__":
             workdir = a
         elif o == '-d':
             parentdir = a
+        elif o == '-i':
+            includedirs = a.split(':')
         elif o == '--testset':
             testset = int(a)
         elif o == '--devset':
@@ -1112,7 +1115,12 @@ if __name__ == "__main__":
         settingsfile = workdir + '/mt-' + corpusname + '-' + sourcelang + '-' + targetlang + '.py'
     f = codecs.open(settingsfile,'w','utf-8')
     f.write("#! /usr/bin/env python\n# -*- coding: utf8 -*-#\n\n")
-    f.write("#Generated with: " + ' '.join(sys.argv) + "\n")
+    f.write("#Generated with: " + ' '.join(sys.argv) + "\n\n")
+    if includedirs:         
+        f.write('import sys\n')
+        for dir in includedirs:
+            f.write("sys.append('" + dir + "')\n")
+    f.write("\n")
     f.write("from mtwrapper import MTWrapper\n")    
     f.write("mtwrapper = MTWrapper(\n")
     for key, default, help in MTWrapper.defaults:            
