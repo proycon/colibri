@@ -995,7 +995,7 @@ def usage():
     print >>sys.stderr,"Optional Input:"
     print >>sys.stderr,"\t--testset=n          Extract a random sample of n lines as test set, and exclude from training"
     print >>sys.stderr,"\t--devset=n           Extract a random sample of n lines as development set, and exclude from training"
-    #print >>sys.stderr,"\t--trainset=n         Restrict the training set to a random sample of n lines"
+    print >>sys.stderr,"\t--trainset=n         Restrict the training set to a random sample of n lines"
 
 if __name__ == "__main__":        
     
@@ -1073,7 +1073,7 @@ if __name__ == "__main__":
     if testset or devset:
         if not sourcecorpusfile or not targetcorpusfile:
             print>>sys.stderr, "Error: You need to specify -s and -t on the command line!"
-        filesampler([sourcecorpusfile, targetcorpusfile],  testset, devset, workdir )
+        filesampler([sourcecorpusfile, targetcorpusfile],  testset, devset, trainset, workdir )
         
         #rename files
         oldfile = workdir + '/' + os.path.basename(sourcecorpusfile) + '.dev' 
