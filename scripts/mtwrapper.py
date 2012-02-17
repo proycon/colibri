@@ -1035,12 +1035,17 @@ if __name__ == "__main__":
         elif o == '--devset=':
             devset = int(a)            
         elif o == '--trainset=':
-            trainset = int(a)            
-        else:
+            trainset = int(a)
+        elif o == '-h':            
             usage()
             sys.exit(0)
+        else:
+            print >>"Error, invalid option: ", o
+            usage()
+            sys.exit(2)
     
     if not corpusname or not sourcelang or not targetlang:
+        print >>"Specify at least -n -S and -T"
         usage()
         sys.exit(2)
         
