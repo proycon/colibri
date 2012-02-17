@@ -748,7 +748,7 @@ class MTWrapper(object):
         return self.footer('Build Moses Configuration', 0, *outputfiles)
     
     def build_moses_mert(self):            
-        if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' moses.ini'): return False 
+        if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' moses.ini', 'Parameter tuning for Moses using MERT'): return False         
         return True
     
     def build_pbmbmt(self):
