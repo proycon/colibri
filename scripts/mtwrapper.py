@@ -786,7 +786,7 @@ class MTWrapper(object):
         for testfile in glob.glob(self.WORKDIR + '/*.test.*.inst'):
             if not self.runcmd(self.EXEC_TIMBL + self.PBMBMT_TIMBL_OPTIONS + ' +v+db+di +D -s -f ' + testfile + ' -i ' + testfile.replace('test','train') + '.ibase', 'Running classifier ' + os.path.basename(testfile)): return False
         
-        if not self.runcmd(self.EXEC_PBMBMT_DECODER + ' -t ' + basename + '.txt --srilm=' + self.gets2tfilename('srilm') + ' ' + self.PBMBMT_DECODER_OPTIONS + ' > output.txt','Running PBMBMT Decoder'): return False        
+        if not self.runcmd(self.EXEC_PBMBMT_DECODER + ' -t ' + basename + '.txt --srilm=' + self.gets2tfilename('srilm') + ' ' + self.PBMBMT_DECODER_OPTIONS + ' > ' + self.WORKDIR + '/output.txt','Running PBMBMT Decoder'): return False        
         
         return True
             
