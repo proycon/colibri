@@ -1030,11 +1030,11 @@ if __name__ == "__main__":
             workdir = a
         elif o == '-d':
             parentdir = a
-        elif o == '--testset=':
+        elif o == '--testset':
             testset = int(a)
-        elif o == '--devset=':
+        elif o == '--devset':
             devset = int(a)            
-        elif o == '--trainset=':
+        elif o == '--trainset':
             trainset = int(a)
         elif o == '-h':            
             usage()
