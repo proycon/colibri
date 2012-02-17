@@ -756,15 +756,21 @@ class MTWrapper(object):
         if not os.path.isfile(inputfile):
             print >>sys.stderr,red("Error: Input file " + inputfile + " not found!" )
             return False
-    
-                
+
+        if os.path.exists( outputfile):
+            os.unlink( outputfile)
+
         if tokenise:        
             if not self.runcmd(self.EXEC_UCTO + ' -n -L' + self.SOURCELANG +  ' ' + inputfile + ' ' + 'input.txt','Tokenisation of Input File'): return False                                        
         else:
+            if os.path.exists( self.WORKDIR + '/input.txt'):
+                os.unlink( self.WORKDIR + '/input.txt' )
             os.symlink(inputfile, self.WORKDIR + '/input.txt' )
         
         if self.BUILD_MOSES and not self.run_moses(): return False
-        if self.BUILD_MOSES and not self.run_pbmbmt(): return False
+        if self.BUILD_PBMBMT and not self.run_pbmbmt(): return False
+        
+        
         
         os.rename('output.txt',outputfile)        
         return True
