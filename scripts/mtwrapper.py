@@ -1111,7 +1111,9 @@ if __name__ == "__main__":
     else:
         settingsfile = workdir + '/mt-' + corpusname + '-' + sourcelang + '-' + targetlang + '.py'
     f = codecs.open(settingsfile,'w','utf-8')
-    f.write("#! /usr/bin/env python\n# -*- coding: utf8 -*-#\n\nfrom mtwrapper import MTWrapper\n")
+    f.write("#! /usr/bin/env python\n# -*- coding: utf8 -*-#\n\n")
+    f.write("#Generated with: " + ' '.join(sys.argv) + "\n")
+    f.write("from mtwrapper import MTWrapper\n")    
     f.write("mtwrapper = MTWrapper(\n")
     for key, default, help in MTWrapper.defaults:            
         if key == 'CORPUSNAME': 
