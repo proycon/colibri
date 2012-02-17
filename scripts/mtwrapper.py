@@ -145,6 +145,9 @@ class MTWrapper(object):
             else:
                 setattr(self,key,default)
         
+        self.EXEC_PERL = self.findpath(self.EXEC_PERL)
+        self.EXEC_JAVA = self.findpath(self.EXEC_JAVA)
+        
         self.EXEC_TIMBL = self.findpath(self.EXEC_TIMBL)        
         self.EXEC_SRILM = self.findpath(self.EXEC_SRILM,self.PATH_SRILM)
         self.EXEC_GIZA = self.findpath(self.EXEC_GIZA,self.PATH_GIZA)
@@ -188,8 +191,10 @@ class MTWrapper(object):
             if os.path.exists(path + '/' + name) and not os.path.isdir(path + '/' + name):
                 print >>sys.stderr, green("Found " + name + " in " + path)
                 return path + '/' + name
-        if basepath: 
-            return basepath + '/' + name    
+        if basepath and os.path.exists(basepath + '/' + name): 
+            print >>sys.stderr, green("Found " + name + " in " + path)
+            return basepath + '/' + name        
+        print >>sys.stderr, yellow("Warning: Did not find " + name)
         return ""
 
     def check_common(self):
@@ -855,7 +860,7 @@ class MTWrapper(object):
                     print >>sys.stderr, red("Error reading bleu.score")
                     errors = True            
         else:
-            print >>sys.stderr, yellow("Skipping BLEU (no script found)")
+            print >>sys.stderr, yellow("Skipping BLEU (no script found ["+self.EXEC_MATREX_BLEU+"])")
             
         if self.EXEC_MATREX_WER and os.path.exists(self.EXEC_MATREX_WER) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
             if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_MATREX_WER + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + '  > ' + 'wer.score', 'Computing WER score'): errors = True
@@ -871,7 +876,7 @@ class MTWrapper(object):
                     print >>sys.stderr, red("Error reading wer.score")
                     errors = True     
         else:
-            print >>sys.stderr, yellow("Skipping WER (no script found)")
+            print >>sys.stderr, yellow("Skipping WER (no script found ["+self.EXEC_MATREX_WER+"]) ")
      
         if self.EXEC_MATREX_PER and os.path.exists(self.EXEC_MATREX_PER) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
             if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_MATREX_PER + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + '  > ' + 'per.score',  'Computing PER score'): errors = True
@@ -887,7 +892,7 @@ class MTWrapper(object):
                     print >>sys.stderr, red("Error reading per.score")
                     errors = True                     
         else:
-            print >>sys.stderr, yellow("Skipping PER (no script found)")
+            print >>sys.stderr, yellow("Skipping PER (no script found ["+self.EXEC_MATREX_PER+"])")
         
         if self.EXEC_MATREX_METEOR and os.path.exists(self.EXEC_MATREX_METEOR) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
             if not self.runcmd(self.EXEC_PERL + ' -I ' + os.path.dirname(self.EXEC_MATREX_METEOR) + ' ' + self.EXEC_MATREX_METEOR + " -s " + self.CORPUSNAME + " -r " + refxml + ' -t ' + targetxml + ' --modules "exact"  > ' + 'meteor.score',  'Computing METEOR score'): errors = True
@@ -903,7 +908,7 @@ class MTWrapper(object):
                     print >>sys.stderr, red("Error reading meteor.score")
                     errors = True                      
         else:
-            print >>sys.stderr, yellow("Skipping METEOR (no script found)")
+            print >>sys.stderr, yellow("Skipping METEOR (no script found ["+self.EXEC_MATREX_METEOR+"])")
 
         if self.EXEC_MATREX_MTEVAL and os.path.exists(self.EXEC_MATREX_MTEVAL) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
             if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_MATREX_MTEVAL + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml +  '  > ' + 'mteval.score',  'Computing NIST & BLEU scores'): errors = True
