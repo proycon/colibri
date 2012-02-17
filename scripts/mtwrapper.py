@@ -1119,7 +1119,7 @@ if __name__ == "__main__":
     if includedirs:         
         f.write('import sys\n')
         for dir in includedirs:
-            f.write("sys.append('" + dir + "')\n")
+            f.write("sys.path.append('" + dir + "')\n")
     f.write("\n")
     f.write("from mtwrapper import MTWrapper\n")    
     f.write("mtwrapper = MTWrapper(\n")
