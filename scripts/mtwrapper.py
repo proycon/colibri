@@ -1002,7 +1002,7 @@ if __name__ == "__main__":
     
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hs:t:S:T:n:x:w:", ['testset=','devset=','trainset='])
+        opts, args = getopt.getopt(sys.argv[1:], "hs:t:S:T:n:x:w:d:", ['testset=','devset=','trainset='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
