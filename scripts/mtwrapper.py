@@ -493,7 +493,7 @@ class MTWrapper(object):
                 self.usage()
                 sys.exit(2)
             
-            if not self.test(inputfile, referencefile,'output.txt'): 
+            if not self.score(inputfile, referencefile,'output.txt'): 
                 sys.exit(1)
                 
         elif cmd == 'help' or cmd == '-h':
