@@ -122,9 +122,9 @@ class MTWrapper(object):
             ('PBMBMT_RIGHTCONTEXTSIZE',1,''),
             ('PBMBMT_DECODER_OPTIONS','','Options for PBMBMT Decoder (do not include --srilm=, will be added automatically if BUILD_SRILM_TARGETMODEL is enabled)'),
             ('PBMBMT_TIMBL_OPTIONS','-k 1 -a4','Timbl options (+v+db+di is added automatically). See Timbl -h'),
-            ('COLIBRI_GRAPHMODEL_OPTIONS','','Options for the Graphmodel, if empty, no graph model will be constructed for the aligner'),
-            ('COLIBRI_PATTERNFINDER_OPTIONS','','Options for the pattern finder. '),
-            ('COLIBRI_ALIGNER_OPTIONS','','Options for the colibri aligner'),  
+            ('COLIBRI_GRAPHMODEL_OPTIONS','','Options for the Graphmodel, if empty, no graph model will be constructed for the aligner, see graphmodel -h'),
+            ('COLIBRI_PATTERNFINDER_OPTIONS','-t 10 -s -B -E', 'Options for the pattern finder, see patternfinder -h'),
+            ('COLIBRI_ALIGNER_OPTIONS','-E -I 100','Options for the colibri aligner, see aligner -h'),  
     ]
 
     
@@ -146,10 +146,12 @@ class MTWrapper(object):
                 setattr(self,key,default)
         
         self.EXEC_PERL = self.findpath(self.EXEC_PERL)
-        self.EXEC_JAVA = self.findpath(self.EXEC_JAVA)
+        self.EXEC_JAVA = self.findpath(self.EXEC_JAVA)    
         
-        self.EXEC_TIMBL = self.findpath(self.EXEC_TIMBL)        
+        self.EXEC_TIMBL = self.findpath(self.EXEC_TIMBL)
         self.EXEC_SRILM = self.findpath(self.EXEC_SRILM,self.PATH_SRILM)
+        self.EXEC_UCTO = self.findpath(self.EXEC_UCTO)
+        
         self.EXEC_GIZA = self.findpath(self.EXEC_GIZA,self.PATH_GIZA)
         self.EXEC_GIZA_PLAIN2SNT = self.findpath(self.EXEC_GIZA_PLAIN2SNT,self.PATH_GIZA)
         self.EXEC_GIZA_SNT2COOC = self.findpath(self.EXEC_GIZA_SNT2COOC, self.PATH_GIZA)
@@ -163,18 +165,21 @@ class MTWrapper(object):
         self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE,self.PATH_MOSES)
         self.EXEC_MOSES_PHRASEEXTRACT_SCORE = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT_SCORE,self.PATH_MOSES)
         self.EXEC_MOSES_MERT  = self.findpath(self.EXEC_MOSES_MERT , self.PATH_MOSES)
+        
         self.EXEC_MATREX_WER = self.findpath(self.EXEC_MATREX_WER, self.PATH_MATREX)
         self.EXEC_MATREX_PER = self.findpath(self.EXEC_MATREX_PER, self.PATH_MATREX)
         self.EXEC_MATREX_BLEU = self.findpath(self.EXEC_MATREX_BLEU, self.PATH_MATREX)
         self.EXEC_MATREX_METEOR = self.findpath(self.EXEC_MATREX_METEOR, self.PATH_MATREX)
         self.EXEC_MATREX_MTEVAL = self.findpath(self.EXEC_MATREX_MTEVAL, self.PATH_MATREX)
         self.EXEC_MATREX_TER = self.findpath(self.EXEC_MATREX_TER, self.PATH_MATREX)
-        
-        
+                
         self.EXEC_COLIBRI_CLASSENCODE = self.findpath(self.EXEC_COLIBRI_CLASSENCODE , self.PATH_COLIBRI)
         self.EXEC_COLIBRI_PATTERNFINDER = self.findpath(self.EXEC_COLIBRI_PATTERNFINDER , self.PATH_COLIBRI)
         self.EXEC_COLIBRI_GRAPHMODEL = self.findpath(self.EXEC_COLIBRI_GRAPHMODEL , self.PATH_COLIBRI)
         self.EXEC_COLIBRI_ALIGNER = self.findpath(self.EXEC_COLIBRI_ALIGNER , self.PATH_COLIBRI)
+        
+        self.EXEC_PBMBMT_DECODER = self.findpath(self.EXEC_PBMBMT_DECODER, self.PATH_PBMBMT)
+        self.EXEC_PBMBMT_INSTANCEGENERATOR = self.findpath(self.EXEC_PBMBMT_INSTANCEGENERATOR, self.PATH_PBMBMT)
         
         if self.PATH_MOSES:
             self.PATH_MOSES_MERT = self.PATH_MOSES + '/mert'
@@ -261,6 +266,22 @@ class MTWrapper(object):
         if (self.TOKENIZE_SOURCECORPUS or self.TOKENIZE_TARGETCORPUS) and (not self.EXEC_UCTO or not os.path.isfile(self.EXEC_UCTO)):
             print >>sys.stderr,red("Dependency error: ucto not found (EXEC_UCTO=" + self.EXEC_UCTO + ")")
             sane = False
+            
+        if self.BUILD_COLIBRI_ALIGNMENT:
+            if not self.EXEC_COLIBRI_PATTERNFINDER or not os.path.exists(self.EXEC_COLIBRI_PATTERNFINDER):
+                sane = False
+                print >>sys.stderr,red("Configuration error: EXEC_COLIBRI_PATTERNFINDER not found ! Required for BUILD_COLIBRI_ALIGNMENT !")            
+            if not self.EXEC_COLIBRI_ALIGNER or not os.path.exists(self.EXEC_COLIBRI_ALIGNER):
+                sane = False
+                print >>sys.stderr,red("Configuration error: EXEC_COLIBRI_ALIGNER not found ! Required for BUILD_COLIBRI_ALIGNMENT !")
+            if not self.EXEC_COLIBRI_GRAPHMODEL or not os.path.exists(self.EXEC_COLIBRI_GRAPHMODEL):
+                sane = False
+                print >>sys.stderr,red("Configuration error: EXEC_COLIBRI_GRAPHMODEL not found ! Required for BUILD_COLIBRI_ALIGNMENT !")                
+            if not self.EXEC_COLIBRI_CLASSENCODE or not os.path.exists(self.EXEC_COLIBRI_CLASSENCODE):
+                sane = False
+                print >>sys.stderr,red("Configuration error: EXEC_COLIBRI_CLASSENCODE not found ! Required for BUILD_COLIBRI_ALIGNMENT !")
+                
+            
 
         if self.BUILD_MOSES_MERT:
             if not self.BUILD_MOSES: 
@@ -551,10 +572,11 @@ class MTWrapper(object):
         if self.TOKENIZE_SOURCECORPUS and not self.tokenize_sourcecorpus(): return False
         if self.TOKENIZE_TARGETCORPUS and not self.tokenize_targetcorpus(): return False
 
+        if self.BUILD_COLIBRI_ALIGNMENT and not self.build_colibri_alignment(): return False
 
         if self.BUILD_SRILM_TARGETMODEL and not self.build_srilm_targetmodel(): return False    
         if self.BUILD_SRILM_SOURCEMODEL and not self.build_srilm_sourcemodel(): return False       
-        
+                
         if self.BUILD_GIZA_WORDALIGNMENT and not self.build_giza_wordalignment(): return False
         if self.BUILD_GIZA_WORDALIGNMENT_REV and not self.build_giza_wordalignment_rev(): return False    
         
@@ -633,6 +655,23 @@ class MTWrapper(object):
         
         
     #---------------------------------- Methods for building sub-parts ----------------------------
+    
+    def build_colibri_alignment(self):
+        if not self.runcmd(self.EXEC_COLIBRI_CLASSENCODE + ' -f ' + self.getsourcefilename('txt'), "Encoding source corpus for Colibri",self.getsourcefilename('cls'), self.getsourcefilename('clsenc') ): return False
+         
+        if not self.runcmd(self.EXEC_COLIBRI_CLASSENCODE + ' -f ' + self.gettargetfilename('txt'), "Encoding target corpus for Colibri",self.gettargetfilename('cls'), self.gettargetfilename('clsenc') ): return False
+        
+        if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.getsourcefilename('clsenc') + ' ' + self.COLIBRI_PATTERNFINDER_OPTIONS, "Building source-side pattern model",self.getsourcefilename('indexedpatternmodel.colibri') ): return False
+        
+        if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.gettargetfilename('clsenc') + ' ' + self.COLIBRI_PATTERNFINDER_OPTIONS, "Building target-side pattern model",self.gettargetfilename('indexedpatternmodel.colibri') ): return False
+        
+        if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.getsourcefilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHMODEL_OPTIONS, "Building source-side graph model",self.getsourcefilename('graphmodel.colibri') ): return False
+
+        if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHMODEL_OPTIONS, "Building target-side graph model",self.gettargetfilename('graphmodel.colibri') ): return False
+        
+        if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphmodel.colibri') + ' -t ' + self.gettargetfilename('graphmodel.colibri') + ' '+ self.COLIBRI_ALIGNER_OPTIONS, "Building alignment model",self.gettargetfilename('alignmodel.colibri') ): return False
+        
+        return True
         
     def build_giza_wordalignment(self):
         if not self.runcmd(self.EXEC_GIZA_PLAIN2SNT + ' ' + self.getsourcefilename('txt') + ' ' + self.gettargetfilename('txt'),'GIZA++ Input Preparation', self.getsourcefilename('vcb'), self.gettargetfilename('vcb'), self.gets2tfilename('snt',longform=True) ): return False
