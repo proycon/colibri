@@ -826,14 +826,17 @@ class MTWrapper(object):
         self.header('Converting source to XML for evaluation')
         r = self.xmlize(sourcefile,'src')
         sourcexml = sourcefile + '.xml'
+        sourcexml = sourcexml.replace('//','/')
         if not self.footer('Converting source to XML for evaluation',int(not r), sourcexml): return False
         self.header('Converting reference to XML for evaluation')
         r = self.xmlize(reffile,'ref')
         refxml = reffile + '.xml'
+        refxml = refxml.replace('//','/')
         if not self.footer('Converting reference to XML for evaluation',int(not r),refxml): return False
         self.header('Converting output to XML for evaluation')
         r = self.xmlize(targetfile,'tst')
         targetxml = targetfile + '.xml'
+        targetxml = targetxml.replace('//','/')
         if not self.footer('Converting output to XML for evaluation',int(not r),targetxml): return False        
         
         
