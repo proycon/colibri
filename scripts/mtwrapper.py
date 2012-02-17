@@ -941,15 +941,14 @@ class MTWrapper(object):
                     f = open(self.WORKDIR + '/ter.score')
                     for line in f:
                         if line[0:10] == "Total TER:":
-                             self.meteor = float(line[11:].strip().split(' ')[0])
-                             print >>sys.stderr,"TER score: ", self.meteor
+                             self.ter = float(line[11:].strip().split(' ')[0])
+                             print >>sys.stderr,"TER score: ", self.ter
                     f.close()
                 except:                
                     print >>sys.stderr, red("Error reading ter.score")
-                    errors = True    
         else:
             print >>sys.stderr, yellow("Skipping TER (no script found)")     
-    
+    s
         if not errors:
             f = open(self.WORKDIR + '/summary.score','w')
             s = "BLEU METEOR NIST TER WER PER"
