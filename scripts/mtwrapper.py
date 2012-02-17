@@ -995,7 +995,7 @@ class MTWrapper(object):
             fin = open(inputfile,'r')
             fout = open(inputfile + '.xml','w')
             fout.write( "<" + type + "set setid=\"mteval\" srclang=\"" + self.SOURCELANG + "\" trglang=\"" + self.TARGETLANG + "\">\n")
-            fout.write("<DOC docid=\"" + inputfile + "\" sysid=\"" + self.CORPUSNAME + "\">\n")
+            fout.write("<DOC docid=\"" + self.CORPUSNAME + "\" sysid=\"" + self.CORPUSNAME + "\">\n")
             for linenum, line in enumerate(fin):
                 fout.write("<seg id=\"" + str(linenum+1) + "\">\n")
                 fout.write(line.strip())
