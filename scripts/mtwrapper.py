@@ -950,11 +950,11 @@ class MTWrapper(object):
             print >>sys.stderr, yellow("Skipping TER (no script found)")     
     
         if not errors:
+            print >>sys.stderr,"SCORE SUMMARY\n===================\n"
             f = open(self.WORKDIR + '/summary.score','w')
             s = "BLEU METEOR NIST TER WER PER"
             f.write(s+ "\n")
-            print >>sys.stderr, s
-            print >>sys.stderr,"SCORE SUMMARY\n===================\n"
+            print >>sys.stderr, s            
             s = str(round(self.bleu,4)) + " " + str(round(self.meteor,4)) + " " + str(round(self.nist,4))  + " " + str(round(self.ter,2)) + " " + str(round(self.wer,2))  + " " + str(round(self.per,2))
             f.write(s + "\n")
             print >>sys.stderr, s
