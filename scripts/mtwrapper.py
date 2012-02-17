@@ -948,7 +948,7 @@ class MTWrapper(object):
                     print >>sys.stderr, red("Error reading ter.score")
         else:
             print >>sys.stderr, yellow("Skipping TER (no script found)")     
-    s
+    
         if not errors:
             f = open(self.WORKDIR + '/summary.score','w')
             s = "BLEU METEOR NIST TER WER PER"
