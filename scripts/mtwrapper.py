@@ -110,7 +110,9 @@ class MTWrapper(object):
             ('PHRASESCORE_OPTIONS', '',''), #--Hierarchical --WordAlignment (--Inverse)
             ('PBMBMT_PHRASETABLE','','Use the following pre-existing phrase-table (rather than depending on Moses to create one from scratch)'),
             ('PBMBMT_GIZAALIGNMENT','','Use the following pre-existing GIZA Word Alignment (rather than depending on GIZA++ to create one from scratch)'),
-            ('PBMBMT_INSTANCEGENERATOR_OPTIONS','--nfeatleft=1 --nfeatright=1','Options for PBMBMT instance generator'),
+            ('PBMBMT_MAXPHRASELENGTH',6,''),
+            ('PBMBMT_LEFTCONTEXTSIZE',1,''),
+            ('PBMBMT_RIGHTCONTEXTSIZE',1,''),
             ('PBMBMT_DECODER_OPTIONS','','Options for PBMBMT Decoder (do not include --srilm=, will be added automatically if BUILD_SRILM_TARGETMODEL is enabled)'),
             ('PBMBMT_TIMBL_OPTIONS','-k 1 -a4','Timbl options (+v+db+di is added automatically). See Timbl -h'),
               
@@ -272,7 +274,10 @@ class MTWrapper(object):
             if not self.PBMBMT_PHRASETABLE and not self.BUILD_MOSES_PHRASETABLE:
                 print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_PBMBMT is enabled and no pre-existing phrasetable is set (PBMBMT_PHRASETABLE)")
             if not self.PBMBMT_GIZAALIGNMENT and not self.BUILD_GIZA_WORDALIGNMENT:
-                print >>sys.stderr,yellow("Configuration update: BUILD_GIZA_WORDALIGNMENT automatically enabled because BUILD_PBMBMT is enabled and no pre-existing word alignment file is set (PBMBMT_GIZAALIGNMENT)")                
+                print >>sys.stderr,yellow("Configuration update: BUILD_GIZA_WORDALIGNMENT automatically enabled because BUILD_PBMBMT is enabled and no pre-existing word alignment file is set (PBMBMT_GIZAALIGNMENT)")               
+            if not self.BUILD_SRILM_TARGETMODEL:
+                print >>sys.stderr,yellow("Configuration update: BUILD_SRILM_TARGETMODEL automatically enabled because BUILD_PBMBMT is too")
+                self.BUILD_SRILM_TARGETMODEL = True         
             if self.PBMBMT_PHRASETABLE:
                 if not os.path.isfile(self.PBMBMT_PHRASETABLE):
                     print >>sys.stderr,yellow("Configuration error: PBMBMT_PHRASETABLE does not exist!")
@@ -727,11 +732,22 @@ class MTWrapper(object):
     
     def build_pbmbmt(self):
         #TODO: implement
-        if not self.runcmd(self.EXEC_PBMBMT_INSTANCEGENERATOR + ' --train=' +  self.gets2tfilename('A3.final') + ' -p ' + self.gets2tfilename('phrasetable') + ' ' + self.PBMBMT_INSTANCEGENERATOR_OPTIONS,'Extracting Training Instances for PBMBMT', self.gets2tfilename('train.111.0x0.inst') ): return False
         
         
+        outputfiles = []
+        for i in range(1,self.PBMBMT_MAXPHRASELENGTH+1):
+            outputfiles.append( self.gets2tfilename('train.' + str(self.PBMBMT_LEFTCONTEXTSIZE) + str(i) + str(self.PBMBMT_RIGHTCONTEXTSIZE) + '.0x0.inst') )
         
-        return False
+        if not self.runcmd(self.EXEC_PBMBMT_INSTANCEGENERATOR + ' --train=' +  self.gets2tfilename('A3.final') + ' -p ' + self.gets2tfilename('phrasetable') + ' --nfeatleft=' + str(self.PBMBMT_LEFTCONTEXTSIZE) + ' --nfeatright='+str(self.PBMBMT_RIGHTCONTEXTSIZE) + ' --phraselength='+str(self.PBMBMT_MAXPHRASELENGTH),'Extracting Training Instances for PBMBMT', *outputfiles ): return False
+        
+                
+        outputfiles_ibase = [ x  + '.ibase' for x in outputfiles ]                
+        for trainfile in glob.glob(self.WORKDIR + '/*.train.*.inst'):
+            if not self.runcmd(self.EXEC_TIMBL + self.PBMBMT_TIMBL_OPTIONS + ' +v+db+di +D -s -f ' + trainfile + ' -I ' + trainfile + '.ibase', 'Building classifier ' + os.path.basename(trainfile), *outputfiles_ibase): return False
+                
+                
+        
+        return True
     
     def run(self, inputfile, outputfile='output.txt', tokenise=False):        
         if tokenise and (not self.EXEC_UCTO or not os.path.isfile(self.EXEC_UCTO)):
