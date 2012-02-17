@@ -95,7 +95,7 @@ class MTWrapper(object):
             ('EXEC_MOSES_MERT','scripts/training/mert-moses.pl',''),
             ('EXEC_MATREX_WER','eval/WER_v01.pl',''),
             ('EXEC_MATREX_PER','eval/PER_v01.pl',''),
-            ('EXEC_MATREX_BLEU','eval/bleu_v04.pl',''),
+            ('EXEC_MATREX_BLEU','eval/bleu-1.04.pl',''),
             ('EXEC_MATREX_METEOR','meteor-0.6/meteor.pl',''),
             ('EXEC_MATREX_MTEVAL','mteval-v11b.pl','NIST and BLEU'),
             ('EXEC_MATREX_TER','tercom.jar',''),
@@ -192,7 +192,7 @@ class MTWrapper(object):
                 print >>sys.stderr, green("Found " + name + " in " + path)
                 return path + '/' + name
         if basepath and os.path.exists(basepath + '/' + name): 
-            print >>sys.stderr, green("Found " + name + " in " + path)
+            print >>sys.stderr, green("Found " + name + " in " + basepath)
             return basepath + '/' + name        
         print >>sys.stderr, yellow("Warning: Did not find " + name)
         return ""
