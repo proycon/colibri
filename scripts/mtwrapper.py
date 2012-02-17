@@ -1040,12 +1040,12 @@ if __name__ == "__main__":
             usage()
             sys.exit(0)
         else:
-            print >>"Error, invalid option: ", o
+            print >>sys.stderr,"Error, invalid option: ", o
             usage()
             sys.exit(2)
     
     if not corpusname or not sourcelang or not targetlang:
-        print >>"Specify at least -n -S and -T"
+        print >>sys.stderr,"Specify at least -n -S and -T"
         usage()
         sys.exit(2)
         
