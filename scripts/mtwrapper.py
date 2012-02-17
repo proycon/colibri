@@ -1,6 +1,11 @@
 #! /usr/bin/env python
 # -*- coding: utf8 -*-
 
+# MT Translation Wrapper
+#   by Maarten van Gompel
+#   Radboud University Nijmegen
+#   Licensed under GPL v3
+
 import sys
 import os
 import subprocess
