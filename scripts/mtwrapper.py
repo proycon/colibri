@@ -66,9 +66,10 @@ class MTWrapper(object):
             ('BUILD_MOSES_PHRASEEXTRACT', False,'Extract phrases'),
             ('BUILD_MOSES_PHRASETRANSTABLE', False,'Build phrase translation table'),
             ('BUILD_MOSES', False,'Build moses configuration, necessary for decoding using moses'),
-            ('BUILD_MOSES_MERT', False,'Do Minimum Error Rate Training for Moses (on development set)'),          
+            ('BUILD_MOSES_MERT', False,'Do Minimum Error Rate Training for Moses (on development set)'),                       
             ('BUILD_PBMBMT', False, 'Build model for Phrase-Based Memory-based Machine Translation'),   
             ('BUILD_PBMBMT_PARAMSEARCH', False, 'Do parameter optimisation for PBMBMT using wrapped progressive sampling'),
+            ('BUILD_COLIBRI_ALIGNMENT', False,'Create an alignment using colibri'),
             ('PATH_MOSES', '','Base directory where Moses is installed'),
             ('PATH_SRILM', '','Base directory where SRILM is installed'),
             ('PATH_GIZA', '','Base directory where GIZA++ is installed'),
@@ -82,6 +83,8 @@ class MTWrapper(object):
             ('EXEC_GIZA', 'GIZA++','Path to GIZA++ binary'),
             ('EXEC_GIZA_PLAIN2SNT', 'plain2snt.out','Path to plain2snt.out (part of GIZA++)'),
             ('EXEC_GIZA_SNT2COOC', 'snt2cooc.out','Path to snt2cooc.out (part of GIZA++)'),
+            ('EXEC_PERL', 'perl','Path to perl binary'),
+            ('EXEC_JAVA', 'java','Path to java binary'),
             ('EXEC_MOSES', 'moses','Path to Moses binary'),
             ('EXEC_MOSES_GIZA2BAL', 'scripts/training/symal/giza2bal.pl', ''),
             ('EXEC_MOSES_SYMAL', 'scripts/training/symal/symal', ''),
@@ -98,6 +101,10 @@ class MTWrapper(object):
             ('EXEC_MATREX_TER','tercom.jar',''),
             ('EXEC_PBMBMT_DECODER','pbmbmt-decode',''),
             ('EXEC_PBMBMT_INSTANCEGENERATOR','instancegenerator.py',''),
+            ('EXEC_COLIBRI_CLASSENCODE','classencode',''),
+            ('EXEC_COLIBRI_PATTERNFINDER','patternfinder',''),
+            ('EXEC_COLIBRI_GRAPHMODEL','graphmodel',''),
+            ('EXEC_COLIBRI_ALIGNER','aligner',''),
             ('MKCLS_OPTIONS','-m2 -c50',''),
             ('GIZA_OPTIONS','-p0 0.98 -m1 5 -m2 0 -m3 3 -m4 3 -nsmooth 4 -model4smoothfactor 0.4',''),
             ('SRILM_ORDER',3,'N-gram size for language model'),
@@ -115,7 +122,9 @@ class MTWrapper(object):
             ('PBMBMT_RIGHTCONTEXTSIZE',1,''),
             ('PBMBMT_DECODER_OPTIONS','','Options for PBMBMT Decoder (do not include --srilm=, will be added automatically if BUILD_SRILM_TARGETMODEL is enabled)'),
             ('PBMBMT_TIMBL_OPTIONS','-k 1 -a4','Timbl options (+v+db+di is added automatically). See Timbl -h'),
-              
+            ('COLIBRI_GRAPHMODEL_OPTIONS','','Options for the Graphmodel, if empty, no graph model will be constructed for the aligner'),
+            ('COLIBRI_PATTERNFINDER_OPTIONS','','Options for the pattern finder. '),
+            ('COLIBRI_ALIGNER_OPTIONS','','Options for the colibri aligner'),  
     ]
 
     
@@ -136,12 +145,13 @@ class MTWrapper(object):
             else:
                 setattr(self,key,default)
         
-        self.EXEC_TIMBL = self.findpath(self.EXEC_TIMBL)
+        self.EXEC_TIMBL = self.findpath(self.EXEC_TIMBL)        
         self.EXEC_SRILM = self.findpath(self.EXEC_SRILM,self.PATH_SRILM)
         self.EXEC_GIZA = self.findpath(self.EXEC_GIZA,self.PATH_GIZA)
         self.EXEC_GIZA_PLAIN2SNT = self.findpath(self.EXEC_GIZA_PLAIN2SNT,self.PATH_GIZA)
         self.EXEC_GIZA_SNT2COOC = self.findpath(self.EXEC_GIZA_SNT2COOC, self.PATH_GIZA)
-        self.EXEC_GIZA_MKCLS = self.findpath(self.EXEC_GIZA_MKCLS, self.PATH_GIZA)        
+        self.EXEC_GIZA_MKCLS = self.findpath(self.EXEC_GIZA_MKCLS, self.PATH_GIZA)
+                
         self.EXEC_MOSES = self.findpath(self.EXEC_MOSES,self.PATH_MOSES)        
         self.EXEC_MOSES_GIZA2BAL = self.findpath(self.EXEC_MOSES_GIZA2BAL,self.PATH_MOSES)
         self.EXEC_MOSES_SYMAL = self.findpath(self.EXEC_MOSES_SYMAL,self.PATH_MOSES)
@@ -155,6 +165,11 @@ class MTWrapper(object):
         self.EXEC_MATREX_METEOR = self.findpath(self.EXEC_MATREX_METEOR, self.PATH_MATREX)
         self.EXEC_MATREX_MTEVAL = self.findpath(self.EXEC_MATREX_MTEVAL, self.PATH_MATREX)
         self.EXEC_MATREX_TER = self.findpath(self.EXEC_MATREX_TER, self.PATH_MATREX)
+        
+        self.EXEC_COLIBRI_CLASSENCODE = self.findpath(self.EXEC_COLIBRI_CLASSENCODE , self.PATH_COLIBRI)
+        self.EXEC_COLIBRI_PATTERNFINDER = self.findpath(self.EXEC_COLIBRI_PATTERNFINDER , self.PATH_COLIBRI)
+        self.EXEC_COLIBRI_GRAPHMODEL = self.findpath(self.EXEC_COLIBRI_GRAPHMODEL , self.PATH_COLIBRI)
+        self.EXEC_COLIBRI_ALIGNER = self.findpath(self.EXEC_COLIBRI_ALIGNER , self.PATH_COLIBRI)
         
         if self.PATH_MOSES:
             self.PATH_MOSES_MERT = self.PATH_MOSES + '/mert'
@@ -826,8 +841,8 @@ class MTWrapper(object):
         
         
         errors = False
-        if self.EXEC_MATREX_BLEU and os.path.exists(self.EXEC_MATREX_BLEU):
-            if not self.runcmd(self.EXEC_MATREX_BLEU + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + ' -ci > ' + 'bleu.score',  'Computing BLEU score'): errors = True
+        if self.EXEC_MATREX_BLEU and os.path.exists(self.EXEC_MATREX_BLEU) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
+            if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_MATREX_BLEU + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + ' -ci > ' + 'bleu.score',  'Computing BLEU score'): errors = True
             if not errors:
                 try:
                     f = open(self.WORKDIR + '/blue.score')
@@ -842,8 +857,8 @@ class MTWrapper(object):
         else:
             print >>sys.stderr, yellow("Skipping BLEU (no script found)")
             
-        if self.EXEC_MATREX_WER and os.path.exists(self.EXEC_MATREX_WER):
-            if not self.runcmd(self.EXEC_MATREX_WER + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + '  > ' + 'wer.score', 'Computing WER score'): errors = True
+        if self.EXEC_MATREX_WER and os.path.exists(self.EXEC_MATREX_WER) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
+            if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_MATREX_WER + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + '  > ' + 'wer.score', 'Computing WER score'): errors = True
             if not errors:
                 try:
                     f = open(self.WORKDIR + '/wer.score')
@@ -858,8 +873,8 @@ class MTWrapper(object):
         else:
             print >>sys.stderr, yellow("Skipping WER (no script found)")
      
-        if self.EXEC_MATREX_PER and os.path.exists(self.EXEC_MATREX_PER):
-            if not self.runcmd(self.EXEC_MATREX_PER + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + '  > ' + 'per.score',  'Computing PER score'): errors = True
+        if self.EXEC_MATREX_PER and os.path.exists(self.EXEC_MATREX_PER) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
+            if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_MATREX_PER + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + '  > ' + 'per.score',  'Computing PER score'): errors = True
             if not errors:
                 try:
                     f = open(self.WORKDIR + '/per.score')
@@ -874,8 +889,8 @@ class MTWrapper(object):
         else:
             print >>sys.stderr, yellow("Skipping PER (no script found)")
         
-        if self.EXEC_MATREX_METEOR and os.path.exists(self.EXEC_MATREX_METEOR):
-            if not self.runcmd('perl -I ' + os.path.dirname(self.EXEC_MATREX_METEOR) + ' ' + self.EXEC_MATREX_METEOR + " -s " + self.CORPUSNAME + " -r " + refxml + ' -t ' + targetxml + ' --modules "exact"  > ' + 'meteor.score',  'Computing METEOR score'): errors = True
+        if self.EXEC_MATREX_METEOR and os.path.exists(self.EXEC_MATREX_METEOR) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
+            if not self.runcmd(self.EXEC_PERL + ' -I ' + os.path.dirname(self.EXEC_MATREX_METEOR) + ' ' + self.EXEC_MATREX_METEOR + " -s " + self.CORPUSNAME + " -r " + refxml + ' -t ' + targetxml + ' --modules "exact"  > ' + 'meteor.score',  'Computing METEOR score'): errors = True
             if not errors:
                 try:
                     f = open(self.WORKDIR + '/meteor.score')
@@ -890,8 +905,8 @@ class MTWrapper(object):
         else:
             print >>sys.stderr, yellow("Skipping METEOR (no script found)")
 
-        if self.EXEC_MATREX_MTEVAL and os.path.exists(self.EXEC_MATREX_MTEVAL):
-            if not self.runcmd(self.EXEC_MATREX_MTEVAL + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml +  '  > ' + 'mteval.score',  'Computing NIST & BLEU scores'): errors = True
+        if self.EXEC_MATREX_MTEVAL and os.path.exists(self.EXEC_MATREX_MTEVAL) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
+            if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_MATREX_MTEVAL + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml +  '  > ' + 'mteval.score',  'Computing NIST & BLEU scores'): errors = True
             if not errors:
                 try:
                     f = open(self.WORKDIR + '/mteval.score')
@@ -911,8 +926,8 @@ class MTWrapper(object):
         else:
             print >>sys.stderr, yellow("Skipping MTEVAL (BLEU & NIST) (no script found)")
      
-        if self.EXEC_MATREX_TER and os.path.exists(self.EXEC_MATREX_TER):
-            if not self.runcmd(self.EXEC_MATREX_TER + " -r " + refxml + ' -h ' + targetxml + '  > ' + 'ter.score',  'Computing TER score'): errors = True
+        if self.EXEC_MATREX_TER and os.path.exists(self.EXEC_MATREX_TER) and self.EXEC_JAVA and os.path.exists(self.EXEC_JAVA):
+            if not self.runcmd(self.EXEC_JAVA + ' -jar ' + self.EXEC_MATREX_TER + " -r " + refxml + ' -h ' + targetxml + '  > ' + 'ter.score',  'Computing TER score'): errors = True
             if not errors:
                 try:
                     f = open(self.WORKDIR + '/ter.score')
