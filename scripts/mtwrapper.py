@@ -564,7 +564,7 @@ class MTWrapper(object):
         #TODO: Moses reordering model and generation model
         
         if self.BUILD_MOSES and not self.build_moses(): return False
-        if self.BUILD_MOSES_MOSES and not self.build_moses_mert(): return False
+        if self.BUILD_MOSES_MERT and not self.build_moses_mert(): return False
         
         if self.BUILD_PBMBMT and not self.build_pbmbmt(): return False
         
