@@ -824,15 +824,15 @@ class MTWrapper(object):
             return False    
      
         self.header('Converting source to XML for evaluation')
-        r = self.xmlize(sourcefile)
+        r = self.xmlize(sourcefile,'src')
         sourcexml = sourcefile + '.xml'
         if not self.footer('Converting source to XML for evaluation',int(not r), sourcexml): return False
         self.header('Converting reference to XML for evaluation')
-        r = self.xmlize(reffile)
+        r = self.xmlize(reffile,'ref')
         refxml = reffile + '.xml'
         if not self.footer('Converting reference to XML for evaluation',int(not r),refxml): return False
         self.header('Converting output to XML for evaluation')
-        r = self.xmlize(targetfile)
+        r = self.xmlize(targetfile,'tst')
         targetxml = targetfile + '.xml'
         if not self.footer('Converting output to XML for evaluation',int(not r),targetxml): return False        
         
@@ -986,8 +986,8 @@ class MTWrapper(object):
         return True
     
     
-    def xmlize(self, inputfile, type='tst'):
-        assert type in ('tst','ref')
+    def xmlize(self, inputfile, type):
+        assert type in ('tst','ref','src')
         try:        
             fin = open(inputfile,'r')
             fout = open(inputfile + '.xml','w')
