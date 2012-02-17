@@ -721,7 +721,7 @@ class MTWrapper(object):
         f.write('[ttable-limit]\n20\n\n')
         f.write('[weight-d]\n1\n\n')
         f.write('[weight-l]\n1\n\n')
-        f.write('[weight-t]\n1\n\n')
+        f.write('[weight-t]\n1\n1\n1\n1\n1\n\n')
         f.write('[weight-w]\n0\n\n')        
         f.close()
         return self.footer('Build Moses Configuration', 0, *outputfiles)
