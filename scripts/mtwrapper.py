@@ -714,7 +714,7 @@ class MTWrapper(object):
         f.write('# translation tables: source-factors, target-factors, number of scores, file\n')
         f.write('[ttable-file]\n')
         if self.BUILD_MOSES_PHRASETRANSTABLE:
-            f.write('0 0 5 ' + self.gets2tfilename('phrasetable') + '\n\n')
+            f.write('0 0 0 5 ' + self.gets2tfilename('phrasetable') + '\n\n')
         f.write('[lmodel-file]\n')
         if self.BUILD_SRILM_TARGETMODEL:
             f.write('0 0 ' + str(self.SRILM_ORDER) + ' ' + self.gettargetfilename('srilm') + '\n\n')
