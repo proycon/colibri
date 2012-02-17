@@ -845,14 +845,14 @@ class MTWrapper(object):
             if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_MATREX_BLEU + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + ' -ci > ' + 'bleu.score',  'Computing BLEU score'): errors = True
             if not errors:
                 try:
-                    f = open(self.WORKDIR + '/blue.score')
+                    f = open(self.WORKDIR + '/bleu.score')
                     for line in f:
                         if line[0:9] == "BLEUr1n4,":
                              self.bleu = float(line[10:].strip())
-                             print >>sys.stderr,"BLUE score: ", self.blue
+                             print >>sys.stderr,"BLEU score: ", self.bleu
                     f.close()
                 except:                
-                    print >>sys.stderr, red("Error reading blue.score")
+                    print >>sys.stderr, red("Error reading bleu.score")
                     errors = True            
         else:
             print >>sys.stderr, yellow("Skipping BLEU (no script found)")
@@ -914,11 +914,11 @@ class MTWrapper(object):
                         if line[0:12] == "NIST score =":
                             self.nist = float(line[13:21].strip())
                         if line[21:33] == "BLEU score =":
-                            if self.blue > 0:
-                                self.blue = float(line[34:40].strip())
-                                print >>sys.stderr,"BLUE score: ", self.blue
+                            if self.bleu > 0:
+                                self.bleu = float(line[34:40].strip())
+                                print >>sys.stderr,"BLEU score: ", self.bleu
                             else:
-                                print >>sys.stderr,"BLUE score (not stored): ", float(line[10:].strip())
+                                print >>sys.stderr,"BLEU score (not stored): ", float(line[10:].strip())
                     f.close()
                 except:                
                     print >>sys.stderr, red("Error reading mteval.score")
@@ -948,7 +948,7 @@ class MTWrapper(object):
             f.write(s+ "\n")
             print >>sys.stderr, s
             print >>sys.stderr,"SCORE SUMMARY\n===================\n"
-            s = str(round(self.blue,4)) + " " + str(round(self.meteor,4)) + " " + str(round(self.nist,4)) +  + " " + str(round(self.ter,2)) + " " + str(round(self.wer,2))  + " " + str(round(self.per,2))
+            s = str(round(self.bleu,4)) + " " + str(round(self.meteor,4)) + " " + str(round(self.nist,4)) +  + " " + str(round(self.ter,2)) + " " + str(round(self.wer,2))  + " " + str(round(self.per,2))
             f.write(s + "\n")
             print >>sys.stderr, s
             f.close()
