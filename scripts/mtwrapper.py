@@ -731,9 +731,6 @@ class MTWrapper(object):
         return True
     
     def build_pbmbmt(self):
-        #TODO: implement
-        
-        
         outputfiles = []
         for i in range(1,self.PBMBMT_MAXPHRASELENGTH+1):
             outputfiles.append( self.gets2tfilename('train.' + str(self.PBMBMT_LEFTCONTEXTSIZE) + str(i) + str(self.PBMBMT_RIGHTCONTEXTSIZE) + '.0x0.inst') )
@@ -744,9 +741,8 @@ class MTWrapper(object):
         outputfiles_ibase = [ x  + '.ibase' for x in outputfiles ]                
         for trainfile in glob.glob(self.WORKDIR + '/*.train.*.inst'):
             if not self.runcmd(self.EXEC_TIMBL + self.PBMBMT_TIMBL_OPTIONS + ' +v+db+di +D -s -f ' + trainfile + ' -I ' + trainfile + '.ibase', 'Building classifier ' + os.path.basename(trainfile), *outputfiles_ibase): return False
-                
-                
         
+         
         return True
     
     def run(self, inputfile, outputfile='output.txt', tokenise=False):        
@@ -765,18 +761,34 @@ class MTWrapper(object):
         if tokenise:        
             if not self.runcmd(self.EXEC_UCTO + ' -n -L' + self.SOURCELANG +  ' ' + inputfile + ' ' + 'input.txt','Tokenisation of Input File'): return False                                        
         else:
-            os.symlink(inputfile, 'input.txt' )
+            os.symlink(inputfile, self.WORKDIR + '/input.txt' )
         
-        if not self.runmoses(): return False
+        if self.BUILD_MOSES and not self.run_moses(): return False
+        if self.BUILD_MOSES and not self.run_pbmbmt(): return False
         
         os.rename('output.txt',outputfile)        
         return True
 
 
     
-    def runmoses(self):
+    def run_moses(self):
         if not self.runcmd(self.EXEC_MOSES + ' -f moses.ini < input.txt > output.txt','Moses Decoder'): return False
         return True 
+    
+    def run_pbmbmt(self):
+        for trainfile in glob.glob(self.WORKDIR + '/*.train.*.inst'):
+            basename = '.'.join(os.path.basename(trainfile).split('.')[:-4])
+        
+        os.symlink(self.WORKDIR + '/input.txt', self.WORKDIR + '/' + basename + '.txt')  
+
+        if not self.runcmd(self.EXEC_PBMBMT_INSTANCEGENERATOR + ' --test='+self.WORKDIR + '/' +basename + '.txt -p ' + self.gets2tfilename('phrasetable') + ' --nfeatleft=' + str(self.PBMBMT_LEFTCONTEXTSIZE) + ' --nfeatright='+str(self.PBMBMT_RIGHTCONTEXTSIZE) + ' --phraselength='+str(self.PBMBMT_MAXPHRASELENGTH),'Extracting Test Instances for PBMBMT'): return False
+                    
+        for testfile in glob.glob(self.WORKDIR + '/*.test.*.inst'):
+            if not self.runcmd(self.EXEC_TIMBL + self.PBMBMT_TIMBL_OPTIONS + ' +v+db+di +D -s -f ' + testfile + ' -i ' + testfile.replace('test','train') + '.ibase', 'Running classifier ' + os.path.basename(testfile)): return False
+        
+        if not self.runcmd(self.EXEC_PBMBMT_DECODER + ' -t ' + basename + '.txt --srilm=' + self.gets2tfilename('srilm') + ' ' + self.PBMBMT_DECODER_OPTIONS + ' > output.txt','Running PBMBMT Decoder'): return False        
+        
+        return True
             
 
     
