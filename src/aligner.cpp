@@ -255,27 +255,40 @@ int main( int argc, char *argv[] ) {
 				alignmodel->intersect(&reversealignmodel, bidirprobthreshold);	
 			}	    				
 		}
+
+		if ((!sourceclassfile.empty()) && (!targetclassfile.empty())) {
+			cerr << "Loading source class decoder " << sourceclassfile << endl;
+			ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
+	
+			cerr << "Loading target class decoder " << targetclassfile << endl;
+			ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
+	
+			cerr << "Decoding..." << endl;
+			alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);    
+		}	
 		       
     } else {
    		cerr << "Loading alignment model..." << endl;
-    	alignmodel = new AlignmentModel(modelfile);    	
+    	alignmodel = new AlignmentModel(modelfile);
+    	
+    	if ((!sourceclassfile.empty()) && (!targetclassfile.empty())) {
+			cerr << "Loading source class decoder " << sourceclassfile << endl;
+			ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
+	
+			cerr << "Loading target class decoder " << targetclassfile << endl;
+			ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
+	
+			cerr << "Decoding..." << endl;
+			alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);    
+		}	    	
     } 
     
 	
 	
-	if ((!sourceclassfile.empty()) && (!targetclassfile.empty())) {
-		cerr << "Loading source class decoder " << sourceclassfile << endl;
-		ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
-	
-		cerr << "Loading target class decoder " << targetclassfile << endl;
-		ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
-	
-	    cerr << "Decoding..." << endl;
-	    alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);    
-	}	
+
 
 	if (!outputprefix.empty()) {
-		alignmodel->save(outputprefix + ".alignmodel.colibri");
+		//alignmodel->save(outputprefix + ".alignmodel.colibri");
 	}
 
 	if (alignmodel != NULL) {
