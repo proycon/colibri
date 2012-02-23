@@ -27,6 +27,8 @@ class AlignmentModel {
 	
 	void intersect(AlignmentModel * reversemodel, double probthreshold = 0); //Compute intersection with reverse model
 	
+	void save(const std::string & filename);
+	
 };
 
 

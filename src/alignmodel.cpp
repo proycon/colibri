@@ -285,3 +285,35 @@ void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthresho
 		if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram);	
 	}	 
 }	 
+
+void AlignmentModel::save(const string & filename) {
+    ofstream f;
+    f.open(filename.c_str(), ios::out | ios::binary);
+    if ((!f) || (!f.good())) {
+       cerr << "File does not exist: " << filename << endl;
+       exit(3);
+    }
+    
+
+    uint64_t _id = 101;
+    f.write( (char*) &_id, sizeof(uint64_t));
+            
+    uint64_t sourcecount = alignmatrix.size();
+    f.write( (char*) &sourcecount, sizeof(uint64_t));         
+
+    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+    	const EncAnyGram* sourcegram = iter->first;
+    	sourcegram->writeasbinary(&f);                
+    	uint64_t targetcount = iter->second.size();
+    	f.write( (char*) &targetcount, sizeof(uint64_t));
+    	            
+        for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+        	const EncAnyGram* targetgram = iter->first;
+        	const double p = iter2->second;
+        	targetgram->writeasbinary(&f);
+        	f.write( (char*) &p, sizeof(double));
+        }
+
+    }    
+    f.close();	
+}
