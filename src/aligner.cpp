@@ -117,7 +117,10 @@ int main( int argc, char *argv[] ) {
             break;
 		case 'l':
             MINLENGTH = atoi(optarg);
-            break;            
+            break;     
+        case 'v':       
+            CONVERGENCE = atof(optarg);
+            break;
 		case 'L':
             MAXLENGTH = atoi(optarg);
             break;
