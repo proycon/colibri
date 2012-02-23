@@ -24,8 +24,8 @@ void usage() {
     cerr << "\t-Z				         Do normalisation; return probabilities instead of co-occurrence scores" << endl;   
     cerr << " EM Alignment Options:" << endl;
     cerr << "\t-P probability-threshold  Prune all alignments with an alignment probability lower than specified (0 <= x <= 1)" << endl;
-    cerr << "\t-I				         Maximum number of iterations (for EM method, default: 10000)" << endl;
-    cerr << "\t-v				         Convergence value (for EM method, default: 0.001)" << endl;
+    cerr << "\t-I n				         Maximum number of iterations (for EM method, default: 10000)" << endl;
+    cerr << "\t-v n				         Convergence value (for EM method, default: 0.001)" << endl;
     cerr << " Input filtering:" << endl;
     cerr << "\t-o occurence-threshold    Consider only patterns occuring more than specified (absolute occurrence). Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
     cerr << "\t-F freq-threshold         Consider only patterns occuring more than specified (relative frequency of all patterns).  Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
@@ -63,9 +63,12 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt(argc, argv, "s:S:t:T:p:P:JDo:F:x:X:B:bl:L:NVZEI:v:")) != -1)
+    while ((c = getopt(argc, argv, "hs:S:t:T:p:P:JDo:F:x:X:B:bl:L:NVZEI:v:")) != -1)
         switch (c)
         {
+        case 'h':
+        	usage();
+        	exit(0);
         case 'B':
         	bidirprobthreshold = atof(optarg);
         	DOBIDIRECTIONAL = true;
@@ -117,7 +120,10 @@ int main( int argc, char *argv[] ) {
             break;            
 		case 'L':
             MAXLENGTH = atoi(optarg);
-            break;    
+            break;
+        case 'I':
+            MAXROUNDS = atoi(optarg);
+            break;        
         case 'N':
             DOSKIPGRAMS = false;
             break;   
