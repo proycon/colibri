@@ -266,6 +266,11 @@ int main( int argc, char *argv[] ) {
 			cerr << "Decoding..." << endl;
 			alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);    
 		}	
+		
+		if (!outputprefix.empty()) {
+			alignmodel->save(outputprefix + ".alignmodel.colibri");
+		}
+
 		       
     } else {
    		cerr << "Loading alignment model..." << endl;
@@ -287,9 +292,6 @@ int main( int argc, char *argv[] ) {
 	
 
 
-	if (!outputprefix.empty()) {
-		//alignmodel->save(outputprefix + ".alignmodel.colibri");
-	}
 
 	if (alignmodel != NULL) {
 		delete alignmodel;

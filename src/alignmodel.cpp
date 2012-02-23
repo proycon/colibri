@@ -294,7 +294,6 @@ void AlignmentModel::save(const string & filename) {
        exit(3);
     }
     
-
     uint64_t _id = 101;
     f.write( (char*) &_id, sizeof(uint64_t));
             
