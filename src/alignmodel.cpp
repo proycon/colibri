@@ -317,3 +317,8 @@ void AlignmentModel::save(const string & filename) {
     }    
     f.close();	
 }
+
+AlignmentModel::AlignmentModel(const string & filename) {
+	//TODO
+}
+

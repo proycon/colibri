@@ -10,8 +10,13 @@ enum CoocMode {
 class AlignmentModel {
    protected:
     bool DEBUG;
+    std::vector<EncNGram> sourcengrams;
+    std::vector<EncNGram> targetngrams;
+    std::vector<EncSkipGram> sourceskipgrams;
+    std::vector<EncSkipGram> targetskipgrams;
    public:
     AlignmentModel() { DEBUG = false; }
+    AlignmentModel(const std::string & filename);
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignmatrix;    
     void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
     void enabledebug() { DEBUG = true; }

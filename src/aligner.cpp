@@ -9,6 +9,7 @@ void usage() {
     cerr << "\t-t targetmodelfile        Target model file (*.graphmodel.colibri)"  << endl;
     cerr << "\t-S sourceclassfile        Source class file (for decoding)" << endl;
     cerr << "\t-T targetclassfile        Target class file (for decoding)" << endl;
+    cerr << "\t-d alignmodelfile         Decode an existing alignment model (*.alignmodel.colibri), specify -S and -T as well" << endl;
     //cerr << "\t-d model                 Load and decode an existing model" << endl; //TODO
     //cerr << "\t-B                       Do a bi-directional alignment and compute intersection of results" << endl; //TODO
     cerr << " Alignment method (choose one):" << endl;
@@ -25,9 +26,9 @@ void usage() {
     cerr << " EM Alignment Options:" << endl;
     cerr << "\t-P probability-threshold  Prune all alignments with an alignment probability lower than specified (0 <= x <= 1)" << endl;
     cerr << "\t-I n				         Maximum number of iterations (for EM method, default: 10000)" << endl;
-    cerr << "\t-v n				         Convergence value (for EM method, default: 0.001)" << endl;
+    cerr << "\t-v n				         Convergence delta value (for EM method, default: 0.001)" << endl;
     cerr << " Input filtering:" << endl;
-    cerr << "\t-o occurence-threshold    Consider only patterns occuring more than specified (absolute occurrence). Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
+    cerr << "\t-O occurence-threshold    Consider only patterns occuring more than specified (absolute occurrence). Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
     cerr << "\t-F freq-threshold         Consider only patterns occuring more than specified (relative frequency of all patterns).  Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
     cerr << "\t-x xcount-threshold       Consider only patterns with an *exclusive* count over this threshold" << endl;
     cerr << "\t-X xcount-ratio           Consider only patterns with an *exclusivity ratio* over this threshold (between 0.0 [not exclusive] and 1.0 [entirely exclusive])" << endl;
@@ -42,6 +43,7 @@ int main( int argc, char *argv[] ) {
     string targetmodelfile = "";
     string sourceclassfile = "";
     string targetclassfile = "";
+    string modelfile="";
     double coocprunevalue = 0.0;
     double probprunevalue = 0.0;
     CoocMode COOCMODE = NOCOOC;
@@ -60,12 +62,15 @@ int main( int argc, char *argv[] ) {
     bool BESTONLY = false;
     int MAXROUNDS = 10000;
     double CONVERGENCE = 0.001;
-    
+    string outputprefix = "";
     
     char c;    
-    while ((c = getopt(argc, argv, "hs:S:t:T:p:P:JDo:F:x:X:B:bl:L:NVZEI:v:")) != -1)
+    while ((c = getopt(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:bl:L:NVZEI:v:")) != -1)
         switch (c)
         {
+        case 'd':
+        	modelfile = optarg;
+        	break;
         case 'h':
         	usage();
         	exit(0);
@@ -103,9 +108,12 @@ int main( int argc, char *argv[] ) {
         case 'T':
             targetclassfile = optarg;
             break;
-        case 'o':
+        case 'O':
             COUNTTHRESHOLD = atoi(optarg);            
             break;
+        case 'o':
+        	outputprefix = optarg;
+        	break;
 		case 'x':
             XCOUNTTHRESHOLD = atoi(optarg);
             break;
@@ -141,109 +149,118 @@ int main( int argc, char *argv[] ) {
             abort ();
         }
         
-    if (sourcemodelfile.empty()  || targetmodelfile.empty()) {
-  	    cerr << "Error: Specify at least a source model, target model, and alignment method!" << endl;
+        
+	
+    if (modelfile.empty() && (sourcemodelfile.empty()  || targetmodelfile.empty())) {
+  	    cerr << "Error: Specify at least a source model, target model, and alignment method to build an alignment model! Or load a pre-existing model" << endl;
         usage();
         exit(2);
     }
     
-    if ((!DO_EM) && (!COOCMODE)) {
+    if (modelfile.empty() && ((!DO_EM) && (!COOCMODE))) {
     	cerr << "Error: No alignment method selected (select -J or -D)" << endl;
     	usage();
     	exit(3);
     }
-    
-    cerr << "Configuration: " << endl;
-    if (DO_EM) {
-    	cerr << "\tEM-alignment" << endl;
-    } else if (COOCMODE == JACCARD) {
-		cerr << "\tCo-occurrence metric : JACCARD (-J)" << endl;	
-    } else if (COOCMODE == DICE) {
-			cerr << "\tCo-occurrence metric : DICE (-D)" << endl;
-	}
-    cerr << "\tAlig. prob prune  (-P): " << probprunevalue << endl;
-    if (DO_EM) cerr << "\tCo-oc prune value (-p): " << coocprunevalue << endl;    
-	cerr << "\tCount threshold   (-o): " << COUNTTHRESHOLD << endl;
-	cerr << "\tFreq threshold    (-F): " << FREQTHRESHOLD << endl;
-	cerr << "\tXcount threshold  (-x): " << XCOUNTTHRESHOLD << endl;
-	cerr << "\tXcount ratio      (-X): " << XCOUNTRATIOTHRESHOLD << endl;
-	cerr << "\tMinimum N length  (-l): " << MINLENGTH << endl;
-	cerr << "\tMaximum N length  (-L): " << MAXLENGTH << endl;
-	if (!DOSKIPGRAMS) {
-		cerr << "\tSKIPGRAMS DISABLED! (-N)";
-	}
-	if (DONORM) {
-		cerr << "\tNormalisation enabled (-Z)";
-	}
-	if (DOBIDIRECTIONAL) {
-		cerr << "\tBidirectional alignment enabled (-B)";
-	}
-	cerr << endl;
+
+	AlignmentModel * alignmodel = NULL;
+
+	if (modelfile.empty()) {
+		cerr << "Configuration: " << endl;
+		if (DO_EM) {
+			cerr << "\tEM-alignment" << endl;
+		} else if (COOCMODE == JACCARD) {
+			cerr << "\tCo-occurrence metric : JACCARD (-J)" << endl;	
+		} else if (COOCMODE == DICE) {
+				cerr << "\tCo-occurrence metric : DICE (-D)" << endl;
+		}
+		cerr << "\tAlig. prob prune  (-P): " << probprunevalue << endl;
+		if (DO_EM) cerr << "\tCo-oc prune value (-p): " << coocprunevalue << endl;    
+		cerr << "\tCount threshold   (-o): " << COUNTTHRESHOLD << endl;
+		cerr << "\tFreq threshold    (-F): " << FREQTHRESHOLD << endl;
+		cerr << "\tXcount threshold  (-x): " << XCOUNTTHRESHOLD << endl;
+		cerr << "\tXcount ratio      (-X): " << XCOUNTRATIOTHRESHOLD << endl;
+		cerr << "\tMinimum N length  (-l): " << MINLENGTH << endl;
+		cerr << "\tMaximum N length  (-L): " << MAXLENGTH << endl;
+		if (!DOSKIPGRAMS) {
+			cerr << "\tSKIPGRAMS DISABLED! (-N)";
+		}
+		if (DONORM) {
+			cerr << "\tNormalisation enabled (-Z)";
+		}
+		if (DOBIDIRECTIONAL) {
+			cerr << "\tBidirectional alignment enabled (-B)";
+		}
+		cerr << endl;
 	
-    
-    cerr << "Loading source model " << sourcemodelfile << endl;
-    SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH);
-    cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
-    cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredtokens << " tokens due to set thresholds" << endl;
-    if (sourcemodel.has_xcount()) {
-    	cerr << "  Exclusive count available? YES" << endl;
-    } else {
-    	cerr << "  Exclusive count available? NO" << endl;
-    }
-    if (sourcemodel.has_index()) {
-    	cerr << "  Reverse index has " << sourcemodel.reverseindex.size() << " sentences" << endl;
-    } else {
-    	cerr << "ERROR: Model " + sourcemodelfile + " contains no indexing information! Unable to align without!" << endl;
-    	exit(3);
-    }    
-    
-    cerr << "Loading target model " << targetmodelfile << endl;
-    SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH);
-    cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
-    cerr << "  Ignored " << targetmodel.ignoredtypes << " types, " << targetmodel.ignoredtokens << " tokens due to set thresholds" << endl;
-    if (targetmodel.has_xcount()) {
-    	cerr << "  Exclusive count available? YES" << endl;
-    } else {
-    	cerr << "  Exclusive count available? NO" << endl;
-    }
-    if (targetmodel.has_index()) {
-    	cerr << "  Reverse index has " << targetmodel.reverseindex.size() << " sentences" << endl;
-    } else {
-    	cerr << "ERROR: Model " + targetmodelfile + " contains no indexing information! Unable to align without!" << endl;
-    	exit(3);
-    }       
-    
-    AlignmentModel * alignmodel = NULL;
-    
-    if (DO_EM) {
-		cerr << "Computing alignment model..." << endl;
-		alignmodel = new EMAlignmentModel(sourcemodel,targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
-		cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
-		cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
 		
-		if (DOBIDIRECTIONAL) {
-			cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-			AlignmentModel reversealignmodel = EMAlignmentModel(targetmodel,sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
-			cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
-			cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;
-			cerr << "Computing intersection of both alignment models..." << endl;
-			alignmodel->intersect(&reversealignmodel, bidirprobthreshold);
-		}	    
-    } else if (COOCMODE) {
-		cerr << "Computing alignment model..." << endl;
-		alignmodel = new CoocAlignmentModel(COOCMODE, sourcemodel,targetmodel, coocprunevalue, probprunevalue, BESTONLY, DONORM, DODEBUG);
-		cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
-		cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
+		cerr << "Loading source model " << sourcemodelfile << endl;
+		SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH);
+		cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
+		cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredtokens << " tokens due to set thresholds" << endl;
+		if (sourcemodel.has_xcount()) {
+			cerr << "  Exclusive count available? YES" << endl;
+		} else {
+			cerr << "  Exclusive count available? NO" << endl;
+		}
+		if (sourcemodel.has_index()) {
+			cerr << "  Reverse index has " << sourcemodel.reverseindex.size() << " sentences" << endl;
+		} else {
+			cerr << "ERROR: Model " + sourcemodelfile + " contains no indexing information! Unable to align without!" << endl;
+			exit(3);
+		}    
 		
-		if (DOBIDIRECTIONAL) {
-			cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-			AlignmentModel reversealignmodel = CoocAlignmentModel(COOCMODE, targetmodel,sourcemodel, coocprunevalue, probprunevalue, BESTONLY, DONORM, DODEBUG);
-			cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
-			cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;
-			cerr << "Computing intersection of both alignment models..." << endl;
-			alignmodel->intersect(&reversealignmodel, bidirprobthreshold);	
-		}	    				
-	}
+		cerr << "Loading target model " << targetmodelfile << endl;
+		SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH);
+		cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
+		cerr << "  Ignored " << targetmodel.ignoredtypes << " types, " << targetmodel.ignoredtokens << " tokens due to set thresholds" << endl;
+		if (targetmodel.has_xcount()) {
+			cerr << "  Exclusive count available? YES" << endl;
+		} else {
+			cerr << "  Exclusive count available? NO" << endl;
+		}
+		if (targetmodel.has_index()) {
+			cerr << "  Reverse index has " << targetmodel.reverseindex.size() << " sentences" << endl;
+		} else {
+			cerr << "ERROR: Model " + targetmodelfile + " contains no indexing information! Unable to align without!" << endl;
+			exit(3);
+		}
+		
+		if (DO_EM) {
+			cerr << "Computing alignment model..." << endl;
+			alignmodel = new EMAlignmentModel(sourcemodel,targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
+			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
+			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
+		
+			if (DOBIDIRECTIONAL) {
+				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
+				AlignmentModel reversealignmodel = EMAlignmentModel(targetmodel,sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
+				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
+				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;
+				cerr << "Computing intersection of both alignment models..." << endl;
+				alignmodel->intersect(&reversealignmodel, bidirprobthreshold);
+			}	    
+		} else if (COOCMODE) {
+			cerr << "Computing alignment model..." << endl;
+			alignmodel = new CoocAlignmentModel(COOCMODE, sourcemodel,targetmodel, coocprunevalue, probprunevalue, BESTONLY, DONORM, DODEBUG);
+			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
+			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
+		
+			if (DOBIDIRECTIONAL) {
+				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
+				AlignmentModel reversealignmodel = CoocAlignmentModel(COOCMODE, targetmodel,sourcemodel, coocprunevalue, probprunevalue, BESTONLY, DONORM, DODEBUG);
+				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
+				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;
+				cerr << "Computing intersection of both alignment models..." << endl;
+				alignmodel->intersect(&reversealignmodel, bidirprobthreshold);	
+			}	    				
+		}
+		       
+    } else {
+   		cerr << "Loading alignment model..." << endl;
+    	alignmodel = new AlignmentModel(modelfile);    	
+    } 
+    
 	
 	
 	if ((!sourceclassfile.empty()) && (!targetclassfile.empty())) {
@@ -256,6 +273,10 @@ int main( int argc, char *argv[] ) {
 	    cerr << "Decoding..." << endl;
 	    alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);    
 	}	
+
+	if (!outputprefix.empty()) {
+		alignmodel->save(outputprefix + ".alignmodel.colibri");
+	}
 
 	if (alignmodel != NULL) {
 		delete alignmodel;
