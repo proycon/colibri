@@ -304,15 +304,27 @@ void CoocAlignmentModel::save(const string & filename) {
     f.write( (char*) &sourcecount, sizeof(uint64_t));         
 
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
-    	const EncAnyGram* sourcegram = iter->first;    	
-    	sourcegram->writeasbinary(&f);                
+    	const EncAnyGram * sourcegram = iter->first;
+    	if (sourcegram->isskipgram()) {
+    		const EncSkipGram * skipgram = (const EncSkipGram*) sourcemodel->getkey(sourcegram);     	
+    		skipgram->writeasbinary(&f);
+    	} else {
+    	    const EncNGram * ngram = (const EncNGram*) sourcemodel->getkey(sourcegram);     	
+    		ngram->writeasbinary(&f);
+    	}                
     	uint64_t targetcount = iter->second.size();
     	f.write( (char*) &targetcount, sizeof(uint64_t));
     	            
         for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
         	const EncAnyGram* targetgram = iter->first;
         	const double p = iter2->second;
-        	targetgram->writeasbinary(&f);
+        	if (targetgram->isskipgram()) {
+    			const EncSkipGram * skipgram = (const EncSkipGram*) targetmodel->getkey(targetgram);     	
+	    		skipgram->writeasbinary(&f);
+    		} else {
+    	    	const EncNGram * ngram = (const EncNGram*) targetmodel->getkey(targetgram);     	
+	    		ngram->writeasbinary(&f);
+    		}                
         	f.write( (char*) &p, sizeof(double));
         }
 
