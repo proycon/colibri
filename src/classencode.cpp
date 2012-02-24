@@ -2,6 +2,7 @@
 #include <iostream>
 #include "classencoder.h"
 #include "getopt.h"
+#include <common.h>
 
 using namespace std;
 
@@ -13,6 +14,7 @@ void usage() {
 int main( int argc, char *argv[] ) {    
     string classfile = "";
     string corpusfile = "";
+    string outputprefix = "";
        
     char c;    
     while ((c = getopt(argc, argv, "f:h")) != -1)
@@ -34,8 +36,13 @@ int main( int argc, char *argv[] ) {
     	exit(2);
     }
     
+    if (outputprefix.empty()) {
+        outputprefix = corpusfile; 
+        strip_extension(outputprefix,"txt");    
+    }
+
     ClassEncoder classencoder = ClassEncoder();
     classencoder.build(corpusfile);
-    classencoder.save(corpusfile + ".cls");
-    classencoder.encodefile(corpusfile, corpusfile + ".clsenc");
+    classencoder.save(outputprefix + ".cls");
+    classencoder.encodefile(corpusfile, outputprefix + ".clsenc");
 }
