@@ -257,6 +257,7 @@ int main( int argc, char *argv[] ) {
 		}
 
 		if (!outputprefix.empty()) {
+		    cerr << "Saving alignment model..." << endl;
 			alignmodel->save(outputprefix + ".alignmodel.colibri");
 		}
 

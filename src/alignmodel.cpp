@@ -306,24 +306,34 @@ void CoocAlignmentModel::save(const string & filename) {
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
     	const EncAnyGram * sourcegram = iter->first;
     	if (sourcegram->isskipgram()) {
-    		const EncSkipGram * skipgram = (const EncSkipGram*) sourcemodel->getkey(sourcegram);     	
+    		const EncSkipGram * skipgram = (const EncSkipGram*) sourcemodel->getkey(sourcegram);
     		skipgram->writeasbinary(&f);
     	} else {
-    	    const EncNGram * ngram = (const EncNGram*) sourcemodel->getkey(sourcegram);     	
-    		ngram->writeasbinary(&f);
+    	    const EncNGram * ngram = (const EncNGram*) sourcemodel->getkey(sourcegram);
+    		ngram->writeasbinary(&f);    		
     	}                
     	uint64_t targetcount = iter->second.size();
     	f.write( (char*) &targetcount, sizeof(uint64_t));
     	            
         for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-        	const EncAnyGram* targetgram = iter->first;
+        	const EncAnyGram* targetgram = iter2->first;
         	const double p = iter2->second;
         	if (targetgram->isskipgram()) {
-    			const EncSkipGram * skipgram = (const EncSkipGram*) targetmodel->getkey(targetgram);     	
-	    		skipgram->writeasbinary(&f);
+    			const EncSkipGram * skipgram = (const EncSkipGram*) targetmodel->getkey(targetgram);
+    			if (skipgram == NULL) {
+    				cerr << "TARGET-SIDE SKIPGRAM NOT FOUND!\n";
+    				exit(3);
+    			}  else {
+	    			skipgram->writeasbinary(&f);
+	    		}
     		} else {
     	    	const EncNGram * ngram = (const EncNGram*) targetmodel->getkey(targetgram);     	
-	    		ngram->writeasbinary(&f);
+	    		if (ngram == NULL) {
+    				cerr << "TARGET-SIDE NGRAM NOT FOUND!";
+    				exit(3);
+    			}  else {
+	    			ngram->writeasbinary(&f);
+	    		}
     		}                
         	f.write( (char*) &p, sizeof(double));
         }
