@@ -290,6 +290,9 @@ void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthresho
 
 
 void CoocAlignmentModel::save(const string & filename) {
+	const unsigned char check = 0xff;
+	const char czero = 0;
+		
     ofstream f;
     f.open(filename.c_str(), ios::out | ios::binary);
     if ((!f) || (!f.good())) {
@@ -304,12 +307,15 @@ void CoocAlignmentModel::save(const string & filename) {
     f.write( (char*) &sourcecount, sizeof(uint64_t));         
 
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+		f.write((char*) &check, sizeof(char));
+			  
     	const EncAnyGram * sourcegram = iter->first;
     	if (sourcegram->isskipgram()) {
     		const EncSkipGram * skipgram = (const EncSkipGram*) sourcemodel->getkey(sourcegram);
     		skipgram->writeasbinary(&f);
     	} else {
     	    const EncNGram * ngram = (const EncNGram*) sourcemodel->getkey(sourcegram);
+    	    f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
     		ngram->writeasbinary(&f);    		
     	}                
     	uint64_t targetcount = iter->second.size();
@@ -332,6 +338,7 @@ void CoocAlignmentModel::save(const string & filename) {
     				cerr << "TARGET-SIDE NGRAM NOT FOUND!";
     				exit(3);
     			}  else {
+    				f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
 	    			ngram->writeasbinary(&f);
 	    		}
     		}                
@@ -342,8 +349,117 @@ void CoocAlignmentModel::save(const string & filename) {
     f.close();	
 }
 
+const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram* key) {
+    if (key->gapcount() == 0) {
+        std::unordered_map<EncNGram,bool>::iterator iter = sourcengrams.find(*( (EncNGram*) key) );
+        if (iter != sourcengrams.end()) {
+            return &iter->first;
+        } else {
+            return NULL;
+        }
+    } else {
+        std::unordered_map<EncSkipGram,bool>::iterator iter = sourceskipgrams.find(*( (EncSkipGram*) key) );
+        if (iter != sourceskipgrams.end()) {
+            return &iter->first;
+        } else {
+            return NULL;
+        }        
+    }
+}
+
+
+const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key) {
+    if (key->gapcount() == 0) {
+        std::unordered_map<EncNGram,bool>::iterator iter = targetngrams.find(*( (EncNGram*) key) );
+        if (iter != targetngrams.end()) {
+            return &iter->first;
+        } else {
+            return NULL;
+        }
+    } else {
+        std::unordered_map<EncSkipGram,bool>::iterator iter = targetskipgrams.find(*( (EncSkipGram*) key) );
+        if (iter != targetskipgrams.end()) {
+            return &iter->first;
+        } else {
+            return NULL;
+        }        
+    }
+}
+
 
 AlignmentModel::AlignmentModel(const string & filename) {
-	//TODO
+	DEBUG = false;
+	unsigned char check;
+	
+    ifstream f;
+    f.open(filename.c_str(), ios::in | ios::binary);
+    if ((!f) || (!f.good())) {
+       cerr << "File does not exist: " << filename << endl;
+       exit(3);
+    }
+    
+    uint64_t model_id;    
+    uint64_t sourcecount = 0;    
+    f.read( (char*) &model_id, sizeof(uint64_t));        
+    f.read( (char*) &sourcecount, sizeof(uint64_t));        
+     
+    char gapcount;    
+    for (int i = 0; i < sourcecount; i++) {	    
+	    if (DEBUG) cerr << "\t@" << i << endl;
+        f.read((char*) &check, sizeof(char));
+        if (check != 0xff) {
+        	cerr << "ERROR processing " + filename + " at construction " << i << " of " << sourcecount << ". Expected check-byte, got " << (int) check << endl;
+        	f.read(&gapcount, sizeof(char));
+        	cerr << "DEBUG: next byte should be gapcount, value=" << (int) gapcount << endl; 
+        	exit(13);        	
+        }
+        f.read(&gapcount, sizeof(char));	 
+        const EncAnyGram * sourcegram;   
+        if (gapcount == 0) {
+            if (DEBUG)  cerr << "\tNGRAM";
+            EncNGram ngram = EncNGram(&f); //read from file            
+            if (!getsourcekey((EncAnyGram*) &ngram)) {
+            	sourcengrams[ngram] = true;            	
+            }   
+            sourcegram = getsourcekey((EncAnyGram*) &ngram);                                           
+        } else {
+            if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
+            EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              
+            if (!getsourcekey((EncAnyGram*) &skipgram)) {
+            	sourceskipgrams[skipgram] = true;            	
+            }   
+            sourcegram = getsourcekey((EncAnyGram*) &skipgram);                     
+        }        
+        uint64_t targetcount;
+        f.read( (char*) &targetcount, sizeof(uint64_t));
+        for (int j = 0; j < targetcount; j++) {
+        	const EncAnyGram * targetgram = NULL;   
+            f.read(&gapcount, sizeof(char));	    
+		    if (gapcount == 0) {
+		        if (DEBUG)  cerr << "\tNGRAM";
+		        EncNGram ngram = EncNGram(&f); //read from file
+		        if (!gettargetkey((EncAnyGram*) &ngram)) {
+		        	targetngrams[ngram] = true;		        	
+		        }   
+		        targetgram = gettargetkey((EncAnyGram*) &ngram);                                           
+		    } else {
+		        if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
+		        EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              		        
+		        if (!gettargetkey((EncAnyGram*) &skipgram)) {
+		        	targetskipgrams[skipgram] = true;		        	
+		        }   
+		        targetgram = gettargetkey((EncAnyGram*) &skipgram);                      
+		    }
+		    double p;
+		    f.read((char*) &p, sizeof(double));
+		    if (sourcegram != NULL and targetgram != NULL) {
+		    	alignmatrix[sourcegram][targetgram] = p;
+		    } else {
+		    	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
+		    	exit(6);
+		    }
+        }        
+	}
+    f.close();
 }
 
