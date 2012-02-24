@@ -228,13 +228,13 @@ int main( int argc, char *argv[] ) {
 		
 		if (DO_EM) {
 			cerr << "Computing alignment model..." << endl;
-			alignmodel = new EMAlignmentModel(sourcemodel,targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
+			alignmodel = new EMAlignmentModel(&sourcemodel,&targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
 		
 			if (DOBIDIRECTIONAL) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-				AlignmentModel reversealignmodel = EMAlignmentModel(targetmodel,sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
+				AlignmentModel reversealignmodel = EMAlignmentModel(&targetmodel,&sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
 				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;
 				cerr << "Computing intersection of both alignment models..." << endl;
@@ -242,19 +242,24 @@ int main( int argc, char *argv[] ) {
 			}	    
 		} else if (COOCMODE) {
 			cerr << "Computing alignment model..." << endl;
-			alignmodel = new CoocAlignmentModel(COOCMODE, sourcemodel,targetmodel, coocprunevalue, probprunevalue, BESTONLY, DONORM, DODEBUG);
+			alignmodel = new CoocAlignmentModel(COOCMODE, &sourcemodel,&targetmodel, coocprunevalue, probprunevalue, BESTONLY, DONORM, DODEBUG);
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
 		
 			if (DOBIDIRECTIONAL) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-				AlignmentModel reversealignmodel = CoocAlignmentModel(COOCMODE, targetmodel,sourcemodel, coocprunevalue, probprunevalue, BESTONLY, DONORM, DODEBUG);
+				AlignmentModel reversealignmodel = CoocAlignmentModel(COOCMODE, &targetmodel,&sourcemodel, coocprunevalue, probprunevalue, BESTONLY, DONORM, DODEBUG);
 				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;
 				cerr << "Computing intersection of both alignment models..." << endl;
 				alignmodel->intersect(&reversealignmodel, bidirprobthreshold);	
 			}	    				
 		}
+
+		if (!outputprefix.empty()) {
+			alignmodel->save(outputprefix + ".alignmodel.colibri");
+		}
+
 
 		if ((!sourceclassfile.empty()) && (!targetclassfile.empty())) {
 			cerr << "Loading source class decoder " << sourceclassfile << endl;
@@ -267,10 +272,7 @@ int main( int argc, char *argv[] ) {
 			alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);    
 		}	
 		
-		if (!outputprefix.empty()) {
-			alignmodel->save(outputprefix + ".alignmodel.colibri");
-		}
-
+		
 		       
     } else {
    		cerr << "Loading alignment model..." << endl;

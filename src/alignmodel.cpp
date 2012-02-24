@@ -45,7 +45,7 @@ double CoocAlignmentModel::cooc( const multiset<uint32_t> & sourceindex, const m
 }
 
 
-unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel) {        
+unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const multiset<uint32_t> & sourceindex, SelectivePatternModel * targetmodel) {        
    
     unsigned int found = 0;
     unsigned int prunedabs = 0;
@@ -59,9 +59,9 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
     for (multiset<uint32_t>::const_iterator iter = sourceindex.begin(); iter != sourceindex.end(); iter++) {
         const uint32_t sentencenumber = *iter;        
         if (sentencenumber == prevsentencenumber) continue;
-		if (targetmodel.reverseindex.count(sentencenumber) > 0) {
-			if (DEBUG) cerr << "\t\t\tReverseindex for sentence " << sentencenumber << " yields " << targetmodel.reverseindex[sentencenumber].size() << " target-side patterns" << endl;
-			for (vector<const EncAnyGram*>::const_iterator reviter = targetmodel.reverseindex[sentencenumber].begin(); reviter != targetmodel.reverseindex[sentencenumber].end(); reviter++) {
+		if (targetmodel->reverseindex.count(sentencenumber) > 0) {
+			if (DEBUG) cerr << "\t\t\tReverseindex for sentence " << sentencenumber << " yields " << targetmodel->reverseindex[sentencenumber].size() << " target-side patterns" << endl;
+			for (vector<const EncAnyGram*>::const_iterator reviter = targetmodel->reverseindex[sentencenumber].begin(); reviter != targetmodel->reverseindex[sentencenumber].end(); reviter++) {
 				const EncAnyGram* targetgram = *reviter;
 				targetpatterns.insert(targetgram);
 			}
@@ -73,9 +73,9 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
 			const EncAnyGram* targetgram = *iter;
 	        multiset<uint32_t> * targetindex;
 		    if (targetgram->gapcount() == 0) {
-		       targetindex = &targetmodel.ngrams[*( (EncNGram*) targetgram)].sentences;
+		       targetindex = &targetmodel->ngrams[*( (EncNGram*) targetgram)].sentences;
 		    } else {
-		       targetindex = &targetmodel.skipgrams[*( (EncSkipGram*) targetgram)].sentences;
+		       targetindex = &targetmodel->skipgrams[*( (EncSkipGram*) targetgram)].sentences;
 		    }				    
 		    const double coocvalue = cooc(sourceindex, *targetindex, absthreshold);                    
 		    if (coocvalue >= absthreshold) {
@@ -108,21 +108,23 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
     return found - prunedprob;
 }
 
-CoocAlignmentModel::CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const double absthreshold, const double probthreshold, bool bestonly, bool normalize, bool DEBUG) {
+CoocAlignmentModel::CoocAlignmentModel(CoocMode mode,SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const double absthreshold, const double probthreshold, bool bestonly, bool normalize, bool DEBUG) {
     this->mode = mode;
     this->absthreshold = absthreshold;
     this->probthreshold = probthreshold;
     this->normalize = normalize;
     this->bestonly = bestonly;
     this->DEBUG = DEBUG;
+    this->sourcemodel = sourcemodel;
+    this->targetmodel = targetmodel;
     unsigned int c = 0;
     unsigned int found = 0;
-    for (unordered_map<EncNGram,IndexCountData >::const_iterator iter = sourcemodel.ngrams.begin();  iter != sourcemodel.ngrams.end(); iter++) {
+    for (unordered_map<EncNGram,IndexCountData >::const_iterator iter = sourcemodel->ngrams.begin();  iter != sourcemodel->ngrams.end(); iter++) {
     	c++;
         if ((c % 1000 == 0) || (DEBUG)) cerr << "\t@" << c << " (ngram) -- " << found << " alignment possibilities thus-far" << endl;
         found += compute(&iter->first, iter->second.sentences, targetmodel);
     }    
-    for (unordered_map<EncSkipGram,IndexCountData >::const_iterator iter = sourcemodel.skipgrams.begin();  iter != sourcemodel.skipgrams.end(); iter++) {
+    for (unordered_map<EncSkipGram,IndexCountData >::const_iterator iter = sourcemodel->skipgrams.begin();  iter != sourcemodel->skipgrams.end(); iter++) {
     	c++;
     	if ((c % 1000 == 0) || (DEBUG)) cerr << "\t@" << c << " (skipgram) -- " << found << " alignment possibilities thus-far" << endl;
         found += compute(&iter->first, iter->second.sentences, targetmodel);
@@ -147,7 +149,7 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
 
 
 
-EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, double probthreshold, bool bestonly, bool DEBUG) {
+EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, double probthreshold, bool bestonly, bool DEBUG) {
     int round = 0;    
     unsigned long c;
     double prevavdivergence = 0;
@@ -155,11 +157,11 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, Selectiv
     
     //initialise uniformly
     cerr << "  Initialisation step" << endl; 
-    for ( unordered_map<uint32_t,std::vector<const EncAnyGram*> >::const_iterator reviter_source = sourcemodel.reverseindex.begin(); reviter_source != sourcemodel.reverseindex.end(); reviter_source++) {
+    for ( unordered_map<uint32_t,std::vector<const EncAnyGram*> >::const_iterator reviter_source = sourcemodel->reverseindex.begin(); reviter_source != sourcemodel->reverseindex.end(); reviter_source++) {
     	uint32_t sentence = reviter_source->first;
 		const vector<const EncAnyGram*> * sourcepatterns = &reviter_source->second;
-		if (targetmodel.reverseindex.count(sentence) > 0) {
-			vector<const EncAnyGram*> * targetpatterns = &targetmodel.reverseindex[sentence];
+		if (targetmodel->reverseindex.count(sentence) > 0) {
+			vector<const EncAnyGram*> * targetpatterns = &targetmodel->reverseindex[sentence];
 			if ((DEBUG) || (sentence % 1000 == 0)) cerr << "@" << sentence << " (" << sourcepatterns->size() << "x" << targetpatterns->size() << ")" << endl;
 			double v = (double) 1 / targetpatterns->size();
 			for (vector<const EncAnyGram*>::const_iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {  
@@ -184,11 +186,11 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel & sourcemodel, Selectiv
         
         
         //ESTIMATION STEP: collect counts to estimate improved model -- use reverse index to iterate over all sentences in training data 
-        for ( unordered_map<uint32_t,std::vector<const EncAnyGram*> >::const_iterator reviter_source = sourcemodel.reverseindex.begin(); reviter_source != sourcemodel.reverseindex.end(); reviter_source++) {        		
+        for ( unordered_map<uint32_t,std::vector<const EncAnyGram*> >::const_iterator reviter_source = sourcemodel->reverseindex.begin(); reviter_source != sourcemodel->reverseindex.end(); reviter_source++) {        		
         		uint32_t sentence = reviter_source->first;
         		const vector<const EncAnyGram*> * sourcepatterns = &reviter_source->second;
-        		if (targetmodel.reverseindex.count(sentence) > 0) {
-        			vector<const EncAnyGram*> * targetpatterns = &targetmodel.reverseindex[sentence];
+        		if (targetmodel->reverseindex.count(sentence) > 0) {
+        			vector<const EncAnyGram*> * targetpatterns = &targetmodel->reverseindex[sentence];
         			if ((DEBUG) || (sentence % 1000 == 0)) cerr << "@" << sentence << " (" << sourcepatterns->size() << "x" << targetpatterns->size() << ")" << endl;
         			//compute sentencetotal for normalisation later in count step, sum_s(p(t|s))
         			unordered_map<const EncAnyGram*, double> sentencetotal;      
@@ -286,7 +288,8 @@ void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthresho
 	}	 
 }	 
 
-void AlignmentModel::save(const string & filename) {
+
+void CoocAlignmentModel::save(const string & filename) {
     ofstream f;
     f.open(filename.c_str(), ios::out | ios::binary);
     if ((!f) || (!f.good())) {
@@ -301,7 +304,7 @@ void AlignmentModel::save(const string & filename) {
     f.write( (char*) &sourcecount, sizeof(uint64_t));         
 
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
-    	const EncAnyGram* sourcegram = iter->first;
+    	const EncAnyGram* sourcegram = iter->first;    	
     	sourcegram->writeasbinary(&f);                
     	uint64_t targetcount = iter->second.size();
     	f.write( (char*) &targetcount, sizeof(uint64_t));
@@ -316,6 +319,7 @@ void AlignmentModel::save(const string & filename) {
     }    
     f.close();	
 }
+
 
 AlignmentModel::AlignmentModel(const string & filename) {
 	//TODO

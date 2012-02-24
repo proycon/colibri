@@ -32,8 +32,7 @@ class AlignmentModel {
 	
 	void intersect(AlignmentModel * reversemodel, double probthreshold = 0); //Compute intersection with reverse model
 	
-	void save(const std::string & filename);
-	
+	virtual void save(const std::string & filename) {};	
 };
 
 
@@ -42,13 +41,17 @@ class CoocAlignmentModel: public AlignmentModel {
     double absthreshold; //cooc threshold
     double probthreshold;
     bool normalize;
-    bool bestonly;
+    bool bestonly; 
    public:   
+    SelectivePatternModel * sourcemodel;
+    SelectivePatternModel * targetmodel;
     CoocMode mode;
-    CoocAlignmentModel(CoocMode mode, SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double absthreshold = 0,  const double relthreshold = 0, bool BESTONLY = false, bool DONORM = true, bool DEBUG = false);         
+    CoocAlignmentModel(CoocMode mode, SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, double absthreshold = 0,  const double relthreshold = 0, bool BESTONLY = false, bool DONORM = true, bool DEBUG = false);         
+   
+    void save(const std::string & filename);
    
     double cooc( const std::multiset<uint32_t> & sourceindex, const std::multiset<uint32_t> & targetindex,  const double threshold = 0); //multiset instead of vector cause we want the ordering to easily compute co-occurence 
-    unsigned int compute(const EncAnyGram * sourcegram, const std::multiset<uint32_t> & sourceindex, SelectivePatternModel & targetmodel);
+    unsigned int compute(const EncAnyGram * sourcegram, const std::multiset<uint32_t> & sourceindex, SelectivePatternModel * targetmodel);
     
 
     //void save(const std::string filename);
@@ -56,7 +59,9 @@ class CoocAlignmentModel: public AlignmentModel {
 
 
 class EMAlignmentModel: public AlignmentModel {
-   public:    
-    EMAlignmentModel(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, bool BESTONLY = false, bool DEBUG = false);        
+   public:
+    SelectivePatternModel * sourcemodel;
+    SelectivePatternModel * targetmodel;    
+    EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, bool BESTONLY = false, bool DEBUG = false);        
     //save(const std::string filename);
 };
