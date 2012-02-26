@@ -1543,7 +1543,7 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, 
 
 /****************************************************************************************************************************************/
 
-SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool DOFORWARDINDEX,  bool DOREVERSEINDEX, bool DOXCOUNT, int COUNTTHRESHOLD, double FREQTHRESHOLD, double XCOUNTRATIOTHRESHOLD, int XCOUNTTHRESHOLD, bool DOSKIPGRAMS,  int MINLENGTH, int MAXLENGTH) { //read a normal graph pattern model in another way optimised for Cooc alignment
+SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool DOFORWARDINDEX,  bool DOREVERSEINDEX, bool DOXCOUNT, int COUNTTHRESHOLD, double FREQTHRESHOLD, double XCOUNTRATIOTHRESHOLD, int XCOUNTTHRESHOLD, bool DOSKIPGRAMS,  int MINLENGTH, int MAXLENGTH, bool DOPARENTS, bool DOCHILDREN, AlignConstraintInterface * alignconstrain, bool alignconstrainsource) { //read a normal graph pattern model in another way optimised for Cooc alignment
 	this->DOFORWARDINDEX = DOFORWARDINDEX;
 	this->DOREVERSEINDEX = DOREVERSEINDEX;
 	this->DOXCOUNT = DOXCOUNT;
@@ -1554,6 +1554,9 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool
 	this->DOSKIPGRAMS = DOSKIPGRAMS;
 	this->MINLENGTH = MINLENGTH;
 	this->MAXLENGTH = MAXLENGTH;
+	this->DOPARENTS = DOPARENTS;
+	this->alignconstrain = alignconstrain;
+	this->alignconstrainsource = alignconstrainsource;
 	
 
 	ngramtokencount = 0;
@@ -1562,7 +1565,13 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool
 	skipgramtypecount = 0;
 	ignoredtypes = 0;
 	ignoredtokens = 0;
-	readfile(filename);
+	        
+    secondpass = false;       
+	readfile(filename);	
+	secondpass = DOPARENTS;
+	if (secondpass) {
+		readfile(filename);
+	}
 }
 
 
@@ -1579,11 +1588,15 @@ void SelectivePatternModel::readheader(std::istream * in, bool ignore) {
 	if ((model_id == UNINDEXEDPATTERNMODEL) && (DOFORWARDINDEX || DOREVERSEINDEX)) 
 	  cerr << "WARNING!!! You opted to load indexes but you the model you are loading is unindexed!" << endl;
 	if (!HASXCOUNT && DOXCOUNT) 
-	  cerr << "WARNING!!! You opted to load exclusive count data but you are loading does not contain this data! (Make sure to load a graphmodel generated with exclusive count data)" << endl;
+	  cerr << "WARNING!!! You opted to load exclusive count data but the model you are loading does not contain this data! (Make sure to load a graphmodel generated with exclusive count data)" << endl;
+	if (!HASPARENTS && DOPARENTS) 
+	  cerr << "WARNING!!! You opted to load parent relation data but the model you are loading does not contain this data! (Make sure to load a graphmodel generated with parent relation data)" << endl;
+	if (!HASCHILDREN && DOCHILDREN) 
+	  cerr << "WARNING!!! You opted to load children relation data but the model you are loading does not contain this data! (Make sure to load a graphmodel generated with children relation data)" << endl;
 }
 
-void SelectivePatternModel::readrelations(std::istream * in) {
-	//Read and ignore relations (we don't care about them but we do need to read them)
+/*void SelectivePatternModel::readrelations(std::istream * in) {
+	//Read and ignore relations (we don't care about them but we do need to read them)	
     uint16_t count;
     in->read((char*) &count,  sizeof(uint16_t));
     char gapcount;
@@ -1593,6 +1606,22 @@ void SelectivePatternModel::readrelations(std::istream * in) {
         EncNGram ngram = EncNGram(in);
        } else {
         EncSkipGram skipgram = EncSkipGram( in, gapcount);
+       }           
+    }    
+}*/
+
+void SelectivePatternModel::readrelations(std::istream * in, const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * relationhash, bool ignore) {
+    uint16_t count;
+    in->read((char*) &count,  sizeof(uint16_t));
+    char gapcount;
+    for (int i = 0; i < count; i++) {                        
+       in->read(&gapcount, sizeof(char));
+       if (gapcount == 0) {
+        EncNGram ngram = EncNGram(in);
+        if ((!ignore) && (secondpass) && (anygram != NULL) && (relationhash != NULL)) (*relationhash)[getkey(anygram)].insert(getkey((EncAnyGram*) &ngram));
+       } else {
+        EncSkipGram skipgram = EncSkipGram( in, gapcount);
+        if ((!ignore) && (secondpass) && (anygram != NULL) && (relationhash != NULL)) (*relationhash)[getkey(anygram)].insert(getkey((EncAnyGram*) &skipgram));
        }           
     }    
 }
@@ -1617,13 +1646,34 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
 		}
 	}    
     if (HASXCOUNT) in->read((char*) &xcount, sizeof(uint32_t)); //read, process later
-    if (HASPARENTS) readrelations(in); //read and ignore
-    if (HASCHILDREN) readrelations(in);  //read and ignore
+    
+    if (secondpass) {    	
+    	const EncAnyGram * anygram = getkey(&ngram);	
+    	if (HASPARENTS) readrelations(in, anygram, &rel_subsumption_parents);
+    	if (HASCHILDREN) readrelations(in, anygram, &rel_subsumption_children);
+    } else {
+    	if (HASPARENTS) readrelations(in); //read and ignore
+    	if (HASCHILDREN) readrelations(in);  //read and ignore
+    }
     
     //THRESHOLD CHECK STAGE - deciding whether to ignore based on unreached thresholds
     
 	if ((count < COUNTTHRESHOLD) || ((double) count / totaltypes < FREQTHRESHOLD)) ignore = true;
 	if ((DOXCOUNT) && (HASXCOUNT) && ((xcount < XCOUNTTHRESHOLD) || (( (double) xcount / count) < XCOUNTRATIOTHRESHOLD) ) ) ignore = true;
+
+
+	//ALIGNMENT MODEL CONSTRAINTS
+	if (alignconstrain != NULL) {
+		if (alignconstrainsource) {
+			if (alignconstrain->getsourcekey((const EncAnyGram*) &ngram) == NULL) {
+				ignore = true;
+			}
+		} else {
+			if (alignconstrain->gettargetkey((const EncAnyGram*) &ngram) == NULL) {
+				ignore = true;
+			}
+		}
+	}
 
     //STORAGE STAGE
     if (!ignore) {
@@ -1674,14 +1724,33 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
 		}    
 	}
     if (HASXCOUNT) in->read((char*) &xcount, sizeof(uint32_t));     
-    if (HASPARENTS) readrelations(in);  //read and ignore
-    if (HASCHILDREN) readrelations(in);  //read and ignore
-    
-    
+
+    if (secondpass) {
+    	const EncAnyGram * anygram = getkey(&skipgram);	
+    	if (HASPARENTS) readrelations(in, anygram, &rel_subsumption_parents);
+    	if (HASCHILDREN) readrelations(in, anygram, &rel_subsumption_children);
+    } else {
+    	if (HASPARENTS) readrelations(in); //read and ignore
+    	if (HASCHILDREN) readrelations(in);  //read and ignore
+    }
+            
     //THRESHOLD CHECK STAGE - deciding whether to ignore based on unreached thresholds
     
 	if ((count < COUNTTHRESHOLD) || ((double) count / totaltypes < FREQTHRESHOLD)) ignore = true;
 	if ((DOXCOUNT) && (HASXCOUNT) && ((xcount < XCOUNTTHRESHOLD) || ((double) (xcount / count) < XCOUNTRATIOTHRESHOLD) ) ) ignore = true;
+	
+	//ALIGNMENT MODEL CONSTRAINTS
+	if (alignconstrain != NULL) {
+		if (alignconstrainsource) {
+			if (alignconstrain->getsourcekey((const EncAnyGram*) &skipgram) == NULL) {
+				ignore = true;
+			}
+		} else {
+			if (alignconstrain->gettargetkey((const EncAnyGram*) &skipgram) == NULL) {
+				ignore = true;
+			}
+		}
+	}	
 	
      //STORAGE STAGE
     if (!ignore) {

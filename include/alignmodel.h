@@ -7,7 +7,7 @@ enum CoocMode {
 	QUICK = 3,
 };
 
-class AlignmentModel {
+class AlignmentModel: public AlignConstraintInterface {
    protected:
     bool DEBUG;
     std::unordered_map<const EncNGram,bool> sourcengrams;
@@ -33,6 +33,9 @@ class AlignmentModel {
 	}
 	
 	void intersect(AlignmentModel * reversemodel, double probthreshold = 0); //Compute intersection with reverse model
+	
+	
+	void graphalign(GraphPatternModel & sourcegraphmodel, GraphPatternModel & targetgraphmodel, int impactfactor);
 	
 	virtual void save(const std::string & filename) {};	
 };

@@ -7,6 +7,7 @@
 const char MAXN = 20;
 
 
+
 enum ModelType {
 	UNINDEXEDPATTERNMODEL = 10, 
     INDEXEDPATTERNMODEL = 20,
@@ -357,12 +358,19 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
 };
 
 
+class AlignConstraintInterface {
+	public: 
+	  virtual const EncAnyGram * getsourcekey(const EncAnyGram* key) =0;
+      virtual const EncAnyGram * gettargetkey(const EncAnyGram* key) =0;
+};
+
 class IndexCountData {
 	public:
 	 uint32_t count;
 	 uint32_t xcount;
-	 std::multiset<uint32_t> sentences; //may occur multiple times in same sentence
+	 std::multiset<uint32_t> sentences; //may occur multiple times in same sentence 
 };
+
 
 class SelectivePatternModel: public ModelReader, public ModelQuerier {
     // Read only model, reads graphpatternmodel/indexedmodel/unindexedmodel in a simplified, selective, less memory intensive representation. For for example alignment tasks, supports double indexes if fed an indexed model, and exclusive counts if fed a graph model. Whilst offering more functionality, it is also limited in the sense that it does not offer the full representation the complete model does.
@@ -370,10 +378,13 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
      bool HASPARENTS;
      bool HASCHILDREN;
      bool HASXCOUNT;
+
      
      bool DOXCOUNT;
      bool DOFORWARDINDEX;
      bool DOREVERSEINDEX;
+     bool DOPARENTS;
+     bool DOCHILDREN;
      
      
      int COUNTTHRESHOLD;
@@ -386,8 +397,14 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
      bool DOSKIPGRAMS;
     
      int ngramtypecount;
-     int skipgramtypecount;    
-     void readrelations(std::istream * in);
+     int skipgramtypecount;   
+     
+     bool secondpass; 
+     
+     AlignConstraintInterface * alignconstrain;
+     bool alignconstrainsource;
+     
+     void readrelations(std::istream * in, const EncAnyGram * anygram = NULL, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * relationhash = NULL, bool ignore = false);
     public:
      unsigned long ngramtokencount;
      unsigned long skipgramtokencount;  
@@ -395,9 +412,12 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
      unsigned long ignoredtokens;
      std::unordered_map<const EncNGram, IndexCountData> ngrams;
      std::unordered_map<const EncSkipGram,IndexCountData> skipgrams;
+     
+     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_parents;
+     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_children;     
     
      std::unordered_map<uint32_t,std::vector<const EncAnyGram*> > reverseindex;    
-     SelectivePatternModel(const std::string & filename, bool DOFORWARDINDEX = true, bool DOREVERSEINDEX = true, bool DOXCOUNT = true, int COUNTTHRESHOLD = 0, double FREQTHRESHOLD = 0, double XCOUNTRATIOTHRESHOLD = 0, int XCOUNTTHRESHOLD = 0, bool DOSKIPGRAMS = true,  int MINLENGTH = 0, int MAXLENGTH=99); //read a graph pattern model
+     SelectivePatternModel(const std::string & filename, bool DOFORWARDINDEX = true, bool DOREVERSEINDEX = true, bool DOXCOUNT = true, int COUNTTHRESHOLD = 0, double FREQTHRESHOLD = 0, double XCOUNTRATIOTHRESHOLD = 0, int XCOUNTTHRESHOLD = 0, bool DOSKIPGRAMS = true,  int MINLENGTH = 0, int MAXLENGTH=99, bool DOPARENTS = false, bool DOCHILDREN = false, AlignConstraintInterface * alignconstrain = NULL, bool alignconstrainsource = true ); //read a graph pattern model
   
      uint64_t types() const { return ngrams.size() + skipgrams.size(); }
      uint64_t tokens() const { return ngramtokencount + skipgramtokencount; }

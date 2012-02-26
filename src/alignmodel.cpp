@@ -463,3 +463,14 @@ AlignmentModel::AlignmentModel(const string & filename) {
     f.close();
 }
 
+
+void AlignmentModel::graphalign(GraphPatternModel & sourcegraphmodel, GraphPatternModel & targetgraphmodel, int impactfactor) {
+	//for s in source
+	for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+		//for s_p in parents_s:
+			//for t in target_s:
+				//for t_p in parents_t
+	}
+					 
+}			
+
