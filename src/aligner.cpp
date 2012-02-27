@@ -10,13 +10,10 @@ void usage() {
     cerr << "\t-S sourceclassfile        Source class file (for decoding)" << endl;
     cerr << "\t-T targetclassfile        Target class file (for decoding)" << endl;
     cerr << "\t-d alignmodelfile         Decode an existing alignment model (*.alignmodel.colibri), specify -S and -T as well" << endl;
-    //cerr << "\t-d model                 Load and decode an existing model" << endl; //TODO
-    //cerr << "\t-B                       Do a bi-directional alignment and compute intersection of results" << endl; //TODO
     cerr << " Alignment method (choose one):" << endl;
     cerr << "\t-J                        Use Jaccard co-occurrence method (simplest)" << endl;
     cerr << "\t-D                        Use Dice co-occurrence method" << endl;
-    cerr << "\t-E                        Use EM alignment method" << endl;
-       
+    cerr << "\t-E                        Use EM alignment method" << endl;       
     cerr << " Generic alignment options:" << endl;    
     cerr << "\t-V				         Verbose debugging output" << endl;
     cerr << "\t-b                        Best alignment only" << endl;
