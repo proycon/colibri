@@ -216,6 +216,9 @@ int main( int argc, char *argv[] ) {
 			cerr << "ERROR: Model " + sourcemodelfile + " contains no indexing information! Unable to align without!" << endl;
 			exit(3);
 		}    
+		if (sourcemodel.has_parents()) {
+			cerr << "  Parent relations available for  " << sourcemodel.rel_subsumption_parents.size() << " patterns" << endl;
+		}
 		
 		cerr << "Loading target model " << targetmodelfile << endl;
 		SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, DOGRAPHALIGN);
@@ -232,6 +235,9 @@ int main( int argc, char *argv[] ) {
 			cerr << "ERROR: Model " + targetmodelfile + " contains no indexing information! Unable to align without!" << endl;
 			exit(3);
 		}
+		if (targetmodel.has_parents()) {
+			cerr << "  Parent relations available for  " << targetmodel.rel_subsumption_parents.size() << " patterns" << endl;
+		}		
 		
 		if (DO_EM) {
 			cerr << "Computing alignment model..." << endl;
