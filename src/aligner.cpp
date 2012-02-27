@@ -187,13 +187,13 @@ int main( int argc, char *argv[] ) {
 		cerr << "\tMinimum N length  (-l): " << MINLENGTH << endl;
 		cerr << "\tMaximum N length  (-L): " << MAXLENGTH << endl;
 		if (!DOSKIPGRAMS) {
-			cerr << "\tSKIPGRAMS DISABLED! (-N)";
+			cerr << "\tSKIPGRAMS DISABLED! (-N)"  << endl;
 		}
 		if (DONORM) {
-			cerr << "\tNormalisation enabled (-Z)";
+			cerr << "\tNormalisation enabled (-Z)"  << endl;
 		}
 		if (DOBIDIRECTIONAL) {
-			cerr << "\tBidirectional alignment enabled (-B)";
+			cerr << "\tBidirectional alignment enabled (-B)" << endl;
 		}
 		if (DOGRAPHALIGN) {
 			cerr << "\tGraph weighting enabled (-G), weight factor: " << graphweightfactor << endl;
