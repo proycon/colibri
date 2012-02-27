@@ -464,7 +464,9 @@ AlignmentModel::AlignmentModel(const string & filename) {
 }
 
 
-void AlignmentModel::graphalign(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double impactfactor) {
+int AlignmentModel::graphalign(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double impactfactor) {
+	int adjustments = 0;
+
 	if (!sourcemodel.has_parents()) {
 		cerr << "ERROR: No parent relations available for source model; required for graphalign" << endl;
 		exit(6);
@@ -524,9 +526,11 @@ void AlignmentModel::graphalign(SelectivePatternModel & sourcemodel, SelectivePa
 			const EncAnyGram * targetgram = targetiter->first;
 			//convert the weights from to: -inf -- 0 -- inf  --> 0 -- 1 -- inf , so they can be applied directly
 			const double weight = pow(impactfactor, weightmatrix[sourcegram][targetgram]);		 
-			alignmatrix[sourcegram][targetgram] = weight * alignmatrix[sourcegram][targetgram];							
+			alignmatrix[sourcegram][targetgram] = weight * alignmatrix[sourcegram][targetgram];
+			adjustments++;							
 		}
 	}
-		
+	
+	return adjustments;	
 }			
 

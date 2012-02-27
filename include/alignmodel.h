@@ -35,7 +35,7 @@ class AlignmentModel: public AlignConstraintInterface {
 	void intersect(AlignmentModel * reversemodel, double probthreshold = 0); //Compute intersection with reverse model
 	
 	
-	void graphalign(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double impactfactor = 1.2);
+	int graphalign(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double impactfactor = 1.2);
 	
 	virtual void save(const std::string & filename) {};	
 };

@@ -271,7 +271,8 @@ int main( int argc, char *argv[] ) {
 
 		if (DOGRAPHALIGN) {
 			cerr << "Weighting based on graph subsumption relations..." << endl;
-			alignmodel->graphalign(sourcemodel, targetmodel, graphweightfactor);			
+			const int adjustments = alignmodel->graphalign(sourcemodel, targetmodel, graphweightfactor);
+			cerr << "   Made " << adjustments << " adjustments" << endl;			
 		}
 
 		if (!outputprefix.empty()) {
