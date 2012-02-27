@@ -465,14 +465,14 @@ AlignmentModel::AlignmentModel(const string & filename) {
 
 
 void AlignmentModel::graphalign(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double impactfactor) {
-	/*if ((sourcemodel.HASPARENTS) && (sourcemodel.DOPARENTS)) {
-		cerr << "ERROR: No parent relations loaded or available for source model; required for graphalign" << endl;
+	if (!sourcemodel.has_parents()) {
+		cerr << "ERROR: No parent relations available for source model; required for graphalign" << endl;
 		exit(6);
 	}
-	if ((targetmodel.HASPARENTS) && (targetmodel.DOPARENTS)) {
-		cerr << "ERROR: No parent relations loaded or available for source model; required for graphalign" << endl;
+	if (!targetmodel.has_parents()) {
+		cerr << "ERROR: No parent relations available for target model; required for graphalign" << endl;
 		exit(6);
-	}*/	
+	}
 
 	std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > weightmatrix;  
 

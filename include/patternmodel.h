@@ -434,6 +434,8 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
     
     bool has_xcount() { return (HASXCOUNT); }
     bool has_index() { return ((model_id != UNINDEXEDPATTERNMODEL)) ; }
+    bool has_parents() { return (HASPARENTS) ; }
+    bool has_children() { return (HASCHILDREN) ; }
     
     virtual void readheader(std::istream * in, bool ignore = false);
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);

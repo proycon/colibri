@@ -209,7 +209,7 @@ int main( int argc, char *argv[] ) {
 			cerr << "  Exclusive count available? YES" << endl;
 		} else {
 			cerr << "  Exclusive count available? NO" << endl;
-		}
+		}		
 		if (sourcemodel.has_index()) {
 			cerr << "  Reverse index has " << sourcemodel.reverseindex.size() << " sentences" << endl;
 		} else {
