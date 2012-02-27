@@ -20,7 +20,7 @@ void usage() {
     cerr << " Generic alignment options:" << endl;    
     cerr << "\t-V				         Verbose debugging output" << endl;
     cerr << "\t-b                        Best alignment only" << endl;
-    cerr << "\t-G 			             Adjust alignment results based on graph information (subsumption relations)" << endl;
+    cerr << "\t-G 			             Weigh alignment results based on graph information (subsumption relations)" << endl;
     cerr << "\t-B probability-threshold  Compute bidirectional alignment (intersection), using given probability threshold" << endl;
     cerr << " Co-occurrence alignment options:" << endl;       
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
