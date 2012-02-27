@@ -464,13 +464,69 @@ AlignmentModel::AlignmentModel(const string & filename) {
 }
 
 
-void AlignmentModel::graphalign(GraphPatternModel & sourcegraphmodel, GraphPatternModel & targetgraphmodel, int impactfactor) {
-	//for s in source
-	for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
-		//for s_p in parents_s:
-			//for t in target_s:
-				//for t_p in parents_t
+void AlignmentModel::graphalign(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double impactfactor) {
+	/*if ((sourcemodel.HASPARENTS) && (sourcemodel.DOPARENTS)) {
+		cerr << "ERROR: No parent relations loaded or available for source model; required for graphalign" << endl;
+		exit(6);
 	}
-					 
+	if ((targetmodel.HASPARENTS) && (targetmodel.DOPARENTS)) {
+		cerr << "ERROR: No parent relations loaded or available for source model; required for graphalign" << endl;
+		exit(6);
+	}*/	
+
+	std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > weightmatrix;  
+
+	//for sourcegram in source
+	for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
+		const EncAnyGram * sourcegram = sourceiter->first;	
+		//if sourcegram has parent relations;
+		if (sourcemodel.rel_subsumption_parents.count(sourcegram) > 0) {
+			//for sourceparentgram in parents_sourcegram:
+			for (unordered_set<const EncAnyGram*>::const_iterator parentiterS = sourcemodel.rel_subsumption_parents[sourcegram].begin(); parentiterS != sourcemodel.rel_subsumption_parents[sourcegram].end(); parentiterS++) {
+				const EncAnyGram * sourceparentgram = *parentiterS;
+				//for t in targets_aligned_to_sourcegram:
+				for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
+					const EncAnyGram * targetgram = targetiter->first;
+					//if targetgram has parent relations;
+					if (targetmodel.rel_subsumption_parents.count(targetgram) > 0) {
+						for (unordered_set<const EncAnyGram*>::const_iterator parentiterT = targetmodel.rel_subsumption_parents[targetgram].begin(); parentiterT != targetmodel.rel_subsumption_parents[targetgram].end(); parentiterT++) {
+								const EncAnyGram * targetparentgram = *parentiterT;
+								//check if parents are aligned too
+								if (alignmatrix.count(sourceparentgram) > 0 && (alignmatrix[sourceparentgram].count(targetparentgram) > 0)) {
+									//yes!
+									//strenghten relation between aligned parents
+									weightmatrix[sourceparentgram][targetparentgram]++;
+									//strenghten relation between aligned pair
+									weightmatrix[sourcegram][targetgram]++;
+								} else {
+									//check for crossed-alignments: sourceparent with targetchild
+									if (alignmatrix.count(sourceparentgram) > 0 && (alignmatrix[sourceparentgram].count(targetgram) > 0)) {
+										weightmatrix[sourceparentgram][targetgram]--;
+										weightmatrix[sourcegram][targetgram] -= 0.5;
+									}
+									//check for crossed-alignments: source with targetparent
+									if (alignmatrix.count(sourcegram) > 0 && (alignmatrix[sourcegram].count(targetparentgram) > 0)) {
+										weightmatrix[sourcegram][targetparentgram]--;
+										weightmatrix[sourcegram][targetgram] -= 0.5;
+									}
+								}
+						}	
+					}				
+				}								
+			}
+		}	
+	}
+	
+	//apply weights	
+	for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = weightmatrix.begin(); iter != weightmatrix.end(); iter++) {
+		const EncAnyGram * sourcegram = iter->first;	
+		for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = weightmatrix[sourcegram].begin(); targetiter != weightmatrix[sourcegram].end(); targetiter++) {		
+			const EncAnyGram * targetgram = targetiter->first;
+			//convert the weights from to: -inf -- 0 -- inf  --> 0 -- 1 -- inf , so they can be applied directly
+			const double weight = pow(impactfactor, weightmatrix[sourcegram][targetgram]);		 
+			alignmatrix[sourcegram][targetgram] = weight * alignmatrix[sourcegram][targetgram];							
+		}
+	}
+		
 }			
 
