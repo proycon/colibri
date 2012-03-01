@@ -532,8 +532,14 @@ int AlignmentModel::graphalign(SelectivePatternModel & sourcemodel, SelectivePat
 		for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = weightmatrix[sourcegram].begin(); targetiter != weightmatrix[sourcegram].end(); targetiter++) {		
 			const EncAnyGram * targetgram = targetiter->first;
 			//convert the weights from to: -inf -- 0 -- inf  --> 0 -- 1 -- inf , so they can be applied directly
-			const double weight = pow(impactfactor, weightmatrix[sourcegram][targetgram]);		 
-			alignmatrix[sourcegram][targetgram] = weight * alignmatrix[sourcegram][targetgram];
+			const double weight = weightmatrix[sourcegram][targetgram];
+			
+			const double a = alignmatrix[sourcegram][targetgram];
+			if (weight < 0) {					 
+				alignmatrix[sourcegram][targetgram] = pow(a, weight+1);
+			} else if (weight > 0) {
+				alignmatrix[sourcegram][targetgram] = pow(a, -1 * weight + 1);
+			}
 			adjustments++;							
 		}
 	}
