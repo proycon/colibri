@@ -495,21 +495,28 @@ int AlignmentModel::graphalign(SelectivePatternModel & sourcemodel, SelectivePat
 								const EncAnyGram * targetparentgram = *parentiterT;
 								//check if parents are aligned too
 								if (alignmatrix.count(sourceparentgram) > 0 && (alignmatrix[sourceparentgram].count(targetparentgram) > 0)) {
+									if (DEBUG) cerr << "graphalign: parallel alignments found for parents, strenghtening ties (+1)" << endl;
 									//yes!
 									//strenghten relation between aligned parents
 									weightmatrix[sourceparentgram][targetparentgram]++;
+									if (DEBUG) cerr << "\t" << weightmatrix[sourceparentgram][targetparentgram] << endl;
 									//strenghten relation between aligned pair
-									weightmatrix[sourcegram][targetgram]++;
+									weightmatrix[sourcegram][targetgram]++;									
+									if (DEBUG) cerr << "\t" << weightmatrix[sourcegram][targetgram] << endl;
 								} else {
 									//check for crossed-alignments: sourceparent with targetchild
 									if (alignmatrix.count(sourceparentgram) > 0 && (alignmatrix[sourceparentgram].count(targetgram) > 0)) {
-										weightmatrix[sourceparentgram][targetgram]--;
-										weightmatrix[sourcegram][targetgram] -= 0.5;
+										if (DEBUG) cerr << "graphalign: cross-alignment 1 found, weakening ties (-0.5)" << endl;
+										weightmatrix[sourceparentgram][targetgram] -= 0.5;
+										if (DEBUG) cerr << "\t" << weightmatrix[sourceparentgram][targetgram] << endl;
+										weightmatrix[sourcegram][targetgram] -= 0.5;												
 									}
 									//check for crossed-alignments: source with targetparent
 									if (alignmatrix.count(sourcegram) > 0 && (alignmatrix[sourcegram].count(targetparentgram) > 0)) {
-										weightmatrix[sourcegram][targetparentgram]--;
-										weightmatrix[sourcegram][targetgram] -= 0.5;
+										if (DEBUG) cerr << "graphalign: cross-alignment 2 found, weakening ties (-0.5)" << endl;
+										weightmatrix[sourcegram][targetparentgram] -= 0.5;
+										if (DEBUG) cerr << "\t" << weightmatrix[sourcegram][targetparentgram] << endl;
+										weightmatrix[sourcegram][targetgram] -= 0.5;											
 									}
 								}
 						}	
