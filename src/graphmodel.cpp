@@ -110,7 +110,8 @@ int main( int argc, char *argv[] ) {
         
         if (TRANSITIVEREDUCTION) {
         	cerr << "Pruning and keeping only transitive reduction " << endl;
-        	graphmodel.transitivereduction();
+        	const int pruned = graphmodel.transitivereduction();
+        	cerr << "\tPruned " << pruned << " edges" << endl;
         }
         
         cerr << "Saving graph " << outputprefix << ".graphpatternmodel.colibri" << endl;
