@@ -14,6 +14,7 @@ enum ModelType {
     GRAPHPATTERNMODEL = 30,        
 };
 
+
 class CorpusReference {
     /* Reference to a position in the corpus */
    public:
@@ -269,6 +270,8 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
 //typedef std::unordered_map<EncSkipGram,set<CorpusReference> > skipgram_freqlist;
 
 
+int transitivereduction(std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relations );
+
 
 class GraphPatternModel: public ModelReader, public ModelWriter {               
    protected:
@@ -285,6 +288,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     bool HASINSKIPCONTENT;
     
     bool DELETEMODEL;
+    bool TRANSITIVE;
     
     void readrelations(std::istream * in,const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > &, bool ignore = false);
     void writerelations(std::ostream * out, const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & );
@@ -306,7 +310,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
 
    
     GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=false,bool DOXCOUNT=false); //compute entire model
-    GraphPatternModel(const std::string & graphmodelfilename, IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=true,bool DOXCOUNT=true ) {
+    GraphPatternModel(const std::string & graphmodelfilename, IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=true,bool DOXCOUNT=true) {
         //do everything (provided that it exists in file)
         this->DOPARENTS = DOPARENTS;
         this->DOCHILDREN = DOCHILDREN;
@@ -322,7 +326,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
         this->DOPARENTS = DOPARENTS;
         this->DOCHILDREN = DOCHILDREN;
         this->DOXCOUNT = DOXCOUNT;    
-    
+    	
     	DELETEMODEL = true;
     	model = new IndexedPatternModel();
     	std::cerr << "Pass one, reading implied indexedpatternmodel..." << std::endl;
@@ -333,8 +337,11 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
         secondpass = true;
         readfile(graphmodelfilename);
     }    
+        
     
     ~GraphPatternModel();
+    
+    int transitivereduction();
     
     int xcount(const EncAnyGram* anygram); //exclusive count    
         
@@ -416,6 +423,7 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
      std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_parents;
      std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_children;     
     
+    
      std::unordered_map<uint32_t,std::vector<const EncAnyGram*> > reverseindex;    
      SelectivePatternModel(const std::string & filename, bool DOFORWARDINDEX = true, bool DOREVERSEINDEX = true, bool DOXCOUNT = true, int COUNTTHRESHOLD = 0, double FREQTHRESHOLD = 0, double XCOUNTRATIOTHRESHOLD = 0, int XCOUNTTHRESHOLD = 0, bool DOSKIPGRAMS = true,  int MINLENGTH = 0, int MAXLENGTH=99, bool DOPARENTS = false, bool DOCHILDREN = false, AlignConstraintInterface * alignconstrain = NULL, bool alignconstrainsource = true ); //read a graph pattern model
   
@@ -431,6 +439,8 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
     int xcount(const EncAnyGram* key);
     double xcountratio(const EncAnyGram* key);
 	void outputinstance(const EncAnyGram *, CorpusReference, ClassDecoder &);    
+    
+    int transitivereduction();
     
     bool has_xcount() { return (HASXCOUNT); }
     bool has_index() { return ((model_id != UNINDEXEDPATTERNMODEL)) ; }

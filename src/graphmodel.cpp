@@ -15,9 +15,10 @@ void usage() {
     cerr << "Constructs a graph model" << endl;
     cerr << "\t-f filename.indexedpatternmodel.colibri		Indexed pattern model to load (required for building a graph model)" << endl;      
     cerr << "\t-P               Compute/load subsumption relations from children to parents (reverse of -C)" << endl;
-    cerr << "\t-C               Compute/load subsumption relations from parents to children (reverse of -P)" << endl;
+    cerr << "\t-C               Compute/load subsumption relations from parents to children (reverse of -P)" << endl;      
     cerr << "\t-X               Compute/load exclusive count" << endl;
     cerr << "\t------------------------------------------------------------------------------" << endl;
+    cerr << "\t-r               Keep only transitive reduction (sizes down the model)" << endl;
     cerr << "\t-d filename.graphpatternmodel.colibri		Graph pattern model to load (for decoding an existing model, use with -c)" << endl;
     cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced (use with -d)" << endl;
 }
@@ -30,9 +31,10 @@ int main( int argc, char *argv[] ) {
     bool DOPARENTS = false;
     bool DOCHILDREN = false;
     bool DOXCOUNT = false;
+    bool TRANSITIVEREDUCTION = false;
     
     char c;    
-    while ((c = getopt(argc, argv, "d:c:f:ho:PCX")) != -1)
+    while ((c = getopt(argc, argv, "d:c:f:ho:PCXr")) != -1)
         switch (c)
         {
         case 'c':
@@ -56,6 +58,9 @@ int main( int argc, char *argv[] ) {
         case 'X': 
             DOXCOUNT = true;
             break;
+        case 'r': 
+        	TRANSITIVEREDUCTION = true;
+        	break;
         case 'h':
             usage();
             break;
@@ -102,6 +107,11 @@ int main( int argc, char *argv[] ) {
             
         cerr << "Constructing graph " << endl;
         GraphPatternModel graphmodel = GraphPatternModel(&patternmodel, DOPARENTS, DOCHILDREN, DOXCOUNT);
+        
+        if (TRANSITIVEREDUCTION) {
+        	cerr << "Pruning and keeping only transitive reduction " << endl;
+        	graphmodel.transitivereduction();
+        }
         
         cerr << "Saving graph " << outputprefix << ".graphpatternmodel.colibri" << endl;
         graphmodel.save(outputprefix + ".graphpatternmodel.colibri");

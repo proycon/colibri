@@ -7,6 +7,7 @@ enum CoocMode {
 	QUICK = 3,
 };
 
+
 class AlignmentModel: public AlignConstraintInterface {
    protected:
     bool DEBUG;

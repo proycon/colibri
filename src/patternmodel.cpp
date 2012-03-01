@@ -1325,6 +1325,35 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
     
 }
 
+int transitivereduction(std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relations ) {
+	int pruned = 0;
+	//compute transitive closure by pruning
+	for (std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> >::iterator iter = relations.begin(); iter != relations.end(); iter++) {
+		const EncAnyGram * node = iter->first;		
+		if (relations.count(node) > 0) {
+			for (std::unordered_set<const EncAnyGram*>::iterator parentiter = relations[node].begin(); parentiter != relations[node].end(); parentiter++) {
+				const EncAnyGram * parent = *parentiter;
+				if (relations.count(parent) > 0) {
+					for (std::unordered_set<const EncAnyGram*>::iterator grandparentiter = relations[parent].begin(); grandparentiter != relations[parent].end(); grandparentiter++) {
+						const EncAnyGram * grandparent = *grandparentiter;
+						if (relations[node].count(grandparent) > 0) {
+							relations[node].erase(grandparent);
+							pruned++;
+						}						
+					}
+				} 
+			}
+		}
+	}
+	return pruned;
+}
+
+int GraphPatternModel::transitivereduction() {
+	int pruned = 0;
+	if (DOCHILDREN) pruned += ::transitivereduction(rel_subsumption_children);
+    if (DOPARENTS) pruned += ::transitivereduction(rel_subsumption_parents);
+    return pruned;	
+}
 
 int GraphPatternModel::xcount(const EncAnyGram* anygram) {
     const AnyGramData* data = model->getdata(anygram);
@@ -1609,6 +1638,13 @@ void SelectivePatternModel::readheader(std::istream * in, bool ignore) {
        }           
     }    
 }*/
+
+int SelectivePatternModel::transitivereduction() {
+	int pruned = 0;
+	if ((HASCHILDREN) && (DOCHILDREN)) ::transitivereduction(rel_subsumption_children);
+    if ((HASPARENTS) && (DOPARENTS)) ::transitivereduction(rel_subsumption_parents);
+    return pruned;	
+}
 
 void SelectivePatternModel::readrelations(std::istream * in, const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * relationhash, bool ignore) {
     uint16_t count;
