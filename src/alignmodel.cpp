@@ -173,7 +173,6 @@ void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassD
 			}
 			*OUT << delimiter << ((-1 * iter2->first) / total) << endl;      
         }            
-        *OUT << endl;
     }	
 }
 
