@@ -74,9 +74,9 @@ int main( int argc, char *argv[] ) {
     string outputprefix = "";
     
     static struct option long_options[] = {      
-       {"--simplelex", no_argument,       &DOSIMPLELEX, 1},
-       {"--simpletable", no_argument,       &DOSIMPLETABLE, 1},
-       {"--targetfirst", no_argument,       &TARGETFIRST, 1},            
+       {"simplelex", no_argument,       &DOSIMPLELEX, 1},
+       {"simpletable", no_argument,       &DOSIMPLETABLE, 1},
+       {"targetfirst", no_argument,       &TARGETFIRST, 1},            
        {0, 0, 0, 0}
      };
     /* getopt_long stores the option index here. */
