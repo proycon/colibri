@@ -20,6 +20,7 @@ class AlignmentModel: public AlignConstraintInterface {
     AlignmentModel(const std::string & filename);
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignmatrix;    
     void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
+    void simplelexiconoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
     void enabledebug() { DEBUG = true; }
     
     const EncAnyGram * getsourcekey(const EncAnyGram* key);

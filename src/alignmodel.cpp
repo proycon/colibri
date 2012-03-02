@@ -147,7 +147,23 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
     }
 }
 
-
+void AlignmentModel::simplelexiconoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
+	/* output a simple word-based lexicon, similar to the one used in moses (s2t, t2s) */
+    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+        const EncAnyGram* sourcegram = iter->first;        
+        map<double, const EncAnyGram*> sorted;        
+        double total = 0;
+        for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+        	sorted[-1 * iter2->second] = iter2->first;
+        	total += iter2->second;            
+        }
+        for (map<double, const EncAnyGram*>::iterator iter2 = sorted.begin(); iter2 != sorted.end(); iter2++) {
+			const EncAnyGram* targetgram = iter2->second;
+			*OUT << sourcegram->decode(sourceclassdecoder) << " " << targetgram->decode(targetclassdecoder) << " " << ((-1 * iter2->first) / total) << endl;      
+        }            
+        *OUT << endl;
+    }	
+}
 
 EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, double probthreshold, bool bestonly, bool DEBUG) {
     int round = 0;    

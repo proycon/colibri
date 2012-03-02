@@ -745,6 +745,7 @@ EncAnyGram* IndexedPatternModel::get_reverse_index_item(const int key, const int
     }    
 }
 
+
 void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, ostream *SKIPGRAMSOUT) {
     const int grandtotal = ngramtokencount + skipgramtokencount;   
 
