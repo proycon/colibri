@@ -39,6 +39,7 @@ void usage() {
     cerr << " Output options:" << endl;
     cerr << "\t--simplelex               Output simple word-based lexicon" << endl;
     cerr << "\t--simpletable             Output simple phrase-based translation table" << endl;
+    cerr << "\t--targetfirst             Output target before source in simple lexicon and simple translation table output" << endl;
 }
 
 int main( int argc, char *argv[] ) {
@@ -69,11 +70,13 @@ int main( int argc, char *argv[] ) {
     double CONVERGENCE = 0.001;
     int DOSIMPLELEX = 0;
     int DOSIMPLETABLE = 0;
+    int TARGETFIRST = 0;
     string outputprefix = "";
     
     static struct option long_options[] = {      
        {"--simplelex", no_argument,       &DOSIMPLELEX, 1},
-       {"--simpletable", no_argument,       &DOSIMPLETABLE, 1},       
+       {"--simpletable", no_argument,       &DOSIMPLETABLE, 1},
+       {"--targetfirst", no_argument,       &TARGETFIRST, 1},            
        {0, 0, 0, 0}
      };
     /* getopt_long stores the option index here. */
@@ -330,9 +333,9 @@ int main( int argc, char *argv[] ) {
 	
 			cerr << "Decoding..." << endl;
 			if (DOSIMPLETABLE) {
-				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout);
+				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST);
 			} else if (DOSIMPLELEX) {
-				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, true);
+				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, true);
 			} else { 
 				alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);
 			}        

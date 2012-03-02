@@ -147,7 +147,7 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
     }
 }
 
-void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT, bool wordbased) {
+void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT, bool targetfirst,  bool wordbased) {
 	/* output a simple word-based lexicon, similar to the one used in moses (s2t, t2s) */
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
         const EncAnyGram* sourcegram = iter->first;        
@@ -160,7 +160,12 @@ void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassD
         }
         for (map<double, const EncAnyGram*>::iterator iter2 = sorted.begin(); iter2 != sorted.end(); iter2++) {
 			const EncAnyGram* targetgram = iter2->second;
-			*OUT << sourcegram->decode(sourceclassdecoder) << " " << targetgram->decode(targetclassdecoder) << " " << ((-1 * iter2->first) / total) << endl;      
+			if (targetfirst) {
+				*OUT << targetgram->decode(targetclassdecoder) << " " << sourcegram->decode(sourceclassdecoder); 
+			} else {
+				*OUT << sourcegram->decode(sourceclassdecoder) << " " << targetgram->decode(targetclassdecoder);
+			}
+			*OUT << " " << ((-1 * iter2->first) / total) << endl;      
         }            
         *OUT << endl;
     }	
