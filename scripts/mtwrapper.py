@@ -68,8 +68,9 @@ class MTWrapper(object):
             ('BUILD_GIZA_WORDALIGNMENT_COOC',False,'Output extra co-occurence data'),
             ('BUILD_MOSES_SYMAL', False,'Symmetrise word alignments'),
             ('BUILD_MOSES_WORDTRANSTABLE', False,'Build lexical translation table'),
-            ('BUILD_MOSES_PHRASEEXTRACT', False,'Extract phrases'),
+            ('BUILD_MOSES_PHRASEEXTRACT', False,'Extract phrases'),            
             ('BUILD_MOSES_PHRASETRANSTABLE', False,'Build phrase translation table'),
+            ('BUILD_MOSES_MEMSCORE', False,'Use memscore to score phrases rather than the default phrase-extract scorer'),
             ('BUILD_MOSES', False,'Build moses configuration, necessary for decoding using moses'),
             ('BUILD_MOSES_MERT', False,'Do Minimum Error Rate Training for Moses (on development set)'),                       
             ('BUILD_PBMBMT', False, 'Build model for Phrase-Based Memory-based Machine Translation'),   
@@ -97,6 +98,7 @@ class MTWrapper(object):
             ('EXEC_MOSES_PHRASEEXTRACT','scripts/training/phrase-extract/extract',''),
             ('EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE','scripts/training/phrase-extract/consolidate',''),
             ('EXEC_MOSES_PHRASEEXTRACT_SCORE','scripts/training/phrase-extract/score',''),
+            ('EXEC_MOSES_MEMSCORE','scripts/training/memscore/memscore',''),
             ('EXEC_MOSES_MERT','scripts/training/mert-moses.pl',''),
             ('EXEC_MATREX_WER','eval/WER_v01.pl',''),
             ('EXEC_MATREX_PER','eval/PER_v01.pl',''),
@@ -350,12 +352,17 @@ class MTWrapper(object):
 
 
 
-          
+        
+        if self.BUILD_MOSES_MEMSCORE:
+            if not self.BUILD_MOSES_PHRASETRANSTABLE:
+                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_MOSES_MEMSCORE is too")
+                self.BUILD_MOSES_PHRASETRANSTABLE = True  
             
         if self.BUILD_MOSES_PHRASETRANSTABLE:
             if not self.BUILD_MOSES_PHRASEEXTRACT:
                 print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASEEXTRACT automatically enabled because BUILD_MOSES_PHRASECORE is too")
                 self.BUILD_MOSES_PHRASEEXTRACT = True        
+                
         
         if self.BUILD_MOSES_PHRASEEXTRACT:
             if not self.BUILD_MOSES_SYMAL:
@@ -744,7 +751,7 @@ class MTWrapper(object):
         return True        
     
     def build_moses_phrasescore(self):
-        #TODO: IMplement memscore alternative?
+        
         
         #if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('s2t') + ' > ' +  self.gets2tfilename('s2t.sorted'),'Sorting Lexical Translation Table (source->target)',  self.gets2tfilename('s2t.sorted') ): return False
         #if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('t2s') + ' > ' +  self.gets2tfilename('t2s.sorted'),'Sorting Lexical Translation Table (target->source)',  self.gets2tfilename('t2s.sorted') ): return False
@@ -752,13 +759,17 @@ class MTWrapper(object):
         if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('phraseextract') + ' > ' +  self.gets2tfilename('phraseextract.sorted'),'Sorting Extracted Phrases (source->target)',  self.gets2tfilename('phraseextract.sorted') ): return False
         if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('phraseextract.inv') + ' > ' +  self.gets2tfilename('phraseextract.inv.sorted'),'Sorting Extracted Phrases Table (target->source)',  self.gets2tfilename('phraseextract.inv.sorted') ): return False
                 
+
+        if self.BUILD_MOSES_MEMSCORE:
+            if not self.runcmd(self.EXEC_MOSES_MEMSCORE + ' -s ml -s lexweights ' + self.gets2tfilename('t2s') + ' -r ml -r lexweights ' + self.gets2tfilename('s2t') + ' -s const 2.718 < ' + self.gets2tfilename('phraseextract') +  ' > ' + self.gets2tfilename('phrasetable')): return False            
+        else:
+            if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract.sorted') + ' ' +  self.gets2tfilename('s2t') + ' ' + self.gets2tfilename('half.s2t') + ' ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (source->target)', self.gets2tfilename('half.s2t') ): return False        
+            if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract.inv.sorted') + ' '  + self.gets2tfilename('t2s') + ' ' + self.gets2tfilename('half.t2s') + ' --Inverse ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (target->source)', self.gets2tfilename('half.t2s') ): return False        
+            
+            if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('half.t2s') + ' > ' +  self.gets2tfilename('half.t2s.sorted'),'Sorting Inverse Table',  self.gets2tfilename('half.t2s.sorted') ): return False
+                    
+            if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE + ' ' + self.gets2tfilename('half.s2t') + ' ' + self.gets2tfilename('half.t2s.sorted') + ' ' + self.gets2tfilename('phrasetable') + ' ' + self.PHRASESCORE_OPTIONS, 'Consolidating two phrase table halves', self.gets2tfilename('phrasetable') ): return False
         
-        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract.sorted') + ' ' +  self.gets2tfilename('s2t') + ' ' + self.gets2tfilename('half.s2t') + ' ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (source->target)', self.gets2tfilename('half.s2t') ): return False        
-        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract.inv.sorted') + ' '  + self.gets2tfilename('t2s') + ' ' + self.gets2tfilename('half.t2s') + ' --Inverse ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (target->source)', self.gets2tfilename('half.t2s') ): return False        
-        
-        if not self.runcmd('LC_ALL=C sort ' + self.gets2tfilename('half.t2s') + ' > ' +  self.gets2tfilename('half.t2s.sorted'),'Sorting Inverse Table',  self.gets2tfilename('half.t2s.sorted') ): return False
-                
-        if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE + ' ' + self.gets2tfilename('half.s2t') + ' ' + self.gets2tfilename('half.t2s.sorted') + ' ' + self.gets2tfilename('phrasetable') + ' ' + self.PHRASESCORE_OPTIONS, 'Consolidating two phrase table halves', self.gets2tfilename('phrasetable') ): return False
         return True
         
     def build_moses_reorderingmodel(self):
