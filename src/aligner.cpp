@@ -1,4 +1,6 @@
+#include <getopt.h>
 #include "alignmodel.h"
+
 
 using namespace std;
 
@@ -63,12 +65,23 @@ int main( int argc, char *argv[] ) {
     bool BESTONLY = false;
     int MAXROUNDS = 10000;
     double CONVERGENCE = 0.001;
+    int DOSIMPLELEX = 0;
     string outputprefix = "";
     
+    static struct option long_options[] = {      
+       {"--simplelex", no_argument,       &DOSIMPLELEX, 1},       
+       {0, 0, 0, 0}
+     };
+    /* getopt_long stores the option index here. */
+    int option_index = 0;
+    
     char c;    
-    while ((c = getopt(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:bl:L:NVZEI:v:G")) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:bl:L:NVZEI:v:G",long_options,&option_index)) != -1)
         switch (c)
         {
+        case 0:
+            if (long_options[option_index].flag != 0)
+               break;
         case 'd':
         	modelfile = optarg;
         	break;
@@ -289,7 +302,11 @@ int main( int argc, char *argv[] ) {
 			ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
 	
 			cerr << "Decoding..." << endl;
-			alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);    
+			if (DOSIMPLELEX) {
+				alignmodel->simplelexiconoutput(sourceclassdecoder, targetclassdecoder, &cout);
+			} else { 
+				alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);
+			}    
 		}	
 		
 		
@@ -306,7 +323,11 @@ int main( int argc, char *argv[] ) {
 			ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
 	
 			cerr << "Decoding..." << endl;
-			alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);    
+			if (DOSIMPLELEX) {
+				alignmodel->simplelexiconoutput(sourceclassdecoder, targetclassdecoder, &cout);
+			} else { 
+				alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);
+			}        
 		}	    	
     } 
     
