@@ -754,7 +754,7 @@ void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT
        const double freq3 = (double) iter->second.count() / grandtotal;
        const EncNGram ngram = iter->first;
         *NGRAMSOUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq1 << '\t' << freq2 << '\t' << freq3;
-        *NGRAMSOUT << '\t';
+        *NGRAMSOUT << "\t0\t-\t";
         for (set<CorpusReference>::iterator iter2 = iter->second.refs.begin() ; iter2 != iter->second.refs.end(); iter2++) {
             *NGRAMSOUT << iter2->sentence << ':' << (int) iter2->token << ' ';
         }                
@@ -771,7 +771,7 @@ void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT
            *SKIPGRAMSOUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq1 << '\t' << freq2 << '\t' << freq3 << '\t';
            const int skiptypes = iter->second.skipcontent.size();               
            const double entropy = iter->second.entropy();
-           *SKIPGRAMSOUT << skiptypes << '\t' << iter->second.count() << '\t' << entropy << '\t';
+           *SKIPGRAMSOUT << skiptypes << '\t' << entropy << '\t';
             for(unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {
                 *SKIPGRAMSOUT << iter2->first.decode(classdecoder) << '|' << iter2->second.count() << '|';
                 for (set<CorpusReference>::iterator iter3 = iter2->second.refs.begin() ; iter3 != iter2->second.refs.end(); iter3++) {
