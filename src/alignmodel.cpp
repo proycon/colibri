@@ -172,7 +172,11 @@ void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassD
 			} else {			
 				*OUT << sourcegram->decode(sourceclassdecoder) << delimiter << targetgram->decode(targetclassdecoder);
 			}
-			*OUT << delimiter << ((-1 * iter2->first) / total) << endl;      
+			if (!moses) {
+				*OUT << delimiter << ((-1 * iter2->first) / total) << endl;
+			} else {
+				*OUT << endl;
+			}      
         }            
     }	
 }
