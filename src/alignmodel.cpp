@@ -147,13 +147,14 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
     }
 }
 
-void AlignmentModel::simplelexiconoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
+void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT, bool wordbased) {
 	/* output a simple word-based lexicon, similar to the one used in moses (s2t, t2s) */
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
         const EncAnyGram* sourcegram = iter->first;        
         map<double, const EncAnyGram*> sorted;        
         double total = 0;
         for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+        	if (wordbased && iter2->first->n() > 1) continue; 
         	sorted[-1 * iter2->second] = iter2->first;
         	total += iter2->second;            
         }

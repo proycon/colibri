@@ -35,8 +35,10 @@ void usage() {
     cerr << "\t-X xcount-ratio           Consider only patterns with an *exclusivity ratio* over this threshold (between 0.0 [not exclusive] and 1.0 [entirely exclusive])" << endl;
     cerr << "\t-l n                      Minimum N length" << endl; 
     cerr << "\t-L n                      Maximum N length" << endl; 
-    cerr << "\t-N                        No skip-grams" << endl; 
-
+    cerr << "\t-N                        No skip-grams" << endl;
+    cerr << " Output options:" << endl;
+    cerr << "\t--simplelex               Output simple word-based lexicon" << endl;
+    cerr << "\t--simpletable             Output simple phrase-based translation table" << endl;
 }
 
 int main( int argc, char *argv[] ) {
@@ -66,10 +68,12 @@ int main( int argc, char *argv[] ) {
     int MAXROUNDS = 10000;
     double CONVERGENCE = 0.001;
     int DOSIMPLELEX = 0;
+    int DOSIMPLETABLE = 0;
     string outputprefix = "";
     
     static struct option long_options[] = {      
-       {"--simplelex", no_argument,       &DOSIMPLELEX, 1},       
+       {"--simplelex", no_argument,       &DOSIMPLELEX, 1},
+       {"--simpletable", no_argument,       &DOSIMPLETABLE, 1},       
        {0, 0, 0, 0}
      };
     /* getopt_long stores the option index here. */
@@ -302,11 +306,13 @@ int main( int argc, char *argv[] ) {
 			ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
 	
 			cerr << "Decoding..." << endl;
-			if (DOSIMPLELEX) {
-				alignmodel->simplelexiconoutput(sourceclassdecoder, targetclassdecoder, &cout);
+			if (DOSIMPLETABLE) {
+				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout);
+			} else if (DOSIMPLELEX) {
+				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, true);
 			} else { 
 				alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);
-			}    
+			}       
 		}	
 		
 		
@@ -323,8 +329,10 @@ int main( int argc, char *argv[] ) {
 			ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
 	
 			cerr << "Decoding..." << endl;
-			if (DOSIMPLELEX) {
-				alignmodel->simplelexiconoutput(sourceclassdecoder, targetclassdecoder, &cout);
+			if (DOSIMPLETABLE) {
+				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout);
+			} else if (DOSIMPLELEX) {
+				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, true);
 			} else { 
 				alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);
 			}        
@@ -332,8 +340,6 @@ int main( int argc, char *argv[] ) {
     } 
     
 	
-	
-
 
 
 	if (alignmodel != NULL) {
