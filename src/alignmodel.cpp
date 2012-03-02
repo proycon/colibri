@@ -147,8 +147,14 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
     }
 }
 
-void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT, bool targetfirst,  bool wordbased) {
+void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT, bool targetfirst,  bool wordbased, bool mosesformat) {
 	/* output a simple word-based lexicon, similar to the one used in moses (s2t, t2s) */
+	string delimiter;
+	if (mosesformat) {
+		delimiter = " ||| ";
+	} else {
+		delimiter = " ";
+	}
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
         const EncAnyGram* sourcegram = iter->first;        
         map<double, const EncAnyGram*> sorted;        
@@ -161,11 +167,11 @@ void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassD
         for (map<double, const EncAnyGram*>::iterator iter2 = sorted.begin(); iter2 != sorted.end(); iter2++) {
 			const EncAnyGram* targetgram = iter2->second;
 			if (targetfirst) {
-				*OUT << targetgram->decode(targetclassdecoder) << " " << sourcegram->decode(sourceclassdecoder); 
-			} else {
-				*OUT << sourcegram->decode(sourceclassdecoder) << " " << targetgram->decode(targetclassdecoder);
+				*OUT << targetgram->decode(targetclassdecoder) << delimiter << sourcegram->decode(sourceclassdecoder);				 
+			} else {			
+				*OUT << sourcegram->decode(sourceclassdecoder) << delimiter << targetgram->decode(targetclassdecoder);
 			}
-			*OUT << " " << ((-1 * iter2->first) / total) << endl;      
+			*OUT << delimiter << ((-1 * iter2->first) / total) << endl;      
         }            
         *OUT << endl;
     }	

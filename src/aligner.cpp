@@ -39,7 +39,8 @@ void usage() {
     cerr << " Output options:" << endl;
     cerr << "\t--simplelex               Output simple word-based lexicon" << endl;
     cerr << "\t--simpletable             Output simple phrase-based translation table" << endl;
-    cerr << "\t--targetfirst             Output target before source in simple lexicon and simple translation table output" << endl;
+    cerr << "\t--targetfirst             Output target before source in simple lexicon and simple translation table output (use with --simplelex, --simpletable)" << endl;
+    cerr << "\t--moses                   Output phrase-translation table in Moses format (use with --simpletable, --simplelex)" << endl;
 }
 
 int main( int argc, char *argv[] ) {
@@ -71,12 +72,14 @@ int main( int argc, char *argv[] ) {
     int DOSIMPLELEX = 0;
     int DOSIMPLETABLE = 0;
     int TARGETFIRST = 0;
+    int MOSESFORMAT = 0;
     string outputprefix = "";
     
     static struct option long_options[] = {      
        {"simplelex", no_argument,       &DOSIMPLELEX, 1},
        {"simpletable", no_argument,       &DOSIMPLETABLE, 1},
-       {"targetfirst", no_argument,       &TARGETFIRST, 1},            
+       {"targetfirst", no_argument,       &TARGETFIRST, 1},
+       {"moses", no_argument,             &MOSESFORMAT, 1},                       
        {0, 0, 0, 0}
      };
     /* getopt_long stores the option index here. */
@@ -173,7 +176,7 @@ int main( int argc, char *argv[] ) {
             abort ();
         }
         
-        
+    if (MOSESFORMAT) TARGETFIRST = 1;    
 	
     if (modelfile.empty() && (sourcemodelfile.empty()  || targetmodelfile.empty())) {
   	    cerr << "Error: Specify at least a source model, target model, and alignment method to build an alignment model! Or load a pre-existing model" << endl;
@@ -333,7 +336,7 @@ int main( int argc, char *argv[] ) {
 	
 			cerr << "Decoding..." << endl;
 			if (DOSIMPLETABLE) {
-				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST);
+				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, false, MOSESFORMAT);
 			} else if (DOSIMPLELEX) {
 				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, true);
 			} else { 
