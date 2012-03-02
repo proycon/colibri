@@ -119,6 +119,7 @@ class MTWrapper(object):
             ('UCTO_OPTIONS','-m -n',''),
             ('SYMAL_OPTIONS','-alignment=grow -diagonal=yes -final=yes -both=no',''), #-hmmiterations 5 -hmmdumpfrequency -5'
             ('MOSES_MERT_OPTIONS','','See http://www.statmt.org/moses/?n=FactoredTraining.Tuning'),
+            ('MOSES_MEMSCORE_METHOD','ml','Memscore scoring method:  ml: maximum likelihood, wittenbell: Witten-Bell smoothing, absdiscount: Absolute discounting'),
             ('PHRASEEXTRACT_MAX_PHRASE_LENGTH',7,''),
             ('PHRASEEXTRACT_REORDERING_FLAGS','',''), #" --model wbe-mslr --model phrase-mslr --model hier-mslr" #Maximum lexical reordering 
             ('PHRASESCORE_OPTIONS', '',''), #--Hierarchical --WordAlignment (--Inverse)
@@ -761,7 +762,7 @@ class MTWrapper(object):
                 
 
         if self.BUILD_MOSES_MEMSCORE:
-            if not self.runcmd(self.EXEC_MOSES_MEMSCORE + ' -s ml -s lexweights ' + self.gets2tfilename('t2s') + ' -r ml -r lexweights ' + self.gets2tfilename('s2t') + ' -s const 2.718 < ' + self.gets2tfilename('phraseextract') +  ' > ' + self.gets2tfilename('phrasetable')): return False            
+            if not self.runcmd(self.EXEC_MOSES_MEMSCORE + ' -s ' + self.MOSES_MEMSCORE_METHOD + ' -s lexweights ' + self.gets2tfilename('t2s') + ' -r ' +  self.MOSES_MEMSCORE_METHOD + ' -r lexweights ' + self.gets2tfilename('s2t') + ' -s const 2.718 < ' + self.gets2tfilename('phraseextract') +  ' > ' + self.gets2tfilename('phrasetable')): return False            
         else:
             if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract.sorted') + ' ' +  self.gets2tfilename('s2t') + ' ' + self.gets2tfilename('half.s2t') + ' ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (source->target)', self.gets2tfilename('half.s2t') ): return False        
             if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract.inv.sorted') + ' '  + self.gets2tfilename('t2s') + ' ' + self.gets2tfilename('half.t2s') + ' --Inverse ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (target->source)', self.gets2tfilename('half.t2s') ): return False        
