@@ -155,8 +155,9 @@ void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassD
 	} else {
 		delimiter = " ";
 	}
-    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
-        const EncAnyGram* sourcegram = iter->first;        
+    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {    
+        const EncAnyGram* sourcegram = iter->first;
+        if (wordbased && sourcegram->n() > 1) continue;         
         map<double, const EncAnyGram*> sorted;        
         double total = 0;
         for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
