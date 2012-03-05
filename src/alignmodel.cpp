@@ -226,7 +226,7 @@ void BiAlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, Clas
 				} else {			
 					*OUT << sourcegram->decode(sourceclassdecoder) << delimiter << targetgram->decode(targetclassdecoder);
 				}
-				*OUT << delimiter << ((-1 * alignmatrix[sourcegram][targetgram]) / sourcetotal) << ' ' << ((-1 * alignmatrixrev[targetgram][sourcegram]) / targettotal) << endl;
+				*OUT << delimiter << ((alignmatrix[sourcegram][targetgram]) / sourcetotal) << ' ' << ((alignmatrixrev[targetgram][sourcegram]) / targettotal) << endl;
 			}
         }            
     }	
