@@ -694,7 +694,7 @@ class MTWrapper(object):
         
                 
         if self.BUILD_COLIBRI_MOSESPHRASETABLE:            
-            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -d ' + self.gets2tfilename('alignmodel.colibri') + ' -i ' + self.gett2sfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') --simpletable --moses > ' + self.gets2tfilename('phrasetable') , "Decoding to Moses phrasetable", self.gets2tfilename('phrasetable') ): return False
+            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -d ' + self.gets2tfilename('alignmodel.colibri') + ' -i ' + self.gett2sfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' --simpletable --moses > ' + self.gets2tfilename('phrasetable') , "Decoding to Moses phrasetable", self.gets2tfilename('phrasetable') ): return False
 
         return True
         
