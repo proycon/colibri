@@ -133,7 +133,7 @@ class MTWrapper(object):
             ('PBMBMT_TIMBL_OPTIONS','-k 1 -a4','Timbl options (+v+db+di is added automatically). See Timbl -h'),
             ('COLIBRI_GRAPHMODEL_OPTIONS','-P -X -r','Options for the Graphmodel, if empty, no graph model will be constructed for the aligner, see graphmodel -h'),
             ('COLIBRI_PATTERNFINDER_OPTIONS','-t 10 -s -B -E', 'Options for the pattern finder, see patternfinder -h'),
-            ('COLIBRI_ALIGNER_OPTIONS','-E -I 100','Options for the colibri aligner, see aligner -h'),  
+            ('COLIBRI_ALIGNER_OPTIONS','-J -p 0.1','Options for the colibri aligner, see aligner -h'),  
     ]
 
     
