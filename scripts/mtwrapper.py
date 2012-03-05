@@ -131,7 +131,7 @@ class MTWrapper(object):
             ('PBMBMT_RIGHTCONTEXTSIZE',1,''),
             ('PBMBMT_DECODER_OPTIONS','','Options for PBMBMT Decoder (do not include --srilm=, will be added automatically if BUILD_SRILM_TARGETMODEL is enabled)'),
             ('PBMBMT_TIMBL_OPTIONS','-k 1 -a4','Timbl options (+v+db+di is added automatically). See Timbl -h'),
-            ('COLIBRI_GRAPHMODEL_OPTIONS','','Options for the Graphmodel, if empty, no graph model will be constructed for the aligner, see graphmodel -h'),
+            ('COLIBRI_GRAPHMODEL_OPTIONS','-P -X -r','Options for the Graphmodel, if empty, no graph model will be constructed for the aligner, see graphmodel -h'),
             ('COLIBRI_PATTERNFINDER_OPTIONS','-t 10 -s -B -E', 'Options for the pattern finder, see patternfinder -h'),
             ('COLIBRI_ALIGNER_OPTIONS','-E -I 100','Options for the colibri aligner, see aligner -h'),  
     ]
