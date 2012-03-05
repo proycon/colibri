@@ -173,6 +173,7 @@ class MTWrapper(object):
         self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE,self.PATH_MOSES)
         self.EXEC_MOSES_PHRASEEXTRACT_SCORE = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT_SCORE,self.PATH_MOSES)
         self.EXEC_MOSES_MERT  = self.findpath(self.EXEC_MOSES_MERT , self.PATH_MOSES)
+        self.EXEC_MOSES_MEMSCORE  = self.findpath(self.EXEC_MOSES_MEMSCORE , self.PATH_MOSES)
         
         self.EXEC_MATREX_WER = self.findpath(self.EXEC_MATREX_WER, self.PATH_MATREX)
         self.EXEC_MATREX_PER = self.findpath(self.EXEC_MATREX_PER, self.PATH_MATREX)
