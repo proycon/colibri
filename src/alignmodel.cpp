@@ -573,7 +573,7 @@ BiAlignmentModel::BiAlignmentModel(const string & s2tfilename, const string & t2
 	    if (DEBUG) cerr << "\t@" << i << endl;
         f.read((char*) &check, sizeof(char));
         if (check != 0xff) {
-        	cerr << "ERROR processing " + t2sfilename + " at construction " << i << " of " << targetcount << ". Expected check-byte, got " << (int) check << endl;
+        	cerr << "ERROR processing " << t2sfilename << " at construction " << i << " of " << targetcount << ". Expected check-byte, got " << (int) check << endl;
         	f.read(&gapcount, sizeof(char));
         	cerr << "DEBUG: next byte should be gapcount, value=" << (int) gapcount << endl; 
         	exit(13);        	
