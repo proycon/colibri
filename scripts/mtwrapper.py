@@ -76,6 +76,7 @@ class MTWrapper(object):
             ('BUILD_PBMBMT', False, 'Build model for Phrase-Based Memory-based Machine Translation'),   
             ('BUILD_PBMBMT_PARAMSEARCH', False, 'Do parameter optimisation for PBMBMT using wrapped progressive sampling'),
             ('BUILD_COLIBRI_ALIGNMENT', False,'Create an alignment using colibri'),
+            ('BUILD_COLIBRI_MOSESPHRASETABLE', False,'Create a Moses Phrasetable using colibri'),
             ('PATH_MOSES', '','Base directory where Moses is installed'),
             ('PATH_SRILM', '','Base directory where SRILM is installed'),
             ('PATH_GIZA', '','Base directory where GIZA++ is installed'),
@@ -111,7 +112,7 @@ class MTWrapper(object):
             ('EXEC_COLIBRI_CLASSENCODE','classencode',''),
             ('EXEC_COLIBRI_PATTERNFINDER','patternfinder',''),
             ('EXEC_COLIBRI_GRAPHMODEL','graphmodel',''),
-            ('EXEC_COLIBRI_ALIGNER','aligner',''),
+            ('EXEC_COLIBRI_ALIGNER','aligner',''),            
             ('MKCLS_OPTIONS','-m2 -c50',''),
             ('GIZA_OPTIONS','-p0 0.98 -m1 5 -m2 0 -m3 3 -m4 3 -nsmooth 4 -model4smoothfactor 0.4',''),
             ('SRILM_ORDER',3,'N-gram size for language model'),
@@ -276,6 +277,11 @@ class MTWrapper(object):
             print >>sys.stderr,red("Dependency error: ucto not found (EXEC_UCTO=" + self.EXEC_UCTO + ")")
             sane = False
             
+        if self.BUILD_COLIBRI_MOSESPHRASETABLE:            
+            if not self.BUILD_COLIBRI_ALIGNMENT:    
+                print >>sys.stderr,yellow("Configuration update: BUILD_COLIBRI_ALIGNMENT automatically enabled because BUILD_COLIBRI_MOSESPHRASETABLE is too")
+                self.BUILD_COLIBRI_ALIGNMENT = True
+                
         if self.BUILD_COLIBRI_ALIGNMENT:
             if not self.EXEC_COLIBRI_PATTERNFINDER or not os.path.exists(self.EXEC_COLIBRI_PATTERNFINDER):
                 sane = False
@@ -310,7 +316,7 @@ class MTWrapper(object):
             if self.BUILD_PBMBMT:
                 print >>sys.stderr,red("Configuration error: Ambiguous selection of MT system: Select only one of BUILD_MOSES or BUILD_PBMBMT")
                 sane = False
-            if not self.BUILD_MOSES_PHRASETRANSTABLE:
+            if not self.BUILD_MOSES_PHRASETRANSTABLE and not self.BUILD_COLIBRI_MOSESPHRASETABLE:
                 print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_MOSES is too")
                 self.BUILD_MOSES_PHRASETRANSTABLE = True
             if not self.BUILD_SRILM_TARGETMODEL:                 
@@ -683,7 +689,12 @@ class MTWrapper(object):
 
         if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHMODEL_OPTIONS, "Building target-side graph model",self.gettargetfilename('graphmodel.colibri') ): return False
         
-        if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphmodel.colibri') + ' -t ' + self.gettargetfilename('graphmodel.colibri') + ' '+ self.COLIBRI_ALIGNER_OPTIONS, "Building alignment model",self.gettargetfilename('alignmodel.colibri') ): return False
+        if self.BUILD_COLIBRI_MOSESPHRASETABLE:            
+            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphmodel.colibri') + ' -t ' + self.gettargetfilename('graphmodel.colibri') + ' -o ' + self.gets2tfilename() + ' ' + self.COLIBRI_ALIGNER_OPTIONS + ' --simpletable --moses > ' + self.gets2tfilename('phrasetable') , "Building alignment model",self.gets2tfilename('alignmodel.colibri'), self.gets2tfilename('phrasetable') ): return False
+        else:
+            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphmodel.colibri') + ' -t ' + self.gettargetfilename('graphmodel.colibri') + ' -o ' + self.gets2tfilename() + ' ' + self.COLIBRI_ALIGNER_OPTIONS, "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
+        
+        
         
         return True
         
