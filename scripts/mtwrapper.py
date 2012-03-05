@@ -565,7 +565,7 @@ class MTWrapper(object):
         if 'srilm' in targets or 'all' in targets:
             self.cleanfiles('*.srilm')
         if 'colibri' in targets or 'all' in targets:
-            self.cleanfiles('*.colibri')
+            self.cleanfiles('*.colibri','*.cls','*.clsenc')
         if 'test' in targets or 'all' in targets:
             self.cleanfiles('output.txt','*.score')
         if 'score' in targets or 'all' in targets:
