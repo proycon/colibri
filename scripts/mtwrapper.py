@@ -762,7 +762,7 @@ class MTWrapper(object):
                 
 
         if self.BUILD_MOSES_MEMSCORE:
-            if not self.runcmd(self.EXEC_MOSES_MEMSCORE + ' -s ' + self.MOSES_MEMSCORE_METHOD + ' -s lexweights ' + self.gets2tfilename('t2s') + ' -r ' +  self.MOSES_MEMSCORE_METHOD + ' -r lexweights ' + self.gets2tfilename('s2t') + ' -s const 2.718 < ' + self.gets2tfilename('phraseextract') +  ' > ' + self.gets2tfilename('phrasetable')): return False            
+            if not self.runcmd(self.EXEC_MOSES_MEMSCORE + ' -s ' + self.MOSES_MEMSCORE_METHOD + ' -s lexweights ' + self.gets2tfilename('t2s') + ' -r ' +  self.MOSES_MEMSCORE_METHOD + ' -r lexweights ' + self.gets2tfilename('s2t') + ' -s const 2.718 < ' + self.gets2tfilename('phraseextract') +  ' > ' + self.gets2tfilename('phrasetable'),'Scoring phrases', self.gets2tfilename('phrasetable')): return False            
         else:
             if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract.sorted') + ' ' +  self.gets2tfilename('s2t') + ' ' + self.gets2tfilename('half.s2t') + ' ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (source->target)', self.gets2tfilename('half.s2t') ): return False        
             if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_SCORE + ' ' + self.gets2tfilename('phraseextract.inv.sorted') + ' '  + self.gets2tfilename('t2s') + ' ' + self.gets2tfilename('half.t2s') + ' --Inverse ' + self.PHRASESCORE_OPTIONS, 'Scoring phrases (target->source)', self.gets2tfilename('half.t2s') ): return False        
