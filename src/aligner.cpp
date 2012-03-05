@@ -12,6 +12,7 @@ void usage() {
     cerr << "\t-S sourceclassfile        Source class file (for decoding)" << endl;
     cerr << "\t-T targetclassfile        Target class file (for decoding)" << endl;
     cerr << "\t-d alignmodelfile         Decode an existing alignment model (*.alignmodel.colibri), specify -S and -T as well" << endl;
+    cerr << "\t-i inv-alignmodelfile     Use inverse alignment model as well (*.alignmodel.colibri), specify -S and -T as well" << endl;
     cerr << " Alignment method (choose one):" << endl;
     cerr << "\t-J                        Use Jaccard co-occurrence method (simplest)" << endl;
     cerr << "\t-D                        Use Dice co-occurrence method" << endl;
@@ -52,6 +53,7 @@ int main( int argc, char *argv[] ) {
     string sourceclassfile = "";
     string targetclassfile = "";
     string modelfile="";
+    string invmodelfile="";
     double coocprunevalue = 0.0;
     double probprunevalue = 0.0;
     double graphweightfactor = 1.2;
@@ -89,7 +91,7 @@ int main( int argc, char *argv[] ) {
     int option_index = 0;
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:bl:L:NVZEI:v:G",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:bl:L:NVZEI:v:Gi:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -97,6 +99,9 @@ int main( int argc, char *argv[] ) {
                break;
         case 'd':
         	modelfile = optarg;
+        	break;
+        case 'i':
+        	invmodelfile = optarg;
         	break;
         case 'h':
         	usage();
@@ -275,7 +280,7 @@ int main( int argc, char *argv[] ) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
 				AlignmentModel reversealignmodel = EMAlignmentModel(&targetmodel,&sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
 				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
-				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;
+				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;						
 				cerr << "Computing intersection of both alignment models..." << endl;
 				alignmodel->intersect(&reversealignmodel, bidirprobthreshold);
 			}	    
@@ -295,6 +300,8 @@ int main( int argc, char *argv[] ) {
 			}	    				
 		}
 
+
+
 		if (DOGRAPHALIGN) {
 			cerr << "Weighting based on graph subsumption relations..." << endl;
 			const int adjustments = alignmodel->graphalign(sourcemodel, targetmodel, graphweightfactor);
@@ -305,7 +312,8 @@ int main( int argc, char *argv[] ) {
 		    cerr << "Saving alignment model..." << endl;
 			alignmodel->save(outputprefix + ".alignmodel.colibri");
 		}
-
+		
+		
 
 		if ((!sourceclassfile.empty()) && (!targetclassfile.empty())) {
 			cerr << "Loading source class decoder " << sourceclassfile << endl;
@@ -323,20 +331,26 @@ int main( int argc, char *argv[] ) {
 				alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);
 			}       
 		}	
-		
-		
+				
 		       
     } else {
-   		cerr << "Loading alignment model..." << endl;
-    	alignmodel = new AlignmentModel(modelfile);
+    	if ((sourceclassfile.empty()) || (targetclassfile.empty())) {
+    		cerr << "Error: Specify -S and -T" << endl; 
+    		usage();
+    		exit(2);
+    	}
     	
-    	if ((!sourceclassfile.empty()) && (!targetclassfile.empty())) {
-			cerr << "Loading source class decoder " << sourceclassfile << endl;
-			ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
-	
-			cerr << "Loading target class decoder " << targetclassfile << endl;
-			ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
-	
+		cerr << "Loading source class decoder " << sourceclassfile << endl;
+		ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
+
+		cerr << "Loading target class decoder " << targetclassfile << endl;
+		ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
+
+    	
+    	if (invmodelfile.empty()) {
+    	   	cerr << "Loading alignment model..." << endl;
+    		alignmodel = new AlignmentModel(modelfile);
+    		    	    	
 			cerr << "Decoding..." << endl;
 			if (DOSIMPLETABLE) {
 				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, false, MOSESFORMAT);
@@ -344,12 +358,22 @@ int main( int argc, char *argv[] ) {
 				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, true);
 			} else { 
 				alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);
-			}        
-		}	    	
+			}            		
+    	} else {
+    		cerr << "Loading alignment models..." << endl;
+    		BiAlignmentModel bialignmodel = BiAlignmentModel(modelfile, invmodelfile);
+			cerr << "Decoding..." << endl;
+			if (DOSIMPLETABLE) {
+				bialignmodel.simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, false, MOSESFORMAT);
+			} else if (DOSIMPLELEX) {
+				bialignmodel.simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, true);
+			} else { 
+				bialignmodel.decode(sourceclassdecoder, targetclassdecoder, &cout);
+			}            		    		
+		}
+			    	
     } 
     
-	
-
 
 	if (alignmodel != NULL) {
 		delete alignmodel;
