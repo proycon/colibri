@@ -43,6 +43,9 @@ void usage() {
     cerr << "\t--moses                   Output phrase-translation table in Moses format (use with --simpletable, --simplelex)" << endl;
 }
 
+
+
+
 int main( int argc, char *argv[] ) {
     string sourcemodelfile = "";
     string targetmodelfile = "";

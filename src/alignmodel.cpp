@@ -147,6 +147,23 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
     }
 }
 
+void BiAlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
+    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+        const EncAnyGram* sourcegram = iter->first;
+        *OUT << sourcegram->decode(sourceclassdecoder) << "\t";
+        map<double, const EncAnyGram*> sorted;        
+        for (unordered_map<const EncAnyGram*, double >::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+        	sorted[-1 * iter2->second] = iter2->first;            
+        }
+        for (map<double, const EncAnyGram*>::iterator iter2 = sorted.begin(); iter2 != sorted.end(); iter2++) {
+			const EncAnyGram* targetgram = iter2->second;            
+            *OUT << targetgram->decode(targetclassdecoder) << "\t" << alignmatrix[sourcegram][targetgram] << "\t" << alignmatrixrev[targetgram][sourcegram] << "\t";
+        }            
+        *OUT << endl;
+    }
+}
+
+
 void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT, bool targetfirst,  bool wordbased, bool mosesformat) {
 	/* output a simple word-based lexicon, similar to the one used in moses (s2t, t2s) */
 	string delimiter;
@@ -172,14 +189,50 @@ void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassD
 			} else {			
 				*OUT << sourcegram->decode(sourceclassdecoder) << delimiter << targetgram->decode(targetclassdecoder);
 			}
-			if (!mosesformat) {
-				*OUT << delimiter << ((-1 * iter2->first) / total) << endl;
-			} else {
-				*OUT << endl;
-			}      
+			*OUT << delimiter << ((-1 * iter2->first) / total) << endl;
         }            
     }	
 }
+
+
+void BiAlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT, bool targetfirst,  bool wordbased, bool mosesformat) {
+	/* output a simple word-based lexicon, similar to the one used in moses (s2t, t2s) */
+	string delimiter;
+	if (mosesformat) {
+		delimiter = " ||| ";
+	} else {
+		delimiter = " ";
+	}
+    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double > >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {    
+        const EncAnyGram* sourcegram = iter->first;
+        if (wordbased && sourcegram->n() > 1) continue;         
+        map<double, const EncAnyGram*> sorted;        
+        double sourcetotal = 0;        
+        for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+        	if (wordbased && iter2->first->n() > 1) continue; 
+        	sorted[-1 * iter2->second] = iter2->first;
+        	sourcetotal += iter2->second;            
+        }
+        for (map<double, const EncAnyGram*>::iterator iter2 = sorted.begin(); iter2 != sorted.end(); iter2++) {
+			const EncAnyGram* targetgram = iter2->second;
+			double targettotal = 0;
+			if (alignmatrixrev.count(targetgram) > 0) { 
+				for (unordered_map<const EncAnyGram*, double>::iterator iter3 = alignmatrixrev[targetgram].begin(); iter3 != alignmatrixrev[targetgram].end(); iter3++) {
+					if (wordbased && iter3->first->n() > 1) continue; 
+					targettotal += iter3->second;            
+				}			
+				if (targetfirst) {
+					*OUT << targetgram->decode(targetclassdecoder) << delimiter << sourcegram->decode(sourceclassdecoder);				 
+				} else {			
+					*OUT << sourcegram->decode(sourceclassdecoder) << delimiter << targetgram->decode(targetclassdecoder);
+				}
+				*OUT << delimiter << ((-1 * alignmatrix[sourcegram][targetgram]) / sourcetotal) << ' ' << ((-1 * alignmatrixrev[targetgram][sourcegram]) / targettotal) << endl;
+			}
+        }            
+    }	
+}
+
+
 
 EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, double probthreshold, bool bestonly, bool DEBUG) {
     int round = 0;    
@@ -481,11 +534,91 @@ AlignmentModel::AlignmentModel(const string & filename) {
 		        	targetskipgrams[skipgram] = true;		        	
 		        }   
 		        targetgram = gettargetkey((EncAnyGram*) &skipgram);                      
-		    }
+		    }		    
 		    double p;
 		    f.read((char*) &p, sizeof(double));
 		    if (sourcegram != NULL and targetgram != NULL) {
 		    	alignmatrix[sourcegram][targetgram] = p;
+		    } else {
+		    	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
+		    	exit(6);
+		    }
+        }        
+	}
+    f.close();
+}
+
+
+
+
+BiAlignmentModel::BiAlignmentModel(const string & s2tfilename, const string & t2sfilename): AlignmentModel(s2tfilename) {
+	//TODO: Code duplication, merge with AlignmentModel() constructor
+	DEBUG = false;
+	unsigned char check;
+	
+    ifstream f;
+    f.open(t2sfilename.c_str(), ios::in | ios::binary);
+    if ((!f) || (!f.good())) {
+       cerr << "File does not exist: " << t2sfilename << endl;
+       exit(3);
+    }
+    
+    uint64_t model_id;    
+    uint64_t targetcount = 0;    
+    f.read( (char*) &model_id, sizeof(uint64_t));        
+    f.read( (char*) &targetcount, sizeof(uint64_t));        
+     
+    char gapcount;    
+    for (int i = 0; i < targetcount; i++) {	    
+	    if (DEBUG) cerr << "\t@" << i << endl;
+        f.read((char*) &check, sizeof(char));
+        if (check != 0xff) {
+        	cerr << "ERROR processing " + t2sfilename + " at construction " << i << " of " << targetcount << ". Expected check-byte, got " << (int) check << endl;
+        	f.read(&gapcount, sizeof(char));
+        	cerr << "DEBUG: next byte should be gapcount, value=" << (int) gapcount << endl; 
+        	exit(13);        	
+        }
+        f.read(&gapcount, sizeof(char));	 
+        const EncAnyGram * targetgram;   
+        if (gapcount == 0) {
+            if (DEBUG)  cerr << "\tNGRAM";
+            EncNGram ngram = EncNGram(&f); //read from file            
+            if (!gettargetkey((EncAnyGram*) &ngram)) {
+            	targetngrams[ngram] = true;            	
+            }   
+            targetgram = gettargetkey((EncAnyGram*) &ngram);                                           
+        } else {
+            if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
+            EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              
+            if (!gettargetkey((EncAnyGram*) &skipgram)) {
+            	targetskipgrams[skipgram] = true;            	
+            }   
+            targetgram = gettargetkey((EncAnyGram*) &skipgram);                     
+        }        
+        uint64_t sourcecount;
+        f.read( (char*) &sourcecount, sizeof(uint64_t));
+        for (int j = 0; j < sourcecount; j++) {
+        	const EncAnyGram * sourcegram = NULL;   
+            f.read(&gapcount, sizeof(char));	    
+		    if (gapcount == 0) {
+		        if (DEBUG)  cerr << "\tNGRAM";
+		        EncNGram ngram = EncNGram(&f); //read from file
+		        if (!getsourcekey((EncAnyGram*) &ngram)) {
+		        	sourcengrams[ngram] = true;		        	
+		        }   
+		        sourcegram = getsourcekey((EncAnyGram*) &ngram);                                           
+		    } else {
+		        if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
+		        EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              		        
+		        if (!getsourcekey((EncAnyGram*) &skipgram)) {
+		        	sourceskipgrams[skipgram] = true;		        	
+		        }   
+		        sourcegram = getsourcekey((EncAnyGram*) &skipgram);                      
+		    }
+		    double p;
+		    f.read((char*) &p, sizeof(double));
+		    if (sourcegram != NULL and targetgram != NULL) {
+		    	alignmatrixrev[targetgram][sourcegram] = p;
 		    } else {
 		    	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
 		    	exit(6);

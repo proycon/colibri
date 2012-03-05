@@ -689,7 +689,7 @@ class MTWrapper(object):
 
         if not self.runcmd(self.EXEC_COLIBRI_GRAPHMODEL + ' -f ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHMODEL_OPTIONS, "Building target-side graph model",self.gettargetfilename('graphpatternmodel.colibri') ): return False
         
-        if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -t ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gets2tfilename() + ' ' + self.COLIBRI_ALIGNER_OPTIONS, "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
+        if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -t ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gets2tfilename() + ' -N ' + self.COLIBRI_ALIGNER_OPTIONS, "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
         
         
         if self.BUILD_COLIBRI_MOSESPHRASETABLE:            

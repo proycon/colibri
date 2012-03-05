@@ -19,8 +19,8 @@ class AlignmentModel: public AlignConstraintInterface {
     AlignmentModel() { DEBUG = false; }
     AlignmentModel(const std::string & filename);
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignmatrix;    
-    void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
-    void simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT, bool targetfirst = false, bool wordbased = false, bool mosesformat = false);
+    virtual void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
+    virtual void simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT, bool targetfirst = false, bool wordbased = false, bool mosesformat = false);
     void enabledebug() { DEBUG = true; }
     
     const EncAnyGram * getsourcekey(const EncAnyGram* key);
@@ -41,6 +41,20 @@ class AlignmentModel: public AlignConstraintInterface {
 	
 	virtual void save(const std::string & filename) {};	
 };
+
+class BiAlignmentModel: public AlignmentModel {
+   public:
+    BiAlignmentModel(const std::string & sourcefilename, const std::string & targetfilename);
+    
+    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignmatrixrev;
+        
+    virtual void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
+    virtual void simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT, bool targetfirst = false, bool wordbased = false, bool mosesformat = false);    
+	
+	//void intersect(AlignmentModel * reversemodel, double probthreshold = 0); //Compute intersection with reverse model			
+	virtual void save(const std::string & filename) {};	
+};
+
 
 
 class CoocAlignmentModel: public AlignmentModel {
