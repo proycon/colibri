@@ -685,9 +685,9 @@ class MTWrapper(object):
         
         if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.gettargetfilename('clsenc') + ' ' + self.COLIBRI_PATTERNFINDER_OPTIONS, "Building target-side pattern model",self.gettargetfilename('indexedpatternmodel.colibri') ): return False
         
-        if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.getsourcefilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHMODEL_OPTIONS, "Building source-side graph model",self.getsourcefilename('graphmodel.colibri') ): return False
+        if not self.runcmd(self.EXEC_COLIBRI_GRAPHMODEL + ' -f ' + self.getsourcefilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHMODEL_OPTIONS, "Building source-side graph model",self.getsourcefilename('graphmodel.colibri') ): return False
 
-        if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHMODEL_OPTIONS, "Building target-side graph model",self.gettargetfilename('graphmodel.colibri') ): return False
+        if not self.runcmd(self.EXEC_COLIBRI_GRAPHMODEL + ' -f ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHMODEL_OPTIONS, "Building target-side graph model",self.gettargetfilename('graphmodel.colibri') ): return False
         
         if self.BUILD_COLIBRI_MOSESPHRASETABLE:            
             if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphmodel.colibri') + ' -t ' + self.gettargetfilename('graphmodel.colibri') + ' -o ' + self.gets2tfilename() + ' ' + self.COLIBRI_ALIGNER_OPTIONS + ' --simpletable --moses > ' + self.gets2tfilename('phrasetable') , "Building alignment model",self.gets2tfilename('alignmodel.colibri'), self.gets2tfilename('phrasetable') ): return False
