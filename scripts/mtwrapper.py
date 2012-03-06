@@ -204,6 +204,8 @@ class MTWrapper(object):
         
 
     def findpath(self, name, basepath = ''):                        
+        if os.path.exists(name):
+            return name
         for path in os.environ['PATH'].split(':'):
             if os.path.exists(path + '/' + name) and not os.path.isdir(path + '/' + name):
                 print >>sys.stderr, green("Found " + name + " in " + path)
