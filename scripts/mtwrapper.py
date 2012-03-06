@@ -453,7 +453,7 @@ class MTWrapper(object):
         print >>sys.stderr,"\ttest <inputfile> <referencefile>   Run and evaluate the MT system on the specified input file and reference file (one sentence per line). If <inputfile> and <referencefile> are not given, the default test files from the system configuration are used."                               
         print >>sys.stderr,"\tscore <inputfile> <referencefile>  Like test, but work on a pre-run system, does  not run the translation again."                   
         print >>sys.stderr,"\tclean [all|giza|moses|colibri|score]    Clean generated files"
-        print >>sys.stderr,"\tbranch <new-directory>             Create a new branch based on this project (files are symlinked instead of copied)"
+        print >>sys.stderr,"\tbranch <expname>                   Create a new branch based on this project (files are symlinked instead of copied)"
 
     def start(self):        
         try:
@@ -526,8 +526,11 @@ class MTWrapper(object):
 
         elif cmd == 'branch':          
             expname = sys.argv[2]
+
             self.branch(expname)
             
+            open(self.WORKDIR + '/.frozen','w').close()
+            print >>sys.stderr, "Current system automatically frozen after branching"
             
         elif cmd == 'test':                        
             if len(sys.argv) == 4:
@@ -1140,7 +1143,7 @@ class MTWrapper(object):
     
         for filename in glob.glob(self.WORKDIR + '/*'):
             basefilename = os.path.basename(filename)
-            if (basefilename[:-3] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.':
+            if (basefilename[-3:] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.':
                 continue    
             try:
                 os.symlink(filename, workdir + '/' + basefilename)
