@@ -1116,7 +1116,7 @@ class MTWrapper(object):
         parentdir = os.path.dirname(parentdir)
         
         
-        workdir = parentdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANGUAGE + '-' + self.TARGETLANGUAGE + '-' + expname
+        workdir = parentdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + expname
         if workdir and not os.path.isdir(workdir):            
             print>>sys.stderr, "Creating branched work directory (as sibling): " + workdir
             os.mkdir(workdir)
