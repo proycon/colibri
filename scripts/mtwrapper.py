@@ -1172,6 +1172,11 @@ class MTWrapper(object):
             else:
                 value = self.__getattribute__(key)
             
+            if key[:5] == 'PATH_' and (value == default or value == ""): 
+                continue
+            if key[:5] == 'EXEC_' and (value == default or value == ""): 
+                continue
+            
             if isinstance(default, str) or isinstance(value,  unicode):            
                 f.write("    " + key + "=\"" + value + "\"")
             else:
@@ -1352,7 +1357,8 @@ if __name__ == "__main__":
             default = devsourcecorpusfile
         elif key == 'DEVTARGETCORPUS':
             default = devtargetcorpusfile
-            
+        
+    
         
         if isinstance(default, str) or isinstance(default,  unicode):            
             f.write("    " + key + "=\"" + default + "\"")
