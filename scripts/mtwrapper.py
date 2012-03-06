@@ -1165,7 +1165,7 @@ class MTWrapper(object):
             elif key == 'WORKDIR':
                 value = workdir
             else:
-                value = self.getattr(key)
+                value = self.__getattribute__(key)
             
             if isinstance(default, str) or isinstance(value,  unicode):            
                 f.write("    " + key + "=\"" + value + "\"")
