@@ -1137,15 +1137,25 @@ class MTWrapper(object):
             settingsfile = workdir + '/mt-' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + expname + '.py'
         else:
             settingsfile = workdir + '/mt-' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '.py'
+    
+        for filename in glob.glob(self.WORKDIR + '/*'):
+            basefilename = os.path.basename(filename)
+            if (basefilename[:-3] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.':
+                continue    
+            try:
+                os.symlink(filename, workdir + '/' + basefilename)
+                print>>sys.stderr, green("Branched file " + basefilename + " (symlink)")
+            except:
+                print>>sys.stderr, red("Error making symlink for " + basefilename)
+
         
         f = codecs.open(settingsfile,'w','utf-8')
         f.write("#! /usr/bin/env python\n# -*- coding: utf8 -*-#\n\n")
-        f.write("#Generated as branch of " + self.WORKDIR + "\n\n")
-        if includedirs:         
-            f.write('import sys\n')
-            for dir in sys.path:                
-                if dir:
-                    f.write("sys.path.append('" + dir + "')\n")
+        f.write("#Generated as branch of " + self.WORKDIR + "\n\n")         
+        f.write('import sys\n')
+        for dir in sys.path:                
+            if dir:
+                f.write("sys.path.append('" + dir + "')\n")
         f.write("\n")
         f.write("from mtwrapper import MTWrapper\n")    
         f.write("mtwrapper = MTWrapper(\n")
