@@ -462,9 +462,15 @@ class MTWrapper(object):
             self.usage()
             sys.exit(2)
         if cmd == 'train':
+            if os.path.isfile(self.WORKDIR + '/.frozen'):
+                print >>sys.stderr, "Courageously refusing to train system because it is frozen"
+                sys.exit(2)
             if not self.starttrain():
                 sys.exit(1)                
         elif cmd == 'clean':
+            if os.path.isfile(self.WORKDIR + '/.frozen'):
+                print >>sys.stderr, "Courageously refusing to clean system because it is frozen"
+                sys.exit(2)
             targets = sys.argv[2:]
             if not self.clean(targets):
                 sys.exit(1)
@@ -498,11 +504,30 @@ class MTWrapper(object):
             else:
                 print >>sys.stderr, "An error occurred whilst trying to run the system" 
                 sys.exit(1)
-    
-        elif cmd == 'branch':          
+
+        elif cmd == 'freeze':          
+            if os.path.isfile(self.WORKDIR + '/.frozen'):
+                print >>sys.stderr, "System is already frozen"
+                sys.exit(0)
             
-            #TODO: IMplement
-            raise NotImplemented
+                
+            open(self.WORKDIR + '/.frozen','w').close()
+            print >>sys.stderr, "System frozen" 
+
+
+        elif cmd == 'unfreeze' or cmd=='thaw':          
+            if os.path.isfile(self.WORKDIR + '/.frozen'):
+                os.unlink(self.WORKDIR + '/.frozen')
+                print >>sys.stderr, "Thawing system"
+                sys.exit(0)            
+            else:    
+                print >>sys.stderr, "System is not frozen"
+                sys.exit(0)
+
+        elif cmd == 'branch':          
+            expname = sys.argv[2]
+            self.branch(expname)
+            
             
         elif cmd == 'test':                        
             if len(sys.argv) == 4:
@@ -1084,8 +1109,69 @@ class MTWrapper(object):
         return True
 
    
+    def branch(self,expname):
+        parentdir = self.WORKDIR
+        if parentdir[-1] == '/':
+            parentdir = parentdir[:-1]
+        parentdir = os.path.dirname(parentdir)
+        
+        
+        workdir = parentdir + '/' + corpusname + '-' + sourcelang + '-' + targetlang + '-' + expname
+        if workdir and not os.path.isdir(workdir):            
+            print>>sys.stderr, "Creating branched work directory (as sibling): " + workdir
+            os.mkdir(workdir)
+        elif workdir:
+            print>>sys.stderr, yellow("WARNING: work directory " +  workdir + " already exists! Press ENTER to continue or ctrl-C to abort")
+            raw_input()
 
 
+        self.writesettings(expname, workdir) 
+        
+   
+    def writesettings(self,expname=None, workdir = None):    
+        if not workdir: 
+            workdir = self.WORKDIR
+        if not expname:
+            expname = self.EXPERIMENTNAME
+        if expname:
+            settingsfile = workdir + '/mt-' + corpusname + '-' + sourcelang + '-' + targetlang + '-' + expname + '.py'
+        else:
+            settingsfile = workdir + '/mt-' + corpusname + '-' + sourcelang + '-' + targetlang + '.py'
+        
+        f = codecs.open(settingsfile,'w','utf-8')
+        f.write("#! /usr/bin/env python\n# -*- coding: utf8 -*-#\n\n")
+        f.write("#Generated as branch of " + self.WORKDIR + "\n\n")
+        if includedirs:         
+            f.write('import sys\n')
+            for dir in sys.path:                
+                if dir:
+                    f.write("sys.path.append('" + dir + "')\n")
+        f.write("\n")
+        f.write("from mtwrapper import MTWrapper\n")    
+        f.write("mtwrapper = MTWrapper(\n")
+        for key, default, help in MTWrapper.defaults:            
+            if key == 'EXPERIMENTNAME': 
+                value = expname
+            elif key == 'WORKDIR':
+                value = workdir
+            else:
+                value = self.getattr(key)
+            
+            if isinstance(default, str) or isinstance(value,  unicode):            
+                f.write("    " + key + "=\"" + value + "\"")
+            else:
+                f.write("    " + key + "=" + str(value))
+            
+            if help:
+                f.write(", #" + help + "\n")
+            else:
+                f.write(",\n")
+        f.write(")\nmtwrapper.start()\n")
+        f.close()
+        os.chmod(settingsfile, 0754)
+        os.system('vim ' + settingsfile)
+        print >>sys.stderr,"All done, to go to the newly branched system: $ cd " + workdir
+   
 
     
 def usage():
