@@ -807,7 +807,7 @@ class MTWrapper(object):
         if self.BUILD_MOSES_PHRASETRANSTABLE:
             f.write('0 0 0 5 ' + self.gets2tfilename('phrasetable') + '\n\n')
         elif self.BUILD_COLIBRI_MOSESPHRASETABLE:
-            f.write('0 0 0 3 ' + self.gets2tfilename('phrasetable') + '\n\n')
+            f.write('0 0 0 2 ' + self.gets2tfilename('phrasetable') + '\n\n')
         f.write('[lmodel-file]\n')
         if self.BUILD_SRILM_TARGETMODEL:
             f.write('0 0 ' + str(self.SRILM_ORDER) + ' ' + self.gettargetfilename('srilm') + '\n\n')
