@@ -1116,7 +1116,7 @@ class MTWrapper(object):
         parentdir = os.path.dirname(parentdir)
         
         
-        workdir = parentdir + '/' + corpusname + '-' + sourcelang + '-' + targetlang + '-' + expname
+        workdir = parentdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANGUAGE + '-' + self.TARGETLANGUAGE + '-' + expname
         if workdir and not os.path.isdir(workdir):            
             print>>sys.stderr, "Creating branched work directory (as sibling): " + workdir
             os.mkdir(workdir)
@@ -1134,9 +1134,9 @@ class MTWrapper(object):
         if not expname:
             expname = self.EXPERIMENTNAME
         if expname:
-            settingsfile = workdir + '/mt-' + corpusname + '-' + sourcelang + '-' + targetlang + '-' + expname + '.py'
+            settingsfile = workdir + '/mt-' + self.CORPUSNAME + '-' + self.SOURCELANGUAGE + '-' + self.TARGETLANGUAGE + '-' + expname + '.py'
         else:
-            settingsfile = workdir + '/mt-' + corpusname + '-' + sourcelang + '-' + targetlang + '.py'
+            settingsfile = workdir + '/mt-' + self.CORPUSNAME + '-' + self.SOURCELANGUAGE + '-' + self.TARGETLANGUAGE + '.py'
         
         f = codecs.open(settingsfile,'w','utf-8')
         f.write("#! /usr/bin/env python\n# -*- coding: utf8 -*-#\n\n")
