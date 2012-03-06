@@ -184,7 +184,7 @@ int main( int argc, char *argv[] ) {
             abort ();
         }
         
-    if (MOSESFORMAT) TARGETFIRST = 1;    
+    //if (MOSESFORMAT) TARGETFIRST = 1;    
 	
     if (modelfile.empty() && (sourcemodelfile.empty()  || targetmodelfile.empty())) {
   	    cerr << "Error: Specify at least a source model, target model, and alignment method to build an alignment model! Or load a pre-existing model" << endl;
