@@ -806,13 +806,18 @@ class MTWrapper(object):
         f.write('[ttable-file]\n')
         if self.BUILD_MOSES_PHRASETRANSTABLE:
             f.write('0 0 0 5 ' + self.gets2tfilename('phrasetable') + '\n\n')
+        elif self.BUILD_COLIBRI_MOSESPHRASETABLE:
+            f.write('0 0 0 3 ' + self.gets2tfilename('phrasetable') + '\n\n')
         f.write('[lmodel-file]\n')
         if self.BUILD_SRILM_TARGETMODEL:
             f.write('0 0 ' + str(self.SRILM_ORDER) + ' ' + self.gettargetfilename('srilm') + '\n\n')
         f.write('[ttable-limit]\n20\n\n')
         f.write('[weight-d]\n1\n\n')
         f.write('[weight-l]\n1\n\n')
-        f.write('[weight-t]\n1\n1\n1\n1\n1\n\n')
+        if self.BUILD_MOSES_PHRASETRANSTABLE:
+            f.write('[weight-t]\n1\n1\n1\n1\n1\n\n')
+        elif self.BUILD_COLIBRI_MOSESPHRASETABLE:
+            f.write('[weight-t]\n1\n1\n1\n\n')
         f.write('[weight-w]\n0\n\n')        
         f.close()
         return self.footer('Build Moses Configuration', 0, *outputfiles)
