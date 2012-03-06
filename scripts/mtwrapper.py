@@ -1134,9 +1134,9 @@ class MTWrapper(object):
         if not expname:
             expname = self.EXPERIMENTNAME
         if expname:
-            settingsfile = workdir + '/mt-' + self.CORPUSNAME + '-' + self.SOURCELANGUAGE + '-' + self.TARGETLANGUAGE + '-' + expname + '.py'
+            settingsfile = workdir + '/mt-' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + expname + '.py'
         else:
-            settingsfile = workdir + '/mt-' + self.CORPUSNAME + '-' + self.SOURCELANGUAGE + '-' + self.TARGETLANGUAGE + '.py'
+            settingsfile = workdir + '/mt-' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '.py'
         
         f = codecs.open(settingsfile,'w','utf-8')
         f.write("#! /usr/bin/env python\n# -*- coding: utf8 -*-#\n\n")
