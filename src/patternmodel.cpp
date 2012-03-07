@@ -35,7 +35,10 @@ void NGramData::writeasbinary(ostream * out) const {
 
 void ModelReader::readfile(const string & filename) {
     const bool DEBUG = false;
-
+	int last = 0;
+	//EncNGram lastngram;
+	//EncSkipGram lastskipgram;
+	
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
     if ((!f) || (!f.good())) {
@@ -56,18 +59,27 @@ void ModelReader::readfile(const string & filename) {
         if (check != 0xff) {
         	cerr << "ERROR processing " + filename + " at construction " << i << " of " << totaltypes << ". Expected check-byte, got " << (int) check << endl;
         	f.read(&gapcount, sizeof(char));
-        	cerr << "DEBUG: next byte should be gapcount, value=" << (int) gapcount << endl; 
+        	cerr << "DEBUG: next byte should be gapcount, value=" << (int) gapcount << endl;
+        	if (last == 1) {
+        		cerr << "DEBUG: previous construction was a n-gram" << endl;
+        	} else if (last == 2) {
+        		cerr << "DEBUG: previous construction was a skip-gram" << endl;
+        	} 
         	exit(13);        	
         }
         f.read(&gapcount, sizeof(char));
         if (gapcount == 0) {
             if (DEBUG)  cerr << "\tNGRAM";
             const EncNGram ngram = EncNGram(&f); //read from file            
-            readngramdata(&f, ngram);          
+            readngramdata(&f, ngram);      
+            last = 1;
+            //lastngram = ngram;    
         } else {
             if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
             const EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              
             readskipgramdata(&f, skipgram);
+            last = 2;
+            //lastskipgram = skipgram;
         }
         if (DEBUG)  cerr << endl;      //DEBUG  
     }
