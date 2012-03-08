@@ -1397,8 +1397,8 @@ int GraphPatternModel::xcount(const EncAnyGram* anygram) {
 
 
 void GraphPatternModel::readrelations(std::istream * in, const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relationhash, bool ignore) {
-    uint16_t count;
-    in->read((char*) &count,  sizeof(uint16_t));
+    uint32_t count;
+    in->read((char*) &count,  sizeof(uint32_t));
     char gapcount;
     for (int i = 0; i < count; i++) {                        
        in->read(&gapcount, sizeof(char));
@@ -1415,25 +1415,19 @@ void GraphPatternModel::readrelations(std::istream * in, const EncAnyGram * anyg
 void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relationhash) {
 	const char zero = 0;
 	unordered_set<const EncAnyGram*> * relations = &relationhash[model->getkey(anygram)];
-	
-    uint16_t count = (uint16_t) relations->size();  // size() doesn't correspond to actual iterations???
-    /*for (unordered_set<const EncAnyGram*>::iterator iter = relationhash[model->getkey(anygram)].begin(); iter != relationhash[model->getkey(anygram)].end(); iter++) {
-    	count++;    
-    }*/
-    out->write((char*) &count, sizeof(uint16_t));
+		
+    uint32_t count = (uint32_t) relations->size();
+    out->write((char*) &count, sizeof(uint32_t));
     char gapcount;
-    int c = 0;                           
+    int i = 0;                           
     for (unordered_set<const EncAnyGram*>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
-    	c++;
+    	i++;
 		model->writeanygram(*iter, out);
-        /*const EncAnyGram * anygram2 = model->getkey(*iter);
-        if (!anygram2->isskipgram()) out->write( (char*) &zero, sizeof(char)); //for ngrams         
-        ((EncSkipGram*) anygram2)->writeasbinary(out);*/
     }
     //sanity check:
-    if (c != count) {
-    	cerr << "INTERNAL ERROR: GraphPatternModel::writerelations: Sanity check failed, wrote " << c << " constructions instead of expected " << count << endl;
-    	cerr << "DEBUG: " << relations->size() << endl;        	
+    if (i != count) {
+    	cerr << "INTERNAL ERROR: GraphPatternModel::writerelations: Sanity check failed, wrote " << i << " constructions instead of expected " << count << ". uint32 overflow?" << endl;
+    	cerr << "DEBUG: relations.size() == " << relations->size() << endl;        	
     	exit(13);
     }    
 }
@@ -1677,8 +1671,8 @@ int SelectivePatternModel::transitivereduction() {
 }
 
 void SelectivePatternModel::readrelations(std::istream * in, const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * relationhash, bool ignore) {
-    uint16_t count;
-    in->read((char*) &count,  sizeof(uint16_t));
+    uint32_t count;
+    in->read((char*) &count,  sizeof(uint32_t));
     char gapcount;
     for (int i = 0; i < count; i++) {                        
        in->read(&gapcount, sizeof(char));
