@@ -807,10 +807,14 @@ void IndexedPatternModel::writeanygram(const EncAnyGram * anygram,std::ostream *
     if (!anygram2->isskipgram()) {
     	//ngram
     	out->write( (char*) &zero, sizeof(char)); //for ngrams
-    	((EncNGram*) anygram2)->writeasbinary(out);
+    	//((EncNGram*) anygram2)->writeasbinary(out);
+    	const EncNGram * tmp = (EncNGram*) anygram2;
+    	tmp->writeasbinary(out);    	
     } else {
     	//skipgram
-    	((EncSkipGram*) anygram2)->writeasbinary(out);
+    	const EncSkipGram * tmp = (EncSkipGram*) anygram2;
+    	tmp->writeasbinary(out);
+    	//((EncSkipGram*) anygram2)->writeasbinary(out);
     }        
 }         
         
@@ -1412,13 +1416,20 @@ void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * any
 	const char zero = 0;
     uint16_t count = relationhash[model->getkey(anygram)].size();
     out->write((char*) &count, sizeof(uint16_t));
-    char gapcount;                       
+    char gapcount;
+    int c = 0;                       
     for (unordered_set<const EncAnyGram*>::iterator iter = relationhash[model->getkey(anygram)].begin(); iter != relationhash[model->getkey(anygram)].end(); iter++) {
+    	c++;
 		model->writeanygram(*iter, out);
         /*const EncAnyGram * anygram2 = model->getkey(*iter);
         if (!anygram2->isskipgram()) out->write( (char*) &zero, sizeof(char)); //for ngrams         
         ((EncSkipGram*) anygram2)->writeasbinary(out);*/
     }
+    //sanity check:
+    if (c != count) {
+    	cerr << "INTERNAL ERROR: GraphPatternModel::writerelations: Sanity check failed, wrote " << c << " constructions instead of expected " << count << endl;
+    	exit(13);
+    }    
 }
 
 

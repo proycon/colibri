@@ -244,6 +244,10 @@ void EncAnyGram::writeasbinary(ostream * out) const {
 }
 
 void EncSkipGram::writeasbinary(ostream * out) const {
+	if (skipcount <= 0) {
+        cerr << "INTERNAL ERROR EncSkipGram::writeasbinary(): Writing skipgram with skipcount <= 0! Not possible!" << endl;
+        exit(13);	
+	}
     out->write( &skipcount, sizeof(char) ); //nr of gaps
     if (skipcount > MAXSKIPS) {
     	cerr << "INTERNAL ERROR EncSkipGram::writeasbinary(): Writing skipgram with skipcount > MAXSKIPS! (" << (int) skipcount << " > " << (int) MAXSKIPS << "). Not possible!" << endl;
