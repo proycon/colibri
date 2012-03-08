@@ -1416,7 +1416,7 @@ void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * any
 	const char zero = 0;
 	unordered_set<const EncAnyGram*> * relations = &relationhash[model->getkey(anygram)];
 	
-    uint16_t count = relations->size();  // size() doesn't correspond to actual iterations???
+    uint16_t count = (uint16_t) relations->size();  // size() doesn't correspond to actual iterations???
     /*for (unordered_set<const EncAnyGram*>::iterator iter = relationhash[model->getkey(anygram)].begin(); iter != relationhash[model->getkey(anygram)].end(); iter++) {
     	count++;    
     }*/
