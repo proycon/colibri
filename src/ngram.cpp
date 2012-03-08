@@ -244,10 +244,6 @@ void EncAnyGram::writeasbinary(ostream * out) const {
 }
 
 void EncSkipGram::writeasbinary(ostream * out) const {
-	if (skipcount <= 0) {
-        cerr << "INTERNAL ERROR EncSkipGram::writeasbinary(): Writing skipgram with skipcount <= 0! Not possible!" << endl;
-        exit(13);	
-	}
     out->write( &skipcount, sizeof(char) ); //nr of gaps
     if (skipcount > MAXSKIPS) {
     	cerr << "INTERNAL ERROR EncSkipGram::writeasbinary(): Writing skipgram with skipcount > MAXSKIPS! (" << (int) skipcount << " > " << (int) MAXSKIPS << "). Not possible!" << endl;
@@ -331,11 +327,7 @@ EncSkipGram::EncSkipGram(const vector<EncNGram*> & dataref, const vector<int> & 
         cerr << "INTERNAL ERROR: EncSkipGram(): Skipgram contains " << (int) skipcount << " skips, but configuration specifies " << (int) skipref.size() << endl;      
         cerr << data <<endl;
         exit(13);
-    } else if (skipcount == 0) {
-        cerr << "INTERNAL ERROR: EncSkipGram(): Skipgram contains no skips" << endl;      
-        cerr << data <<endl;
-        exit(13);
-    }
+    } 
 }
 
 EncSkipGram::EncSkipGram(const unsigned char *dataref, const char size, const unsigned char* skipref, const char skipcount): EncAnyGram(dataref,size) {
@@ -365,12 +357,7 @@ EncSkipGram::EncSkipGram(const unsigned char *dataref, const char size, const un
         cerr << "INTERNAL ERROR: EncSkipGram(): Skipgram contains " << (int) foundskipcount << " skips, but configuration specifies " << (int) skipcount << endl;      
         cerr << data <<endl;
         exit(13);
-    } else if (skipcount == 0) {
-        cerr << "INTERNAL ERROR: EncSkipGram(): Skipgram contains no skips" << endl;      
-        cerr << data <<endl;
-        exit(13);
     }    
-    
 }
 
 
