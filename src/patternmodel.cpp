@@ -1433,7 +1433,7 @@ void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * any
     //sanity check:
     if (c != count) {
     	cerr << "INTERNAL ERROR: GraphPatternModel::writerelations: Sanity check failed, wrote " << c << " constructions instead of expected " << count << endl;
-    	cerr < "DEBUG: " << relations->size() << endl;        	
+    	cerr << "DEBUG: " << relations->size() << endl;        	
     	exit(13);
     }    
 }
