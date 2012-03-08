@@ -84,7 +84,8 @@ int main( int argc, char *argv[] ) {
        {"simplelex", no_argument,       &DOSIMPLELEX, 1},
        {"simpletable", no_argument,       &DOSIMPLETABLE, 1},
        {"targetfirst", no_argument,       &TARGETFIRST, 1},
-       {"moses", no_argument,             &MOSESFORMAT, 1},                       
+       {"moses", no_argument,             &MOSESFORMAT, 1}, 
+                      
        {0, 0, 0, 0}
      };
     /* getopt_long stores the option index here. */
