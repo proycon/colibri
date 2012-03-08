@@ -1593,6 +1593,45 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, 
 
 }
 
+void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT) {
+	*OUT << "digraph G {\n";
+	//first pass, output nodes
+	for (unordered_map<const EncNGram,NGramData>::const_iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
+		*OUT << "ngram" << iter->first.hash() << " [label=\"" << iter->first.decode(classdecoder) << "\\n" << iter->second.refs.size() << "\",shape=box];" << endl;				 
+	}
+	for (unordered_map<const EncSkipGram,SkipGramData>::const_iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {
+		*OUT << "skipgram" << iter->first.hash() << " [label=\"" << iter->first.decode(classdecoder) << "\\n" << iter->second.count() << "\",shape=circle];" << endl;				 
+	}
+		
+	//second pass, output edges
+	for (unordered_map<const EncNGram,NGramData>::const_iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
+		const EncAnyGram * anygram = &iter->first;
+		if (DOPARENTS) outputrelations(anygram, classdecoder, OUT, rel_subsumption_parents, "black");
+		if (DOCHILDREN) outputrelations(anygram, classdecoder, OUT, rel_subsumption_children, "grey");
+	}
+	
+
+	for (unordered_map<const EncSkipGram,SkipGramData>::const_iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {
+		const EncAnyGram * anygram = &iter->first;
+		if (DOPARENTS) outputrelations(anygram, classdecoder, OUT, rel_subsumption_parents, "black");
+		if (DOCHILDREN) outputrelations(anygram, classdecoder, OUT, rel_subsumption_children, "grey");
+	}	
+
+	
+	*OUT << "}\n";
+}
+
+
+
+
+
+void GraphPatternModel::outputrelations( const EncAnyGram * anygram, ClassDecoder & classdecoder, ostream *OUT, unordered_map<const EncAnyGram *, unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour) {
+		unordered_set<const EncAnyGram*> * relations = &relationhash[model->getkey(anygram)];
+	    for (unordered_set<const EncAnyGram*>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
+	    	const EncAnyGram * anygram2  = *iter;
+	    	*OUT << anygram->decode(classdecoder) << " -> " << anygram2->decode(classdecoder) << " [ color=" << colour << " ];" << endl; 
+	    }				
+}
 
 /****************************************************************************************************************************************/
 

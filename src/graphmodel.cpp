@@ -21,6 +21,7 @@ void usage() {
     cerr << "\t-r               Keep only transitive reduction (sizes down the model)" << endl;
     cerr << "\t-d filename.graphpatternmodel.colibri		Graph pattern model to load (for decoding an existing model, use with -c)" << endl;
     cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced (use with -d)" << endl;
+    cerr << "\t-G               Output graphviz graph for visualisation" << endl;
 }
 
 int main( int argc, char *argv[] ) {
@@ -28,13 +29,16 @@ int main( int argc, char *argv[] ) {
     string patternmodelfile = "";
     string modelfile = "";
     string outputprefix = "";
+    
     bool DOPARENTS = false;
     bool DOCHILDREN = false;
     bool DOXCOUNT = false;
     bool TRANSITIVEREDUCTION = false;
     
+    bool DOGRAPHVIZ = false; 
+    
     char c;    
-    while ((c = getopt(argc, argv, "d:c:f:ho:PCXr")) != -1)
+    while ((c = getopt(argc, argv, "d:c:f:ho:PCXrG")) != -1)
         switch (c)
         {
         case 'c':
@@ -58,6 +62,9 @@ int main( int argc, char *argv[] ) {
         case 'X': 
             DOXCOUNT = true;
             break;
+        case 'G':
+        	DOGRAPHVIZ = true;
+        	break;
         case 'r': 
         	TRANSITIVEREDUCTION = true;
         	break;
@@ -121,8 +128,14 @@ int main( int argc, char *argv[] ) {
             cerr << "Loading class decoder " << classfile << endl;
             ClassDecoder classdecoder = ClassDecoder(classfile);
             
+           
             cerr << "Decoding graph" << endl;
-            graphmodel.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
+            if (DOGRAPHVIZ) {
+            	graphmodel.outputgraph(classdecoder, (ostream*) &cout );
+            } else {
+            	graphmodel.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
+            }
+            
         }        
     } else {
         if (!classfile.empty()) {           
@@ -133,7 +146,11 @@ int main( int argc, char *argv[] ) {
             ClassDecoder classdecoder = ClassDecoder(classfile);
             
             cerr << "Decoding graph" << endl;
-            graphmodel.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
+            if (DOGRAPHVIZ) {
+            	graphmodel.outputgraph(classdecoder, (ostream*) &cout );
+            } else {
+            	graphmodel.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
+            }
         } else {
             cerr << "No classer specified" << endl;
             exit(4);

@@ -349,6 +349,8 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     
     virtual uint64_t id() { return GRAPHPATTERNMODEL; }
     
+    
+    
     virtual void readheader(std::istream * in, bool ignore = false);
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
     virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
@@ -361,7 +363,9 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     virtual void writeskipgrams(std::ostream * out);
     virtual void writefooter(std::ostream * out) {};    
     
-    void decode(ClassDecoder & classdecoder, std::ostream *NGRAMSOUT, std::ostream *SKIPGRAMSOUT);    
+    void decode(ClassDecoder & classdecoder, std::ostream *NGRAMSOUT, std::ostream *SKIPGRAMSOUT);
+    void outputgraph(ClassDecoder & classdecoder, std::ostream *OUT);
+    void outputrelations( const EncAnyGram * anygram, ClassDecoder & classdecoder, std::ostream *OUT, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour);
 };
 
 
