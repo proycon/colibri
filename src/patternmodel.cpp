@@ -1404,7 +1404,10 @@ void GraphPatternModel::readrelations(std::istream * in, const EncAnyGram * anyg
        in->read(&gapcount, sizeof(char));
        if (gapcount == 0) {
         EncNGram ngram = EncNGram(in);
-        if ((!ignore) && (secondpass)) relationhash[model->getkey(anygram)].insert(model->getkey((EncAnyGram*) &ngram));
+        if ((!ignore) && (secondpass))  {
+        	cerr << "DEBUG inserting" << endl;
+        	relationhash[model->getkey(anygram)].insert(model->getkey((EncAnyGram*) &ngram));
+        }
        } else {
         EncSkipGram skipgram = EncSkipGram( in, gapcount);
         if ((!ignore) && (secondpass)) relationhash[model->getkey(anygram)].insert(model->getkey((EncAnyGram*) &skipgram));
