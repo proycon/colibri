@@ -1602,6 +1602,8 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT) {
 	for (unordered_map<const EncSkipGram,SkipGramData>::const_iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {
 		*OUT << "c" << iter->first.hash() << " [label=\"" << iter->first.decode(classdecoder) << "\\n" << iter->second.count() << "\",shape=circle];" << endl;				 
 	}
+	
+	cerr << "DEBUG: " << DOPARENTS << endl;
 		
 	//second pass, output edges
 	for (unordered_map<const EncNGram,NGramData>::const_iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
