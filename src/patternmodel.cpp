@@ -1414,14 +1414,16 @@ void GraphPatternModel::readrelations(std::istream * in, const EncAnyGram * anyg
 
 void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relationhash) {
 	const char zero = 0;
-    uint16_t count = relationhash[model->getkey(anygram)].size();  // size() doesn't correspond to actual iterations???
+	unordered_set<const EncAnyGram*> * relations = &relationhash[model->getkey(anygram)];
+	
+    uint16_t count = relations->size();  // size() doesn't correspond to actual iterations???
     /*for (unordered_set<const EncAnyGram*>::iterator iter = relationhash[model->getkey(anygram)].begin(); iter != relationhash[model->getkey(anygram)].end(); iter++) {
     	count++;    
     }*/
     out->write((char*) &count, sizeof(uint16_t));
     char gapcount;
-    int c = 0;                       
-    for (unordered_set<const EncAnyGram*>::iterator iter = relationhash[model->getkey(anygram)].begin(); iter != relationhash[model->getkey(anygram)].end(); iter++) {
+    int c = 0;                           
+    for (unordered_set<const EncAnyGram*>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
     	c++;
 		model->writeanygram(*iter, out);
         /*const EncAnyGram * anygram2 = model->getkey(*iter);
@@ -1431,7 +1433,7 @@ void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * any
     //sanity check:
     if (c != count) {
     	cerr << "INTERNAL ERROR: GraphPatternModel::writerelations: Sanity check failed, wrote " << c << " constructions instead of expected " << count << endl;    
-    	cerr << "DEBUG: Bucket count: " << relationhash[model->getkey(anygram)].bucket_count() << endl;    	
+    	cerr << "DEBUG: Bucket count: " << relations->bucket_count() << endl;    	
     	exit(13);
     }    
 }
