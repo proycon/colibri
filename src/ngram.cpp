@@ -305,6 +305,7 @@ EncSkipGram::EncSkipGram(const vector<EncNGram*> & dataref, const vector<int> & 
         data[cursor++] = '\0';
     }       
     
+    
     //sanity check
     skipcount = 0;
     bool prevnull = false;
@@ -326,7 +327,11 @@ EncSkipGram::EncSkipGram(const vector<EncNGram*> & dataref, const vector<int> & 
         cerr << "INTERNAL ERROR: EncSkipGram(): Skipgram contains " << (int) skipcount << " skips, but configuration specifies " << (int) skipref.size() << endl;      
         cerr << data <<endl;
         exit(13);
-    }    
+    } else if (skipcount == 0) {
+        cerr << "INTERNAL ERROR: EncSkipGram(): Skipgram contains no skips" << endl;      
+        cerr << data <<endl;
+        exit(13);
+    }
 }
 
 EncSkipGram::EncSkipGram(const unsigned char *dataref, const char size, const unsigned char* skipref, const char skipcount): EncAnyGram(dataref,size) {
@@ -334,6 +339,34 @@ EncSkipGram::EncSkipGram(const unsigned char *dataref, const char size, const un
     for (int i = 0; i < skipcount; i++) {
         skipsize[i] = skipref[i];
     }
+    
+    //sanity check
+    char foundskipcount = 0;
+    bool prevnull = false;
+    //cerr << "--SKIPGRAM-- (size=" << (int) _size << ")" << endl;
+    for (int i = 0; i < _size; i++) {
+        //cerr << (int) data[i] << ':' << prevnull << ':' << skipcount << endl;
+        if (data[i] == '\0') {
+            if (prevnull) {
+                prevnull = false;
+                foundskipcount++;
+            } else {
+                prevnull = true;
+            }
+        } else {
+            prevnull = false;
+        }        
+    }
+    if (skipcount != foundskipcount) {
+        cerr << "INTERNAL ERROR: EncSkipGram(): Skipgram contains " << (int) foundskipcount << " skips, but configuration specifies " << (int) skipcount << endl;      
+        cerr << data <<endl;
+        exit(13);
+    } else if (skipcount == 0) {
+        cerr << "INTERNAL ERROR: EncSkipGram(): Skipgram contains no skips" << endl;      
+        cerr << data <<endl;
+        exit(13);
+    }    
+    
 }
 
 
@@ -355,7 +388,7 @@ const char EncSkipGram::n() const {
     return count;    
 }
 
-
+/*
 EncSkipGram::EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, const char refn): EncAnyGram() {
     const char pregapsize = pregap.size();
     const char postgapsize = postgap.size();
@@ -378,6 +411,7 @@ EncSkipGram::EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, cons
         data[cursor++] = postgap.data[i];
     }        
 }
+*/
 
 
 
