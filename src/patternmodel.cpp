@@ -7,6 +7,7 @@ using namespace std;
 
 
 
+
 CorpusReference::CorpusReference(uint32_t sentence, unsigned char token) {
     this->sentence = sentence;
     this->token = token;
@@ -1624,6 +1625,30 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT) {
 }
 
 
+
+void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, const EncAnyGram * focus) {
+	
+	unordered_set<const EncAnyGram *> relatednodes;
+	relatednodes.insert(focus);
+	
+	relatednodes.insert( rel_subsumption_parents[focus].begin(), rel_subsumption_parents[focus].end() );
+	relatednodes.insert( rel_subsumption_children[focus].begin(), rel_subsumption_children[focus].end() );
+	
+	*OUT << "digraph G {\n";
+	
+	for (unordered_set<const EncAnyGram*>::iterator iter = relatednodes.begin(); iter != relatednodes.end(); iter++) {
+		const EncAnyGram * anygram = *iter;
+		if (anygram->isskipgram()) {
+			*OUT << "c" << anygram->hash() << " [label=\"" << anygram->decode(classdecoder) << "\\n" << model->count(anygram) << "\",shape=circle];" << endl;
+		} else {
+			*OUT << "c" << anygram->hash() << " [label=\"" << anygram->decode(classdecoder) << "\\n" << model->count(anygram) << "\",shape=box];" << endl;
+		}
+	}
+
+	if (DOPARENTS) outputrelations(focus, OUT, rel_subsumption_parents, "black");
+	if (DOCHILDREN) outputrelations(focus, OUT, rel_subsumption_children, "grey");
+	*OUT << "}\n";
+}
 
 
 
