@@ -22,6 +22,7 @@ void usage() {
     cerr << "\t-d filename.graphpatternmodel.colibri		Graph pattern model to load (for decoding an existing model, use with -c)" << endl;
     cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced (use with -d)" << endl;
     cerr << "\t-G               Output graphviz graph for visualisation" << endl;
+    cerr << "\t-q word          Query word (use with -G to output a selected graph)" << endl;
 }
 
 int main( int argc, char *argv[] ) {
@@ -29,6 +30,7 @@ int main( int argc, char *argv[] ) {
     string patternmodelfile = "";
     string modelfile = "";
     string outputprefix = "";
+    string querystring = "";
     
     bool DOPARENTS = false;
     bool DOCHILDREN = false;
@@ -38,7 +40,7 @@ int main( int argc, char *argv[] ) {
     bool DOGRAPHVIZ = false; 
     
     char c;    
-    while ((c = getopt(argc, argv, "d:c:f:ho:PCXrG")) != -1)
+    while ((c = getopt(argc, argv, "d:c:f:ho:PCXrGq:")) != -1)
         switch (c)
         {
         case 'c':
@@ -71,6 +73,9 @@ int main( int argc, char *argv[] ) {
         case 'h':
             usage();
             break;
+        case 'q':
+        	querystring = optarg;
+        	break; 
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
             usage();
@@ -151,7 +156,18 @@ int main( int argc, char *argv[] ) {
             
             cerr << "Decoding graph" << endl;
             if (DOGRAPHVIZ) {
-            	graphmodel.outputgraph(classdecoder, (ostream*) &cout );
+            	if (!querystring.empty()) {
+            		cerr << "Loading class encoder " << classfile << endl;
+            		ClassEncoder encoder = ClassEncoder(classfile);
+            		
+            		cerr << "Outputting graph" << endl;
+            		unsigned char buffer[65536];
+            		char buffersize = encoder.encodestring(querystring, buffer);
+            		EncNGram ngram = EncNGram(buffer,buffersize);
+            		graphmodel.outputgraph(classdecoder,(ostream*) &cout, (EncAnyGram*) &ngram);
+            	} else {            	
+            		graphmodel.outputgraph(classdecoder, (ostream*) &cout );
+            	}
             } else {
             	graphmodel.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
             }
