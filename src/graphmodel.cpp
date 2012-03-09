@@ -160,10 +160,10 @@ int main( int argc, char *argv[] ) {
             		cerr << "Loading class encoder " << classfile << endl;
             		ClassEncoder encoder = ClassEncoder(classfile);
             		
-            		cerr << "Outputting graph" << endl;
+            		cerr << "Outputting graph for \"" << querystring << "\"" << endl;
             		unsigned char buffer[65536];
             		char buffersize = encoder.encodestring(querystring, buffer);
-            		EncNGram ngram = EncNGram(buffer,buffersize);
+            		EncNGram ngram = EncNGram(buffer,buffersize-1); //-1 to strip last \0 byte
             		graphmodel.outputgraph(classdecoder,(ostream*) &cout, (EncAnyGram*) &ngram);
             	} else {            	
             		graphmodel.outputgraph(classdecoder, (ostream*) &cout );

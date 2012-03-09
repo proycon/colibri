@@ -1626,8 +1626,12 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT) {
 
 
 
-void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, const EncAnyGram * focus) {
-	
+void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, const EncAnyGram * focusinput) {
+	const EncAnyGram * focus = model->getkey(focusinput);
+	if (focus == NULL) {
+		cerr << "Query word not found" << endl;
+		return;
+	} 
 	unordered_set<const EncAnyGram *> relatednodes;
 	relatednodes.insert(focus);
 	
@@ -1653,11 +1657,9 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 
 
 void GraphPatternModel::outputrelations( const EncAnyGram * anygram, ostream *OUT, unordered_map<const EncAnyGram *, unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour) {
-		unordered_set<const EncAnyGram*> * relations = &relationhash[model->getkey(anygram)];
-		//cerr << "DEBUG: IN2: " << relations->size() << endl;
+		unordered_set<const EncAnyGram*> * relations = &relationhash[anygram];
 	    for (unordered_set<const EncAnyGram*>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
-	    	//cerr << "DEBUG: IN3" << endl;
-	    	const EncAnyGram * anygram2  = *iter;
+	    	const EncAnyGram * anygram2  = model->getkey(*iter);
 	    	*OUT << "c" << anygram->hash() << " -> " << "c" << anygram2->hash() << " [ color=" << colour << " ];" << endl; 
 	    }				
 }
