@@ -1649,8 +1649,8 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 		}
 	}
 
-	if (DOPARENTS) outputrelations(focus, OUT, rel_subsumption_parents, "black");
-	if (DOCHILDREN) outputrelations(focus, OUT, rel_subsumption_children, "grey");
+	if (DOPARENTS) outputrelations(relatednodes, OUT, rel_subsumption_parents, "black");
+	if (DOCHILDREN) outputrelations(relatednodes, OUT, rel_subsumption_children, "grey");
 	*OUT << "}\n";
 }
 
@@ -1663,6 +1663,20 @@ void GraphPatternModel::outputrelations( const EncAnyGram * anygram, ostream *OU
 	    	*OUT << "c" << anygram->hash() << " -> " << "c" << anygram2->hash() << " [ color=" << colour << " ];" << endl; 
 	    }				
 }
+
+void GraphPatternModel::outputrelations( const unordered_set<const EncAnyGram *> & nodes, ostream *OUT, unordered_map<const EncAnyGram *, unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour) {	
+	for (unordered_set<const EncAnyGram*>::const_iterator iter = nodes.begin(); iter != nodes.end(); iter++) {
+		const EncAnyGram * anygram = model->getkey(*iter);
+		unordered_set<const EncAnyGram*> * relations = &relationhash[anygram];
+	    for (unordered_set<const EncAnyGram*>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
+	    	const EncAnyGram * anygram2  = model->getkey(*iter);
+	    	if (nodes.count(anygram2) > 0) {
+	    		*OUT << "c" << anygram->hash() << " -> " << "c" << anygram2->hash() << " [ color=" << colour << " ];" << endl;
+	    	} 
+	    }				
+	}
+}
+
 
 /****************************************************************************************************************************************/
 
