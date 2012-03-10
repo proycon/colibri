@@ -1624,6 +1624,26 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT) {
 	*OUT << "}\n";
 }
 
+void GraphPatternModel::findincomingnodes(const EncAnyGram * focus, unordered_set<const EncAnyGram *> & relatednodes) {
+	for (unordered_map<const EncNGram,NGramData>::const_iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
+		const EncAnyGram * anygram = (const EncAnyGram *) &iter->first;
+		if (anygram != focus) {
+			findincomingnodes(focus, anygram, relatednodes, rel_subsumption_parents);
+			findincomingnodes(focus, anygram, relatednodes, rel_subsumption_children);
+		}
+	}
+}
+
+void GraphPatternModel::findincomingnodes(const EncAnyGram * focus, const EncAnyGram * anygram, unordered_set<const EncAnyGram *> & relatednodes, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> >  & relationhash ) {
+	unordered_set<const EncAnyGram*> * relations = &relationhash[anygram];
+	for (unordered_set<const EncAnyGram*>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
+		const EncAnyGram * anygram2  = model->getkey(*iter);
+		if (focus == anygram2) {
+			relatednodes.insert(anygram);
+		}	
+	}
+}
+
 
 
 void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, const EncAnyGram * focusinput) {
@@ -1637,6 +1657,8 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	
 	relatednodes.insert( rel_subsumption_parents[focus].begin(), rel_subsumption_parents[focus].end() );
 	relatednodes.insert( rel_subsumption_children[focus].begin(), rel_subsumption_children[focus].end() );
+	
+	findincomingnodes(focus,relatednodes);	 			
 	
 	*OUT << "digraph G {\n";
 	

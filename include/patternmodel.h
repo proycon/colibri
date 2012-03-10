@@ -368,6 +368,9 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     void outputgraph(ClassDecoder & classdecoder, std::ostream *OUT, const EncAnyGram *);
     void outputrelations( const EncAnyGram * anygram, std::ostream *OUT, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour);
     void outputrelations( const std::unordered_set<const EncAnyGram *> &, std::ostream *OUT, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour);
+    
+    void findincomingnodes(const EncAnyGram * focus, std::unordered_set<const EncAnyGram *> & relatednodes);
+    void findincomingnodes(const EncAnyGram * focus, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram *> & relatednodes, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> >  & relationhash );
 };
 
 
