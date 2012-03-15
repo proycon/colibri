@@ -356,6 +356,68 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, Selectiv
 }
 
 
+void EMAlignmentModel::save(const string & filename) {
+	//TODO: Merge with CoocAlignMentModel::save()
+
+	const unsigned char check = 0xff;
+	const char czero = 0;
+		
+    ofstream f;
+    f.open(filename.c_str(), ios::out | ios::binary);
+    if ((!f) || (!f.good())) {
+       cerr << "File does not exist: " << filename << endl;
+       exit(3);
+    }
+    
+    uint64_t _id = 101;
+    f.write( (char*) &_id, sizeof(uint64_t));
+            
+    uint64_t sourcecount = alignmatrix.size();
+    f.write( (char*) &sourcecount, sizeof(uint64_t));         
+
+    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+		f.write((char*) &check, sizeof(char));
+			  
+    	const EncAnyGram * sourcegram = iter->first;
+    	if (sourcegram->isskipgram()) {
+    		const EncSkipGram * skipgram = (const EncSkipGram*) sourcemodel->getkey(sourcegram);
+    		skipgram->writeasbinary(&f);
+    	} else {
+    	    const EncNGram * ngram = (const EncNGram*) sourcemodel->getkey(sourcegram);
+    	    f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
+    		ngram->writeasbinary(&f);    		
+    	}                
+    	uint64_t targetcount = iter->second.size();
+    	f.write( (char*) &targetcount, sizeof(uint64_t));
+    	            
+        for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+        	const EncAnyGram* targetgram = iter2->first;
+        	const double p = iter2->second;
+        	if (targetgram->isskipgram()) {
+    			const EncSkipGram * skipgram = (const EncSkipGram*) targetmodel->getkey(targetgram);
+    			if (skipgram == NULL) {
+    				cerr << "TARGET-SIDE SKIPGRAM NOT FOUND!\n";
+    				exit(3);
+    			}  else {
+	    			skipgram->writeasbinary(&f);
+	    		}
+    		} else {
+    	    	const EncNGram * ngram = (const EncNGram*) targetmodel->getkey(targetgram);     	
+	    		if (ngram == NULL) {
+    				cerr << "TARGET-SIDE NGRAM NOT FOUND!";
+    				exit(3);
+    			}  else {
+    				f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
+	    			ngram->writeasbinary(&f);
+	    		}
+    		}                
+        	f.write( (char*) &p, sizeof(double));
+        }
+
+    }    
+    f.close();	
+}
+
 void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthreshold) {
 	 //Compute intersection with reverse model
 	for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {

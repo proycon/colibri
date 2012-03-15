@@ -84,5 +84,6 @@ class EMAlignmentModel: public AlignmentModel {
     SelectivePatternModel * sourcemodel;
     SelectivePatternModel * targetmodel;    
     EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, bool BESTONLY = false, bool DEBUG = false);        
-    //save(const std::string filename);
+    void save(const std::string & filename);
+    
 };
