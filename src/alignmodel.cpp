@@ -235,6 +235,26 @@ void BiAlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, Clas
 
 
 EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, double probthreshold, bool bestonly, bool DEBUG) {
+	// Compute p(target|source)      alignmatrix[source][target]
+	/* 
+	initialize t(t|s) uniformly
+   do until convergence
+   	  set count(t|s) to 0 for all t,s
+  	  set total(s) to 0 for all s
+      for all sentence pairs (t_s,s_s)
+         set total_s(t) = 0 for all t
+         for all words t in t_s
+            for all words s in s_s
+              total_s(t) += t(t|s)
+         for all words t in t_s
+             for all words s in s_s
+                count(t|s) += t(t|s) / total_s(t)
+                total(s)   += t(t|s) / total_s(t)
+      for all s
+     	for all t
+           t(t|s) = count(t|s) / total(s)
+	*/
+
 	this->sourcemodel = sourcemodel;
 	this->targetmodel = targetmodel;
 
@@ -244,14 +264,14 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, Selectiv
     bool converged = false;
     
     //initialise uniformly
-    cerr << "  Initialisation step" << endl; 
+    cerr << "  Initialisation step" << endl;
+    double v = (double) 1 / targetmodel->types();     
     for ( unordered_map<uint32_t,std::vector<const EncAnyGram*> >::const_iterator reviter_source = sourcemodel->reverseindex.begin(); reviter_source != sourcemodel->reverseindex.end(); reviter_source++) {
     	uint32_t sentence = reviter_source->first;
 		const vector<const EncAnyGram*> * sourcepatterns = &reviter_source->second;
 		if (targetmodel->reverseindex.count(sentence) > 0) {
 			vector<const EncAnyGram*> * targetpatterns = &targetmodel->reverseindex[sentence];
-			if ((DEBUG) || (sentence % 1000 == 0)) cerr << "@" << sentence << " (" << sourcepatterns->size() << "x" << targetpatterns->size() << ")" << endl;
-			double v = (double) 1 / targetpatterns->size();
+			if ((DEBUG) || (sentence % 1000 == 0)) cerr << "@" << sentence << " (" << sourcepatterns->size() << "x" << targetpatterns->size() << ")" << endl;			
 			for (vector<const EncAnyGram*>::const_iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {  
     			const EncAnyGram * targetgram = *targetiter;
                 for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
@@ -273,8 +293,8 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, Selectiv
 		unordered_map<const EncAnyGram*, double> total;
         
         
-        //ESTIMATION STEP: collect counts to estimate improved model -- use reverse index to iterate over all sentences in training data 
-        for ( unordered_map<uint32_t,std::vector<const EncAnyGram*> >::const_iterator reviter_source = sourcemodel->reverseindex.begin(); reviter_source != sourcemodel->reverseindex.end(); reviter_source++) {        		
+        //EXPECTATION STEP: collect counts to estimate improved model -- use reverse index to iterate over all sentences in training data 
+        for ( unordered_map<uint32_t,std::vector<const EncAnyGram*> >::const_iterator reviter_source = sourcemodel->reverseindex.begin(); reviter_source != sourcemodel->reverseindex.end(); reviter_source++) {   //iterate over sentences    		
         		uint32_t sentence = reviter_source->first;
         		const vector<const EncAnyGram*> * sourcepatterns = &reviter_source->second;
         		if (targetmodel->reverseindex.count(sentence) > 0) {
