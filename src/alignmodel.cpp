@@ -235,6 +235,9 @@ void BiAlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, Clas
 
 
 EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, double probthreshold, bool bestonly, bool DEBUG) {
+	this->sourcemodel = sourcemodel;
+	this->targetmodel = targetmodel;
+
     int round = 0;    
     unsigned long c;
     double prevavdivergence = 0;
