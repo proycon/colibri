@@ -6,8 +6,6 @@ using namespace std;
 
 
 
-
-
 CorpusReference::CorpusReference(uint32_t sentence, unsigned char token) {
     this->sentence = sentence;
     this->token = token;
@@ -1276,11 +1274,17 @@ int intersection( set<CorpusReference> & a, set<CorpusReference> & b) {
 
 
 
-GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS, bool DOCHILDREN, bool DOXCOUNT) {
+GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS, bool DOCHILDREN, bool DOXCOUNT, bool DOTEMPLATES, bool DOINSTANCES, bool DOSKIPUSAGE, bool DOSKIPCONTENT, bool DOSUCCESSORS, bool DOPREDECESSORS ) {
     this->model = model;
     this->DOPARENTS = DOPARENTS;
     this->DOCHILDREN = DOCHILDREN;   
     this->DOXCOUNT = DOXCOUNT;     
+    this->DOTEMPLATES = DOTEMPLATES;
+    this->DOINSTANCES = DOINSTANCES;
+    this->DOSKIPUSAGE = DOSKIPUSAGE;
+    this->DOSKIPCONTENT = DOSKIPCONTENT;
+    this->DOSUCCESSORS = DOSUCCESSORS;
+    this->DOPREDECESSORS = DOPREDECESSORS;
     DELETEMODEL = false;
     
     cerr << "Computing relations on n-grams" << endl;
@@ -1292,12 +1296,10 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
             const EncAnyGram * subngram = model->getkey(*iter2);
             if (subngram != NULL) {
                 //subgram exists, add relation:
-                if (DOCHILDREN)
-                 rel_subsumption_children[ngram].insert(subngram);
+                if (DOCHILDREN) rel_subsumption_children[ngram].insert(subngram);
                                     
                 //reverse:
-                if ((DOPARENTS) || (DOXCOUNT))
-                 rel_subsumption_parents[subngram].insert(ngram);
+                if ((DOPARENTS) || (DOXCOUNT)) rel_subsumption_parents[subngram].insert(ngram);
             }
         }                  
     }
@@ -1317,11 +1319,9 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
                 //subgram exists, add relation:
                 const EncAnyGram * subngram = model->getkey(*iter3);
                 if (subngram != NULL) {
-                    if (DOCHILDREN)
-                     rel_subsumption_children[skipgram].insert(subngram);
+                    if (DOCHILDREN) rel_subsumption_children[skipgram].insert(subngram);
                      
-                    if ((DOPARENTS) || (DOXCOUNT))
-                     rel_subsumption_parents[subngram].insert(skipgram);
+                    if ((DOPARENTS) || (DOXCOUNT)) rel_subsumption_parents[subngram].insert(skipgram);
                 }
             }
             delete ngram;
@@ -1438,12 +1438,26 @@ void GraphPatternModel::readheader(std::istream * in, bool ignore) {
     in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
     in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
     in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
+    if (model_id >= GRAPHPATTERNMODEL+1 ) {
+	    in->read((char*) &HASTEMPLATES, sizeof(bool)); //1 byte, not 1 bit
+	    in->read((char*) &HASINSTANCES, sizeof(bool)); //1 byte, not 1 bit
+    	in->read((char*) &HASSKIPUSAGE, sizeof(bool)); //1 byte, not 1 bit
+    	in->read((char*) &HASSKIPCONTENT, sizeof(bool)); //1 byte, not 1 bit
+    	in->read((char*) &HASSUCCESSORS, sizeof(bool)); //1 byte, not 1 bit
+    	in->read((char*) &HASPREDECESSORS, sizeof(bool)); //1 byte, not 1 bit
+    }
 }
 
 void GraphPatternModel::writeheader(std::ostream * out) {
     out->write((char*) &DOPARENTS,  sizeof(bool)); //1 byte, not 1 bit
     out->write((char*) &DOCHILDREN, sizeof(bool)); //1 byte, not 1 bit
     out->write((char*) &DOXCOUNT, sizeof(bool)); //1 byte, not 1 bit
+    out->write((char*) &DOTEMPLATES, sizeof(bool)); //1 byte, not 1 bit
+    out->write((char*) &DOINSTANCES, sizeof(bool)); //1 byte, not 1 bit
+    out->write((char*) &DOSKIPUSAGE, sizeof(bool)); //1 byte, not 1 bit
+    out->write((char*) &DOSKIPCONTENT, sizeof(bool)); //1 byte, not 1 bit
+    out->write((char*) &DOSUCCESSORS, sizeof(bool)); //1 byte, not 1 bit
+    out->write((char*) &DOPREDECESSORS, sizeof(bool)); //1 byte, not 1 bit
 }
 
 void GraphPatternModel::readngramdata(std::istream * in, const EncNGram & ngram, bool ignore) {
@@ -1457,9 +1471,13 @@ void GraphPatternModel::readngramdata(std::istream * in, const EncNGram & ngram,
         }
     }
     if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_parents, (ignore || !secondpass || !DOPARENTS));
-
-    if (HASCHILDREN) 
-        readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));
+    if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));
+    if (HASTEMPLATES) readrelations(in, (const EncAnyGram*) &ngram, rel_templates, (ignore || !secondpass || !DOTEMPLATES));
+    if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &ngram, rel_instances, (ignore || !secondpass || !DOINSTANCES));
+    if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &ngram, rel_skipusage, (ignore || !secondpass || !DOSKIPUSAGE));
+    if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &ngram, rel_skipcontent, (ignore || !secondpass || !DOSKIPCONTENT));
+    if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &ngram, rel_successors, (ignore || !secondpass || !DOSUCCESSORS));
+    if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &ngram, rel_predecessors, (ignore || !secondpass || !DOPREDECESSORS));        
 }
 
 void GraphPatternModel::readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
@@ -1469,11 +1487,14 @@ void GraphPatternModel::readskipgramdata(std::istream * in, const EncSkipGram & 
         in->read((char*) &_xcount, sizeof(uint32_t));
         if ((DOXCOUNT) && (secondpass) && (!ignore)) data_xcount[model->getkey((const EncAnyGram*) &skipgram)] = _xcount;
     }
-    if (HASPARENTS) {
-        readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_parents, (ignore || !secondpass || !DOPARENTS));
-    }
-    if (HASCHILDREN) 
-        readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));        
+    if (HASPARENTS) readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_parents, (ignore || !secondpass || !DOPARENTS));
+    if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));
+    if (HASTEMPLATES) readrelations(in, (const EncAnyGram*) &skipgram, rel_templates, (ignore || !secondpass || !DOTEMPLATES));
+    if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &skipgram, rel_instances, (ignore || !secondpass || !DOINSTANCES));
+    if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &skipgram, rel_skipusage, (ignore || !secondpass || !DOSKIPUSAGE));
+    if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &skipgram, rel_skipcontent, (ignore || !secondpass || !DOSKIPCONTENT));
+    if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &skipgram, rel_successors, (ignore || !secondpass || !DOSUCCESSORS));
+    if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &skipgram, rel_predecessors, (ignore || !secondpass || !DOPREDECESSORS));        
 }
 
 
@@ -1484,13 +1505,14 @@ void GraphPatternModel::writengramdata(std::ostream * out, const EncNGram & ngra
         out->write( (char*) &_xcount, sizeof(uint32_t));
     }
     
-    if (DOPARENTS)
-          writerelations(out, (const EncAnyGram*) &ngram, rel_subsumption_parents);
-        
-    if (DOCHILDREN)  
-        writerelations(out, (const EncAnyGram*) &ngram, rel_subsumption_children);
-        
-            
+    if (DOPARENTS) writerelations(out, (const EncAnyGram*) &ngram, rel_subsumption_parents);
+    if (DOCHILDREN) writerelations(out, (const EncAnyGram*) &ngram, rel_subsumption_children);
+    if (DOTEMPLATES) writerelations(out, (const EncAnyGram*) &ngram, rel_templates);
+    if (DOINSTANCES) writerelations(out, (const EncAnyGram*) &ngram, rel_instances);
+    if (DOSKIPUSAGE) writerelations(out, (const EncAnyGram*) &ngram, rel_skipusage);
+	if (DOSKIPCONTENT) writerelations(out, (const EncAnyGram*) &ngram, rel_skipcontent);
+	if (DOSUCCESSORS) writerelations(out, (const EncAnyGram*) &ngram, rel_successors);
+	if (DOPREDECESSORS) writerelations(out, (const EncAnyGram*) &ngram, rel_predecessors);            
 }
 
 void GraphPatternModel::writeskipgramdata(std::ostream * out, const EncSkipGram & skipgram) {
@@ -1499,10 +1521,14 @@ void GraphPatternModel::writeskipgramdata(std::ostream * out, const EncSkipGram 
         uint32_t _xcount = xcount((const EncAnyGram*) &skipgram);
         out->write( (char*) &_xcount, sizeof(uint32_t));
     }
-    if (DOPARENTS)  writerelations(out, (const EncAnyGram*) &skipgram, rel_subsumption_parents);
-        
-    if (DOCHILDREN)  
-        writerelations(out, (const EncAnyGram*) &skipgram, rel_subsumption_children);        
+    if (DOPARENTS)  writerelations(out, (const EncAnyGram*) &skipgram, rel_subsumption_parents);        
+    if (DOCHILDREN)  writerelations(out, (const EncAnyGram*) &skipgram, rel_subsumption_children);
+    if (DOTEMPLATES) writerelations(out, (const EncAnyGram*) &skipgram, rel_templates);
+    if (DOINSTANCES) writerelations(out, (const EncAnyGram*) &skipgram, rel_instances);
+    if (DOSKIPUSAGE) writerelations(out, (const EncAnyGram*) &skipgram, rel_skipusage);
+	if (DOSKIPCONTENT) writerelations(out, (const EncAnyGram*) &skipgram, rel_skipcontent);
+	if (DOSUCCESSORS) writerelations(out, (const EncAnyGram*) &skipgram, rel_successors);
+	if (DOPREDECESSORS) writerelations(out, (const EncAnyGram*) &skipgram, rel_predecessors);        
 }
 
 

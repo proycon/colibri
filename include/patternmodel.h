@@ -6,7 +6,7 @@
 
 const char MAXN = 20;
 
-
+const short GRAPHPATTERNMODELVERSION = 1;
 
 enum ModelType {
 	UNINDEXEDPATTERNMODEL = 10, 
@@ -278,14 +278,23 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     bool DOPARENTS;
     bool DOCHILDREN;
     bool DOXCOUNT;
+    bool DOTEMPLATES;
+    bool DOINSTANCES;
+    bool DOSKIPUSAGE;
     bool DOSKIPCONTENT;
-    bool DOINSKIPCONTENT;
+    bool DOSUCCESSORS;
+    bool DOPREDECESSORS;
+    
     
     bool HASPARENTS;
     bool HASCHILDREN;
     bool HASXCOUNT;
+    bool HASTEMPLATES;
+    bool HASINSTANCES;
+    bool HASSKIPUSAGE;
     bool HASSKIPCONTENT;
-    bool HASINSKIPCONTENT;
+    bool HASSUCCESSORS;
+    bool HASPREDECESSORS;
     
     bool DELETEMODEL;
     bool TRANSITIVE;
@@ -301,6 +310,15 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_children;        
     std::unordered_map<const EncAnyGram*,int> data_xcount;        
    
+   
+    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_templates; //instance -> skipgram
+    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_instances; //skipgram -> instance
+    
+    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_skipusage; //skipcontent -> skipgram
+    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_skipcontent; //skipgram -> skipcontent       
+    
+    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_successors;  
+    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_predecessors;
     //std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_skipcontent; //skipgram -> skipcontent       
     //std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_inskipcontent; //skipcontent -> skipgram
     
@@ -309,23 +327,35 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     
 
    
-    GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=false,bool DOXCOUNT=false); //compute entire model
-    GraphPatternModel(const std::string & graphmodelfilename, IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=true,bool DOXCOUNT=true) {
+    GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=false,bool DOXCOUNT=false, bool DOTEMPLATES =false, bool DOINSTANCES = false,bool DOSKIPUSAGE=false,bool DOSKIPCONTENT=false,bool DOSUCCESSORS=false,bool DOPREDECESSORS=false); //compute entire model
+    GraphPatternModel(const std::string & graphmodelfilename, IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=true,bool DOXCOUNT=true, bool DOTEMPLATES =false, bool DOINSTANCES = false,bool DOSKIPUSAGE=false,bool DOSKIPCONTENT=false,bool DOSUCCESSORS=false,bool DOPREDECESSORS=false) {
         //do everything (provided that it exists in file)
         this->DOPARENTS = DOPARENTS;
         this->DOCHILDREN = DOCHILDREN;
         this->DOXCOUNT = DOXCOUNT;
+        this->DOTEMPLATES = DOTEMPLATES;
+		this->DOINSTANCES = DOINSTANCES;
+		this->DOSKIPUSAGE = DOSKIPUSAGE;
+		this->DOSKIPCONTENT = DOSKIPCONTENT;
+		this->DOSUCCESSORS = DOSUCCESSORS;
+		this->DOPREDECESSORS = DOPREDECESSORS;
         
     	DELETEMODEL = false;        
         this->model = model;
         secondpass = true;
     	readfile(graphmodelfilename);        
     }
-    GraphPatternModel(const std::string & graphmodelfilename, bool DOPARENTS=true,bool DOCHILDREN=true,bool DOXCOUNT=true) {
+    GraphPatternModel(const std::string & graphmodelfilename, bool DOPARENTS=true,bool DOCHILDREN=true,bool DOXCOUNT=true, bool DOTEMPLATES =false, bool DOINSTANCES = false,bool DOSKIPUSAGE=false,bool DOSKIPCONTENT=false,bool DOSUCCESSORS=false,bool DOPREDECESSORS=false) {
         //do everything (provided that it exists in file)
         this->DOPARENTS = DOPARENTS;
         this->DOCHILDREN = DOCHILDREN;
         this->DOXCOUNT = DOXCOUNT;    
+        this->DOTEMPLATES = DOTEMPLATES;
+		this->DOINSTANCES = DOINSTANCES;
+		this->DOSKIPUSAGE = DOSKIPUSAGE;
+		this->DOSKIPCONTENT = DOSKIPCONTENT;
+		this->DOSUCCESSORS = DOSUCCESSORS;
+		this->DOPREDECESSORS = DOPREDECESSORS;
     	
     	DELETEMODEL = true;
     	model = new IndexedPatternModel();
@@ -347,7 +377,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
         
     void save(const std::string & filename) { writefile(filename); }
     
-    virtual uint64_t id() { return GRAPHPATTERNMODEL; }
+    virtual uint64_t id() { return GRAPHPATTERNMODEL + GRAPHPATTERNMODELVERSION; }
     
     
     
@@ -432,6 +462,8 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
      std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_parents;
      std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_children;     
     
+
+              
     
      std::unordered_map<uint32_t,std::vector<const EncAnyGram*> > reverseindex;    
      SelectivePatternModel(const std::string & filename, bool DOFORWARDINDEX = true, bool DOREVERSEINDEX = true, bool DOXCOUNT = true, int COUNTTHRESHOLD = 0, double FREQTHRESHOLD = 0, double XCOUNTRATIOTHRESHOLD = 0, int XCOUNTTHRESHOLD = 0, bool DOSKIPGRAMS = true,  int MINLENGTH = 0, int MAXLENGTH=99, bool DOPARENTS = false, bool DOCHILDREN = false, AlignConstraintInterface * alignconstrain = NULL, bool alignconstrainsource = true ); //read a graph pattern model
