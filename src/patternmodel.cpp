@@ -1327,20 +1327,21 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
             delete ngram;
         }          
         
-        for (unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++) {
-        	const EncSkipGram * skipgram_skipcontent = &(iter->first);
-        	skipgram_skipcontent->parts(parts);
-		    for (vector<EncNGram*>::iterator iter3 = parts.begin(); iter3 != parts.end(); iter3++) {
-		        //subgram exists, add relation:
-		        const EncAnyGram * subngram = model->getkey(*iter3);
-		        if (subngram != NULL) {
-		            if (DOSKIPCONTENT) rel_skipcontent[skipgram].insert(subngram);
-		            if (DOSKIPUSAGE) rel_skipusage[subngram].insert(skipgram);
-		        }
-		    }          
-
-        	
-        }
+        if ((DOSKIPCONTENT) || (DOSKIPUSAGE)) {
+		    for (unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++) {
+		    	const EncSkipGram * skipgram_skipcontent = &(iter->first);
+		    	skipgram_skipcontent->parts(parts);
+				for (vector<EncNGram*>::iterator iter3 = parts.begin(); iter3 != parts.end(); iter3++) {
+				    //subgram exists, add relation:
+				    const EncAnyGram * subngram = model->getkey(*iter3);
+				    if (subngram != NULL) {
+				        if (DOSKIPCONTENT) rel_skipcontent[skipgram].insert(subngram);
+				        if (DOSKIPUSAGE) rel_skipusage[subngram].insert(skipgram);
+				    }
+				}          
+		    }
+		}
+        
     }
 
     if (DOXCOUNT) {
