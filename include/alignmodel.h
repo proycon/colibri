@@ -17,7 +17,7 @@ class AlignmentModel: public AlignConstraintInterface {
     std::unordered_map<const EncSkipGram,bool> targetskipgrams;
    public:
     AlignmentModel() { DEBUG = false; }
-    AlignmentModel(const std::string & filename);
+    AlignmentModel(const std::string & filename, const bool bestonly = false);
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignmatrix;    
     virtual void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
     virtual void simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT, bool targetfirst = false, bool wordbased = false, bool mosesformat = false);

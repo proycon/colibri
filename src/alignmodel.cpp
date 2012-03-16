@@ -557,7 +557,7 @@ const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key) {
 }
 
 
-AlignmentModel::AlignmentModel(const string & filename) {
+AlignmentModel::AlignmentModel(const string & filename, const bool bestonly) {
 	DEBUG = false;
 	unsigned char check;
 	
@@ -602,6 +602,8 @@ AlignmentModel::AlignmentModel(const string & filename) {
         }        
         uint64_t targetcount;
         f.read( (char*) &targetcount, sizeof(uint64_t));
+        const EncAnyGram * besttargetgram = NULL;
+        double bestprob = 0;
         for (int j = 0; j < targetcount; j++) {
         	const EncAnyGram * targetgram = NULL;   
             f.read(&gapcount, sizeof(char));	    
@@ -622,12 +624,20 @@ AlignmentModel::AlignmentModel(const string & filename) {
 		    }		    
 		    double p;
 		    f.read((char*) &p, sizeof(double));
-		    if (sourcegram != NULL and targetgram != NULL) {
-		    	alignmatrix[sourcegram][targetgram] = p;
+		    if (sourcegram != NULL and targetgram != NULL) {		    	
+		    	if (!bestonly) {
+		    		alignmatrix[sourcegram][targetgram] = p;
+		    	} else if (p > bestprob) {
+		    		bestprob = p;
+					besttargetgram = targetgram;
+		    	}
 		    } else {
 		    	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
 		    	exit(6);
 		    }
+        }
+        if ((bestonly) && (besttargetgram != NULL)) {
+        	alignmatrix[sourcegram][besttargetgram] = bestprob;
         }        
 	}
     f.close();

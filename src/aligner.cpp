@@ -350,7 +350,7 @@ int main( int argc, char *argv[] ) {
     	
     	if (invmodelfile.empty()) {
     	   	cerr << "Loading alignment model..." << endl;
-    		alignmodel = new AlignmentModel(modelfile);
+    		alignmodel = new AlignmentModel(modelfile, BESTONLY);
     		    	    	
 			cerr << "Decoding..." << endl;
 			if (DOSIMPLETABLE) {
