@@ -74,7 +74,8 @@ class EncNGram: public EncAnyGram {
     EncNGram * slice(const int begin,const int length) const;    
     
     
-    int subngrams(std::vector<EncNGram*> & container) const;     
+    int subngrams(std::vector<EncNGram*> & container) const;
+    int splits(std::vector<std::pair<EncNGram*, EncNGram*> > & container) const;     
 };
 
 EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size, const unsigned int linenum = 0);

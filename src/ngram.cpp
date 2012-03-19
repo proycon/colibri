@@ -145,7 +145,15 @@ int EncNGram::subngrams(vector<EncNGram*> & container) const {
     return count;
 }
 
-
+int EncNGram::splits(vector<pair<EncNGram*, EncNGram*> > & container) const {
+	int count = 0;
+	const int N = n();
+    for (int begin = 1; begin < N - 1; begin++) {
+    	int length = N-begin;
+    	count++;
+    	container.push_back( make_pair<EncNGram *,EncNGram *>(slice(0,begin),slice(begin,length) ) ); 
+    }        	
+}
 
 std::string EncAnyGram::decode(ClassDecoder& classdecoder) const {
     //cout << "DECODING NGRAM size=" << (int) _size << " n=" << n() << " data=" << data << endl;

@@ -1301,7 +1301,26 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
                 //reverse:
                 if ((DOPARENTS) || (DOXCOUNT)) rel_subsumption_parents[subngram].insert(ngram);
             }
-        }                  
+            //TODO: memory leak? clean subngram
+            delete *iter2;
+        }   
+        if (DOSUCCESSORS || DOPREDECESSORS) {
+			vector<pair<EncNGram*,EncNGram*> > splitngrams;
+		    ngram->splits(splitngrams);
+		    for (vector<pair<EncNGram*,EncNGram*> >::iterator iter2 = splitngrams.begin(); iter2 != splitngrams.end(); iter2++) {
+		    	//const EncAnyGram * subngram = model->getkey(*iter2);
+		    
+		   		const EncAnyGram * left = model->getkey(iter2->first);
+		   		const EncAnyGram * right = model->getkey(iter2->second);
+		    	if ((left != NULL) && (right != NULL)) {
+		    		if (DOSUCCESSORS) rel_successors[left].insert(right);
+		    		if (DOPREDECESSORS) rel_predecessors[right].insert(left);
+		    	}
+		    	//TODO: memory leak? clean subngram
+		    	delete iter2->first;
+		    	delete iter2->second;
+		    }
+        }
     }
     
     
@@ -1323,6 +1342,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
                      
                     if ((DOPARENTS) || (DOXCOUNT)) rel_subsumption_parents[subngram].insert(skipgram);
                 }
+                delete *iter3;
             }
             delete ngram;
         }          
@@ -1330,6 +1350,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
         if ((DOSKIPCONTENT) || (DOSKIPUSAGE) || (DOINSTANCES) || (DOTEMPLATES)) {
 		    for (unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++) {
 		    	const EncSkipGram * skipgram_skipcontent = &(iter->first);
+		    	parts.clear();
 		    	skipgram_skipcontent->parts(parts);
 				for (vector<EncNGram*>::iterator iter3 = parts.begin(); iter3 != parts.end(); iter3++) {
 				    //subgram exists, add relation:
@@ -1337,9 +1358,12 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
 				    if (subngram != NULL) {
 				        if (DOSKIPCONTENT) rel_skipcontent[skipgram].insert(subngram);
 				        if (DOSKIPUSAGE) rel_skipusage[subngram].insert(skipgram);
+				        //TODO: instances + templates
 				    }
+				    delete *iter3;
 				}          
 		    }
+		    
 		}
         
     }
