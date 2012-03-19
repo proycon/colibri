@@ -1348,7 +1348,6 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
         }          
         
         if ((DOSKIPCONTENT) || (DOSKIPUSAGE) || (DOINSTANCES) || (DOTEMPLATES)) {
-        	cerr << skipcontent.size() << endl;
 		    for (unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++) {
 		    	const EncSkipGram * skipgram_skipcontent = &(iter->first);
 		    	parts.clear();

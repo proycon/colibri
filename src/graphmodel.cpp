@@ -168,7 +168,7 @@ int main( int argc, char *argv[] ) {
     } else {
         if (!classfile.empty()) {           
             cerr << "Loading graph model " << modelfile << endl;
-            GraphPatternModel graphmodel = GraphPatternModel(modelfile);  
+            GraphPatternModel graphmodel = GraphPatternModel(modelfile, DOPARENTS, DOCHILDREN, DOXCOUNT, DOTEMPLATES, DOINSTANCES,DOSKIPUSAGE,DOSKIPCONTENT,DOSUCCESSORS,DOPREDECESSORS);  
             
             cerr << "  Loaded " << graphmodel.model->types() << " types, " << graphmodel.model->tokens() << " tokens" << endl;
             cerr << "  Parent relations available for " << graphmodel.rel_subsumption_parents.size() << " patterns" << endl;
