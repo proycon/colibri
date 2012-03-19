@@ -1742,11 +1742,6 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	unordered_set<const EncAnyGram *> relatednodes;
 	relatednodes.insert(focus);
 	
-	if (focus->isskipgram()) {
-		*OUT << "c" << focus->hash() << " [label=\"" << focus->decode(classdecoder) << "\\n" << model->count(focus) << "\",shape=circle,color=yellow,style=filled];" << endl;
-	} else {
-		*OUT << "c" << focus->hash() << " [label=\"" << focus->decode(classdecoder) << "\\n" << model->count(focus) << "\",shape=box,color=yellow,style=filled];" << endl;
-	}
 	
 	relatednodes.insert( rel_subsumption_parents[focus].begin(), rel_subsumption_parents[focus].end() );
 	relatednodes.insert( rel_subsumption_children[focus].begin(), rel_subsumption_children[focus].end() );
@@ -1759,6 +1754,12 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	findincomingnodes(focus,relatednodes);	 			
 	
 	*OUT << "digraph G {\n";
+
+	if (focus->isskipgram()) {
+		*OUT << "c" << focus->hash() << " [label=\"" << focus->decode(classdecoder) << "\\n" << model->count(focus) << "\",shape=circle,color=yellow,style=filled];" << endl;
+	} else {
+		*OUT << "c" << focus->hash() << " [label=\"" << focus->decode(classdecoder) << "\\n" << model->count(focus) << "\",shape=box,color=yellow,style=filled];" << endl;
+	}
 	
 	for (unordered_set<const EncAnyGram*>::iterator iter = relatednodes.begin(); iter != relatednodes.end(); iter++) {
 		const EncAnyGram * anygram = *iter;
