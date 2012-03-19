@@ -18,10 +18,10 @@ classencode_SOURCES = classencode.cpp
 classencode_LDFLAGS = -static
 
 
-graphmodel_CXXFLAGS = -Wall -std=c++0x
-graphmodel_LDADD = libcolibri.la
-graphmodel_SOURCES = graphmodel.cpp
-graphmodel_LDFLAGS = -static
+grapher_CXXFLAGS = -Wall -std=c++0x
+grapher_LDADD = libcolibri.la
+grapher_SOURCES = grapher.cpp
+grapher_LDFLAGS = -static
 
 patternfinder_CXXFLAGS = -Wall -std=c++0x
 patternfinder_LDADD = libcolibri.la

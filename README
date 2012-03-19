@@ -64,10 +64,10 @@ Indexed pattern models can be used to build more sophisticated graph-based model
  1) Encode your source corpus and target corpus (see section 1)
  2) Build an (independent) indexed pattern model for both (see section 2)
  3) For both source and target, build a graph model (see previous section) containing parent relations (-P) and exclusive count data (-X):
-    graphmodel -f source.indexedpatternmodel.colibri -P -X
-    graphmodel -f target.indexedpatternmodel.colibri -P -X
+    grapher -f source.indexedpatternmodel.colibri -P -X
+    grapher -f target.indexedpatternmodel.colibri -P -X
   
-  This results in source.graphmodel.colibri and target.graphmodel.colibri . These models can be decoded to a textual representation by passing them to graphmodel using -d and the cls file using -c . 
+  This results in source.graphmodel.colibri and target.graphmodel.colibri . These models can be decoded to a textual representation by passing them to grapher using -d and the cls file using -c . 
  
  4) Train an alignment model using the graph models:
    
