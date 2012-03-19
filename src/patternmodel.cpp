@@ -1713,6 +1713,10 @@ void GraphPatternModel::findincomingnodes(const EncAnyGram * focus, unordered_se
 		if (anygram != focus) {
 			findincomingnodes(focus, anygram, relatednodes, rel_subsumption_parents);
 			findincomingnodes(focus, anygram, relatednodes, rel_subsumption_children);
+			findincomingnodes(focus, anygram, relatednodes, rel_skipcontent);
+			findincomingnodes(focus, anygram, relatednodes, rel_skipusage);
+			findincomingnodes(focus, anygram, relatednodes, rel_successors);
+			findincomingnodes(focus, anygram, relatednodes, rel_predecessors);
 		}
 	}
 }
@@ -1738,8 +1742,19 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	unordered_set<const EncAnyGram *> relatednodes;
 	relatednodes.insert(focus);
 	
+	if (focus->isskipgram()) {
+		*OUT << "c" << focus->hash() << " [label=\"" << focus->decode(classdecoder) << "\\n" << model->count(focus) << "\",shape=circle,color=yellow,style=filled];" << endl;
+	} else {
+		*OUT << "c" << focus->hash() << " [label=\"" << focus->decode(classdecoder) << "\\n" << model->count(focus) << "\",shape=box,color=yellow,style=filled];" << endl;
+	}
+	
 	relatednodes.insert( rel_subsumption_parents[focus].begin(), rel_subsumption_parents[focus].end() );
 	relatednodes.insert( rel_subsumption_children[focus].begin(), rel_subsumption_children[focus].end() );
+	relatednodes.insert( rel_predecessors[focus].begin(), rel_predecessors[focus].end() );
+	relatednodes.insert( rel_successors[focus].begin(), rel_successors[focus].end() );
+	relatednodes.insert( rel_skipcontent[focus].begin(), rel_skipcontent[focus].end() );
+	relatednodes.insert( rel_skipusage[focus].begin(), rel_skipusage[focus].end() );
+	
 	
 	findincomingnodes(focus,relatednodes);	 			
 	
@@ -1747,15 +1762,21 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	
 	for (unordered_set<const EncAnyGram*>::iterator iter = relatednodes.begin(); iter != relatednodes.end(); iter++) {
 		const EncAnyGram * anygram = *iter;
-		if (anygram->isskipgram()) {
-			*OUT << "c" << anygram->hash() << " [label=\"" << anygram->decode(classdecoder) << "\\n" << model->count(anygram) << "\",shape=circle];" << endl;
-		} else {
-			*OUT << "c" << anygram->hash() << " [label=\"" << anygram->decode(classdecoder) << "\\n" << model->count(anygram) << "\",shape=box];" << endl;
+		if (anygram != focus) {
+			if (anygram->isskipgram()) {
+				*OUT << "c" << anygram->hash() << " [label=\"" << anygram->decode(classdecoder) << "\\n" << model->count(anygram) << "\",shape=circle];" << endl;
+			} else {
+				*OUT << "c" << anygram->hash() << " [label=\"" << anygram->decode(classdecoder) << "\\n" << model->count(anygram) << "\",shape=box];" << endl;
+			}
 		}
 	}
 
 	if (DOPARENTS) outputrelations(relatednodes, OUT, rel_subsumption_parents, "black");
 	if (DOCHILDREN) outputrelations(relatednodes, OUT, rel_subsumption_children, "grey");
+	if (DOPREDECESSORS) outputrelations(relatednodes, OUT, rel_predecessors, "yellow");
+	if (DOSUCCESSORS) outputrelations(relatednodes, OUT, rel_successors, "green");
+	if (DOSKIPCONTENT) outputrelations(relatednodes, OUT, rel_skipcontent, "cyan");
+	if (DOSKIPUSAGE) outputrelations(relatednodes, OUT, rel_skipusage, "purple");
 	*OUT << "}\n";
 }
 
