@@ -1377,14 +1377,19 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
         if (!DOPARENTS) rel_subsumption_parents.clear();
     }
  
-    if (DOCHILDREN) cerr << "Child subsumption relations: " << rel_subsumption_children.size() << endl;
-    if (DOPARENTS) cerr << "Parent subsumption relations: " << rel_subsumption_parents.size() << endl;
-    if (DOSUCCESSORS) cerr << "Successors found for " << rel_successors.size() << " patterns" << endl;
-    if (DOPREDECESSORS) cerr << "Predecessors found for " << rel_predecessors.size() << " patterns" << endl;
-    if (DOSKIPCONTENT)  cerr << "Content-relations found for " <<  rel_skipcontent.size() << " skipgrams" << endl;
-    if (DOSKIPUSAGE)  cerr << "Skipgram parents found for " <<  rel_skipusage.size() << " n-grams" << endl;
-    if (DOXCOUNT) cerr << "Exclusive count: " << data_xcount.size() << endl;
-    
+}
+
+
+void GraphPatternModel::stats(std::ostream *OUT) {
+	cerr << "Graphmodel contains " << model->types() << " types, " << model->tokens() << " tokens" << endl;
+    if (DOCHILDREN) *OUT << " Child subsumption relations: " << rel_subsumption_children.size() << endl;
+    if (DOPARENTS) *OUT << " Parent subsumption relations: " << rel_subsumption_parents.size() << endl;
+    if (DOSUCCESSORS) *OUT << " Successors found for " << rel_successors.size() << " patterns" << endl;
+    if (DOPREDECESSORS) *OUT << " Predecessors found for " << rel_predecessors.size() << " patterns" << endl;
+    if (DOSKIPCONTENT)  *OUT << " Content-relations found for " <<  rel_skipcontent.size() << " skipgrams" << endl;
+    if (DOSKIPUSAGE)  *OUT << " Skipgram parents found for " <<  rel_skipusage.size() << " n-grams" << endl;
+    if (DOXCOUNT) *OUT << " Exclusive count: " << data_xcount.size() << endl;
+ 
 }
 
 int transitivereduction(std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relations ) {

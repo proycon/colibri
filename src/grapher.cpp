@@ -143,11 +143,15 @@ int main( int argc, char *argv[] ) {
         cerr << "Constructing graph " << endl;
         GraphPatternModel graphmodel = GraphPatternModel(&patternmodel, DOPARENTS, DOCHILDREN, DOXCOUNT, DOTEMPLATES, DOINSTANCES,DOSKIPUSAGE,DOSKIPCONTENT,DOSUCCESSORS,DOPREDECESSORS);
         
+        
+        
         if (TRANSITIVEREDUCTION) {
         	cerr << "Pruning and keeping only transitive reduction " << endl;
         	const int pruned = graphmodel.transitivereduction();
         	cerr << "\tPruned " << pruned << " edges" << endl;
         }
+        
+        graphmodel.stats( (ostream*) &cerr );
         
         cerr << "Saving graph " << outputprefix << ".graphpatternmodel.colibri" << endl;
         graphmodel.save(outputprefix + ".graphpatternmodel.colibri");
@@ -170,9 +174,8 @@ int main( int argc, char *argv[] ) {
             cerr << "Loading graph model " << modelfile << endl;
             GraphPatternModel graphmodel = GraphPatternModel(modelfile, DOPARENTS, DOCHILDREN, DOXCOUNT, DOTEMPLATES, DOINSTANCES,DOSKIPUSAGE,DOSKIPCONTENT,DOSUCCESSORS,DOPREDECESSORS);  
             
-            cerr << "  Loaded " << graphmodel.model->types() << " types, " << graphmodel.model->tokens() << " tokens" << endl;
-            cerr << "  Parent relations available for " << graphmodel.rel_subsumption_parents.size() << " patterns" << endl;
-            cerr << "  Child relation available for " << graphmodel.rel_subsumption_children.size() << " patterns" << endl;      
+            graphmodel.stats( (ostream*) &cerr );
+                                         
         
             cerr << "Loading class decoder " << classfile << endl;
             ClassDecoder classdecoder = ClassDecoder(classfile);
