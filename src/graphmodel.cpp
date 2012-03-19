@@ -15,7 +15,11 @@ void usage() {
     cerr << "Constructs a graph model" << endl;
     cerr << "\t-f filename.indexedpatternmodel.colibri		Indexed pattern model to load (required for building a graph model)" << endl;      
     cerr << "\t-P               Compute/load subsumption relations from children to parents (reverse of -C)" << endl;
-    cerr << "\t-C               Compute/load subsumption relations from parents to children (reverse of -P)" << endl;      
+    cerr << "\t-C               Compute/load subsumption relations from parents to children (reverse of -P)" << endl;
+    cerr << "\t-S               Compute/load subsumption skipgram to skipcontent relations" << endl;
+    cerr << "\t-s               Compute/load subsumption skip-content to skipgram relations (reverse of -S)" << endl;
+    cerr << "\t-L               Compute/load subsumption predecessor relations (constructions to the left)" << endl;
+    cerr << "\t-R               Compute/load subsumption sucessor relations (constructions to the right)" << endl;      
     cerr << "\t-X               Compute/load exclusive count" << endl;
     cerr << "\t------------------------------------------------------------------------------" << endl;
     cerr << "\t-r               Keep only transitive reduction (sizes down the model)" << endl;
@@ -35,12 +39,19 @@ int main( int argc, char *argv[] ) {
     bool DOPARENTS = false;
     bool DOCHILDREN = false;
     bool DOXCOUNT = false;
+    bool DOSUCCESSORS = false;
+    bool DOPREDECESSORS = false;
+    bool DOSKIPCONTENT = false;
+    bool DOSKIPUSAGE = false;
     bool TRANSITIVEREDUCTION = false;
+    
+    bool DOTEMPLATES = false; //yet to be used
+    bool DOINSTANCES = false; //yet to be used
     
     bool DOGRAPHVIZ = false; 
     
     char c;    
-    while ((c = getopt(argc, argv, "d:c:f:ho:PCXrGq:")) != -1)
+    while ((c = getopt(argc, argv, "d:c:f:ho:PCXrGq:LRSs")) != -1)
         switch (c)
         {
         case 'c':
@@ -61,6 +72,18 @@ int main( int argc, char *argv[] ) {
         case 'C': 
             DOCHILDREN = true;
             break;
+        case 'R':
+        	DOSUCCESSORS = true;
+        	break;
+		case 'L':
+        	DOPREDECESSORS = true;
+        	break;
+		case 'S':
+        	DOSKIPCONTENT = true;
+        	break;       
+		case 's':
+        	DOSKIPUSAGE = true;
+        	break;               	         	
         case 'X': 
             DOXCOUNT = true;
             break;
@@ -118,7 +141,7 @@ int main( int argc, char *argv[] ) {
         cerr << "Loaded " << patternmodel.types() << " types, " << patternmodel.tokens() << " tokens" << endl;
             
         cerr << "Constructing graph " << endl;
-        GraphPatternModel graphmodel = GraphPatternModel(&patternmodel, DOPARENTS, DOCHILDREN, DOXCOUNT);
+        GraphPatternModel graphmodel = GraphPatternModel(&patternmodel, DOPARENTS, DOCHILDREN, DOXCOUNT, DOTEMPLATES, DOINSTANCES,DOSKIPUSAGE,DOSKIPCONTENT,DOSUCCESSORS,DOPREDECESSORS);
         
         if (TRANSITIVEREDUCTION) {
         	cerr << "Pruning and keeping only transitive reduction " << endl;
