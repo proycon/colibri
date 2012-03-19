@@ -1680,6 +1680,10 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT) {
 		const EncAnyGram * anygram = &iter->first;
 		if (DOPARENTS) outputrelations(anygram, OUT, rel_subsumption_parents, "black");
 		if (DOCHILDREN) outputrelations(anygram, OUT, rel_subsumption_children, "grey");
+		if (DOPREDECESSORS) outputrelations(anygram, OUT, rel_predecessors, "yellow");
+		if (DOSUCCESSORS) outputrelations(anygram, OUT, rel_successors, "green");
+		if (DOSKIPCONTENT) outputrelations(anygram, OUT, rel_skipcontent, "cyan");
+		if (DOSKIPUSAGE) outputrelations(anygram, OUT, rel_skipusage, "purple");
 	}
 	
 
@@ -1688,6 +1692,10 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT) {
 		//cerr << "DEBUG: IN1" << endl;
 		if (DOPARENTS) outputrelations(anygram, OUT, rel_subsumption_parents, "black");
 		if (DOCHILDREN) outputrelations(anygram, OUT, rel_subsumption_children, "grey");
+		if (DOPREDECESSORS) outputrelations(anygram, OUT, rel_predecessors, "yellow");
+		if (DOSUCCESSORS) outputrelations(anygram, OUT, rel_successors, "green");
+		if (DOSKIPCONTENT) outputrelations(anygram, OUT, rel_skipcontent, "cyan");
+		if (DOSKIPUSAGE) outputrelations(anygram, OUT, rel_skipusage, "purple");		
 	}	
 
 	
