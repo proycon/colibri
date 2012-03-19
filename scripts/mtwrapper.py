@@ -111,7 +111,7 @@ class MTWrapper(object):
             ('EXEC_PBMBMT_INSTANCEGENERATOR','instancegenerator.py',''),
             ('EXEC_COLIBRI_CLASSENCODE','classencode',''),
             ('EXEC_COLIBRI_PATTERNFINDER','patternfinder',''),
-            ('EXEC_COLIBRI_GRAPHMODEL','graphmodel',''),
+            ('EXEC_COLIBRI_GRAPHER','grapher',''),
             ('EXEC_COLIBRI_ALIGNER','aligner',''),            
             ('MKCLS_OPTIONS','-m2 -c50',''),
             ('GIZA_OPTIONS','-p0 0.98 -m1 5 -m2 0 -m3 3 -m4 3 -nsmooth 4 -model4smoothfactor 0.4',''),
@@ -131,7 +131,7 @@ class MTWrapper(object):
             ('PBMBMT_RIGHTCONTEXTSIZE',1,''),
             ('PBMBMT_DECODER_OPTIONS','','Options for PBMBMT Decoder (do not include --srilm=, will be added automatically if BUILD_SRILM_TARGETMODEL is enabled)'),
             ('PBMBMT_TIMBL_OPTIONS','-k 1 -a4','Timbl options (+v+db+di is added automatically). See Timbl -h'),
-            ('COLIBRI_GRAPHMODEL_OPTIONS','-P -X -r','Options for the Graphmodel, if empty, no graph model will be constructed for the aligner, see graphmodel -h'),
+            ('COLIBRI_GRAPHER_OPTIONS','-P -X -r','Options for the Graphmodel, if empty, no graph model will be constructed for the aligner, see graphmodel -h'),
             ('COLIBRI_PATTERNFINDER_OPTIONS','-t 10 -s -B -E', 'Options for the pattern finder, see patternfinder -h'),
             ('COLIBRI_ALIGNER_OPTIONS','-J -p 0.1','Options for the colibri aligner, see aligner -h'),  
     ]
@@ -185,7 +185,7 @@ class MTWrapper(object):
                 
         self.EXEC_COLIBRI_CLASSENCODE = self.findpath(self.EXEC_COLIBRI_CLASSENCODE , self.PATH_COLIBRI)
         self.EXEC_COLIBRI_PATTERNFINDER = self.findpath(self.EXEC_COLIBRI_PATTERNFINDER , self.PATH_COLIBRI)
-        self.EXEC_COLIBRI_GRAPHMODEL = self.findpath(self.EXEC_COLIBRI_GRAPHMODEL , self.PATH_COLIBRI)
+        self.EXEC_COLIBRI_GRAPHER = self.findpath(self.EXEC_COLIBRI_GRAPHER , self.PATH_COLIBRI)
         self.EXEC_COLIBRI_ALIGNER = self.findpath(self.EXEC_COLIBRI_ALIGNER , self.PATH_COLIBRI)
         
         self.EXEC_PBMBMT_DECODER = self.findpath(self.EXEC_PBMBMT_DECODER, self.PATH_PBMBMT)
@@ -291,9 +291,9 @@ class MTWrapper(object):
             if not self.EXEC_COLIBRI_ALIGNER or not os.path.exists(self.EXEC_COLIBRI_ALIGNER):
                 sane = False
                 print >>sys.stderr,red("Configuration error: EXEC_COLIBRI_ALIGNER not found ! Required for BUILD_COLIBRI_ALIGNMENT !")
-            if not self.EXEC_COLIBRI_GRAPHMODEL or not os.path.exists(self.EXEC_COLIBRI_GRAPHMODEL):
+            if not self.EXEC_COLIBRI_GRAPHER or not os.path.exists(self.EXEC_COLIBRI_GRAPHER):
                 sane = False
-                print >>sys.stderr,red("Configuration error: EXEC_COLIBRI_GRAPHMODEL not found ! Required for BUILD_COLIBRI_ALIGNMENT !")                
+                print >>sys.stderr,red("Configuration error: EXEC_COLIBRI_GRAPHER not found ! Required for BUILD_COLIBRI_ALIGNMENT !")                
             if not self.EXEC_COLIBRI_CLASSENCODE or not os.path.exists(self.EXEC_COLIBRI_CLASSENCODE):
                 sane = False
                 print >>sys.stderr,red("Configuration error: EXEC_COLIBRI_CLASSENCODE not found ! Required for BUILD_COLIBRI_ALIGNMENT !")
@@ -715,9 +715,9 @@ class MTWrapper(object):
         
         if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.gettargetfilename('clsenc') + ' ' + self.COLIBRI_PATTERNFINDER_OPTIONS, "Building target-side pattern model",self.gettargetfilename('indexedpatternmodel.colibri') ): return False
         
-        if not self.runcmd(self.EXEC_COLIBRI_GRAPHMODEL + ' -f ' + self.getsourcefilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHMODEL_OPTIONS, "Building source-side graph model",self.getsourcefilename('graphpatternmodel.colibri') ): return False
+        if not self.runcmd(self.EXEC_COLIBRI_GRAPHER + ' -f ' + self.getsourcefilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHER_OPTIONS, "Building source-side graph model",self.getsourcefilename('graphpatternmodel.colibri') ): return False
 
-        if not self.runcmd(self.EXEC_COLIBRI_GRAPHMODEL + ' -f ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHMODEL_OPTIONS, "Building target-side graph model",self.gettargetfilename('graphpatternmodel.colibri') ): return False
+        if not self.runcmd(self.EXEC_COLIBRI_GRAPHER + ' -f ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHER_OPTIONS, "Building target-side graph model",self.gettargetfilename('graphpatternmodel.colibri') ): return False
         
         if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -t ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -N ' + self.COLIBRI_ALIGNER_OPTIONS, "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
         if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -t ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -s ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gett2sfilename('alignmodel.colibri') + ' -N ' + self.COLIBRI_ALIGNER_OPTIONS, "Building reverse alignment model",self.gett2sfilename('alignmodel.colibri') ): return False
