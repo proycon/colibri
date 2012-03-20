@@ -136,6 +136,18 @@ class MTWrapper(object):
             ('COLIBRI_ALIGNER_OPTIONS','-J -p 0.1','Options for the colibri aligner, see aligner -h'),  
     ]
 
+    def initlog(self, logfile):
+        self.logfile = open(self.WORKDIR + '/' + logfile + '.log','w') 
+    
+    def log(self, msg, color=None, dobold = True):
+        if self.logfile:
+            self.logfile.write(msg+"\n")
+        if color:
+            msg = color(msg)
+        if bold:
+            msg = bold(msg)
+        print >>sys.stderr, msg
+        
     
     def parsekwargs(self, key, default, **kwargs):
         if key in kwargs:
@@ -197,21 +209,29 @@ class MTWrapper(object):
             self.PATH_MOSES_MERT = ''            
         
         for key in kwargs:
-            print >>sys.stderr, "Unknown configuration directive: " + key
+            self.log("Unknown configuration directive: " + key,red)
             sys.exit(2)
+        
+        self.batches = []
+        self.logfile = None
             
-        
-        
+    def addbatch(self, batchname, **kwargs):
+        for key in kwargs:
+            try:
+                getattr(self,key)
+            except AttributeError:
+                self.log("Unknown configuration directive in batch " + batchname + ":" + key,red)
+        self.batches.append(batchname, kwargs)                
 
     def findpath(self, name, basepath = ''):                        
         if os.path.exists(name):
             return name
         for path in os.environ['PATH'].split(':'):
             if os.path.exists(path + '/' + name) and not os.path.isdir(path + '/' + name):
-                print >>sys.stderr, green("Found " + name + " in " + path)
+                self.log("Found " + name + " in " + path,green)
                 return path + '/' + name
         if basepath and os.path.exists(basepath + '/' + name): 
-            print >>sys.stderr, green("Found " + name + " in " + basepath)
+            self.log("Found " + name + " in " + basepath,green)
             return basepath + '/' + name        
         print >>sys.stderr, yellow("Warning: Did not find " + name)
         return ""
@@ -221,22 +241,22 @@ class MTWrapper(object):
         if self.WORKDIR[-1] != '/':     
             self.WORKDIR += '/'
             if not os.path.isdir(self.WORKDIR):
-                print >>sys.stderr,yellow("Work directory does not exist, creating " + self.WORKDIR)
+                self.log("Work directory does not exist, creating " + self.WORKDIR,yellow)
                 try:
                     os.mkdir(self.WORKDIR)
                 except:
-                    print >>sys.stderr, red("Configuration error: Unable to create work directory " + self.WORKDIR)
+                    self.log("Configuration error: Unable to create work directory " + self.WORKDIR,red)
                     sane = False
         
         sane = True
         if not self.CORPUSNAME:
-            print >>sys.stderr,red("Configuration error: CORPUSNAME not specified!")
+            self.log("Configuration error: CORPUSNAME not specified!",red)
             sane = False
         if not self.SOURCELANG:
-            print >>sys.stderr,red("Configuration error: SOURCELANG not specified!")
+            self.log("Configuration error: SOURCELANG not specified!",red)
             sane = False
         if not self.TARGETLANG:
-            print >>sys.stderr,red("Configuration error: TARGETLANG not specified!")
+            self.log("Configuration error: TARGETLANG not specified!",red)
             sane = False
         return sane
 
@@ -244,180 +264,180 @@ class MTWrapper(object):
     def check_run(self):        
         if self.BUILD_MOSES:
             if not self.EXEC_MOSES or not os.path.isfile(self.EXEC_MOSES):
-                print >>sys.stderr,bold(red("Error: Moses not found!"))
+                self.log("Error: Moses not found!",red,True)
                 return False
             elif not os.path.exists(self.WORKDIR + '/moses.ini'):
-                print >>sys.stderr,bold(red("Error: No Moses configuration found. Did you forget to train the system first?"))
+                self.log("Error: No Moses configuration found. Did you forget to train the system first?",red,True)
                 return False
             elif not os.path.exists(self.gets2tfilename('phrasetable')):
-                print >>sys.stderr,bold(red("Error: No Moses phrasetable found ("+ self.gets2tfilename('phrasetable')+") . Did you forget to train the system first?"))
+                self.log("Error: No Moses phrasetable found ("+ self.gets2tfilename('phrasetable')+") . Did you forget to train the system first?",red,True)
                 return False
         elif self.BUILD_PBMBMT:
             #TODO: implement
             return False
         else:
-            print >>sys.stderr,bold(red("Error: System is not runnable, no MT decoder enabled"))
+            self.log("Error: System is not runnable, no MT decoder enabled",red,True)
             return False
         return True
     
     def check_test(self):
         if not (self.EXEC_MATREX_WER or self.EXEC_MATREX_PER or self.EXEC_MATREX_BLEU or self.EXEC_MATREX_MTEVAL or self.EXEC_MATREX_METEOR or self.EXEC_MATREX_TER):
-            print >>sys.stderr,bold(red("Error: No evaluation scripts found, set at least one of EXEC_MATREX_* and PATH_MATREX"))
+            self.log("Error: No evaluation scripts found, set at least one of EXEC_MATREX_* and PATH_MATREX",red,True)
             return False            
         return True
 
     def check_train(self):
         sane = True                            
         if not self.TRAINSOURCECORPUS:
-            print >>sys.stderr,red("Configuration error: TRAINSOURCECORPUS not specified!")
+            self.log("Configuration error: TRAINSOURCECORPUS not specified!",red,True)
             sane = False
         if not self.TRAINTARGETCORPUS:
-            print >>sys.stderr,red("Configuration error: TRAINTARGETCORPUS not specified!")
+            self.log("Configuration error: TRAINTARGETCORPUS not specified!",red,True)
             sane = False
             
         if (self.TOKENIZE_SOURCECORPUS or self.TOKENIZE_TARGETCORPUS) and (not self.EXEC_UCTO or not os.path.isfile(self.EXEC_UCTO)):
-            print >>sys.stderr,red("Dependency error: ucto not found (EXEC_UCTO=" + self.EXEC_UCTO + ")")
+            self.log("Dependency error: ucto not found (EXEC_UCTO=" + self.EXEC_UCTO + ")",red)
             sane = False
             
         if self.BUILD_COLIBRI_MOSESPHRASETABLE:            
             if not self.BUILD_COLIBRI_ALIGNMENT:    
-                print >>sys.stderr,yellow("Configuration update: BUILD_COLIBRI_ALIGNMENT automatically enabled because BUILD_COLIBRI_MOSESPHRASETABLE is too")
+                self.log("Configuration update: BUILD_COLIBRI_ALIGNMENT automatically enabled because BUILD_COLIBRI_MOSESPHRASETABLE is too",yellow)
                 self.BUILD_COLIBRI_ALIGNMENT = True
                 
         if self.BUILD_COLIBRI_ALIGNMENT:
             if not self.EXEC_COLIBRI_PATTERNFINDER or not os.path.exists(self.EXEC_COLIBRI_PATTERNFINDER):
                 sane = False
-                print >>sys.stderr,red("Configuration error: EXEC_COLIBRI_PATTERNFINDER not found ! Required for BUILD_COLIBRI_ALIGNMENT !")            
+                self.log("Configuration error: EXEC_COLIBRI_PATTERNFINDER not found ! Required for BUILD_COLIBRI_ALIGNMENT !",red)            
             if not self.EXEC_COLIBRI_ALIGNER or not os.path.exists(self.EXEC_COLIBRI_ALIGNER):
                 sane = False
-                print >>sys.stderr,red("Configuration error: EXEC_COLIBRI_ALIGNER not found ! Required for BUILD_COLIBRI_ALIGNMENT !")
+                self.log("Configuration error: EXEC_COLIBRI_ALIGNER not found ! Required for BUILD_COLIBRI_ALIGNMENT !",red)
             if not self.EXEC_COLIBRI_GRAPHER or not os.path.exists(self.EXEC_COLIBRI_GRAPHER):
                 sane = False
-                print >>sys.stderr,red("Configuration error: EXEC_COLIBRI_GRAPHER not found ! Required for BUILD_COLIBRI_ALIGNMENT !")                
+                self.log("Configuration error: EXEC_COLIBRI_GRAPHER not found ! Required for BUILD_COLIBRI_ALIGNMENT !",red)                
             if not self.EXEC_COLIBRI_CLASSENCODE or not os.path.exists(self.EXEC_COLIBRI_CLASSENCODE):
                 sane = False
-                print >>sys.stderr,red("Configuration error: EXEC_COLIBRI_CLASSENCODE not found ! Required for BUILD_COLIBRI_ALIGNMENT !")
+                self.log("Configuration error: EXEC_COLIBRI_CLASSENCODE not found ! Required for BUILD_COLIBRI_ALIGNMENT !",red)
                 
             
 
         if self.BUILD_MOSES_MERT:
             if not self.BUILD_MOSES: 
-                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES automatically enabled because BUILD_MOSES_MERT is too")
+                self.log("Configuration update: BUILD_MOSES automatically enabled because BUILD_MOSES_MERT is too",yellow)
                 self.BUILD_MOSES = True
             if not self.DEVSOURCECORPUS or not os.path.exists(self.DEVSOURCECORPUS):
                 sane = False
-                print >>sys.stderr,red("Configuration error: DEVSOURCECORPUS not found! Required for BUILD_MOSES_MERT !")
+                self.log("Configuration error: DEVSOURCECORPUS not found! Required for BUILD_MOSES_MERT !",red)
             if not self.DEVTARGETCORPUS or not os.path.exists(self.DEVTARGETCORPUS):
                 sane = False
-                print >>sys.stderr,red("Configuration error: DEVTARGETCORPUS not found! Required for BUILD_MOSES_MERT !")
+                self.log("Configuration error: DEVTARGETCORPUS not found! Required for BUILD_MOSES_MERT !",red)
             if not self.PATH_MOSES_MERT or not os.path.isdir(self.PATH_MOSES_MERT):
                 sane = False
-                print >>sys.stderr,red("PATH_MOSES_MERT not found, please set PATH_MOSES !")
+                self.log("PATH_MOSES_MERT not found, please set PATH_MOSES !",red)
 
         if self.BUILD_MOSES:
             if self.BUILD_PBMBMT:
-                print >>sys.stderr,red("Configuration error: Ambiguous selection of MT system: Select only one of BUILD_MOSES or BUILD_PBMBMT")
+                self.log("Configuration error: Ambiguous selection of MT system: Select only one of BUILD_MOSES or BUILD_PBMBMT",red)
                 sane = False
             if not self.BUILD_MOSES_PHRASETRANSTABLE and not self.BUILD_COLIBRI_MOSESPHRASETABLE:
-                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_MOSES is too")
+                self.log("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_MOSES is too",yellow)
                 self.BUILD_MOSES_PHRASETRANSTABLE = True
             if not self.BUILD_SRILM_TARGETMODEL:                 
-                print >>sys.stderr,yellow("Configuration update: BUILD_SRILM_TARGETMODEL automatically enabled because BUILD_MOSES is too")
+                self.log("Configuration update: BUILD_SRILM_TARGETMODEL automatically enabled because BUILD_MOSES is too",yellow)
                 self.BUILD_SRILM_TARGETMODEL = True
             if not self.EXEC_MOSES or not os.path.isfile(self.EXEC_MOSES):
                 sane = False
-                print >>sys.stderr,red("Moses not found! Set EXEC_MOSES or PATH_MOSES !")                
+                self.log("Moses not found! Set EXEC_MOSES or PATH_MOSES !",red)                
                 
                 
                 
         if self.BUILD_PBMBMT:
             if not self.PBMBMT_PHRASETABLE and not self.BUILD_MOSES_PHRASETABLE:
-                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_PBMBMT is enabled and no pre-existing phrasetable is set (PBMBMT_PHRASETABLE)")
+                self.log("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_PBMBMT is enabled and no pre-existing phrasetable is set (PBMBMT_PHRASETABLE)",yellow)
             if not self.PBMBMT_GIZAALIGNMENT and not self.BUILD_GIZA_WORDALIGNMENT:
-                print >>sys.stderr,yellow("Configuration update: BUILD_GIZA_WORDALIGNMENT automatically enabled because BUILD_PBMBMT is enabled and no pre-existing word alignment file is set (PBMBMT_GIZAALIGNMENT)")               
+                self.log("Configuration update: BUILD_GIZA_WORDALIGNMENT automatically enabled because BUILD_PBMBMT is enabled and no pre-existing word alignment file is set (PBMBMT_GIZAALIGNMENT)",yellow)               
             if not self.BUILD_SRILM_TARGETMODEL:
-                print >>sys.stderr,yellow("Configuration update: BUILD_SRILM_TARGETMODEL automatically enabled because BUILD_PBMBMT is too")
+                self.log("Configuration update: BUILD_SRILM_TARGETMODEL automatically enabled because BUILD_PBMBMT is too",yellow)
                 self.BUILD_SRILM_TARGETMODEL = True         
             if self.PBMBMT_PHRASETABLE:
                 if not os.path.isfile(self.PBMBMT_PHRASETABLE):
-                    print >>sys.stderr,yellow("Configuration error: PBMBMT_PHRASETABLE does not exist!")
+                    self.log("Configuration error: PBMBMT_PHRASETABLE does not exist!",red)
                     sane = False
                 else:
                     os.symlink(self.PBMBMT_PHRASETABLE, self.gets2tfilename('phrasetable'))
             if self.PBMBMT_GIZAALIGNMENT: 
                 if not os.path.isfile(self.PBMBMT_GIZAALIGNMENT):
-                    print >>sys.stderr,yellow("Configuration error: PBMBMT_GIZAALIGNMENT does not exist!")
+                    self.log("Configuration error: PBMBMT_GIZAALIGNMENT does not exist!",red)
                     sane = False
                 else:
                     os.symlink(self.PBMBMT_GIZAALIGNMENT, self.gets2tfilename('A3.final'))
             if not self.EXEC_PBMBMT_DECODER or not os.path.isfile(self.EXEC_PBMBMT_DECODER):
                 sane = False
-                print >>sys.stderr,red("PBMBMT decoder not found! Set EXEC_PBMBMT_DECODER or PATH_PBMBMT !")                
+                self.log("PBMBMT decoder not found! Set EXEC_PBMBMT_DECODER or PATH_PBMBMT !",red)                
             if not self.EXEC_PBMBMT_INSTANCEGENERATOR or not os.path.isfile(self.EXEC_PBMBMT_INSTANCEGENERATOR):
                 sane = False
-                print >>sys.stderr,red("PBMBMT instance generator not found! Set EXEC_PBMBMT_DECODER or PATH_PBMBMT !")
+                self.log("PBMBMT instance generator not found! Set EXEC_PBMBMT_DECODER or PATH_PBMBMT !",red)
             if not self.EXEC_TIMBL or not os.path.isfile(self.EXEC_TIMBL):
                 sane = False
-                print >>sys.stderr,red("TiMBL was not found, but is required for PBMBMT! Set EXEC_TIMBL or PATH_TIMBL !")
+                self.log("TiMBL was not found, but is required for PBMBMT! Set EXEC_TIMBL or PATH_TIMBL !",red)
 
 
 
         
         if self.BUILD_MOSES_MEMSCORE:
             if not self.BUILD_MOSES_PHRASETRANSTABLE:
-                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_MOSES_MEMSCORE is too")
+                self.log("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_MOSES_MEMSCORE is too",yellow)
                 self.BUILD_MOSES_PHRASETRANSTABLE = True  
             
         if self.BUILD_MOSES_PHRASETRANSTABLE:
             if not self.BUILD_MOSES_PHRASEEXTRACT:
-                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_PHRASEEXTRACT automatically enabled because BUILD_MOSES_PHRASECORE is too")
+                self.log("Configuration update: BUILD_MOSES_PHRASEEXTRACT automatically enabled because BUILD_MOSES_PHRASECORE is too",yellow)
                 self.BUILD_MOSES_PHRASEEXTRACT = True        
                 
         
         if self.BUILD_MOSES_PHRASEEXTRACT:
             if not self.BUILD_MOSES_SYMAL:
-                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_WORDTRANSTABLE automatically enabled because BUILD_MOSES_PHRASEEXTRACT is too")
+                self.log("Configuration update: BUILD_MOSES_WORDTRANSTABLE automatically enabled because BUILD_MOSES_PHRASEEXTRACT is too",yellow)
                 self.BUILD_MOSES_WORDTRANSTABLE = True
                 
         
         if self.BUILD_MOSES_WORDTRANSTABLE:
             if not self.BUILD_MOSES_SYMAL:
-                print >>sys.stderr,yellow("Configuration update: BUILD_MOSES_SYMAL automatically enabled because BUILD_MOSES_WORDTRANSTABLE is too")
+                self.log("Configuration update: BUILD_MOSES_SYMAL automatically enabled because BUILD_MOSES_WORDTRANSTABLE is too",yellow)
                 self.BUILD_MOSES_SYMAL = True
         
                 
         if self.BUILD_MOSES_SYMAL:            
             if not self.BUILD_GIZA_WORDALIGNMENT:
-                print >>sys.stderr,yellow("Configuration update: BUILD_GIZA_WORDALIGNMENT automatically enabled because BUILD_MOSES_SYMAL is too")
+                self.log("Configuration update: BUILD_GIZA_WORDALIGNMENT automatically enabled because BUILD_MOSES_SYMAL is too",yellow)
                 self.BUILD_GIZA_WORDALIGNMENT = True
             if not self.BUILD_GIZA_WORDALIGNMENT_REV:
-                print >>sys.stderr,yellow("Configuration update: BUILD_GIZA_WORDALIGNMENT_REV automatically enabled because BUILD_MOSES_SYMAL is too")
+                self.log("Configuration update: BUILD_GIZA_WORDALIGNMENT_REV automatically enabled because BUILD_MOSES_SYMAL is too",yellow)
                 self.BUILD_GIZA_WORDALIGNMENT_REV = True                            
 
             if not self.EXEC_MOSES_GIZA2BAL or not os.path.isfile(self.EXEC_MOSES_GIZA2BAL):
                 sane = False
-                print >>sys.stderr,red("Dependency error: giza2bal.pl (provided by Moses) not found (EXEC_MOSES_GIZA2BAL=" + self.EXEC_MOSES_GIZA2BAL + ")")
+                self.log("Dependency error: giza2bal.pl (provided by Moses) not found (EXEC_MOSES_GIZA2BAL=" + self.EXEC_MOSES_GIZA2BAL + ")",red)
                
             
             if not self.EXEC_MOSES_SYMAL or not os.path.isfile(self.EXEC_MOSES_SYMAL):
                 sane = False
-                print >>sys.stderr,red("Dependency error: symal (provided by Moses) not found (EXEC_MOSES_SYMAL=" + self.EXEC_MOSES_SYMAL + ")")
+                self.log("Dependency error: symal (provided by Moses) not found (EXEC_MOSES_SYMAL=" + self.EXEC_MOSES_SYMAL + ")",red)
                
             
                 
         if self.BUILD_GIZA_WORDALIGNMENT and (not self.EXEC_GIZA or not os.path.isfile(self.EXEC_GIZA)): 
-            print >>sys.stderr,red("Dependency error: GIZA++ not found (EXEC_GIZA=" + self.EXEC_GIZA + ")")
+            self.log("Dependency error: GIZA++ not found (EXEC_GIZA=" + self.EXEC_GIZA + ")",red)
         if self.BUILD_GIZA_WORDALIGNMENT and (not self.EXEC_GIZA_PLAIN2SNT or not os.path.isfile(self.EXEC_GIZA_PLAIN2SNT)): 
-            print >>sys.stderr,red("Dependency error: plain2snt.out (provided by GIZA++) not found (EXEC_GIZA_PLAIN2SNT=" + self.EXEC_GIZA_PLAIN2SNT + ")")            
+            self.log("Dependency error: plain2snt.out (provided by GIZA++) not found (EXEC_GIZA_PLAIN2SNT=" + self.EXEC_GIZA_PLAIN2SNT + ")",red)            
             sane = False
         if self.BUILD_GIZA_WORDALIGNMENT_COOC and (not self.EXEC_GIZA_SNT2COOC or not os.path.isfile(self.EXEC_GIZA_SNT2COOC)): 
-            print >>sys.stderr,red("Dependency error: snt2cooc.out (provided by GIZA++) not found (EXEC_GIZA_SNT2COOC=" + self.EXEC_GIZA_SNT2COOC + ")")            
+            self.log("Dependency error: snt2cooc.out (provided by GIZA++) not found (EXEC_GIZA_SNT2COOC=" + self.EXEC_GIZA_SNT2COOC + ")",red)            
             sane = False                        
         if self.BUILD_GIZA_WORDALIGNMENT and (not self.EXEC_GIZA_MKCLS or not os.path.isfile(self.EXEC_GIZA_MKCLS)): 
-            print >>sys.stderr,red("Dependency error: mkcls (provided by GIZA++) not found (EXEC_GIZA_MKCLS=" + self.EXEC_GIZA_MKCLS + ")")            
+            self.log("Dependency error: mkcls (provided by GIZA++) not found (EXEC_GIZA_MKCLS=" + self.EXEC_GIZA_MKCLS + ")",red)            
             sane = False                            
         if (self.BUILD_SRILM_TARGETMODEL or self.BUILD_SRILM_SOURCEMODEL) and (not self.EXEC_SRILM or not os.path.isfile(self.EXEC_SRILM)):
-            print >>sys.stderr,red("Dependency error: ngram-count (provided by SRILM) not found (EXEC_SRILM=" + self.EXEC_SRILM + ")")
+            self.log("Dependency error: ngram-count (provided by SRILM) not found (EXEC_SRILM=" + self.EXEC_SRILM + ")",red)
             sane = False
         return sane
     
@@ -457,6 +477,7 @@ class MTWrapper(object):
         print >>sys.stderr,"\tclean [all|giza|moses|colibri|score]    Clean generated files"
         print >>sys.stderr,"\tbranch <expname> [VARIABLE value]       Create a new branch based on this project (files are symlinked instead of copied)"
         print >>sys.stderr,"\tconf VARIABLE value [VARIABLE2 value2]  Change configuration"
+        print >>sys.stderr,"\tstartbatch [batchname] [batchname2]     Start batch (if none are specified, all specified batches will be started sequentially)"
 
     def start(self):        
         try:
@@ -465,12 +486,14 @@ class MTWrapper(object):
             self.usage()
             sys.exit(2)
         if cmd == 'train':
+            self.initlog('train')
             if os.path.isfile(self.WORKDIR + '/.frozen'):
                 print >>sys.stderr, "Courageously refusing to train system because it is frozen"
                 sys.exit(2)
             if not self.starttrain():
                 sys.exit(1)                
         elif cmd == 'clean':
+            self.initlog('clean')
             if os.path.isfile(self.WORKDIR + '/.frozen'):
                 print >>sys.stderr, "Courageously refusing to clean system because it is frozen"
                 sys.exit(2)
@@ -478,6 +501,7 @@ class MTWrapper(object):
             if not self.clean(targets):
                 sys.exit(1)
         elif cmd == 'run':
+            self.initlog('run')
             try:
                 inputfile = sys.argv[2]
             except:
@@ -509,6 +533,7 @@ class MTWrapper(object):
                 sys.exit(1)
 
         elif cmd == 'freeze':          
+            self.initlog('freeze')
             if os.path.isfile(self.WORKDIR + '/.frozen'):
                 print >>sys.stderr, "System is already frozen"
                 sys.exit(0)
@@ -519,6 +544,7 @@ class MTWrapper(object):
 
 
         elif cmd == 'unfreeze' or cmd=='thaw':          
+            self.initlog('unfreeze')
             if os.path.isfile(self.WORKDIR + '/.frozen'):
                 os.unlink(self.WORKDIR + '/.frozen')
                 print >>sys.stderr, "Thawing system"
@@ -528,6 +554,7 @@ class MTWrapper(object):
                 sys.exit(0)
 
         elif cmd == 'branch':          
+            self.initlog('branch')
             expname = sys.argv[2]
 
             self.branch(expname, sys.argv[3:])                                        
@@ -536,15 +563,16 @@ class MTWrapper(object):
             print >>sys.stderr, "Current system automatically frozen after branching"
             
         elif cmd == 'test':                        
+            self.initlog('test')
             if len(sys.argv) == 4:
                 inputfile = sys.argv[2]
                 referencefile = sys.argv[3]
             elif len(sys.argv) == 2:
                 if not self.TESTSOURCECORPUS or not os.path.exists(self.TESTSOURCECORPUS):
-                    print >>sys.stderr, bold(red("No predefined default test corpus set for input (set TESTSOURCECORPUS) or specify on command line"))
+                    self.log("No predefined default test corpus set for input (set TESTSOURCECORPUS) or specify on command line",red,True)
                     sys.exit(2)
                 if not self.TESTTARGETCORPUS or not os.path.exists(self.TESTTARGETCORPUS):
-                    print >>sys.stderr, bold(red("No predefined default test corpus set for reference (set TESTSOURCECORPUS and TESTTARGETCORPUS) or specify on command line "))
+                    self.log("No predefined default test corpus set for reference (set TESTSOURCECORPUS and TESTTARGETCORPUS) or specify on command line ",red,True)
                     sys.exit(2)                    
                 inputfile = self.TESTSOURCECORPUS                
                 referencefile = self.TESTTARGETCORPUS                
@@ -556,15 +584,16 @@ class MTWrapper(object):
                 sys.exit(1)
 
         elif cmd == 'score':                        
+            self.initlog('score')
             if len(sys.argv) == 4:
                 inputfile = sys.argv[2]
                 referencefile = sys.argv[3]
             elif len(sys.argv) == 2:
                 if not self.TESTSOURCECORPUS or not os.path.exists(self.TESTSOURCECORPUS):
-                    print >>sys.stderr, bold(red("No predefined default test corpus set for input (set TESTSOURCECORPUS) or specify on command line"))
+                    self.log("No predefined default test corpus set for input (set TESTSOURCECORPUS) or specify on command line",red,True)
                     sys.exit(2)
                 if not self.TESTTARGETCORPUS or not os.path.exists(self.TESTTARGETCORPUS):
-                    print >>sys.stderr, bold(red("No predefined default test corpus set for reference (set TESTSOURCECORPUS and TESTTARGETCORPUS) or specify on command line "))
+                    self.log("No predefined default test corpus set for reference (set TESTSOURCECORPUS and TESTTARGETCORPUS) or specify on command line ",red,True)
                     sys.exit(2)                    
                 inputfile = self.TESTSOURCECORPUS                
                 referencefile = self.TESTTARGETCORPUS                
@@ -575,13 +604,38 @@ class MTWrapper(object):
             if not self.score(inputfile, referencefile,'output.txt'): 
                 sys.exit(1)
         elif cmd == 'conf':
+            self.initlog('conf')
             if self.parseconf(sys.argv[2:]):
-                print >>sys.stderr,"Writing new configuration..."
+                self.log("Writing new configuration...")
                 self.writesettings()
+        elif cmd == 'startbatch':
+            self.initlog('batch')
+            if not self.batches:
+                self.log("No batch jobs in configuration...",red)
+                
+            if sys.argv[2:]:
+                selectedbatches = sys.argv[2:]
+                for batch in selectedbatches:
+                    if not batch in [ key for (key,conf) in self.batches ]:
+                        self.log( "No such batch: " + batch,red,True)
+            else:
+                selectedbatches= None
+                
+                
+                            
+            for batch, conf in self.batches:
+                self.log("Branching for batch " + batch,white,True)
+                self.branch(batch, conf, False, True, False)
+                
+                self.log("Starting batch " + batch,white,True)
+                
+                
+                            
+            
         elif cmd == 'help' or cmd == '-h':
             self.usage()
         else:
-            print >>sys.stderr,"Error, no such command: " + cmd
+            self.log("Error, no such command: " + cmd,red)
             self.usage()
             sys.exit(2)
         
@@ -589,7 +643,7 @@ class MTWrapper(object):
             
     def clean(self, targets):            
         if not targets:
-            print >>sys.stderr,"Nothing to clean, please specify one or more targets: all, giza, moses, colibri, srilm"
+            self.log("Nothing to clean, please specify one or more targets: all, giza, moses, colibri, srilm",red)
             sys.exit(2)        
         
         if 'giza' in targets or 'all' in targets:
@@ -612,10 +666,10 @@ class MTWrapper(object):
             for filename in glob.glob(self.WORKDIR + '/' + mask):
                 try:
                     os.unlink(filename)
-                    print >>sys.stderr, green("Removed " + filename)
+                    self.log("Removed " + filename,green)
                 except:
                     ok = False
-                    print >>sys.stderr, bold(red("Unable to remove " + filename))
+                    self.log("Unable to remove " + filename,red,True)
         return ok
             
     def starttrain(self):                
@@ -658,12 +712,13 @@ class MTWrapper(object):
                     skip = False
                     break                                
             if skip:
-                print >>sys.stderr, bold(yellow("Skipping " + name))  + " (output files already present)"
+                self.log("Skipping " + name, yellow, True)
                 return False        
         if 'cmd' in kwargs:
-            print >>sys.stderr, bold(white("Calling " + name)) + ": " + kwargs['cmd']            
+            self.log("Calling " + name,white, True)
+            self.log("Command "+ ": " + kwargs['cmd'])            
         else:
-            print >>sys.stderr, bold(white("Calling " + name))
+            self.log("Calling " + name,white, True)
         return True
             
             
@@ -673,17 +728,17 @@ class MTWrapper(object):
         else:
             successcodes = [0]
         if r in successcodes:
-           print >>sys.stderr, bold(green("Finished " + name))
+           self.log("Finished " + name,green,True)
         else:
-           print >>sys.stderr, bold(red("Runtime error from " + name + '(return code ' + str(r) + ')'))
+           self.log("Runtime error from " + name + '(return code ' + str(r) + ')',red,True)
            return False
         if outputfiles:
             error = False
             for outputfile in outputfiles:
                 if os.path.exists(outputfile):                
-                    print >>sys.stderr, green("Produced output file " + outputfile)
+                    self.log("Produced output file " + outputfile,green)
                 else:
-                    print >>sys.stderr, bold(red("Expected output file " + outputfile+ ", not produced!"))
+                    self.log("Expected output file " + outputfile+ ", not produced!",red)
                     error = True
             if error: 
                 return False    
@@ -709,17 +764,28 @@ class MTWrapper(object):
 
     def parseconf(self, conf):        
         changed = False
-        for i in range(0,len(conf) - 1):
-            key = conf[i]
-            value = conf[i+1]
-            try:
-                getattr(self, key)
-                setattr(self,key,value)
-                changed = True
-                print >>sys.stderr,"Set variable " + key + " to \"" + value +"\""
-            except AttributeError:
-                print >>sys.stderr,"ERROR: No such variable exists: " + key
-                sys.exit(2)
+        if isinstance(conf,str) or isinstance(conf,unicode):        
+            for i in range(0,len(conf) - 1):
+                key = conf[i]
+                value = conf[i+1]
+                try:
+                    getattr(self, key)
+                    setattr(self,key,value)
+                    changed = True
+                    self.log("Set variable " + key + " to \"" + value +"\"")
+                except AttributeError:
+                    self.log("ERROR: No such variable exists: " + key,red)
+                    sys.exit(2)
+        elif isinstance(conf,dict):
+            for key, value in conf.items():
+                try:
+                    getattr(self, key)
+                    setattr(self,key,value)
+                    changed = True
+                    self.log("Set variable " + key + " to \"" + value +"\"")
+                except AttributeError:
+                    self.log("ERROR: No such variable exists: " + key,red)
+                    sys.exit(2)                
         return changed
                                         
         
@@ -892,14 +958,14 @@ class MTWrapper(object):
     
     def run(self, inputfile, outputfile='output.txt', tokenise=False):        
         if tokenise and (not self.EXEC_UCTO or not os.path.isfile(self.EXEC_UCTO)):
-            print >>sys.stderr,red("Error: Ucto not found! Unable to tokenise!" )
+            self.log("Error: Ucto not found! Unable to tokenise!" ,red)
             return False
         
         if not self.check_common(): return False
         if not self.check_run(): return False
         
         if not os.path.isfile(inputfile):
-            print >>sys.stderr,red("Error: Input file " + inputfile + " not found!" )
+            self.log("Error: Input file " + inputfile + " not found!" ,red)
             return False
 
         if os.path.exists( outputfile):
@@ -945,7 +1011,7 @@ class MTWrapper(object):
     
     def score(self, sourcefile, reffile, targetfile):
         if not os.path.isfile(targetfile):
-            print >>sys.stderr,red("Error: Output file " + targetfile + " not found!" )
+            self.log("Error: Output file " + targetfile + " not found!" ,red)
             return False    
      
         self.header('Converting source to XML for evaluation')
@@ -985,10 +1051,10 @@ class MTWrapper(object):
                              print >>sys.stderr,"BLEU score: ", self.bleu
                     f.close()
                 except:                
-                    print >>sys.stderr, red("Error reading bleu.score")
+                    self.log("Error reading bleu.score",red)
                     errors = True            
         else:
-            print >>sys.stderr, yellow("Skipping BLEU (no script found ["+self.EXEC_MATREX_BLEU+"])")
+            self.log("Skipping BLEU (no script found ["+self.EXEC_MATREX_BLEU+"])",yellow)
             
         if self.EXEC_MATREX_WER and os.path.exists(self.EXEC_MATREX_WER) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
             if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_MATREX_WER + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + '  > ' + 'wer.score', 'Computing WER score'): errors = True
@@ -998,13 +1064,13 @@ class MTWrapper(object):
                     for line in f:
                         if line[0:11] == "WER score =":
                              self.wer = float(line[12:20].strip())
-                             print >>sys.stderr,"WER score: ", self.wer
+                             self.log("WER score: " + str(self.wer), white)
                     f.close()
                 except:                
-                    print >>sys.stderr, red("Error reading wer.score")
+                    self.log("Error reading wer.score",red)
                     errors = True     
         else:
-            print >>sys.stderr, yellow("Skipping WER (no script found ["+self.EXEC_MATREX_WER+"]) ")
+            self.log("Skipping WER (no script found ["+self.EXEC_MATREX_WER+"]) ",yellow)
      
         if self.EXEC_MATREX_PER and os.path.exists(self.EXEC_MATREX_PER) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
             if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_MATREX_PER + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + '  > ' + 'per.score',  'Computing PER score'): errors = True
@@ -1014,13 +1080,13 @@ class MTWrapper(object):
                     for line in f:
                         if line[0:11] == "PER score =":
                              self.per = float(line[12:20].strip())
-                             print >>sys.stderr,"PER score: ", self.per
+                             self.log("PER score: " + str(self.per), white)
                     f.close()
                 except:                
-                    print >>sys.stderr, red("Error reading per.score")
+                    self.log("Error reading per.score",red)
                     errors = True                     
         else:
-            print >>sys.stderr, yellow("Skipping PER (no script found ["+self.EXEC_MATREX_PER+"])")
+            self.log("Skipping PER (no script found ["+self.EXEC_MATREX_PER+"])",yellow)
         
         if self.EXEC_MATREX_METEOR and os.path.exists(self.EXEC_MATREX_METEOR) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
             if not self.runcmd(self.EXEC_PERL + ' -I ' + os.path.dirname(self.EXEC_MATREX_METEOR) + ' ' + self.EXEC_MATREX_METEOR + " -s " + self.CORPUSNAME + " -r " + refxml + ' -t ' + targetxml + ' --modules "exact"  > ' + 'meteor.score',  'Computing METEOR score'): errors = True
@@ -1030,13 +1096,13 @@ class MTWrapper(object):
                     for line in f:
                         if line[0:6] == "Score:":
                              self.meteor = float(line[7:].strip())
-                             print >>sys.stderr,"METEOR score: ", self.meteor
+                             self.log("METEOR score: " + str(self.meteor), white)
                     f.close()
                 except:                
-                    print >>sys.stderr, red("Error reading meteor.score")
+                    self.log("Error reading meteor.score",red)
                     errors = True                      
         else:
-            print >>sys.stderr, yellow("Skipping METEOR (no script found ["+self.EXEC_MATREX_METEOR+"])")
+            self.log("Skipping METEOR (no script found ["+self.EXEC_MATREX_METEOR+"])",yellow)
 
         if self.EXEC_MATREX_MTEVAL and os.path.exists(self.EXEC_MATREX_MTEVAL) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
             if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_MATREX_MTEVAL + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml +  '  > ' + 'mteval.score',  'Computing NIST & BLEU scores'): errors = True
@@ -1050,15 +1116,15 @@ class MTWrapper(object):
                         if line[21:33] == "BLEU score =":
                             if self.bleu > 0:
                                 self.bleu = float(line[34:40].strip())
-                                print >>sys.stderr,"BLEU score: ", self.bleu
+                                self.log("BLEU score: " + str(self.bleu), white)
                             else:
-                                print >>sys.stderr,"BLEU score (not stored): ", float(line[10:].strip())
+                                self.log("BLEU score (not stored): " + str(float(line[10:].strip())))
                     f.close()
                 except:                
-                    print >>sys.stderr, red("Error reading mteval.score")
+                    self.log("Error reading mteval.score",red)
                     errors = True                   
         else:
-            print >>sys.stderr, yellow("Skipping MTEVAL (BLEU & NIST) (no script found)")
+            self.log("Skipping MTEVAL (BLEU & NIST) (no script found)", yellow)
      
         if self.EXEC_MATREX_TER and os.path.exists(self.EXEC_MATREX_TER) and self.EXEC_JAVA and os.path.exists(self.EXEC_JAVA):
             if not self.runcmd(self.EXEC_JAVA + ' -jar ' + self.EXEC_MATREX_TER + " -r " + refxml + ' -h ' + targetxml + '  > ' + 'ter.score',  'Computing TER score'): errors = True
@@ -1071,9 +1137,9 @@ class MTWrapper(object):
                              print >>sys.stderr,"TER score: ", self.ter
                     f.close()
                 except:                
-                    print >>sys.stderr, red("Error reading ter.score")
+                    self.log("Error reading ter.score",red)
         else:
-            print >>sys.stderr, yellow("Skipping TER (no script found)")     
+            self.log("Skipping TER (no script found)",yellow)     
     
         if not errors:
             print >>sys.stderr,"SCORE SUMMARY\n===================\n"
@@ -1097,11 +1163,11 @@ class MTWrapper(object):
         if not self.check_test(): return False
         
         if not os.path.isfile(sourcefile):
-            print >>sys.stderr,red("Error: Source file " + sourcefile + " not found!" )
+            self.log("Error: Source file " + sourcefile + " not found!" ,red)
             return False        
              
         if not os.path.isfile(reffile):
-            print >>sys.stderr,red("Error: Reference file " + reffile + " not found!" )
+            self.log("Error: Reference file " + reffile + " not found!" ,red)
             return False        
         
         if not self.run(sourcefile):
@@ -1133,28 +1199,29 @@ class MTWrapper(object):
         return True
 
    
-    def branch(self,expname, conf=None):
+    def branch(self,expname, conf=None, useparentdir=True, quiet = False, writebatches=True):
+        
         parentdir = self.WORKDIR
-        if parentdir[-1] == '/':
-            parentdir = parentdir[:-1]
-        parentdir = os.path.dirname(parentdir)
-        
-        
+        if useparentdir:
+            if parentdir[-1] == '/':
+                parentdir = parentdir[:-1]
+            parentdir = os.path.dirname(parentdir)
+                
         workdir = parentdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + expname
         if workdir and not os.path.isdir(workdir):            
-            print>>sys.stderr, "Creating branched work directory (as sibling): " + workdir
+            self.log("Creating branched work directory (as sibling): " + workdir,white)
             os.mkdir(workdir)
-        elif workdir:
-            print>>sys.stderr, yellow("WARNING: work directory " +  workdir + " already exists! Press ENTER to continue or ctrl-C to abort")
+        elif workdir and not quiet:
+            self.log("WARNING: work directory " +  workdir + " already exists! Press ENTER to continue or ctrl-C to abort",white)
             raw_input()
 
         if conf:
             self.parseconf(conf)
 
-        self.writesettings(expname, workdir) 
+        self.writesettings(expname, workdir, writebatches) 
         
    
-    def writesettings(self,expname=None, workdir = None):    
+    def writesettings(self,expname=None, workdir = None, writebatches=True):    
         if not workdir: 
             workdir = self.WORKDIR
         if not expname:
@@ -1170,9 +1237,9 @@ class MTWrapper(object):
                 continue    
             try:
                 os.symlink(filename, workdir + '/' + basefilename)
-                print>>sys.stderr, green("Branched file " + basefilename + " (symlink)")
+                self.log("Branched file " + basefilename + " (symlink)",green)
             except:
-                print>>sys.stderr, red("Error making symlink for " + basefilename)
+                self.log("Error making symlink for " + basefilename,red)
 
         
         f = codecs.open(settingsfile,'w','utf-8')
@@ -1207,7 +1274,11 @@ class MTWrapper(object):
                 f.write(", #" + help + "\n")
             else:
                 f.write(",\n")
-        f.write(")\nmtwrapper.start()\n")
+        f.write(")\n")
+        if writebatches:
+            for batch, conf in self.batches:                     
+                f.write("mtwrapper.addbatch('" + batch + "', **"+repr(conf)+")")
+        f.write("mtwrapper.start()\n")
         f.close()
         os.chmod(settingsfile, 0754)
         os.system('vim ' + settingsfile)
