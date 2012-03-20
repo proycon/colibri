@@ -224,7 +224,7 @@ class MTWrapper(object):
                 getattr(self,key)
             except AttributeError:
                 self.log("Unknown configuration directive in batch " + batchname + ":" + key,red)
-        self.batches.append(batchname, kwargs)                
+        self.batches.append( (batchname, kwargs) )                
 
     def findpath(self, name, basepath = ''):                        
         if os.path.exists(name):
