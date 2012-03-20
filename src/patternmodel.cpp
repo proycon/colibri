@@ -1487,6 +1487,7 @@ void GraphPatternModel::readheader(std::istream * in, bool ignore) {
     in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
     in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
     in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
+    cerr << "DEBUG: " << model_id << " vs " << (GRAPHPATTERNMODEL+1) << endl;
     if (model_id >= GRAPHPATTERNMODEL+1 ) {
 	    in->read((char*) &HASTEMPLATES, sizeof(bool)); //1 byte, not 1 bit
 	    in->read((char*) &HASINSTANCES, sizeof(bool)); //1 byte, not 1 bit
