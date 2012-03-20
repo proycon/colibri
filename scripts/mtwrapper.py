@@ -160,6 +160,8 @@ class MTWrapper(object):
         
 
     def __init__(self, **kwargs):                
+        self.batches = []
+        self.logfile = None
         
         for key, default, help in MTWrapper.defaults:
             if key in kwargs:
@@ -214,8 +216,7 @@ class MTWrapper(object):
             self.log("Unknown configuration directive: " + key,red)
             sys.exit(2)
         
-        self.batches = []
-        self.logfile = None
+
             
     def addbatch(self, batchname, **kwargs):
         for key in kwargs:
