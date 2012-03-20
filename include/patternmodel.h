@@ -73,10 +73,10 @@ class SkipGramData: public AnyGramData {
 
 class ModelReader {
    protected:
-    uint64_t model_id;
     uint64_t totaltokens;
     uint64_t totaltypes; 
    public:
+    uint64_t model_id;
     virtual uint64_t id() =0;
     virtual void readheader(std::istream * in, bool ignore=false) =0;
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false) =0;
@@ -339,7 +339,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
 		this->DOSKIPCONTENT = DOSKIPCONTENT;
 		this->DOSUCCESSORS = DOSUCCESSORS;
 		this->DOPREDECESSORS = DOPREDECESSORS;
-        
+        model->model_id = GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION;
     	DELETEMODEL = false;        
         this->model = model;
         secondpass = true;
@@ -359,6 +359,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     	
     	DELETEMODEL = true;
     	model = new IndexedPatternModel();
+    	model->model_id = GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION;
     	std::cerr << "Pass one, reading implied indexedpatternmodel..." << std::endl;
     	//reading is done in two passes
     	secondpass = false;

@@ -1276,6 +1276,7 @@ int intersection( set<CorpusReference> & a, set<CorpusReference> & b) {
 
 GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS, bool DOCHILDREN, bool DOXCOUNT, bool DOTEMPLATES, bool DOINSTANCES, bool DOSKIPUSAGE, bool DOSKIPCONTENT, bool DOSUCCESSORS, bool DOPREDECESSORS ) {
     this->model = model;
+    model->model_id = GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION;
     this->DOPARENTS = DOPARENTS;
     this->DOCHILDREN = DOCHILDREN;   
     this->DOXCOUNT = DOXCOUNT;     
