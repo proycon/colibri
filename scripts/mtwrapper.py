@@ -12,6 +12,7 @@ import subprocess
 import getopt
 import codecs
 import glob
+import datetime
 from pynlpl.evaluation import filesampler
 
 def bold(s):
@@ -612,6 +613,11 @@ class MTWrapper(object):
             self.initlog('batch')
             if not self.batches:
                 self.log("No batch jobs in configuration...",red)
+                sys.exit(2)
+
+            if not os.path.isfile(self.WORKDIR + '/.frozen'):
+                self.log("Refusing to start batches from a non-frozen system, please explicitly freeze the system first",red)
+                sys.exit(2)
                 
             if sys.argv[2:]:
                 selectedbatches = sys.argv[2:]
@@ -624,13 +630,27 @@ class MTWrapper(object):
                 
                             
             for batch, conf in self.batches:
-                self.log("Branching for batch " + batch,white,True)
-                self.branch(batch, conf, False, True, False)
-                
-                self.log("Starting batch " + batch,white,True)
-                
-                
+                if not selectedbatches or batch in selectedbatches:
+                    self.log("Branching for batch " + batch,white,True) 
+                    self.branch(batch, conf, False, True, False)
+
+                    batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch 
+                    
+                    self.log("Starting training batch " + batch + " " + self.timestamp(),white,True)
+                    self.log(" Log will be in " + batchdir + '/train.log')
+                    r = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py train', shell=True)                    
+                    if r == 0: 
+                        self.log("Training batch " + batch + " finished succesfully " + self.timestamp(),green,True)
+                    else:
+                        self.log("Training batch " + batch + " finished with error code " + str(r) + " " + self.timestamp(),red,True)
                             
+                    self.log("Starting testing batch " + batch + " " + self.timestamp(),white,True)
+                    self.log(" Log will be in " + batchdir + '/test.log')
+                    r = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py test', shell=True)
+                    if r == 0: 
+                        self.log("Testing batch " + batch + " finished succesfully " + self.timestamp(),green,True)
+                    else:
+                        self.log("Testing batch " + batch + " finished with error code " + str(r) + " " + self.timestamp(),red,True)                            
             
         elif cmd == 'help' or cmd == '-h':
             self.usage()
@@ -715,12 +735,14 @@ class MTWrapper(object):
                 self.log("Skipping " + name, yellow, True)
                 return False        
         if 'cmd' in kwargs:
-            self.log("Calling " + name,white, True)
+            self.log("Calling " + name + " " + self.timestamp() ,white, True)
             self.log("Command "+ ": " + kwargs['cmd'])            
         else:
-            self.log("Calling " + name,white, True)
+            self.log("Calling " + name + " " + self.timestamp(),white, True)
         return True
             
+    def timestamp(self):
+        return "\t" + magenta("@" + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             
     def footer(self, name, r, *outputfiles, **kwargs):
         if 'successcodes' in kwargs:
@@ -728,9 +750,9 @@ class MTWrapper(object):
         else:
             successcodes = [0]
         if r in successcodes:
-           self.log("Finished " + name,green,True)
+           self.log("Finished " + name + " " + self.timestamp(),green,True)
         else:
-           self.log("Runtime error from " + name + '(return code ' + str(r) + ')',red,True)
+           self.log("Runtime error from " + name + '(return code ' + str(r) + ') ' + self.timestamp(),red,True)
            return False
         if outputfiles:
             error = False
