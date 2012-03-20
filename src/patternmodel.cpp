@@ -1494,6 +1494,7 @@ void GraphPatternModel::readheader(std::istream * in, bool ignore) {
     	in->read((char*) &HASSKIPCONTENT, sizeof(bool)); //1 byte, not 1 bit
     	in->read((char*) &HASSUCCESSORS, sizeof(bool)); //1 byte, not 1 bit
     	in->read((char*) &HASPREDECESSORS, sizeof(bool)); //1 byte, not 1 bit
+    	cerr << "DEBUG: READ9" << endl;
     }
 }
 
