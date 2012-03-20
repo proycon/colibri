@@ -1842,7 +1842,7 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool
 
 
 void SelectivePatternModel::readheader(std::istream * in, bool ignore) {
-	if (model_id == GRAPHPATTERNMODEL) || (model_id <= GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION) { 
+	if ((model_id == GRAPHPATTERNMODEL) || (model_id <= GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION)) { 
     	in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
 	    in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
 	    in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
