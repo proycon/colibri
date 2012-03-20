@@ -141,13 +141,13 @@ class MTWrapper(object):
     def initlog(self, logfile):
         self.logfile = open(self.WORKDIR + '/' + logfile + '.log','w') 
      
-    def log(self, msg, color=None, dobold = False):
-        if self.logfile:
-            self.logfile.write(msg+"\n")
+    def log(self, msg, color=None, dobold = False):        
         if color:
             msg = color(msg)
         if dobold:
             msg = bold(msg)
+        if self.logfile:
+           self.logfile.write(msg+"\n")
         print >>sys.stderr, msg
         
     
