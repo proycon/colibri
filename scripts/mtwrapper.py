@@ -13,6 +13,7 @@ import getopt
 import codecs
 import glob
 import datetime
+import shutil
 from pynlpl.evaluation import filesampler
  
 def bold(s):
