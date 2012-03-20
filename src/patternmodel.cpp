@@ -1844,19 +1844,33 @@ void SelectivePatternModel::readheader(std::istream * in, bool ignore) {
     	in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
 	    in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
 	    in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
+		if (model_id >= GRAPHPATTERNMODEL+1 ) {
+			in->read((char*) &HASTEMPLATES, sizeof(bool)); //1 byte, not 1 bit
+			in->read((char*) &HASINSTANCES, sizeof(bool)); //1 byte, not 1 bit
+			in->read((char*) &HASSKIPUSAGE, sizeof(bool)); //1 byte, not 1 bit
+			in->read((char*) &HASSKIPCONTENT, sizeof(bool)); //1 byte, not 1 bit
+			in->read((char*) &HASSUCCESSORS, sizeof(bool)); //1 byte, not 1 bit
+			in->read((char*) &HASPREDECESSORS, sizeof(bool)); //1 byte, not 1 bit
+    	}
 	} else {
 		HASPARENTS = false;
 		HASCHILDREN = false;
 		HASXCOUNT = false;
+		HASTEMPLATES = false;
+		HASINSTANCES = false;
+		HASSKIPUSAGE = false;
+		HASSKIPCONTENT = false;
+		HASSUCCESSORS = false;
+		HASPREDECESSORS = false;
 	}	
-	if ((model_id == UNINDEXEDPATTERNMODEL) && (DOFORWARDINDEX || DOREVERSEINDEX)) 
+	/*if ((model_id == UNINDEXEDPATTERNMODEL) && (DOFORWARDINDEX || DOREVERSEINDEX)) 
 	  cerr << "WARNING!!! You opted to load indexes but you the model you are loading is unindexed!" << endl;
 	if (!HASXCOUNT && DOXCOUNT) 
 	  cerr << "WARNING!!! You opted to load exclusive count data but the model you are loading does not contain this data! (Make sure to load a graphmodel generated with exclusive count data)" << endl;
 	if (!HASPARENTS && DOPARENTS) 
 	  cerr << "WARNING!!! You opted to load parent relation data but the model you are loading does not contain this data! (Make sure to load a graphmodel generated with parent relation data)" << endl;
 	if (!HASCHILDREN && DOCHILDREN) 
-	  cerr << "WARNING!!! You opted to load children relation data but the model you are loading does not contain this data! (Make sure to load a graphmodel generated with children relation data)" << endl;
+	  cerr << "WARNING!!! You opted to load children relation data but the model you are loading does not contain this data! (Make sure to load a graphmodel generated with children relation data)" << endl;*/
 }
 
 /*void SelectivePatternModel::readrelations(std::istream * in) {
@@ -1922,9 +1936,21 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
     	const EncAnyGram * anygram = getkey(&ngram);	
     	if (HASPARENTS) readrelations(in, anygram, &rel_subsumption_parents);
     	if (HASCHILDREN) readrelations(in, anygram, &rel_subsumption_children);
+    	if (HASTEMPLATES) readrelations(in);
+        if (HASINSTANCES) readrelations(in);
+        if (HASSKIPUSAGE) readrelations(in);
+        if (HASSKIPCONTENT) readrelations(in);
+        if (HASSUCCESSORS) readrelations(in);
+        if (HASPREDECESSORS) readrelations(in);
     } else {
     	if (HASPARENTS) readrelations(in); //read and ignore
     	if (HASCHILDREN) readrelations(in);  //read and ignore
+    	if (HASTEMPLATES) readrelations(in);
+        if (HASINSTANCES) readrelations(in);
+        if (HASSKIPUSAGE) readrelations(in);
+        if (HASSKIPCONTENT) readrelations(in);
+        if (HASSUCCESSORS) readrelations(in);
+        if (HASPREDECESSORS) readrelations(in);
     }
     
     //THRESHOLD CHECK STAGE - deciding whether to ignore based on unreached thresholds

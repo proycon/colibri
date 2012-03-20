@@ -425,13 +425,26 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
      bool HASPARENTS;
      bool HASCHILDREN;
      bool HASXCOUNT;
-
+     bool HASTEMPLATES;
+     bool HASINSTANCES;
+     bool HASSKIPUSAGE;
+     bool HASSKIPCONTENT;
+     bool HASSUCCESSORS;
+     bool HASPREDECESSORS;
+ 
      
      bool DOXCOUNT;
      bool DOFORWARDINDEX;
      bool DOREVERSEINDEX;
      bool DOPARENTS;
      bool DOCHILDREN;
+     bool DOTEMPLATES;
+     bool DOINSTANCES;
+     bool DOSKIPUSAGE;
+     bool DOSKIPCONTENT;
+     bool DOSUCCESSORS;
+     bool DOPREDECESSORS;
+     
      
      
      int COUNTTHRESHOLD;

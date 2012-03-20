@@ -781,7 +781,7 @@ class MTWrapper(object):
         if r in successcodes:
            self.log("Finished " + name + " " + self.timestamp(),green,True)
         else:
-           self.log("Runtime error from " + name + '(return code ' + str(r) + ') ' + self.timestamp(),red,True)
+           self.log("Runtime error from " + name + ' (return code ' + str(r) + ') ' + self.timestamp(),red,True)
            return False
         if outputfiles:
             error = False
