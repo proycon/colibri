@@ -660,6 +660,7 @@ class MTWrapper(object):
                         else:
                             self.log("Testing batch " + batch + " finished with error code " + str(rtest) + " " + self.timestamp(),red,True)
                             
+                    self.log("----------------------------------------------------",white)                            
             
         elif cmd == 'help' or cmd == '-h':
             self.usage()
