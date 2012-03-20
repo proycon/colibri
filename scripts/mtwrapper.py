@@ -560,10 +560,13 @@ class MTWrapper(object):
             self.initlog('branch')
             expname = sys.argv[2]
 
-            self.branch(expname, sys.argv[3:])                                        
+            branchdir, branchsettings = self.branch(expname, sys.argv[3:])                                        
+                                    
+            os.system('vim ' + branchsettings)
             
             open(self.WORKDIR + '/.frozen','w').close()
             print >>sys.stderr, "Current system automatically frozen after branching"
+            print >>sys.stderr,"All done, to go to the newly branched system: $ cd " + branchdir
             
         elif cmd == 'test':                        
             self.initlog('test')
@@ -1266,7 +1269,9 @@ class MTWrapper(object):
         if conf:
             self.parseconf(conf)
 
-        self.writesettings(expname, workdir, writebatches) 
+        settingsfile = self.writesettings(expname, workdir, writebatches) 
+                
+        return (workdir, settingsfile)
         
    
     def writesettings(self,expname=None, workdir = None, writebatches=True):    
@@ -1329,9 +1334,8 @@ class MTWrapper(object):
         f.write("mtwrapper.start()\n")
         f.close()
         os.chmod(settingsfile, 0754)
-        os.system('vim ' + settingsfile)
-        print >>sys.stderr,"All done, to go to the newly branched system: $ cd " + workdir
-   
+
+        return settingsfile
 
     
 def usage():
