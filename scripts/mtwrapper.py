@@ -455,7 +455,8 @@ class MTWrapper(object):
         print >>sys.stderr,"\ttest <inputfile> <referencefile>   Run and evaluate the MT system on the specified input file and reference file (one sentence per line). If <inputfile> and <referencefile> are not given, the default test files from the system configuration are used."                               
         print >>sys.stderr,"\tscore <inputfile> <referencefile>  Like test, but work on a pre-run system, does  not run the translation again."                   
         print >>sys.stderr,"\tclean [all|giza|moses|colibri|score]    Clean generated files"
-        print >>sys.stderr,"\tbranch <expname>                   Create a new branch based on this project (files are symlinked instead of copied)"
+        print >>sys.stderr,"\tbranch <expname> [VARIABLE value]       Create a new branch based on this project (files are symlinked instead of copied)"
+        print >>sys.stderr,"\tconf VARIABLE value [VARIABLE2 value2]  Change configuration"
 
     def start(self):        
         try:
@@ -529,7 +530,7 @@ class MTWrapper(object):
         elif cmd == 'branch':          
             expname = sys.argv[2]
 
-            self.branch(expname)
+            self.branch(expname, sys.argv[3:])                                        
             
             open(self.WORKDIR + '/.frozen','w').close()
             print >>sys.stderr, "Current system automatically frozen after branching"
@@ -573,7 +574,10 @@ class MTWrapper(object):
             
             if not self.score(inputfile, referencefile,'output.txt'): 
                 sys.exit(1)
-                
+        elif cmd == 'conf':
+            if self.parseconf(sys.argv[2:]):
+                print >>sys.stderr,"Writing new configuration..."
+                self.writesettings()
         elif cmd == 'help' or cmd == '-h':
             self.usage()
         else:
@@ -702,7 +706,22 @@ class MTWrapper(object):
             except:
                 pass
         return True        
-        
+
+    def parseconf(self, conf):        
+        changed = False
+        for i in range(0,len(conf) - 1):
+            key = conf[i]
+            value = conf[i+1]
+            try:
+                getattr(self, key)
+                setattr(self,key,value)
+                changed = True
+                print >>sys.stderr,"Set variable " + key + " to \"" + value +"\""
+            except AttributeError:
+                print >>sys.stderr,"ERROR: No such variable exists: " + key
+                sys.exit(2)
+        return changed
+                                        
         
     #---------------------------------- Methods for building sub-parts ----------------------------
     
@@ -1114,7 +1133,7 @@ class MTWrapper(object):
         return True
 
    
-    def branch(self,expname):
+    def branch(self,expname, conf=None):
         parentdir = self.WORKDIR
         if parentdir[-1] == '/':
             parentdir = parentdir[:-1]
@@ -1129,6 +1148,8 @@ class MTWrapper(object):
             print>>sys.stderr, yellow("WARNING: work directory " +  workdir + " already exists! Press ENTER to continue or ctrl-C to abort")
             raw_input()
 
+        if conf:
+            self.parseconf(conf)
 
         self.writesettings(expname, workdir) 
         
