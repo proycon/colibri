@@ -645,7 +645,7 @@ class MTWrapper(object):
                     else:                    
                         self.log("Starting training batch " + batch + " " + self.timestamp(),white,True)
                         self.log(" Log will be in " + batchdir + '/train.log')
-                        rtrain = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py train', shell=True)                    
+                        rtrain = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py train')                    
                         if rtrain == 0: 
                             self.log("Training batch " + batch + " finished succesfully " + self.timestamp(),green,True)
                         else:
@@ -653,14 +653,13 @@ class MTWrapper(object):
                                                                                         
                         self.log("Starting testing batch " + batch + " " + self.timestamp(),white,True)
                         self.log(" Log will be in " + batchdir + '/test.log')
-                        rtest = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py test', shell=True)
+                        rtest = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py test')
                         if rtest == 0: 
                             self.log("Testing batch " + batch + " finished succesfully " + self.timestamp(),green,True)
                             open(batchdir + '/.batchdone','w').close()
                         else:
                             self.log("Testing batch " + batch + " finished with error code " + str(rtest) + " " + self.timestamp(),red,True)
                             
-
             
         elif cmd == 'help' or cmd == '-h':
             self.usage()
