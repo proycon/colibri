@@ -14,7 +14,7 @@ import codecs
 import glob
 import datetime
 from pynlpl.evaluation import filesampler
-
+ 
 def bold(s):
    CSI="\x1B["
    return CSI+"1m" + s + CSI + "0m"
@@ -136,10 +136,10 @@ class MTWrapper(object):
             ('COLIBRI_PATTERNFINDER_OPTIONS','-t 10 -s -B -E', 'Options for the pattern finder, see patternfinder -h'),
             ('COLIBRI_ALIGNER_OPTIONS','-J -p 0.1','Options for the colibri aligner, see aligner -h'),  
     ]
-
+ 
     def initlog(self, logfile):
         self.logfile = open(self.WORKDIR + '/' + logfile + '.log','w') 
-    
+     
     def log(self, msg, color=None, dobold = True):
         if self.logfile:
             self.logfile.write(msg+"\n")
@@ -475,7 +475,7 @@ class MTWrapper(object):
         print >>sys.stderr,"\t\t-o <outputfile>                  Output file (default: stdout)"        
         print >>sys.stderr,"\ttest <inputfile> <referencefile>   Run and evaluate the MT system on the specified input file and reference file (one sentence per line). If <inputfile> and <referencefile> are not given, the default test files from the system configuration are used."                               
         print >>sys.stderr,"\tscore <inputfile> <referencefile>  Like test, but work on a pre-run system, does  not run the translation again."                   
-        print >>sys.stderr,"\tclean [all|giza|moses|colibri|score]    Clean generated files"
+        print >>sys.stderr,"\tclean [all|giza|moses|colibri|score|batch]    Clean generated files"
         print >>sys.stderr,"\tbranch <expname> [VARIABLE value]       Create a new branch based on this project (files are symlinked instead of copied)"
         print >>sys.stderr,"\tconf VARIABLE value [VARIABLE2 value2]  Change configuration"
         print >>sys.stderr,"\tstartbatch [batchname] [batchname2]     Start batch (if none are specified, all specified batches will be started sequentially)"
@@ -635,22 +635,27 @@ class MTWrapper(object):
                     self.branch(batch, conf, False, True, False)
 
                     batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch 
-                    
-                    self.log("Starting training batch " + batch + " " + self.timestamp(),white,True)
-                    self.log(" Log will be in " + batchdir + '/train.log')
-                    r = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py train', shell=True)                    
-                    if r == 0: 
-                        self.log("Training batch " + batch + " finished succesfully " + self.timestamp(),green,True)
-                    else:
-                        self.log("Training batch " + batch + " finished with error code " + str(r) + " " + self.timestamp(),red,True)
+                    if os.path.exists(batchdir + '/.batchdone'):
+                        self.log("Batch " + batch + " already completed.. skipping",white,True)
+                    else:                    
+                        self.log("Starting training batch " + batch + " " + self.timestamp(),white,True)
+                        self.log(" Log will be in " + batchdir + '/train.log')
+                        rtrain = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py train', shell=True)                    
+                        if rtrain == 0: 
+                            self.log("Training batch " + batch + " finished succesfully " + self.timestamp(),green,True)
+                        else:
+                            self.log("Training batch " + batch + " finished with error code " + str(rtrain) + " " + self.timestamp(),red,True)
+                                                                                        
+                        self.log("Starting testing batch " + batch + " " + self.timestamp(),white,True)
+                        self.log(" Log will be in " + batchdir + '/test.log')
+                        rtest = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py test', shell=True)
+                        if rtest == 0: 
+                            self.log("Testing batch " + batch + " finished succesfully " + self.timestamp(),green,True)
+                            open(batchdir + '/.batchdone','w').close()
+                        else:
+                            self.log("Testing batch " + batch + " finished with error code " + str(rtest) + " " + self.timestamp(),red,True)
                             
-                    self.log("Starting testing batch " + batch + " " + self.timestamp(),white,True)
-                    self.log(" Log will be in " + batchdir + '/test.log')
-                    r = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py test', shell=True)
-                    if r == 0: 
-                        self.log("Testing batch " + batch + " finished succesfully " + self.timestamp(),green,True)
-                    else:
-                        self.log("Testing batch " + batch + " finished with error code " + str(r) + " " + self.timestamp(),red,True)                            
+
             
         elif cmd == 'help' or cmd == '-h':
             self.usage()
@@ -678,6 +683,25 @@ class MTWrapper(object):
             self.cleanfiles('output.txt','*.score')
         if 'score' in targets or 'all' in targets:
             self.cleanfiles('*.score')
+        if 'batches' in targets:
+            if not self.batches:
+                self.log("No batch jobs in configuration...",red)
+                sys.exit(2)
+                            
+            if sys.argv[3:]:
+                selectedbatches = sys.argv[2:]
+                for batch in selectedbatches:
+                    if not batch in [ key for (key,conf) in self.batches ]:
+                        self.log( "No such batch: " + batch,red,True)
+            
+
+            for batch, conf in self.batches:
+                if not selectedbatches or batch in selectedbatches:
+                    self.log("Removing batch " + batch,white,True)                     
+                    batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch 
+                    if os.path.isdir(batchdir):
+                        shutil.rmtree(batchdir)
+                        
         return True
             
     def cleanfiles(self, *args):
