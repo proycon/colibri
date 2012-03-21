@@ -483,6 +483,7 @@ class MTWrapper(object):
         print >>sys.stderr,"\tstartbatch [batchname] [batchname2]     Start batch (if none are specified, all specified batches will be started sequentially)"
 
     def start(self):        
+        os.chdir(self.WORKDIR)
         try:
             cmd = sys.argv[1]
         except:
@@ -962,7 +963,7 @@ class MTWrapper(object):
     def build_moses(self):
         outputfiles = ['moses.ini']
         if not self.header('Build Moses Configuration',*outputfiles): return True
-        f = open('moses.ini','w')
+        f = open(self.WORKDIR + '/moses.ini','w')
         f.write('#Moses INI, produced by mtwrapper.py\n')
         f.write('[input-factors]\n')
         f.write('0\n\n')
@@ -989,7 +990,7 @@ class MTWrapper(object):
         return self.footer('Build Moses Configuration', 0, *outputfiles)
     
     def build_moses_mert(self):            
-        if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' moses.ini', 'Parameter tuning for Moses using MERT'): return False         
+        if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/moses.ini', 'Parameter tuning for Moses using MERT'): return False         
         return True
     
     def build_pbmbmt(self):
@@ -1040,7 +1041,7 @@ class MTWrapper(object):
 
     
     def run_moses(self):
-        if not self.runcmd(self.EXEC_MOSES + ' -f moses.ini < input.txt > output.txt','Moses Decoder'): return False
+        if not self.runcmd(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini < input.txt > output.txt','Moses Decoder'): return False
         return True 
     
     def run_pbmbmt(self):
