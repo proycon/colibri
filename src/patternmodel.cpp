@@ -1728,7 +1728,7 @@ void GraphPatternModel::findincomingnodes(const EncAnyGram * focus, const EncAny
 	unordered_set<const EncAnyGram*> * relations = &relationhash[anygram];
 	for (unordered_set<const EncAnyGram*>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
 		const EncAnyGram * anygram2  = model->getkey(*iter);
-		if (focus == anygram2) {
+		if (anygram == anygram2) {
 			relatednodes.insert(anygram);
 		}	
 	}
