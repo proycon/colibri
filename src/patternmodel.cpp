@@ -1741,13 +1741,24 @@ void GraphPatternModel::findincomingnodes(const EncAnyGram * focus, unordered_se
 			findincomingnodes(focus, anygram, relatednodes, rel_predecessors);
 		}
 	}
+	for (unordered_map<const EncSkipGram,SkipGramData>::const_iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {
+		const EncAnyGram * anygram = (const EncAnyGram *) &iter->first;
+		if (anygram != focus) {
+			findincomingnodes(focus, anygram, relatednodes, rel_subsumption_parents);
+			findincomingnodes(focus, anygram, relatednodes, rel_subsumption_children);
+			findincomingnodes(focus, anygram, relatednodes, rel_skipcontent);
+			findincomingnodes(focus, anygram, relatednodes, rel_skipusage);
+			findincomingnodes(focus, anygram, relatednodes, rel_successors);
+			findincomingnodes(focus, anygram, relatednodes, rel_predecessors);
+		}
+	}	
 }
 
 void GraphPatternModel::findincomingnodes(const EncAnyGram * focus, const EncAnyGram * anygram, unordered_set<const EncAnyGram *> & relatednodes, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> >  & relationhash ) {
 	unordered_set<const EncAnyGram*> * relations = &relationhash[anygram];
 	for (unordered_set<const EncAnyGram*>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
 		const EncAnyGram * anygram2  = model->getkey(*iter);
-		if (anygram == anygram2) {
+		if (focus == anygram2) {
 			relatednodes.insert(anygram);
 		}	
 	}
