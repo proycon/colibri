@@ -1672,14 +1672,33 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *NGRAMSOUT, 
 
 }
 
+void replaceAll(std::string& str, const std::string& from, const std::string& to) {
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length();
+    }
+}
+
+
+
+
 void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT) {
 	*OUT << "digraph G {\n";
 	//first pass, output nodes
 	for (unordered_map<const EncNGram,NGramData>::const_iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
-		*OUT << "c" << iter->first.hash() << " [label=\"" << iter->first.decode(classdecoder) << "\\n" << iter->second.refs.size() << "\",shape=box];" << endl;				 
+		string label = iter->first.decode(classdecoder);
+		replaceAll(label,"\"","\\\"");
+		*OUT << "c" << iter->first.hash() << " [label=\"" << label << "\\n" << iter->second.refs.size();
+		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " << data_xcount[(const EncAnyGram *) &iter->first];			
+		*OUT << "\",shape=box];" << endl;				 
 	}
 	for (unordered_map<const EncSkipGram,SkipGramData>::const_iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {
-		*OUT << "c" << iter->first.hash() << " [label=\"" << iter->first.decode(classdecoder) << "\\n" << iter->second.count() << "\",shape=circle];" << endl;				 
+		string label = iter->first.decode(classdecoder);
+		replaceAll(label,"\"","\\\"");
+		*OUT << "c" << iter->first.hash() << " [label=\"" << label << "\\n" << iter->second.count();
+		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " << data_xcount[(const EncAnyGram *) &iter->first]; 
+		*OUT << "\",shape=circle];" << endl;				 
 	}
 	
 		
@@ -1758,20 +1777,32 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	
 	*OUT << "digraph G {\n";
 
+	string focuslabel = focus->decode(classdecoder);
+	replaceAll(focuslabel,"\"","\\\"");
+
+	*OUT << "c" << focus->hash() << " [label=\"" << focuslabel << "\\n" << model->count(focus);
+	if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " << data_xcount[focus];
 	if (focus->isskipgram()) {
-		*OUT << "c" << focus->hash() << " [label=\"" << focus->decode(classdecoder) << "\\n" << model->count(focus) << "\",shape=circle,color=yellow,style=filled];" << endl;
+		*OUT <<  "\",shape=circle,color=yellow,style=filled];" << endl;
 	} else {
-		*OUT << "c" << focus->hash() << " [label=\"" << focus->decode(classdecoder) << "\\n" << model->count(focus) << "\",shape=box,color=yellow,style=filled];" << endl;
+		*OUT << "\",shape=box,color=yellow,style=filled];" << endl;
 	}
 	
 	for (unordered_set<const EncAnyGram*>::iterator iter = relatednodes.begin(); iter != relatednodes.end(); iter++) {
 		const EncAnyGram * anygram = *iter;
+		
 		if (anygram != focus) {
+			string label = anygram->decode(classdecoder);
+			replaceAll(label,"\"","\\\"");
+			*OUT << "c" << anygram->hash() << " [label=\"" << label << "\\n" << model->count(anygram);
+			*OUT << " " << (int) ( (double) model->count(anygram) / model->count(focus) ) << "%";
+			if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " << data_xcount[anygram];	
 			if (anygram->isskipgram()) {
-				*OUT << "c" << anygram->hash() << " [label=\"" << anygram->decode(classdecoder) << "\\n" << model->count(anygram) << "\",shape=circle];" << endl;
+				*OUT << "\",shape=circle];" << endl;
 			} else {
-				*OUT << "c" << anygram->hash() << " [label=\"" << anygram->decode(classdecoder) << "\\n" << model->count(anygram) << "\",shape=box];" << endl;
+				*OUT << "\",shape=box];" << endl;	
 			}
+		
 		}
 	}
 
