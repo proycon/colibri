@@ -1781,7 +1781,7 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	replaceAll(focuslabel,"\"","\\\"");
 
 	*OUT << "c" << focus->hash() << " [label=\"" << focuslabel << "\\n" << model->count(focus);
-	if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " << data_xcount[focus];
+	if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " <<  setprecision(1)  << (double) data_xcount[focus] / model->count(focus);
 	if (focus->isskipgram()) {
 		*OUT <<  "\",shape=circle,color=yellow,style=filled];" << endl;
 	} else {
