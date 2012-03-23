@@ -1772,8 +1772,11 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	relatednodes.insert( rel_skipcontent[focus].begin(), rel_skipcontent[focus].end() );
 	relatednodes.insert( rel_skipusage[focus].begin(), rel_skipusage[focus].end() );
 	
+	cerr << "  Found " << relatednodes.size() << " nodes (direct relations)" << endl;
 	
 	findincomingnodes(focus,relatednodes);	 			
+	
+	cerr << "  Found " << relatednodes.size() << " nodes (considering incoming edges)" << endl;
 	
 	*OUT << "digraph G {\n";
 
