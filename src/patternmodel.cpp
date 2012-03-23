@@ -1690,14 +1690,14 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT) {
 		string label = iter->first.decode(classdecoder);
 		replaceAll(label,"\"","\\\"");
 		*OUT << "c" << iter->first.hash() << " [label=\"" << label << "\\n" << iter->second.refs.size();
-		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " << data_xcount[(const EncAnyGram *) &iter->first];			
+		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << setprecision(1)  << " " << (double) data_xcount[(const EncAnyGram *) &iter->first] / iter->second.refs.size();				
 		*OUT << "\",shape=box];" << endl;				 
 	}
 	for (unordered_map<const EncSkipGram,SkipGramData>::const_iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {
 		string label = iter->first.decode(classdecoder);
 		replaceAll(label,"\"","\\\"");
 		*OUT << "c" << iter->first.hash() << " [label=\"" << label << "\\n" << iter->second.count();
-		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " << data_xcount[(const EncAnyGram *) &iter->first]; 
+		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << setprecision(1)  << " " << (double) data_xcount[(const EncAnyGram *) &iter->first] / iter->second.count();
 		*OUT << "\",shape=circle];" << endl;				 
 	}
 	
