@@ -1795,7 +1795,7 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 			string label = anygram->decode(classdecoder);
 			replaceAll(label,"\"","\\\"");
 			*OUT << "c" << anygram->hash() << " [label=\"" << label << "\\n" << model->count(anygram);
-			*OUT << " " << (int) ( (double) model->count(anygram) / model->count(focus) ) << "%";
+			*OUT << " " << setprecision(3)  << (double) model->count(anygram) / model->count(focus) << "%";
 			if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " << data_xcount[anygram];	
 			if (anygram->isskipgram()) {
 				*OUT << "\",shape=circle];" << endl;
