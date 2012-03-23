@@ -1797,10 +1797,10 @@ void GraphPatternModel::outputrelations( const EncAnyGram * anygram, ostream *OU
 void GraphPatternModel::outputrelations( const unordered_set<const EncAnyGram *> & nodes, ostream *OUT, unordered_map<const EncAnyGram *, unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour) {	
 	for (unordered_set<const EncAnyGram*>::const_iterator iter = nodes.begin(); iter != nodes.end(); iter++) {
 		const EncAnyGram * anygram = model->getkey(*iter);
-		if (relationhash.count(anygram) > 0) {
+		if (relationhash.count(anygram) > 0) { 
 			unordered_set<const EncAnyGram*> * relations = &relationhash[anygram];
-			for (unordered_set<const EncAnyGram*>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
-				const EncAnyGram * anygram2  = model->getkey(*iter);
+			for (unordered_set<const EncAnyGram*>::iterator iter2 = relations->begin(); iter2 != relations->end(); iter2++) {
+				const EncAnyGram * anygram2  = model->getkey(*iter2);
 				if (nodes.count(anygram2) > 0) {
 					*OUT << "c" << anygram->hash() << " -> " << "c" << anygram2->hash() << " [ color=" << colour << " ];" << endl;
 				} 
