@@ -25,6 +25,7 @@ void usage() {
     cerr << "\t-r               Keep only transitive reduction (sizes down the model)" << endl;
     cerr << "\t-d filename.graphpatternmodel.colibri		Graph pattern model to load (for decoding an existing model, use with -c)" << endl;
     cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced (use with -d)" << endl;
+	cerr << "\t-g               Output relations for queried word" << endl;    
     cerr << "\t-G               Output graphviz graph for visualisation" << endl;
     cerr << "\t-q word          Query word (use with -G to output a selected graph)" << endl;
 }
@@ -43,6 +44,7 @@ int main( int argc, char *argv[] ) {
     bool DOPREDECESSORS = false;
     bool DOSKIPCONTENT = false;
     bool DOSKIPUSAGE = false;
+    bool DOOUTPUTRELATIONS = false;
     bool TRANSITIVEREDUCTION = false;
     
     bool DOTEMPLATES = false; //yet to be used
@@ -51,7 +53,7 @@ int main( int argc, char *argv[] ) {
     bool DOGRAPHVIZ = false; 
     
     char c;    
-    while ((c = getopt(argc, argv, "d:c:f:ho:PCXrGq:LRSs")) != -1)
+    while ((c = getopt(argc, argv, "d:c:f:ho:PCXrGq:LRSsg")) != -1)
         switch (c)
         {
         case 'c':
@@ -89,6 +91,9 @@ int main( int argc, char *argv[] ) {
             break;
         case 'G':
         	DOGRAPHVIZ = true;
+        	break;
+        case 'g':
+        	DOOUTPUTRELATIONS = true;
         	break;
         case 'r': 
         	TRANSITIVEREDUCTION = true;
@@ -194,6 +199,19 @@ int main( int argc, char *argv[] ) {
             	} else {            	
             		graphmodel.outputgraph(classdecoder, (ostream*) &cout );
             	}
+            } else if (DOOUTPUTRELATIONS) {
+            	if (!querystring.empty()) {
+            		cerr << "Loading class encoder " << classfile << endl;
+            		ClassEncoder encoder = ClassEncoder(classfile);
+            		
+            		cerr << "Outputting graph for \"" << querystring << "\"" << endl;
+            		unsigned char buffer[65536];
+            		char buffersize = encoder.encodestring(querystring, buffer);
+            		EncNGram ngram = EncNGram(buffer,buffersize-1); //-1 to strip last \0 byte
+            		graphmodel.outputrelations(classdecoder,(ostream*) &cout, (EncAnyGram*) &ngram);
+            	} else {            	
+            		cerr << "Specify a query string with -q" << endl;
+            	}             
             } else {
             	graphmodel.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
             }

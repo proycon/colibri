@@ -1705,24 +1705,24 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT) {
 	//second pass, output edges
 	for (unordered_map<const EncNGram,NGramData>::const_iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
 		const EncAnyGram * anygram = &iter->first;
-		if (DOPARENTS) outputrelations(anygram, OUT, rel_subsumption_parents, "black");
-		if (DOCHILDREN) outputrelations(anygram, OUT, rel_subsumption_children, "grey");
-		if (DOPREDECESSORS) outputrelations(anygram, OUT, rel_predecessors, "yellow");
-		if (DOSUCCESSORS) outputrelations(anygram, OUT, rel_successors, "green");
-		if (DOSKIPCONTENT) outputrelations(anygram, OUT, rel_skipcontent, "cyan");
-		if (DOSKIPUSAGE) outputrelations(anygram, OUT, rel_skipusage, "purple");
+		if (DOPARENTS) outputgraphvizrelations(anygram, OUT, rel_subsumption_parents, "black");
+		if (DOCHILDREN) outputgraphvizrelations(anygram, OUT, rel_subsumption_children, "grey");
+		if (DOPREDECESSORS) outputgraphvizrelations(anygram, OUT, rel_predecessors, "yellow");
+		if (DOSUCCESSORS) outputgraphvizrelations(anygram, OUT, rel_successors, "green");
+		if (DOSKIPCONTENT) outputgraphvizrelations(anygram, OUT, rel_skipcontent, "cyan");
+		if (DOSKIPUSAGE) outputgraphvizrelations(anygram, OUT, rel_skipusage, "purple");
 	}
 	
 
 	for (unordered_map<const EncSkipGram,SkipGramData>::const_iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {
 		const EncAnyGram * anygram = &iter->first;
 		//cerr << "DEBUG: IN1" << endl;
-		if (DOPARENTS) outputrelations(anygram, OUT, rel_subsumption_parents, "black");
-		if (DOCHILDREN) outputrelations(anygram, OUT, rel_subsumption_children, "grey");
-		if (DOPREDECESSORS) outputrelations(anygram, OUT, rel_predecessors, "yellow");
-		if (DOSUCCESSORS) outputrelations(anygram, OUT, rel_successors, "green");
-		if (DOSKIPCONTENT) outputrelations(anygram, OUT, rel_skipcontent, "cyan");
-		if (DOSKIPUSAGE) outputrelations(anygram, OUT, rel_skipusage, "purple");		
+		if (DOPARENTS) outputgraphvizrelations(anygram, OUT, rel_subsumption_parents, "black");
+		if (DOCHILDREN) outputgraphvizrelations(anygram, OUT, rel_subsumption_children, "grey");
+		if (DOPREDECESSORS) outputgraphvizrelations(anygram, OUT, rel_predecessors, "yellow");
+		if (DOSUCCESSORS) outputgraphvizrelations(anygram, OUT, rel_successors, "green");
+		if (DOSKIPCONTENT) outputgraphvizrelations(anygram, OUT, rel_skipcontent, "cyan");
+		if (DOSKIPUSAGE) outputgraphvizrelations(anygram, OUT, rel_skipusage, "purple");		
 	}	
 
 	
@@ -1765,6 +1765,35 @@ void GraphPatternModel::findincomingnodes(const EncAnyGram * focus, const EncAny
 }
 
 
+void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OUT, const EncAnyGram * focusinput) {
+	const EncAnyGram * focus = model->getkey(focusinput);
+	if (focus == NULL) {
+		cerr << "Query word not found" << endl;
+		return;
+	} 
+	cerr << "Parent relations - " << rel_subsumption_parents[focus].size();
+	outputrelations(classdecoder,OUT,  rel_subsumption_parents[focus]);
+	cerr << "Child relations - " << rel_subsumption_children[focus].size();
+	outputrelations(classdecoder,OUT,  rel_subsumption_children[focus]);
+	cerr << "Predecessor relations - " << rel_predecessors[focus].size();
+	outputrelations(classdecoder,OUT,  rel_predecessors[focus]);
+	cerr << "Successor relations - " << rel_successors[focus].size();
+	outputrelations(classdecoder,OUT,  rel_successors[focus]);
+	cerr << "Skipcontent - " << rel_skipcontent[focus].size();
+	outputrelations(classdecoder,OUT,  rel_skipcontent[focus]);
+	cerr << "Skipusage - " << rel_skipusage[focus].size();
+	outputrelations(classdecoder,OUT,  rel_skipusage[focus]);
+	
+}
+
+void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OUT, unordered_set<const EncAnyGram*>   & relations ) {
+	for (std::unordered_set<const EncAnyGram*>::iterator iter = relations.begin(); iter != relations.end(); iter++) {
+		const EncAnyGram * anygram = *iter;
+		*OUT << "\t" << anygram->decode(classdecoder) << "\t" << model->count(anygram);
+		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[anygram];
+		*OUT << endl;		
+	}
+}
 
 void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, const EncAnyGram * focusinput) {
 	const EncAnyGram * focus = model->getkey(focusinput);
@@ -1820,18 +1849,18 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 		}
 	}
 
-	if (DOPARENTS) outputrelations(relatednodes, OUT, rel_subsumption_parents, "black");
-	if (DOCHILDREN) outputrelations(relatednodes, OUT, rel_subsumption_children, "grey");
-	if (DOPREDECESSORS) outputrelations(relatednodes, OUT, rel_predecessors, "yellow");
-	if (DOSUCCESSORS) outputrelations(relatednodes, OUT, rel_successors, "green");
-	if (DOSKIPCONTENT) outputrelations(relatednodes, OUT, rel_skipcontent, "cyan");
-	if (DOSKIPUSAGE) outputrelations(relatednodes, OUT, rel_skipusage, "purple");
+	if (DOPARENTS) outputgraphvizrelations(relatednodes, OUT, rel_subsumption_parents, "black");
+	if (DOCHILDREN) outputgraphvizrelations(relatednodes, OUT, rel_subsumption_children, "grey");
+	if (DOPREDECESSORS) outputgraphvizrelations(relatednodes, OUT, rel_predecessors, "yellow");
+	if (DOSUCCESSORS) outputgraphvizrelations(relatednodes, OUT, rel_successors, "green");
+	if (DOSKIPCONTENT) outputgraphvizrelations(relatednodes, OUT, rel_skipcontent, "cyan");
+	if (DOSKIPUSAGE) outputgraphvizrelations(relatednodes, OUT, rel_skipusage, "purple");
 	*OUT << "}\n";
 }
 
 
 
-void GraphPatternModel::outputrelations( const EncAnyGram * anygram, ostream *OUT, unordered_map<const EncAnyGram *, unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour) {
+void GraphPatternModel::outputgraphvizrelations( const EncAnyGram * anygram, ostream *OUT, unordered_map<const EncAnyGram *, unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour) {
 		unordered_set<const EncAnyGram*> * relations = &relationhash[anygram];
 	    for (unordered_set<const EncAnyGram*>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
 	    	const EncAnyGram * anygram2  = model->getkey(*iter);
@@ -1839,7 +1868,7 @@ void GraphPatternModel::outputrelations( const EncAnyGram * anygram, ostream *OU
 	    }				
 }
 
-void GraphPatternModel::outputrelations( const unordered_set<const EncAnyGram *> & nodes, ostream *OUT, unordered_map<const EncAnyGram *, unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour) {	
+void GraphPatternModel::outputgraphvizrelations( const unordered_set<const EncAnyGram *> & nodes, ostream *OUT, unordered_map<const EncAnyGram *, unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour) {	
 	for (unordered_set<const EncAnyGram*>::const_iterator iter = nodes.begin(); iter != nodes.end(); iter++) {
 		const EncAnyGram * anygram = model->getkey(*iter);
 		if (relationhash.count(anygram) > 0) { 
