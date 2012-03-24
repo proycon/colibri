@@ -1771,17 +1771,17 @@ void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OU
 		cerr << "Query word not found" << endl;
 		return;
 	} 
-	cerr << "Parent relations - " << rel_subsumption_parents[focus].size();
+	cerr << "Parent relations - " << rel_subsumption_parents[focus].size() << endl;
 	outputrelations(classdecoder,OUT,  rel_subsumption_parents[focus]);
-	cerr << "Child relations - " << rel_subsumption_children[focus].size();
+	cerr << "Child relations - " << rel_subsumption_children[focus].size() << endl;
 	outputrelations(classdecoder,OUT,  rel_subsumption_children[focus]);
-	cerr << "Predecessor relations - " << rel_predecessors[focus].size();
+	cerr << "Predecessor relations - " << rel_predecessors[focus].size() << endl;
 	outputrelations(classdecoder,OUT,  rel_predecessors[focus]);
-	cerr << "Successor relations - " << rel_successors[focus].size();
+	cerr << "Successor relations - " << rel_successors[focus].size() << endl;
 	outputrelations(classdecoder,OUT,  rel_successors[focus]);
-	cerr << "Skipcontent - " << rel_skipcontent[focus].size();
+	cerr << "Skipcontent - " << rel_skipcontent[focus].size() << endl;
 	outputrelations(classdecoder,OUT,  rel_skipcontent[focus]);
-	cerr << "Skipusage - " << rel_skipusage[focus].size();
+	cerr << "Skipusage - " << rel_skipusage[focus].size() << endl;
 	outputrelations(classdecoder,OUT,  rel_skipusage[focus]);
 	
 }
