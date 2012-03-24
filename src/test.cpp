@@ -25,7 +25,7 @@ int main( int argc, char *argv[] ) {
     ngram.subngrams(subngrams);
     for (vector<EncNGram*>::iterator iter2 = subngrams.begin(); iter2 != subngrams.end(); iter2++) {                
         const EncAnyGram * subngram = *iter2;
-    	subngram->decode(classdecoder);
+    	cout << "'" << subngram->decode(classdecoder) << "'" << endl;
     }
     
     
