@@ -136,8 +136,8 @@ int EncNGram::subngrams(vector<EncNGram*> & container) const {
     int count = 0;
     const int N = n();
     for (int begin = 0; begin < N; begin++) {
-        for (int length = 1; length < N-begin; length++)
-            if (length <= N) {
+        for (int length = 1; length < N-begin+1; length++)
+            if (length < N) {
                 count++; 
                 container.push_back( slice(begin,length) );
             }
