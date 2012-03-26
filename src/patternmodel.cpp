@@ -1828,7 +1828,7 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	replaceAll(focuslabel,"\"","\\\"");
 
 	*OUT << "c" << focus->hash() << " [label=\"" << focuslabel << "\\n" << model->count(focus);
-	if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " <<  setprecision(1)  << (double) data_xcount[focus] / model->count(focus);
+	if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " <<  setprecision(2)  << (double) data_xcount[focus] / model->count(focus);
 	if (focus->isskipgram()) {
 		*OUT <<  "\",shape=circle,color=yellow,style=filled];" << endl;
 	} else {
@@ -1842,7 +1842,7 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 			string label = anygram->decode(classdecoder);
 			replaceAll(label,"\"","\\\"");
 			*OUT << "c" << anygram->hash() << " [label=\"" << label << "\\n" << model->count(anygram);
-			*OUT << " " << setprecision(1)  << (double) model->count(anygram) / model->count(focus) << "%";
+			*OUT << " " << setprecision(2)  << (double) model->count(anygram) / model->count(focus) << "%";
 			if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " << (double) data_xcount[anygram] / model->count(anygram);	
 			if (anygram->isskipgram()) {
 				*OUT << "\",shape=circle];" << endl;
