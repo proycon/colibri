@@ -185,7 +185,7 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
           	  }
           	  begin = i+1;
           	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
-          	    unsigned int cls;
+          	    unsigned int cls = 0;
           	    if (word == "{*1*}") { //not very elegant, but gets the job done for now
           	    	skipconf[(*skipcount)++] = 1; 
           	    } else if (word == "{*2*}") {
@@ -216,24 +216,25 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
           	  		cls = classes[word];
           	  	}
           	  	
-	      	  	int length = 0;
-	      	  	unsigned char * byterep;
+	      	  	
 		      	if (cls > 0) {
-	  	        	byterep = inttobytes(cls, length);
+		      		int length = 0;
+	  	        	unsigned char * byterep = inttobytes(cls, length);
+   	   	        	if (length == 0) {
+	  	        		cerr << "INTERNAL ERROR: Error whilst encoding '" << word << "' (class " << cls << "), length==0, not possible!" << endl;
+	  	        		exit(13);
+	  	        	}  	        		
+	  	        	//cerr << "writing " << word << " as " << cls << " in " << length << " bytes" << endl;
+	  	        	for (int j = 0; j < length; j++) {
+	  	        		outputbuffer[outputcursor++] = byterep[j];
+	  	        	}  	        	
+	  	        	//OUT.write((const char *) byterep, length);
+	  	        	delete byterep;
+
 				} else {
-					byterep = new unsigned char(0);
-					length = 1;
+					//skip
+					outputbuffer[outputcursor++] = 0;
 				}
-   	        	if (length == 0) {
-  	        		cerr << "INTERNAL ERROR: Error whilst encoding '" << word << "' (class " << cls << "), length==0, not possible!" << endl;
-  	        		exit(13);
-  	        	}  	        		
-  	        	//cerr << "writing " << word << " as " << cls << " in " << length << " bytes" << endl;
-  	        	for (int j = 0; j < length; j++) {
-  	        		outputbuffer[outputcursor++] = byterep[j];
-  	        	}  	        	
-  	        	//OUT.write((const char *) byterep, length);
-  	        	delete byterep;
   	        	outputbuffer[outputcursor++] = 0; //write separator
   	        	//OUT.write(&zero, sizeof(char)); //write separator 
           	  }			 
