@@ -1333,6 +1333,11 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
         skipgram->parts(parts);
         for (vector<EncNGram*>::iterator iter2 = parts.begin(); iter2 != parts.end(); iter2++) {
             const EncNGram * ngram = *iter2;
+            const EncAnyGram * partgram = model->getkey(*iter2);
+            if (partgram != NULL) {
+                    if (DOCHILDREN) rel_subsumption_children[skipgram].insert(partgram);
+                    if ((DOPARENTS) || (DOXCOUNT)) rel_subsumption_parents[partgram].insert(skipgram);
+            }
             vector<EncNGram*> subngrams;
             ngram->subngrams(subngrams);
             for (vector<EncNGram*>::iterator iter3 = subngrams.begin(); iter3 != subngrams.end(); iter3++) {
@@ -1350,7 +1355,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
         
         if ((DOSKIPCONTENT) || (DOSKIPUSAGE) || (DOINSTANCES) || (DOTEMPLATES)) {
 		    for (unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++) {
-		    	const EncSkipGram * skipgram_skipcontent = &(iter->first);
+		    	const EncSkipGram * skipgram_skipcontent = &(iter2->first);
 		    	parts.clear();
 		    	skipgram_skipcontent->parts(parts);
 				for (vector<EncNGram*>::iterator iter3 = parts.begin(); iter3 != parts.end(); iter3++) {
