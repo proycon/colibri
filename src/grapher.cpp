@@ -192,10 +192,11 @@ int main( int argc, char *argv[] ) {
             		ClassEncoder encoder = ClassEncoder(classfile);
             		
             		cerr << "Outputting graph for \"" << querystring << "\"" << endl;
-            		unsigned char buffer[65536];
-            		char buffersize = encoder.encodestring(querystring, buffer);
-            		EncNGram ngram = EncNGram(buffer,buffersize-1); //-1 to strip last \0 byte
-            		graphmodel.outputgraph(classdecoder,(ostream*) &cout, (EncAnyGram*) &ngram);
+            		const EncAnyGram * anygram = encoder.input2anygram(querystring);
+            		//unsigned char buffer[65536];
+            		//char buffersize = encoder.encodestring(querystring, buffer);
+            		//EncNGram ngram = EncNGram(buffer,buffersize-1); //-1 to strip last \0 byte
+            		graphmodel.outputgraph(classdecoder,(ostream*) &cout, anygram); // (EncAnyGram*) &ngram);
             	} else {            	
             		graphmodel.outputgraph(classdecoder, (ostream*) &cout );
             	}
@@ -205,10 +206,8 @@ int main( int argc, char *argv[] ) {
             		ClassEncoder encoder = ClassEncoder(classfile);
             		
             		cerr << "Outputting graph for \"" << querystring << "\"" << endl;
-            		unsigned char buffer[65536];
-            		char buffersize = encoder.encodestring(querystring, buffer);
-            		EncNGram ngram = EncNGram(buffer,buffersize-1); //-1 to strip last \0 byte
-            		graphmodel.outputrelations(classdecoder,(ostream*) &cout, (EncAnyGram*) &ngram);
+            		const EncAnyGram * anygram = encoder.input2anygram(querystring);
+            		graphmodel.outputrelations(classdecoder,(ostream*) &cout, anygram); //(EncAnyGram*) &ngram);
             	} else {            	
             		cerr << "Specify a query string with -q" << endl;
             	}             
