@@ -230,10 +230,6 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
 	  	        	}  	        	
 	  	        	//OUT.write((const char *) byterep, length);
 	  	        	delete byterep;
-
-				} else {
-					//skip
-					outputbuffer[outputcursor++] = 0;
 				}
   	        	outputbuffer[outputcursor++] = 0; //write separator
   	        	//OUT.write(&zero, sizeof(char)); //write separator 
