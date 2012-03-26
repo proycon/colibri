@@ -1,3 +1,6 @@
+#ifndef CLASSDECODER_H
+#define CLASSDECODER_H
+
 #include <unordered_map>
 #include <string>
 #include <vector>
@@ -28,3 +31,4 @@ unsigned int bytestoint(const unsigned char* a, const int l);
 int readline(std::istream* IN, unsigned char* buffer, const int);
 
 const int countwords(const unsigned char* data, const int l);
+#endif

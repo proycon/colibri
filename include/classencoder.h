@@ -1,7 +1,11 @@
+#ifndef CLASSENCODER_H
+#define CLASSENCODER_H
+
 #include <unordered_map>
 #include <string>
 #include <vector>
 #include <fstream>
+#include <ngram.h>
 
 class ClassEncoder {
     private:
@@ -15,7 +19,13 @@ class ClassEncoder {
     
     std::vector<unsigned int> encodeseq(const std::vector<std::string> & seq); //not really used yet
     int encodestring(const std::string & line, unsigned char * outputbuffer, int unknownclass=0);
+    int encodestring(const std::string & line, unsigned char * outputbuffer, unsigned char * skipconf, char * skipcount, int unknownclass=0);
     void encodefile(const std::string &, const std::string &);
+    EncSkipGram input2skipgram(const std::string &);
+    EncNGram input2ngram(const std::string &);
+    EncAnyGram * input2anygram(const std::string &);
+    
+    
     void save(const std::string & filename);
     
     int size() const {
@@ -32,4 +42,4 @@ unsigned char * inttobytes(unsigned int, int & length);
 int readline(std::istream* IN, unsigned char* buffer, const int);
 
 const int countwords(const unsigned char* data, const int l);
-
+#endif

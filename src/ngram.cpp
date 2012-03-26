@@ -198,7 +198,7 @@ bool EncAnyGram::out() const {
                 //cout << " CLASS " << cls << " (length " << l << ") DECODES TO " << classdecoder[cls] << endl;
                 cout << cls << ' ';
             }
-            begin = i + 1;            
+            begin = i + 1;           
             l = 0;
         }
     }

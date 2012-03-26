@@ -1,3 +1,6 @@
+#ifndef NGRAM_H
+#define NGRAM_H
+
 #include <string>
 #include <iostream>
 #include <ostream>
@@ -176,3 +179,4 @@ namespace std {
     };    
 
 }
+#endif

@@ -1,3 +1,6 @@
+#ifndef PATTERNMODEL_H
+#define PATTERNMODEL_H
+
 #include <ngram.h>
 #include "classencoder.h"
 #include <cmath>
@@ -511,3 +514,4 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
     virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};
 };
+#endif

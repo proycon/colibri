@@ -171,6 +171,104 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
       return outputcursor;
 }
 
+int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer, unsigned char * skipconf, char * skipcount, int unknownclass) {
+	  int outputcursor = 0;
+	  *skipcount = 0;
+      int begin = 0;      
+      for (int i = 0; i < line.length(); i++) {
+      	  if ((line[i] == ' ') || (i == line.length() - 1)) {
+          	  string word;
+          	  if (line[i] == ' ') {
+          	  	word  = string(line.begin() + begin, line.begin() + i);
+          	  } else {
+			   	word  = string(line.begin() + begin, line.begin() + i + 1);
+          	  }
+          	  begin = i+1;
+          	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
+          	    unsigned int cls;
+          	    if (word == "{*1*}") { //not very elegant, but gets the job done for now
+          	    	skipconf[(*skipcount)++] = 1; 
+          	    } else if (word == "{*2*}") {
+          	    	skipconf[(*skipcount)++] = 2;
+          	    } else if (word == "{*3*}") {
+          	    	skipconf[(*skipcount)++] = 3;
+          	    } else if (word == "{*4*}") {
+          	    	skipconf[(*skipcount)++] = 4;
+          	    } else if (word == "{*5*}") {
+          	    	skipconf[(*skipcount)++] = 5;
+          	    } else if (word == "{*6*}") {
+          	    	skipconf[(*skipcount)++] = 6;
+          	    } else if (word == "{*7*}") {
+          	    	skipconf[(*skipcount)++] = 7;
+          	    } else if (word == "{*8*}") {
+          	    	skipconf[(*skipcount)++] = 8;
+          	    } else if (word == "{*9*}") {
+          	    	skipconf[(*skipcount)++] = 9;
+          	    } else if (classes.count(word) == 0) {
+          	    	if (unknownclass == 0) { 	
+  	        			cerr << "ERROR: Unknown word '" << word << "', does not occur in model" << endl;
+  	        			return 0;         
+	  	        	} else {
+	  	        		cerr << "WARNING: Unknown word '" << word << "', does not occur in model. Replacing with placeholder" << endl;
+	  	        		cls = unknownclass;	
+	  	        	}    	
+          	    } else {
+          	  		cls = classes[word];
+          	  	}
+          	  	
+	      	  	int length = 0;
+	      	  	unsigned char * byterep;
+		      	if (cls > 0) {
+	  	        	byterep = inttobytes(cls, length);
+				} else {
+					byterep = new unsigned char(0);
+					length = 1;
+				}
+   	        	if (length == 0) {
+  	        		cerr << "INTERNAL ERROR: Error whilst encoding '" << word << "' (class " << cls << "), length==0, not possible!" << endl;
+  	        		exit(13);
+  	        	}  	        		
+  	        	//cerr << "writing " << word << " as " << cls << " in " << length << " bytes" << endl;
+  	        	for (int j = 0; j < length; j++) {
+  	        		outputbuffer[outputcursor++] = byterep[j];
+  	        	}  	        	
+  	        	//OUT.write((const char *) byterep, length);
+  	        	delete byterep;
+  	        	outputbuffer[outputcursor++] = 0; //write separator
+  	        	//OUT.write(&zero, sizeof(char)); //write separator 
+          	  }			 
+          }
+      }
+      return outputcursor;
+}
+
+EncSkipGram ClassEncoder::input2skipgram(const std::string & querystring) {
+	unsigned char buffer[65536];
+	unsigned char skipref[4];
+	char skipcount = 0;
+	char buffersize = encodestring(querystring, buffer, skipref, &skipcount);
+	EncSkipGram skipgram = EncSkipGram(buffer,buffersize-1,skipref,skipcount); //-1 to strip last \0 byte
+	return skipgram;
+}
+
+EncNGram ClassEncoder::input2ngram(const std::string & querystring) {
+	unsigned char buffer[65536];
+	char buffersize = encodestring(querystring, buffer);
+	EncNGram ngram = EncNGram(buffer,buffersize-1); //-1 to strip last \0 byte
+	return ngram;
+}
+
+EncAnyGram * ClassEncoder::input2anygram(const std::string & querystring) {
+	unsigned char buffer[65536];
+	unsigned char skipref[4];
+	char skipcount = 0;
+	char buffersize = encodestring(querystring, buffer, skipref, &skipcount);
+	if (skipcount == 0) {
+		return new EncNGram(buffer,buffersize-1); //-1 to strip last \0 byte;
+	} else {
+		return new EncSkipGram(buffer,buffersize-1,skipref,skipcount); //-1 to strip last \0 byte;
+	}
+}
 
 void ClassEncoder::encodefile(const std::string & inputfilename, const std::string & outputfilename) {
 	const char zero = 0;
