@@ -493,7 +493,7 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
             prevnull = false;
         }        
     }
-    if (begin < _size - 1) {        
+    if (begin < _size ) {        
         container.push_back( new EncNGram(data + begin,_size-begin) );        
     }
     return container.size();
