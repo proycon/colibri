@@ -522,12 +522,12 @@ EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::ve
 	for (int i = 0; i < size(); i++) {
 		if ((data[i] == 0) && (lastbyte == 0)) {
 			for (int j = 0; j < contentparts[contentpartcursor]->size(); j++) {
-					buffer[buffercursor++] += contentparts[contentpartcursor]->data[j];
+					buffer[buffercursor++] = contentparts[contentpartcursor]->data[j];
 			}
 			contentpartcursor++;			
 		}
-		lastbyte == data[i];
-		buffer[buffercursor++] += data[i];
+		lastbyte = data[i];
+		buffer[buffercursor++] = data[i];
 	}
 	return EncNGram(buffer, buffercursor);
 }
