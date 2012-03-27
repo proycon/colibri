@@ -1366,15 +1366,18 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
 					if (instance != NULL) {
 						if (DOINSTANCES) rel_instances[skipgram].insert(instance);
 						if (DOTEMPLATES) rel_templates[instance].insert(skipgram);
-					}				
+					}
+					cerr << "DEBUG: A" << endl;				
 				}
 		    	
 		    	if (DOSKIPCONTENT || DOSKIPUSAGE) {
+		    		cerr << "DEBUG: B" << endl;
 		    		const EncAnyGram * inverseskipgram = model->getkey(skipgram_skipcontent);
 					if (inverseskipgram != NULL) {
 						if (DOSKIPCONTENT) rel_skipcontent[skipgram].insert(inverseskipgram);
 						if (DOSKIPUSAGE) rel_skipusage[inverseskipgram].insert(skipgram);
-					}		    						
+					}		    				
+					cerr << "DEBUG: C" << endl;		
 					for (vector<EncNGram*>::iterator iter3 = contentparts.begin(); iter3 != contentparts.end(); iter3++) {
 						//subgram exists, add relation:
 						const EncAnyGram * subngram = model->getkey(*iter3);
@@ -1385,6 +1388,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
 						}
 						delete *iter3;
 					}
+					cerr << "DEBUG: D" << endl;
 				}          
 		    }
 		    
