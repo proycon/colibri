@@ -519,10 +519,14 @@ EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::ve
 	int contentpartcursor = 0;
 	int buffercursor = 0;
 	unsigned char lastbyte = 0;
+	if (skipcount != contentparts.size()) {
+		cerr << "FATAL ERROR: content parts should be equal to skipcount! " <<  contentparts.size() << " content parts, " << skipcount << " skipcount" << endl;
+		exit(13);
+	}
 	for (int i = 0; i < size(); i++) {
 		if ((data[i] == 0) && (lastbyte == 0)) {
 			if (contentpartcursor >= contentparts.size()) {
-				cerr << "FATAL ERROR: not enough content parts for instantiation! " <<  contentparts.size() << endl;
+				cerr << "FATAL ERROR: not enough content parts for instantiation! " <<  contentparts.size() << " content parts, " << p.size() << " parts" << endl;
 				exit(13);
 			} 
 			const EncNGram * ngram = contentparts[contentpartcursor];
@@ -532,11 +536,11 @@ EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::ve
 			contentpartcursor++;			
 		}
 		lastbyte = data[i];
+		buffer[buffercursor++] = data[i];
 		if (buffercursor > 2046) {
 			cerr << "FATAL ERROR: exceeding buffer lengtht in skipgram::instantiate: " << buffercursor << endl;
 			exit(13);
-		}
-		buffer[buffercursor++] = data[i];
+		}		
 	}
 	EncNGram x = EncNGram(buffer, buffercursor); 
 	return x;
