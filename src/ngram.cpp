@@ -520,7 +520,7 @@ EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::ve
 	int buffercursor = 0;
 	unsigned char lastbyte = 0;
 	if (skipcount != contentparts.size()) {
-		cerr << "FATAL ERROR: content parts should be equal to skipcount! " <<  contentparts.size() << " content parts, " << skipcount << " skipcount" << endl;
+		cerr << "FATAL ERROR: content parts should be equal to skipcount! " <<  contentparts.size() << " content parts, " << (int) skipcount << " skipcount" << endl;
 		exit(13);
 	}
 	for (int i = 0; i < size(); i++) {
