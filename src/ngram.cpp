@@ -523,6 +523,10 @@ EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::ve
 		if ((data[i] == 0) && (lastbyte == 0)) {
 			if (contentpartcursor >= contentparts.size()) {
 				cerr << "FATAL ERROR: not enough content parts for instantiation! " <<  contentparts.size() << " content parts, i=" << i << endl;
+				cerr << "DEBUG: skipgram out:" << endl;
+				out();
+				cerr << "DEBUG: skipcontent out:" << endl;
+				skipcontent->out();
 				exit(13);
 			} 
 			const EncNGram * ngram = contentparts[contentpartcursor];
