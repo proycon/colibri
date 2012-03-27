@@ -485,7 +485,7 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
         //cerr << (int) data[i] << ':' << prevnull << ':' << skipcount << endl;
         if (data[i] == 0) {
             if (prevnull) {                            
-                if (i > begin-1) container.push_back( new EncNGram(data + begin,i-begin - 1) );
+                if (i-begin - 1 > 0) container.push_back( new EncNGram(data + begin,i-begin - 1) );
                 begin = i+1;                
             }
             prevnull = true;
@@ -493,7 +493,7 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
             prevnull = false;
         }        
     }
-    if (begin < _size ) {        
+    if (_size - begin > 0) {        
         container.push_back( new EncNGram(data + begin,_size-begin) );        
     }
     return container.size();
