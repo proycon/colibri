@@ -1404,7 +1404,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
         }        
         if (!DOPARENTS) rel_subsumption_parents.clear();
     }
- 
+ 	cerr << "DEBUG: DONE" << endl;
 }
 
 
