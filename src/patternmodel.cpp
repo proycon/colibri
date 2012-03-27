@@ -1725,14 +1725,14 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT) {
 		string label = iter->first.decode(classdecoder);
 		replaceAll(label,"\"","\\\"");
 		*OUT << "c" << iter->first.hash() << " [label=\"" << label << "\\n" << iter->second.refs.size();
-		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << setprecision(1) << fixed  << " " << (double) data_xcount[(const EncAnyGram *) &iter->first] / iter->second.refs.size();				
+		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << setprecision(3) << fixed  << " " << (double) data_xcount[(const EncAnyGram *) &iter->first] / (double) iter->second.refs.size();				
 		*OUT << "\",shape=box];" << endl;				 
 	}
 	for (unordered_map<const EncSkipGram,SkipGramData>::const_iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {
 		string label = iter->first.decode(classdecoder);
 		replaceAll(label,"\"","\\\"");
 		*OUT << "c" << iter->first.hash() << " [label=\"" << label << "\\n" << iter->second.count();
-		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << setprecision(2) << fixed  << " " << (double) data_xcount[(const EncAnyGram *) &iter->first] / iter->second.count();
+		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << setprecision(3) << fixed  << " " << (double) data_xcount[(const EncAnyGram *) &iter->first] / (double) iter->second.count();
 		*OUT << "\",shape=circle];" << endl;				 
 	}
 	
@@ -1871,7 +1871,7 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	replaceAll(focuslabel,"\"","\\\"");
 
 	*OUT << "c" << focus->hash() << " [label=\"" << focuslabel << "\\n" << model->count(focus);
-	if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " <<  setprecision(2) << fixed << (double) data_xcount[focus] / model->count(focus);
+	if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " <<  setprecision(3) << fixed << (double) data_xcount[focus] / (double) model->count(focus);
 	if (focus->isskipgram()) {
 		*OUT <<  "\",shape=circle,color=yellow,style=filled];" << endl;
 	} else {
@@ -1885,8 +1885,8 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 			string label = anygram->decode(classdecoder);
 			replaceAll(label,"\"","\\\"");
 			*OUT << "c" << anygram->hash() << " [label=\"" << label << "\\n" << model->count(anygram);
-			*OUT << " " << setprecision(1) << fixed << (double) model->count(anygram) / model->count(focus) << "%";
-			if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " << (double) data_xcount[anygram] / model->count(anygram);	
+			*OUT << " " << setprecision(2) << fixed << (double) model->count(anygram) / model->count(focus) << "%";
+			if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " "<<  setprecision(3) << fixed  << (double) data_xcount[anygram] / (double) model->count(anygram);	
 			if (anygram->isskipgram()) {
 				*OUT << "\",shape=circle];" << endl;
 			} else {
