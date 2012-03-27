@@ -1290,9 +1290,11 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
     
     cerr << "Computing relations on n-grams" << endl;
     for(std::unordered_map<EncNGram,NGramData >::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
+    	cerr << "DEBUG: n1" << endl;        
         const EncNGram * ngram = &(iter->first);
         vector<EncNGram*> subngrams;
         ngram->subngrams(subngrams);
+        cerr << "DEBUG: n2" << endl;
         for (vector<EncNGram*>::iterator iter2 = subngrams.begin(); iter2 != subngrams.end(); iter2++) {                
             const EncAnyGram * subngram = model->getkey(*iter2);
             if (subngram != NULL) {
@@ -1305,6 +1307,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
             //TODO: memory leak? clean subngram
             delete *iter2;
         }   
+        cerr << "DEBUG: n3" << endl;
         if (DOSUCCESSORS || DOPREDECESSORS) {
 			vector<pair<EncNGram*,EncNGram*> > splitngrams;
 		    ngram->splits(splitngrams);
@@ -1322,12 +1325,15 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
 		    	delete iter2->second;
 		    }
         }
+        cerr << "DEBUG: n4" << endl;
     }
     
     
 
     cerr << "Computing relations on skip-grams" << endl;
-    for(std::unordered_map<EncSkipGram,SkipGramData >::iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {        
+    
+    for(std::unordered_map<EncSkipGram,SkipGramData >::iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {
+    	cerr << "DEBUG: s1" << endl;        
         const EncSkipGram * skipgram = &(iter->first);
         vector<EncNGram*> parts;
         skipgram->parts(parts);
@@ -1353,31 +1359,28 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
             delete ngram;
         }          
         
+		cerr << "DEBUG: s2" << endl;
         if ((DOSKIPCONTENT) || (DOSKIPUSAGE) || (DOINSTANCES) || (DOTEMPLATES)) {
 		    for (unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++) {
 		    	const EncSkipGram * skipgram_skipcontent = &(iter2->first);
 		    	vector<EncNGram*> contentparts;
 		    	skipgram_skipcontent->parts(contentparts);
 		    	if ((DOINSTANCES || DOTEMPLATES) && (contentparts.size() > 0)) {
-		    		cerr << "DEBUG: begin instantiate" << endl;		
-					const EncNGram instancengram = skipgram->instantiate(skipgram_skipcontent, parts, contentparts);
-					cerr << "DEBUG: END instantiate" << endl;
+		    				
+					const EncNGram instancengram = skipgram->instantiate(skipgram_skipcontent, parts, contentparts);					
 					const EncAnyGram * instance = model->getkey(&instancengram);
 					if (instance != NULL) {
 						if (DOINSTANCES) rel_instances[skipgram].insert(instance);
 						if (DOTEMPLATES) rel_templates[instance].insert(skipgram);
-					}
-					cerr << "DEBUG: A" << endl;				
+					}				
 				}
 		    	
 		    	if (DOSKIPCONTENT || DOSKIPUSAGE) {
-		    		cerr << "DEBUG: B" << endl;
 		    		const EncAnyGram * inverseskipgram = model->getkey(skipgram_skipcontent);
 					if (inverseskipgram != NULL) {
 						if (DOSKIPCONTENT) rel_skipcontent[skipgram].insert(inverseskipgram);
 						if (DOSKIPUSAGE) rel_skipusage[inverseskipgram].insert(skipgram);
 					}		    				
-					cerr << "DEBUG: C" << endl;		
 					for (vector<EncNGram*>::iterator iter3 = contentparts.begin(); iter3 != contentparts.end(); iter3++) {
 						//subgram exists, add relation:
 						const EncAnyGram * subngram = model->getkey(*iter3);
@@ -1388,11 +1391,11 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
 						}
 						delete *iter3;
 					}
-					cerr << "DEBUG: D" << endl;
 				}          
 		    }
 		    
 		}
+		cerr << "DEBUG: s3" <<endl;
         
     }
 
@@ -1404,7 +1407,6 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
         }        
         if (!DOPARENTS) rel_subsumption_parents.clear();
     }
- 	cerr << "DEBUG: DONE" << endl;
 }
 
 
