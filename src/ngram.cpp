@@ -510,7 +510,7 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
 
 int instantiate(const EncSkipGram * skipcontent,std::vector<EncSkipGram*> & container, const std::vector<EncNGram*> & p, const std::vector<EncNGram*> & contentparts) const {*/
 
-EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::vector<EncNGram*> & p, const std::vector<EncNGram*> & contentparts) const {
+EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::vector<EncNGram*> & contentparts) const {
 	unsigned char buffer[2048]; 
 	int contentpartcursor = 0;
 	int buffercursor = 0;
@@ -522,7 +522,7 @@ EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::ve
 	for (int i = 0; i < size(); i++) {
 		if ((data[i] == 0) && (lastbyte == 0)) {
 			if (contentpartcursor >= contentparts.size()) {
-				cerr << "FATAL ERROR: not enough content parts for instantiation! " <<  contentparts.size() << " content parts, " << p.size() << " parts" << endl;
+				cerr << "FATAL ERROR: not enough content parts for instantiation! " <<  contentparts.size() << " content parts, i=" << i << endl;
 				exit(13);
 			} 
 			const EncNGram * ngram = contentparts[contentpartcursor];

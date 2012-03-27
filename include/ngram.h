@@ -129,7 +129,7 @@ class EncSkipGram: public EncAnyGram {
       //int instantiate(const EncSkipGram * skipcontent, std::vector<EncSkipGram*> & container) const;
       //int instantiate(const EncSkipGram * skipcontent, std::vector<EncSkipGram*> & container, const std::vector<EncNGram*> & parts, const std::vector<EncNGram*> & contentparts) const; //returns all instances (as skipgrams cause instances may be skipgrams) 
 	  
-	  EncNGram instantiate(const EncSkipGram * skipcontent, const std::vector<EncNGram*> & p, const std::vector<EncNGram*> & contentparts) const;      
+	  EncNGram instantiate(const EncSkipGram * skipcontent, const std::vector<EncNGram*> & contentparts) const;      
       void writeasbinary(std::ostream * out) const; //write binary output
       
 };

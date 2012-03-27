@@ -101,7 +101,7 @@ int main( int argc, char *argv[] ) {
     }    
     cerr << "----------------------------------------------------" << endl;
     cerr << "Re-instantiating skipgram with skipcontent" << endl;
-    EncNGram rengram = skipgram.instantiate(&skipgraminv2, parts, parts2);
+    EncNGram rengram = skipgram.instantiate(&skipgraminv2, parts2);
     
     cerr << "Ngram: " << rengram.decode(classdecoder) << endl;
 	cerr << "N: " << (int) rengram.n() << endl;
