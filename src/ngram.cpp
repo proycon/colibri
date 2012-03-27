@@ -510,38 +510,47 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
 
 int instantiate(const EncSkipGram * skipcontent,std::vector<EncSkipGram*> & container, const std::vector<EncNGram*> & p, const std::vector<EncNGram*> & contentparts) const {*/
 
+EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent) const {
+	vector<EncNGram*> contentparts;
+	skipcontent->parts(contentparts); 
+	return instantiate(skipcontent,contentparts);
+}
+
 EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::vector<EncNGram*> & contentparts) const {
+
 	unsigned char buffer[2048]; 
-	int contentpartcursor = 0;
+    int l = 0;
+    int skipnum = 0;
 	int buffercursor = 0;
 	unsigned char lastbyte = 0;
 	if (skipcount != contentparts.size()) {
 		cerr << "FATAL ERROR: content parts should be equal to skipcount! " <<  contentparts.size() << " content parts, " << (int) skipcount << " skipcount" << endl;
 		exit(13);
 	}
-	for (int i = 0; i < size(); i++) {
-		if ((data[i] == 0) && (lastbyte == 0)) {
-			if (contentpartcursor >= contentparts.size()) {
-				cerr << "FATAL ERROR: not enough content parts for instantiation! " <<  contentparts.size() << " content parts, i=" << i << endl;
-				cerr << "DEBUG: skipgram out:" << endl;
-				out();
-				cerr << "DEBUG: skipcontent out:" << endl;
-				skipcontent->out();
-				exit(13);
-			} 
-			const EncNGram * ngram = contentparts[contentpartcursor];
-			for (int j = 0; j < ngram->size(); j++) {
-					buffer[buffercursor++] = ngram->data[j];
-			}
-			contentpartcursor++;			
-		}
-		lastbyte = data[i];
-		buffer[buffercursor++] = data[i];
-		if (buffercursor > 2046) {
-			cerr << "FATAL ERROR: exceeding buffer lengtht in skipgram::instantiate: " << buffercursor << endl;
-			exit(13);
-		}		
-	}
+    for (int i = 0; i < _size; i++) {
+        l++;
+        if ((data[i] == 0) && (l > 0)) {            
+            if ((i > 0) && (data[i-1] == 0)) {
+		        if (skipnum >= contentparts.size()) {
+					cerr << "FATAL ERROR: not enough content parts for instantiation! " <<  contentparts.size() << " content parts, i=" << i << endl;
+					cerr << "DEBUG: skipgram out:" << endl;
+					out();
+					cerr << "DEBUG: skipcontent out:" << endl;
+					skipcontent->out();
+					exit(13);
+				} 
+				const EncNGram * ngram = contentparts[skipnum];
+				for (int j = 0; j < ngram->size(); j++) {
+						buffer[buffercursor++] = ngram->data[j];
+				}
+				skipnum++;
+            }            
+            //begin = i + 1;            
+            l = 0;
+       }
+       buffer[buffercursor++] = data[i];        
+    }
+
 	EncNGram x = EncNGram(buffer, buffercursor); 
 	return x;
 }
