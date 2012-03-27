@@ -1358,7 +1358,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
 		    	const EncSkipGram * skipgram_skipcontent = &(iter2->first);
 		    	vector<EncNGram*> contentparts;
 		    	skipgram_skipcontent->parts(contentparts);
-		    	if (DOINSTANCES || DOTEMPLATES) {		
+		    	if ((DOINSTANCES || DOTEMPLATES) && (contentparts.size() > 0)) {		
 					const EncNGram instancengram = skipgram->instantiate(skipgram_skipcontent, parts, contentparts);
 					const EncAnyGram * instance = model->getkey(&instancengram);
 					if (instance != NULL) {
