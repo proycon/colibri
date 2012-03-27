@@ -519,6 +519,7 @@ EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::ve
 	int contentpartcursor = 0;
 	int buffercursor = 0;
 	unsigned char lastbyte = 0;
+	cerr << "DEBUG: instantiate begin" << endl;
 	for (int i = 0; i < size(); i++) {
 		if ((data[i] == 0) && (lastbyte == 0)) {
 			const EncNGram * ngram = contentparts[contentpartcursor];
@@ -530,7 +531,10 @@ EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::ve
 		lastbyte = data[i];
 		buffer[buffercursor++] = data[i];
 	}
-	return EncNGram(buffer, buffercursor);
+	cerr << "DEBUG: instantiate making ngram" << endl;
+	EncNGram x = EncNGram(buffer, buffercursor); 
+	cerr << "DEBUG: instantiate returning" << endl;
+	return x;
 }
 
 	
