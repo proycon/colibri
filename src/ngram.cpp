@@ -503,7 +503,34 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
     return count;
 }
 
+/*int instantiate(const EncSkipGram * skipcontent,std::vector<EncSkipGram*> & container) const {
+	skipcontent->parts(contentparts); //parts
+	parts(p); //parts
+	int r = instantiate(skipcontent,container,p, contentparts);
+	for (vector<EncNGram*>::iterator iter = p.begin(); iter != p.end(); iter++) delete *iter;
+	for (vector<EncNGram*>::iterator iter = contentparts.begin(); iter != contentparts.end(); iter++) delete *iter;
+	return r;
+}
 
+int instantiate(const EncSkipGram * skipcontent,std::vector<EncSkipGram*> & container, const std::vector<EncNGram*> & p, const std::vector<EncNGram*> & contentparts) const {*/
+
+EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::vector<EncNGram*> & p, const std::vector<EncNGram*> & contentparts) const {
+	unsigned char buffer[2048]; 
+	int contentpartcursor = 0;
+	int buffercursor = 0;
+	unsigned char lastbyte = 0;
+	for (int i = 0; i < size(); i++) {
+		if ((data[i] == 0) && (lastbyte == 0)) {
+			for (int j = 0; j < contentparts[contentpartcursor]->size(); j++) {
+					buffer[buffercursor++] += contentparts[contentpartcursor]->data[j];
+			}
+			contentpartcursor++;			
+		}
+		lastbyte == data[i];
+		buffer[buffercursor++] += data[i];
+	}
+	return EncNGram(buffer, buffercursor);
+}
 
 	
 

@@ -19,7 +19,10 @@ void usage() {
     cerr << "\t-S               Compute/load subsumption skipgram to skipcontent relations" << endl;
     cerr << "\t-s               Compute/load subsumption skip-content to skipgram relations (reverse of -S)" << endl;
     cerr << "\t-L               Compute/load subsumption predecessor relations (constructions to the left)" << endl;
-    cerr << "\t-R               Compute/load subsumption sucessor relations (constructions to the right)" << endl;      
+    cerr << "\t-R               Compute/load subsumption sucessor relations (constructions to the right)" << endl;
+    cerr << "\t-T               Compute/load subsumption template relations" << endl;
+    cerr << "\t-I               Compute/load subsumption instance relations (reverse of -T)" << endl;
+    cerr << "\t-a               Compute/load subsumption all relations" << endl;      
     cerr << "\t-X               Compute/load exclusive count" << endl;
     cerr << "\t------------------------------------------------------------------------------" << endl;
     cerr << "\t-r               Keep only transitive reduction (sizes down the model)" << endl;
@@ -47,15 +50,26 @@ int main( int argc, char *argv[] ) {
     bool DOOUTPUTRELATIONS = false;
     bool TRANSITIVEREDUCTION = false;
     
-    bool DOTEMPLATES = false; //yet to be used
-    bool DOINSTANCES = false; //yet to be used
+    bool DOTEMPLATES = false; 
+    bool DOINSTANCES = false;
     
     bool DOGRAPHVIZ = false; 
     
     char c;    
-    while ((c = getopt(argc, argv, "d:c:f:ho:PCXrGq:LRSsg")) != -1)
+    while ((c = getopt(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgIT")) != -1)
         switch (c)
         {
+        case 'a':
+        	DOTEMPLATES = true;
+        	DOINSTANCES = true;
+        	DOPARENTS = true;
+        	DOCHILDREN = true;
+        	DOXCOUNT = true;
+        	DOSUCCESSORS = true;
+        	DOPREDECESSORS = true;
+        	DOSKIPCONTENT = true;
+        	DOSKIPUSAGE = true;
+        	break;
         case 'c':
             classfile = optarg;
             break;
@@ -85,7 +99,13 @@ int main( int argc, char *argv[] ) {
         	break;       
 		case 's':
         	DOSKIPUSAGE = true;
-        	break;               	         	
+        	break;     
+        case 'I':
+        	DOINSTANCES = true;
+        	break;
+        case 'T':
+        	DOTEMPLATES = true;
+        	break;  
         case 'X': 
             DOXCOUNT = true;
             break;

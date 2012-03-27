@@ -1356,17 +1356,33 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
         if ((DOSKIPCONTENT) || (DOSKIPUSAGE) || (DOINSTANCES) || (DOTEMPLATES)) {
 		    for (unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++) {
 		    	const EncSkipGram * skipgram_skipcontent = &(iter2->first);
-		    	parts.clear();
-		    	skipgram_skipcontent->parts(parts);
-				for (vector<EncNGram*>::iterator iter3 = parts.begin(); iter3 != parts.end(); iter3++) {
-				    //subgram exists, add relation:
-				    const EncAnyGram * subngram = model->getkey(*iter3);
-				    if (subngram != NULL) {
-				        if (DOSKIPCONTENT) rel_skipcontent[skipgram].insert(subngram);
-				        if (DOSKIPUSAGE) rel_skipusage[subngram].insert(skipgram);
-				        //TODO: instances + templates
-				    }
-				    delete *iter3;
+		    	vector<EncNGram*> contentparts;
+		    	skipgram_skipcontent->parts(contentparts);
+		    	if (DOINSTANCES || DOTEMPLATES) {		
+					const EncNGram instancengram = skipgram->instantiate(skipgram_skipcontent, parts, contentparts);
+					const EncAnyGram * instance = model->getkey(&instancengram);
+					if (instance != NULL) {
+						if (DOINSTANCES) rel_instances[skipgram].insert(instance);
+						if (DOTEMPLATES) rel_templates[instance].insert(skipgram);
+					}				
+				}
+		    	
+		    	if (DOSKIPCONTENT || DOSKIPUSAGE) {
+		    		const EncAnyGram * inverseskipgram = model->getkey(skipgram_skipcontent);
+					if (inverseskipgram != NULL) {
+						if (DOSKIPCONTENT) rel_skipcontent[skipgram].insert(inverseskipgram);
+						if (DOSKIPUSAGE) rel_skipusage[inverseskipgram].insert(skipgram);
+					}		    						
+					for (vector<EncNGram*>::iterator iter3 = contentparts.begin(); iter3 != contentparts.end(); iter3++) {
+						//subgram exists, add relation:
+						const EncAnyGram * subngram = model->getkey(*iter3);
+						if (subngram != NULL) {
+						    if (DOSKIPCONTENT) rel_skipcontent[skipgram].insert(subngram);
+						    if (DOSKIPUSAGE) rel_skipusage[subngram].insert(skipgram);
+						    //TODO: instances + templates
+						}
+						delete *iter3;
+					}
 				}          
 		    }
 		    
@@ -1394,6 +1410,8 @@ void GraphPatternModel::stats(std::ostream *OUT) {
     if (DOPREDECESSORS) *OUT << " Predecessors found for " << rel_predecessors.size() << " patterns" << endl;
     if (DOSKIPCONTENT)  *OUT << " Content-relations found for " <<  rel_skipcontent.size() << " skipgrams" << endl;
     if (DOSKIPUSAGE)  *OUT << " Skipgram parents found for " <<  rel_skipusage.size() << " n-grams" << endl;
+    if (DOTEMPLATES)  *OUT << " Templates found for " <<  rel_templates.size() << " skipgrams" << endl;
+    if (DOINSTANCES)  *OUT << " Instances found for " <<  rel_instances.size() << " skipgrams" << endl;
     if (DOXCOUNT) *OUT << " Exclusive count: " << data_xcount.size() << endl;
  
 }
@@ -1715,6 +1733,8 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT) {
 		if (DOSUCCESSORS) outputgraphvizrelations(anygram, OUT, rel_successors, "green");
 		if (DOSKIPCONTENT) outputgraphvizrelations(anygram, OUT, rel_skipcontent, "cyan");
 		if (DOSKIPUSAGE) outputgraphvizrelations(anygram, OUT, rel_skipusage, "purple");
+		if (DOTEMPLATES) outputgraphvizrelations(anygram, OUT, rel_skipcontent, "blue");
+		if (DOINSTANCES) outputgraphvizrelations(anygram, OUT, rel_skipusage, "red");		
 	}
 	
 
@@ -1726,7 +1746,9 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT) {
 		if (DOPREDECESSORS) outputgraphvizrelations(anygram, OUT, rel_predecessors, "yellow");
 		if (DOSUCCESSORS) outputgraphvizrelations(anygram, OUT, rel_successors, "green");
 		if (DOSKIPCONTENT) outputgraphvizrelations(anygram, OUT, rel_skipcontent, "cyan");
-		if (DOSKIPUSAGE) outputgraphvizrelations(anygram, OUT, rel_skipusage, "purple");		
+		if (DOSKIPUSAGE) outputgraphvizrelations(anygram, OUT, rel_skipusage, "purple");
+		if (DOTEMPLATES) outputgraphvizrelations(anygram, OUT, rel_skipcontent, "blue");
+		if (DOINSTANCES) outputgraphvizrelations(anygram, OUT, rel_skipusage, "red");				
 	}	
 
 	
@@ -1743,6 +1765,8 @@ void GraphPatternModel::findincomingnodes(const EncAnyGram * focus, unordered_se
 			findincomingnodes(focus, anygram, relatednodes, rel_skipusage);
 			findincomingnodes(focus, anygram, relatednodes, rel_successors);
 			findincomingnodes(focus, anygram, relatednodes, rel_predecessors);
+			findincomingnodes(focus, anygram, relatednodes, rel_templates);
+			findincomingnodes(focus, anygram, relatednodes, rel_instances);
 		}
 	}
 	for (unordered_map<const EncSkipGram,SkipGramData>::const_iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {
@@ -1754,6 +1778,8 @@ void GraphPatternModel::findincomingnodes(const EncAnyGram * focus, unordered_se
 			findincomingnodes(focus, anygram, relatednodes, rel_skipusage);
 			findincomingnodes(focus, anygram, relatednodes, rel_successors);
 			findincomingnodes(focus, anygram, relatednodes, rel_predecessors);
+			findincomingnodes(focus, anygram, relatednodes, rel_templates);
+			findincomingnodes(focus, anygram, relatednodes, rel_instances);
 		}
 	}	
 }
@@ -1787,6 +1813,10 @@ void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OU
 	outputrelations(classdecoder,OUT,  rel_skipcontent[focus]);
 	cerr << "Skipusage - " << rel_skipusage[focus].size() << endl;
 	outputrelations(classdecoder,OUT,  rel_skipusage[focus]);
+	cerr << "Templates - " << rel_templates[focus].size() << endl;
+	outputrelations(classdecoder,OUT,  rel_templates[focus]);
+	cerr << "Instances - " << rel_instances[focus].size() << endl;
+	outputrelations(classdecoder,OUT,  rel_instances[focus]);
 	
 }
 
@@ -1859,6 +1889,8 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	if (DOSUCCESSORS) outputgraphvizrelations(relatednodes, OUT, rel_successors, "green");
 	if (DOSKIPCONTENT) outputgraphvizrelations(relatednodes, OUT, rel_skipcontent, "cyan");
 	if (DOSKIPUSAGE) outputgraphvizrelations(relatednodes, OUT, rel_skipusage, "purple");
+	if (DOTEMPLATES) outputgraphvizrelations(relatednodes, OUT, rel_templates, "blue");
+	if (DOINSTANCES) outputgraphvizrelations(relatednodes, OUT, rel_instances, "red");	
 	*OUT << "}\n";
 }
 
