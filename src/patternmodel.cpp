@@ -1337,6 +1337,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
         const EncSkipGram * skipgram = &(iter->first);
         vector<EncNGram*> parts;
         skipgram->parts(parts);
+        cerr << "DEBUG: s1.5" << endl;        
         for (vector<EncNGram*>::iterator iter2 = parts.begin(); iter2 != parts.end(); iter2++) {
             const EncNGram * ngram = *iter2;
             const EncAnyGram * partgram = model->getkey(*iter2);
@@ -1345,7 +1346,9 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
                     if ((DOPARENTS) || (DOXCOUNT)) rel_subsumption_parents[partgram].insert(skipgram);
             }
             vector<EncNGram*> subngrams;
+            cerr << "DEBUG: s1.6" << endl;
             ngram->subngrams(subngrams);
+            cerr << "DEBUG: s1.7" << endl;
             for (vector<EncNGram*>::iterator iter3 = subngrams.begin(); iter3 != subngrams.end(); iter3++) {
                 //subgram exists, add relation:
                 const EncAnyGram * subngram = model->getkey(*iter3);
