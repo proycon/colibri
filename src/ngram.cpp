@@ -521,8 +521,9 @@ EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::ve
 	unsigned char lastbyte = 0;
 	for (int i = 0; i < size(); i++) {
 		if ((data[i] == 0) && (lastbyte == 0)) {
-			for (int j = 0; j < contentparts[contentpartcursor]->size(); j++) {
-					buffer[buffercursor++] = contentparts[contentpartcursor]->data[j];
+			const EncNGram * ngram = contentparts[contentpartcursor];
+			for (int j = 0; j < ngram->size(); j++) {
+					buffer[buffercursor++] = ngram->data[j];
 			}
 			contentpartcursor++;			
 		}
