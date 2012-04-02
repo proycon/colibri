@@ -690,13 +690,14 @@ class MTWrapper(object):
             else:
                 selectedbatches= None   
                 
-            if not selectedbatches or batch in selectedbatches:
-                batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch 
-                if os.path.exists(batchdir):                
-                    self.log("Starting scoring batch " + batch + " " + self.timestamp(),white,True)
-                    rtrain = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py score')                
-                else:
-                    self.log("Batch " + batch + " has not been trained or tested yet.. skipping",yellow,True)
+            for batch, conf in self.batches:
+                if not selectedbatches or batch in selectedbatches:
+                    batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch 
+                    if os.path.exists(batchdir):                
+                        self.log("Starting scoring batch " + batch + " " + self.timestamp(),white,True)
+                        rtrain = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py score')                
+                    else:
+                        self.log("Batch " + batch + " has not been trained or tested yet.. skipping",yellow,True)
         elif cmd == 'batchtest':                                        
             self.initlog('batchtest')
             if not self.batches:
@@ -715,13 +716,14 @@ class MTWrapper(object):
             else:
                 selectedbatches= None   
                 
-            if not selectedbatches or batch in selectedbatches:
-                batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch 
-                if os.path.exists(batchdir):                
-                    self.log("Starting scoring batch " + batch + " " + self.timestamp(),white,True)
-                    rtrain = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py test')                
-                else:
-                    self.log("Batch " + batch + " has not been trained yet.. skipping",yellow,True)
+            for batch, conf in self.batches:
+                if not selectedbatches or batch in selectedbatches:
+                    batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch 
+                    if os.path.exists(batchdir):                
+                        self.log("Starting scoring batch " + batch + " " + self.timestamp(),white,True)
+                        rtrain = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py test')                
+                    else:
+                        self.log("Batch " + batch + " has not been trained yet.. skipping",yellow,True)
                     
         elif cmd == 'batchreport':
             self.initlog('batchreport')
