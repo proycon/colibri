@@ -662,6 +662,28 @@ class MTWrapper(object):
                             self.log("Testing batch " + batch + " finished with error code " + str(rtest) + " " + self.timestamp(),red,True)
                             
                     self.log("----------------------------------------------------",white)                            
+        elif cmd == 'batchreport':
+            self.initlog('batchreport')
+            if not self.batches:
+                self.log("No batch jobs in configuration...",red)
+                sys.exit(2)
+
+            if not os.path.isfile(self.WORKDIR + '/.frozen'):
+                self.log("Refusing to start batches from a non-frozen system, please explicitly freeze the system first",red)
+                sys.exit(2)
+                
+            if sys.argv[2:]:
+                selectedbatches = sys.argv[2:]
+                for batch in selectedbatches:
+                    if not batch in [ key for (key,conf) in self.batches ]:
+                        self.log( "No such batch: " + batch,red,True)
+            else:
+                selectedbatches= None   
+                
+            self.batchreport(selectedbatches)                
+                
+                    
+                         
             
         elif cmd == 'help' or cmd == '-h':
             self.usage()
@@ -671,6 +693,13 @@ class MTWrapper(object):
             sys.exit(2)
         
         sys.exit(0)
+
+    def batchreport(self, selectedbatches):
+        for batch, conf in self.batches:
+            if not selectedbatches or batch in selectedbatches:
+                batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch           
+                #TODO: finish
+
             
     def clean(self, targets):            
         if not targets:
@@ -1193,19 +1222,17 @@ class MTWrapper(object):
         else:
             self.log("Skipping TER (no script found)",yellow)     
     
-        if not errors:
-            print >>sys.stderr,"SCORE SUMMARY\n===================\n"
-            f = open(self.WORKDIR + '/summary.score','w')
-            s = "BLEU METEOR NIST TER WER PER"
-            f.write(s+ "\n")
-            print >>sys.stderr, s            
-            s = str(round(self.bleu,4)) + " " + str(round(self.meteor,4)) + " " + str(round(self.nist,4))  + " " + str(round(self.ter,2)) + " " + str(round(self.wer,2))  + " " + str(round(self.per,2))
-            f.write(s + "\n")
-            print >>sys.stderr, s
-            f.close()
-                        
-        elif os.path.exists(self.WORKDIR + '/summary.score'):
-            os.unlink(self.WORKDIR + '/summary.score')
+        
+        print >>sys.stderr,"SCORE SUMMARY\n===================\n"
+        f = open(self.WORKDIR + '/summary.score','w')
+        s = "BLEU METEOR NIST TER WER PER"
+        f.write(s+ "\n")
+        print >>sys.stderr, s            
+        s = str(round(self.bleu,4)) + " " + str(round(self.meteor,4)) + " " + str(round(self.nist,4))  + " " + str(round(self.ter,2)) + " " + str(round(self.wer,2))  + " " + str(round(self.per,2))
+        f.write(s + "\n")
+        print >>sys.stderr, s
+        f.close()
+            
                              
         return not errors
     

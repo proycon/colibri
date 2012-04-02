@@ -1472,7 +1472,6 @@ int GraphPatternModel::xcount(const EncAnyGram* anygram) {
             parentrefs = parentdata->get_refs();
             for (set<CorpusReference>::iterator iter2 = parentrefs.begin(); iter2 != parentrefs.end(); iter2++) {
                 CorpusReference r = *iter2; 
-                //const CorpusReference * r = &(*(iter2)); //ugly, I know
                 parentrefs.insert(r);
             }
         }        
