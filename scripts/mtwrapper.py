@@ -703,6 +703,7 @@ class MTWrapper(object):
                 batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch
                 if os.path.isfile(batchdir + '/summary.score'):    
                     f = open(batchdir + '/summary.score','r')
+                    f.readline() #skip table header
                     blue, meteor, nist, ter, wer, per = [ int(x) for x in f.readline().split() ]
                     scores.append( ( blue, meteor, nist, ter, wer, per) )
                     names.append(batch)
