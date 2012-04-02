@@ -488,6 +488,9 @@ class MTWrapper(object):
         print >>sys.stderr,"\tbranch <expname> [VARIABLE value]       Create a new branch based on this project (files are symlinked instead of copied)"
         print >>sys.stderr,"\tconf VARIABLE value [VARIABLE2 value2]  Change configuration"
         print >>sys.stderr,"\tstartbatch [batchname] [batchname2]     Start batch (if none are specified, all specified batches will be started sequentially)"
+        print >>sys.stderr,"\tbatchreport [batchname] [batchname2]    Write a batch report for the specified batched if none are specified, all specified batches will be included)"
+        print >>sys.stderr,"\tbatchtest [batchname] [batchname2]      (Re-)score batches (if none are specified, all specified batches will be tested sequentially)"
+        print >>sys.stderr,"\tbatchscore [batchname] [batchname2]     (Re-)score batches (if none are specified, all specified batches will be scored sequentially)"
 
     def start(self):        
         os.chdir(self.WORKDIR)
@@ -622,7 +625,7 @@ class MTWrapper(object):
             if self.parseconf(sys.argv[2:]):
                 self.log("Writing new configuration...")
                 self.writesettings()
-        elif cmd == 'startbatch':
+        elif cmd == 'startbatch' or cmd == 'batchstart':
             self.initlog('batch')
             if not self.batches:
                 self.log("No batch jobs in configuration...",red)
@@ -668,7 +671,58 @@ class MTWrapper(object):
                         else:
                             self.log("Testing batch " + batch + " finished with error code " + str(rtest) + " " + self.timestamp(),red,True)
                             
-                    self.log("----------------------------------------------------",white)                            
+                    self.log("----------------------------------------------------",white)
+        elif cmd == 'batchscore':                                        
+            self.initlog('batchscore')
+            if not self.batches:
+                self.log("No batch jobs in configuration...",red)
+                sys.exit(2)
+
+            if not os.path.isfile(self.WORKDIR + '/.frozen'):
+                self.log("Refusing to start batches from a non-frozen system, please explicitly freeze the system first",red)
+                sys.exit(2)
+                            
+            if sys.argv[2:]:
+                selectedbatches = sys.argv[2:]
+                for batch in selectedbatches:
+                    if not batch in [ key for (key,conf) in self.batches ]:
+                        self.log( "No such batch: " + batch,red,True)
+            else:
+                selectedbatches= None   
+                
+            if not selectedbatches or batch in selectedbatches:
+                batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch 
+                if os.path.exists(batchdir):                
+                    self.log("Starting scoring batch " + batch + " " + self.timestamp(),white,True)
+                    rtrain = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py score')                
+                else:
+                    self.log("Batch " + batch + " has not been trained or tested yet.. skipping",yellow,True)
+        elif cmd == 'batchtest':                                        
+            self.initlog('batchtest')
+            if not self.batches:
+                self.log("No batch jobs in configuration...",red)
+                sys.exit(2)
+
+            if not os.path.isfile(self.WORKDIR + '/.frozen'):
+                self.log("Refusing to start batches from a non-frozen system, please explicitly freeze the system first",red)
+                sys.exit(2)
+                            
+            if sys.argv[2:]:
+                selectedbatches = sys.argv[2:]
+                for batch in selectedbatches:
+                    if not batch in [ key for (key,conf) in self.batches ]:
+                        self.log( "No such batch: " + batch,red,True)
+            else:
+                selectedbatches= None   
+                
+            if not selectedbatches or batch in selectedbatches:
+                batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch 
+                if os.path.exists(batchdir):                
+                    self.log("Starting scoring batch " + batch + " " + self.timestamp(),white,True)
+                    rtrain = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py test')                
+                else:
+                    self.log("Batch " + batch + " has not been trained yet.. skipping",yellow,True)
+                    
         elif cmd == 'batchreport':
             self.initlog('batchreport')
             if not self.batches:
@@ -718,6 +772,10 @@ class MTWrapper(object):
                     scores.append( ( blue, meteor, nist, ter, wer, per) )
                     names.append(batch)
                     f.close()
+        
+        if not scores:
+            self.log("Error, no scores found! Did you forget to train/test/score the batches first?", red)
+            sys.exit(2)
     
         f = open(self.WORKDIR + '/batchreport.tex','w')
         f.write("\\documentclass[a4paper,10pt]{article}\n\\usepackage{graphicx}\n")        
