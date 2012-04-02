@@ -618,7 +618,7 @@ class MTWrapper(object):
                 self.usage()
                 sys.exit(2)
             
-            if not self.score(inputfile, referencefile,'output.txt'): 
+            if not self.score(inputfile, referencefile,'output.txt'):                 
                 sys.exit(1)
         elif cmd == 'conf':
             self.initlog('conf')
@@ -1018,7 +1018,7 @@ class MTWrapper(object):
             self.log("Finished " + name + " " + self.timestamp(),green,True)
         else:
             self.log("Runtime error from " + name + ' (return code ' + str(r) + ') ' + self.timestamp(),red,True)
-        return False
+            return False
         if outputfiles:
             error = False
             for outputfile in outputfiles:
@@ -1298,7 +1298,7 @@ class MTWrapper(object):
     
     def score(self, sourcefile, reffile, targetfile):
         if not os.path.isfile(targetfile):
-            self.log("Error: Output file " + targetfile + " not found!" ,red)
+            self.log("Error: Output file " + targetfile + " not found! Did you forget to test the system?" ,red)
             return False    
     
         self.header('Converting source to XML for evaluation')
