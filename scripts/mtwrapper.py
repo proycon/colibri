@@ -15,10 +15,12 @@ import glob
 import datetime
 import shutil
 import numpy
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot
 from pynlpl.evaluation import filesampler
 
-matplotlib.use('Agg')
+
  
  
 def bold(s):
