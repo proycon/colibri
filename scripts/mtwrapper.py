@@ -701,6 +701,11 @@ class MTWrapper(object):
         sys.exit(0)
 
     def batchreport(self, selectedbatches):
+        if self.EXPERIMENTNAME:
+            title = self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + self.EXPERIMENTNAME
+        else:
+            title = self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG 
+                    
         scores = []
         names = []
         for batch, conf in self.batches:
@@ -713,6 +718,77 @@ class MTWrapper(object):
                     scores.append( ( blue, meteor, nist, ter, wer, per) )
                     names.append(batch)
                     f.close()
+    
+        f = open(batchdir + '/batchreport.tex','w')
+        f.write("\\documentclass[a4paper,10pt]{article}\n\\usepackage{graphicx}\n")
+        f.write('\\section*{Results for ' + title + '}')
+        f.write("\\begin{document}\n\n")
+        f.write("\\begin{table}\n")
+        f.write("\\begin{tabular}{|l|c|c|c|c|c|c|}\n")
+        f.write("\\hline \n Name & BLEU & METEOR & NIST & TER & WER & PER \\\\ \n \\hline \n")
+        bestbleu = max( [ x[0] for x in scores ] )
+        bestmeteor = max( [ x[1] for x in scores ] )
+        bestnist = max( [ x[2] for x in scores ] )
+        bestter = min( [ x[3] for x in scores ] )
+        bestwer = min( [ x[4] for x in scores ] )
+        bestper = min( [ x[5] for x in scores ] )                
+        for name, ( bleu, meteor, nist, ter, wer, per)  in zip(names,scores):
+               f.write('\\textbf{' + name + '} & ')
+               if bleu == bestbleu:
+                    f.write( '\\textbf{' + '%.3f' % bleu + '} &')
+               else:
+                    f.write( '%.3f' % bleu + ' &')
+               if meteor == bestmeteor:
+                    f.write( '\\textbf{' + '%.3f' % meteor + '} &')
+               else:
+                    f.write( '%.3f' % meteor + ' &')
+               if nist == bestnist:
+                    f.write( '\\textbf{' + '%.3f' % nist + '} &')
+               else:
+                    f.write( '%.3f' % nist + ' &')
+               if ter == bestter:
+                    f.write( '\\textbf{' + '%.2f' % ter + '} &')
+               else:
+                    f.write( '%.3f' % ter + ' &')                    
+               if wer == bestwer:
+                    f.write( '\\textbf{' + '%.2f' % wer + '} &')
+               else:
+                    f.write( '%.3f' % wer + ' &')    
+               if per == bestper:
+                    f.write( '\\textbf{' + '%.2f' % per + '} \\\\ \n')
+               else:
+                    f.write( '%.3f' % per + ' \\\\ \n')                        
+               f.write('\\hline')
+        f.write("\\end{tabular}\n")
+        f.write("\\caption{Evaluation results for batches in " + title + "}\n")
+        f.write("\\end{table}\n")
+        f.write("\\begin{figure}\n")
+        f.write("\\begin{center}\n")
+        f.write("\\includegraphics[width=19cm]{batchreport-bleu.png}\n")
+        f.write("\\caption{BLEU scores for " + title + "}\n")
+        f.write("\\end{center}\n")
+        f.write("\\end{figure}\n")
+        f.write("\\begin{figure}\n")
+        f.write("\\begin{center}\n")
+        f.write("\\includegraphics[width=19cm]{batchreport-meteor.png}\n")
+        f.write("\\caption{METEOR scores for " + title + "}\n")
+        f.write("\\end{center}\n")
+        f.write("\\end{figure}\n")
+        f.write("\\begin{figure}\n")
+        f.write("\\begin{center}\n")
+        f.write("\\includegraphics[width=19cm]{batchreport-nist.png}\n")
+        f.write("\\caption{NIST scores for " + title + "}\n")
+        f.write("\\end{center}\n")
+        f.write("\\end{figure}\n") 
+        f.write("\\begin{figure}\n")
+        f.write("\\begin{center}\n")
+        f.write("\\includegraphics[width=19cm]{batchreport-er.png}\n")
+        f.write("\\caption{TER/WER/PER scores for " + title + "}\n")
+        f.write("\\end{center}\n")
+        f.write("\\end{figure}\n")      
+        f.write("\\end{document}\n")
+        f.close()
+            
     
         def autolabel(rects):
             # attach some text labels
@@ -730,7 +806,7 @@ class MTWrapper(object):
         matplotlib.pyplot.grid(True)
         p_bleu = matplotlib.pyplot.bar(xlocations, [ x[0] for x in scores] ,  width, color='b')        
         matplotlib.pyplot.ylabel('BLEU score')
-        matplotlib.pyplot.title('BLEU scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
+        matplotlib.pyplot.title('BLEU scores for ' + title)
         matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
         fig.autofmt_xdate()
         matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in scores)),0.01))
@@ -742,7 +818,7 @@ class MTWrapper(object):
         matplotlib.pyplot.grid(True)
         p_bleu = matplotlib.pyplot.bar(xlocations, [ x[1] for x in scores] ,  width, color='y')        
         matplotlib.pyplot.ylabel('METEOR score')
-        matplotlib.pyplot.title('METEOR scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
+        matplotlib.pyplot.title('METEOR scores for ' + title )
         matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
         fig.autofmt_xdate()
         matplotlib.pyplot.yticks(numpy.arange(0,max( (x[1] for x in scores)),0.05))
@@ -754,7 +830,7 @@ class MTWrapper(object):
         matplotlib.pyplot.grid(True)
         p_bleu = matplotlib.pyplot.bar(xlocations, [ x[2] for x in scores] ,  width, color='r')        
         matplotlib.pyplot.ylabel('NIST score')
-        matplotlib.pyplot.title('NIST scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
+        matplotlib.pyplot.title('NIST scores for ' + title )
         matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
         fig.autofmt_xdate()
         matplotlib.pyplot.yticks(numpy.arange(0,max( (x[2] for x in scores)),0.1))
@@ -769,7 +845,7 @@ class MTWrapper(object):
         p_wer = matplotlib.pyplot.bar(xlocations, [x[4] for x in scores] ,  width, color='y')
         p_per = matplotlib.pyplot.bar(xlocations, [x[5] for x in scores] ,  width, color='m')        
         matplotlib.pyplot.ylabel('Score')
-        matplotlib.pyplot.title('TER/WER/PER scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
+        matplotlib.pyplot.title('TER/WER/PER scores for ' + title)
         matplotlib.pyplot.xticks(xlocations+width/2., names)#, names , rotation='vertical')
         matplotlib.pyplot.yticks(numpy.arange(0,max( (max(x[3],x[4],x[5]) for x in scores)),5))
         matplotlib.pyplot.legend( (p_ter[0],p_wer[0],p_per[0]), ('TER', 'WER','PER') )
