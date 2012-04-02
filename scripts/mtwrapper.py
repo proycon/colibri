@@ -17,6 +17,9 @@ import shutil
 import numpy
 import matplotlib.pyplot
 from pynlpl.evaluation import filesampler
+
+matplotlib.use('Agg')
+ 
  
 def bold(s):
    CSI="\x1B["
