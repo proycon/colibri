@@ -716,9 +716,9 @@ class MTWrapper(object):
                     
 
         
-        ind = numpy.arange(len(scores))    # the x locations for the groups
+        xlocations = numpy.arange(len(scores)+1)    # the x locations for the groups
         width = 0.35       # the width of the bars: can also be len(x) sequence
-        matplotlib.pyplot.bar(ind, (x[0] for x in scores) ,  width, color='b')        
+        matplotlib.pyplot.bar(xlocations, (x[0] for x in scores) ,  width, color='b')        
         matplotlib.pyplot.ylabel('BLEU score')
         matplotlib.pyplot.title('BLEU scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
         matplotlib.pyplot.xticks(ind+width/2., names )
@@ -728,9 +728,9 @@ class MTWrapper(object):
         matplotlib.pyplot.cfg()
                 
         width = 0.35       # the width of the bars: can also be len(x) sequence
-        p_ter = matplotlib.pyplot.bar(ind, (x[3] for x in scores) ,  width, color='g')
-        p_wer = matplotlib.pyplot.bar(ind, (x[4] for x in scores) ,  width, color='y')
-        p_per = matplotlib.pyplot.bar(ind, (x[5] for x in scores) ,  width, color='m')        
+        p_ter = matplotlib.pyplot.bar(xlocations, (x[3] for x in scores) ,  width, color='g')
+        p_wer = matplotlib.pyplot.bar(xlocations, (x[4] for x in scores) ,  width, color='y')
+        p_per = matplotlib.pyplot.bar(xlocations, (x[5] for x in scores) ,  width, color='m')        
         matplotlib.pyplot.ylabel('Score')
         matplotlib.pyplot.title('TER/WER/PER scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
         matplotlib.pyplot.xticks(ind+width/2., names )
