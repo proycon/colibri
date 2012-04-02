@@ -720,9 +720,9 @@ class MTWrapper(object):
                     f.close()
     
         f = open(self.WORKDIR + '/batchreport.tex','w')
-        f.write("\\documentclass[a4paper,10pt]{article}\n\\usepackage{graphicx}\n")
-        f.write('\\section*{Results for ' + title + '}')
+        f.write("\\documentclass[a4paper,10pt]{article}\n\\usepackage{graphicx}\n")        
         f.write("\\begin{document}\n\n")
+        f.write('\\section*{Results for ' + title + '}\n')
         f.write("\\begin{table}\n")
         f.write("\\begin{tabular}{|l|c|c|c|c|c|c|}\n")
         f.write("\\hline \n Name & BLEU & METEOR & NIST & TER & WER & PER \\\\ \n \\hline \n")
