@@ -719,7 +719,7 @@ class MTWrapper(object):
                     names.append(batch)
                     f.close()
     
-        f = open(batchdir + '/batchreport.tex','w')
+        f = open(self.WORKDIR + '/batchreport.tex','w')
         f.write("\\documentclass[a4paper,10pt]{article}\n\\usepackage{graphicx}\n")
         f.write('\\section*{Results for ' + title + '}')
         f.write("\\begin{document}\n\n")
