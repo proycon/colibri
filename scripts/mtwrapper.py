@@ -21,39 +21,39 @@ import matplotlib.pyplot
 from pynlpl.evaluation import filesampler
 
 
- 
- 
+
+
 def bold(s):
-   CSI="\x1B["
-   return CSI+"1m" + s + CSI + "0m"
-   
+    CSI="\x1B["
+    return CSI+"1m" + s + CSI + "0m"
+
 def white(s):
-   CSI="\x1B["
-   return CSI+"37m" + s + CSI + "0m"   
+    CSI="\x1B["
+    return CSI+"37m" + s + CSI + "0m"   
 
 
 def red(s):
-   CSI="\x1B["
-   return CSI+"31m" + s + CSI + "0m"
-   
+    CSI="\x1B["
+    return CSI+"31m" + s + CSI + "0m"
+
 def green(s):
-   CSI="\x1B["
-   return CSI+"32m" + s + CSI + "0m"   
+    CSI="\x1B["
+    return CSI+"32m" + s + CSI + "0m"   
 
 
 def yellow(s):
-   CSI="\x1B["
-   return CSI+"33m" + s + CSI + "0m"   
+    CSI="\x1B["
+    return CSI+"33m" + s + CSI + "0m"   
 
-   
+
 def blue(s):
-   CSI="\x1B["
-   return CSI+"34m" + s + CSI + "0m"   
-   
+    CSI="\x1B["
+    return CSI+"34m" + s + CSI + "0m"   
+
 
 def magenta(s):
-   CSI="\x1B["
-   return CSI+"35m" + s + CSI + "0m"   
+    CSI="\x1B["
+    return CSI+"35m" + s + CSI + "0m"   
 
 class MTWrapper(object):
     defaults = [
@@ -144,17 +144,17 @@ class MTWrapper(object):
             ('COLIBRI_PATTERNFINDER_OPTIONS','-t 10 -s -B -E', 'Options for the pattern finder, see patternfinder -h'),
             ('COLIBRI_ALIGNER_OPTIONS','-J -p 0.1','Options for the colibri aligner, see aligner -h'),  
     ]
- 
+
     def initlog(self, logfile):
         self.logfile = open(self.WORKDIR + '/' + logfile + '.log','w') 
-     
+    
     def log(self, msg, color=None, dobold = False):        
         if color:
             msg = color(msg)
         if dobold:
             msg = bold(msg)
         if self.logfile:
-           self.logfile.write(msg+"\n")
+            self.logfile.write(msg+"\n")
         print >>sys.stderr, msg
         
     
@@ -427,12 +427,12 @@ class MTWrapper(object):
             if not self.EXEC_MOSES_GIZA2BAL or not os.path.isfile(self.EXEC_MOSES_GIZA2BAL):
                 sane = False
                 self.log("Dependency error: giza2bal.pl (provided by Moses) not found (EXEC_MOSES_GIZA2BAL=" + self.EXEC_MOSES_GIZA2BAL + ")",red)
-               
+            
             
             if not self.EXEC_MOSES_SYMAL or not os.path.isfile(self.EXEC_MOSES_SYMAL):
                 sane = False
                 self.log("Dependency error: symal (provided by Moses) not found (EXEC_MOSES_SYMAL=" + self.EXEC_MOSES_SYMAL + ")",red)
-               
+            
             
                 
         if self.BUILD_GIZA_WORDALIGNMENT and (not self.EXEC_GIZA or not os.path.isfile(self.EXEC_GIZA)): 
@@ -689,7 +689,7 @@ class MTWrapper(object):
                 
             self.batchreport(selectedbatches)                
             self.log("Done")
-                                             
+                                            
             
         elif cmd == 'help' or cmd == '-h':
             self.usage()
@@ -713,45 +713,69 @@ class MTWrapper(object):
                     scores.append( ( blue, meteor, nist, ter, wer, per) )
                     names.append(batch)
                     f.close()
-	
-	def autolabel(rects):
-	    # attach some text labels
-	    for rect in rects:
-	        height = rect.get_height()
-	        matplotlib.pyplot.text(rect.get_x()+rect.get_width()/2., height+0.001, '%.3f'%height,ha='center', va='bottom')
+    
+        def autolabel(rects):
+            # attach some text labels
+            for rect in rects:
+                height = rect.get_height()
+                matplotlib.pyplot.text(rect.get_x()+rect.get_width()/2., height+0.001, '%.3f'%height,ha='center', va='bottom')
 
+
+        width = 0.9       # the width of the bars: can also be len(x) sequence
 
         fig = matplotlib.pyplot.figure(figsize=(15,10)) 
-	matplotlib.pyplot.gcf().subplots_adjust(bottom=0.4, left=0.2)        
+        matplotlib.pyplot.gcf().subplots_adjust(bottom=0.4, left=0.2)        
         xlocations = numpy.arange(len(scores))    # the x locations for the groups
-        width = 0.9       # the width of the bars: can also be len(x) sequence
-	matplotlib.pyplot.grid(True)
+        
+        matplotlib.pyplot.grid(True)
         p_bleu = matplotlib.pyplot.bar(xlocations, [ x[0] for x in scores] ,  width, color='b')        
         matplotlib.pyplot.ylabel('BLEU score')
         matplotlib.pyplot.title('BLEU scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
-        #matplotlib.pyplot.xticks(xlocations+width/2., names,rotation=60 )
         matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
         fig.autofmt_xdate()
         matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in scores)),0.01))
-	autolabel(p_bleu)
+        autolabel(p_bleu)
         fig.savefig(self.WORKDIR + '/batchreport-bleu.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
         matplotlib.pyplot.clf()
 
-        fig = matplotlib.pyplot.figure()                
-        matplotlib.pyplot.gcf().subplots_adjust(bottom=0.4, left=0.3)
-        width = 0.9       # the width of the bars: can also be len(x) sequence
+        fig = matplotlib.pyplot.figure(figsize=(15,10)) 
+        matplotlib.pyplot.grid(True)
+        p_bleu = matplotlib.pyplot.bar(xlocations, [ x[1] for x in scores] ,  width, color='y')        
+        matplotlib.pyplot.ylabel('METEOR score')
+        matplotlib.pyplot.title('METEOR scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
+        matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
+        fig.autofmt_xdate()
+        matplotlib.pyplot.yticks(numpy.arange(0,max( (x[1] for x in scores)),0.05))
+        autolabel(p_bleu)
+        fig.savefig(self.WORKDIR + '/batchreport-meteor.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
+        matplotlib.pyplot.clf()
+
+        fig = matplotlib.pyplot.figure(figsize=(15,10)) 
+        matplotlib.pyplot.grid(True)
+        p_bleu = matplotlib.pyplot.bar(xlocations, [ x[2] for x in scores] ,  width, color='r')        
+        matplotlib.pyplot.ylabel('NIST score')
+        matplotlib.pyplot.title('NIST scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
+        matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
+        fig.autofmt_xdate()
+        matplotlib.pyplot.yticks(numpy.arange(0,max( (x[2] for x in scores)),0.1))
+        autolabel(p_bleu)
+        fig.savefig(self.WORKDIR + '/batchreport-nist.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
+        matplotlib.pyplot.clf()
+
+
+        fig = matplotlib.pyplot.figure(figsize=(15,10))               
+        matplotlib.pyplot.gcf().subplots_adjust(bottom=0.4, left=0.2)
         p_ter = matplotlib.pyplot.bar(xlocations, [x[3] for x in scores] ,  width, color='g')
         p_wer = matplotlib.pyplot.bar(xlocations, [x[4] for x in scores] ,  width, color='y')
         p_per = matplotlib.pyplot.bar(xlocations, [x[5] for x in scores] ,  width, color='m')        
         matplotlib.pyplot.ylabel('Score')
         matplotlib.pyplot.title('TER/WER/PER scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
         matplotlib.pyplot.xticks(xlocations+width/2., names)#, names , rotation='vertical')
-	#matplotlib.pyplot.xticklabels(names)
         matplotlib.pyplot.yticks(numpy.arange(0,max( (max(x[3],x[4],x[5]) for x in scores)),5))
         matplotlib.pyplot.legend( (p_ter[0],p_wer[0],p_per[0]), ('TER', 'WER','PER') )
         fig.autofmt_xdate()
         fig.savefig(self.WORKDIR + '/batchreport-er.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)
-                               
+                            
                 
 
             
@@ -863,10 +887,10 @@ class MTWrapper(object):
         else:
             successcodes = [0]
         if r in successcodes:
-           self.log("Finished " + name + " " + self.timestamp(),green,True)
+            self.log("Finished " + name + " " + self.timestamp(),green,True)
         else:
-           self.log("Runtime error from " + name + ' (return code ' + str(r) + ') ' + self.timestamp(),red,True)
-           return False
+            self.log("Runtime error from " + name + ' (return code ' + str(r) + ') ' + self.timestamp(),red,True)
+        return False
         if outputfiles:
             error = False
             for outputfile in outputfiles:
@@ -928,7 +952,7 @@ class MTWrapper(object):
     
     def build_colibri_alignment(self):
         if not self.runcmd(self.EXEC_COLIBRI_CLASSENCODE + ' -f ' + self.getsourcefilename('txt'), "Encoding source corpus for Colibri",self.getsourcefilename('cls'), self.getsourcefilename('clsenc') ): return False
-         
+        
         if not self.runcmd(self.EXEC_COLIBRI_CLASSENCODE + ' -f ' + self.gettargetfilename('txt'), "Encoding target corpus for Colibri",self.gettargetfilename('cls'), self.gettargetfilename('clsenc') ): return False
         
         if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.getsourcefilename('clsenc') + ' ' + self.COLIBRI_PATTERNFINDER_OPTIONS, "Building source-side pattern model",self.getsourcefilename('indexedpatternmodel.colibri') ): return False
@@ -1088,7 +1112,7 @@ class MTWrapper(object):
         for trainfile in glob.glob(self.WORKDIR + '/*.train.*.inst'):
             if not self.runcmd(self.EXEC_TIMBL + self.PBMBMT_TIMBL_OPTIONS + ' +v+db+di +D -s -f ' + trainfile + ' -I ' + trainfile + '.ibase', 'Building classifier ' + os.path.basename(trainfile), *outputfiles_ibase): return False
         
-         
+        
         return True
     
     def run(self, inputfile, outputfile='output.txt', tokenise=False):        
@@ -1148,7 +1172,7 @@ class MTWrapper(object):
         if not os.path.isfile(targetfile):
             self.log("Error: Output file " + targetfile + " not found!" ,red)
             return False    
-     
+    
         self.header('Converting source to XML for evaluation')
         r = self.xmlize(sourcefile,'src')
         sourcexml = sourcefile + '.xml'
@@ -1182,8 +1206,8 @@ class MTWrapper(object):
                     f = open(self.WORKDIR + '/bleu.score')
                     for line in f:
                         if line[0:9] == "BLEUr1n4,":
-                             self.bleu = float(line[10:].strip())
-                             print >>sys.stderr,"BLEU score: ", self.bleu
+                            self.bleu = float(line[10:].strip())
+                            print >>sys.stderr,"BLEU score: ", self.bleu
                     f.close()
                 except:                
                     self.log("Error reading bleu.score",red)
@@ -1198,15 +1222,15 @@ class MTWrapper(object):
                     f = open(self.WORKDIR + '/wer.score')
                     for line in f:
                         if line[0:11] == "WER score =":
-                             self.wer = float(line[12:20].strip())
-                             self.log("WER score: " + str(self.wer), white)
+                            self.wer = float(line[12:20].strip())
+                            self.log("WER score: " + str(self.wer), white)
                     f.close()
                 except:                
                     self.log("Error reading wer.score",red)
                     errors = True     
         else:
             self.log("Skipping WER (no script found ["+self.EXEC_MATREX_WER+"]) ",yellow)
-     
+    
         if self.EXEC_MATREX_PER and os.path.exists(self.EXEC_MATREX_PER) and self.EXEC_PERL and os.path.exists(self.EXEC_PERL):
             if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_MATREX_PER + " -r " + refxml + ' -t ' + targetxml + ' -s ' + sourcexml + '  > ' + 'per.score',  'Computing PER score'): errors = True
             if not errors:
@@ -1214,8 +1238,8 @@ class MTWrapper(object):
                     f = open(self.WORKDIR + '/per.score')
                     for line in f:
                         if line[0:11] == "PER score =":
-                             self.per = float(line[12:20].strip())
-                             self.log("PER score: " + str(self.per), white)
+                            self.per = float(line[12:20].strip())
+                            self.log("PER score: " + str(self.per), white)
                     f.close()
                 except:                
                     self.log("Error reading per.score",red)
@@ -1230,8 +1254,8 @@ class MTWrapper(object):
                     f = open(self.WORKDIR + '/meteor.score')
                     for line in f:
                         if line[0:6] == "Score:":
-                             self.meteor = float(line[7:].strip())
-                             self.log("METEOR score: " + str(self.meteor), white)
+                            self.meteor = float(line[7:].strip())
+                            self.log("METEOR score: " + str(self.meteor), white)
                     f.close()
                 except:                
                     self.log("Error reading meteor.score",red)
@@ -1260,7 +1284,7 @@ class MTWrapper(object):
                     errors = True                   
         else:
             self.log("Skipping MTEVAL (BLEU & NIST) (no script found)", yellow)
-     
+    
         if self.EXEC_MATREX_TER and os.path.exists(self.EXEC_MATREX_TER) and self.EXEC_JAVA and os.path.exists(self.EXEC_JAVA):
             if not self.runcmd(self.EXEC_JAVA + ' -jar ' + self.EXEC_MATREX_TER + " -r " + refxml + ' -h ' + targetxml + '  > ' + 'ter.score',  'Computing TER score'): errors = True
             if not errors:
@@ -1268,8 +1292,8 @@ class MTWrapper(object):
                     f = open(self.WORKDIR + '/ter.score')
                     for line in f:
                         if line[0:10] == "Total TER:":
-                             self.ter = float(line[11:].strip().split(' ')[0])
-                             print >>sys.stderr,"TER score: ", self.ter
+                            self.ter = float(line[11:].strip().split(' ')[0])
+                            print >>sys.stderr,"TER score: ", self.ter
                     f.close()
                 except:                
                     self.log("Error reading ter.score",red)
@@ -1287,7 +1311,7 @@ class MTWrapper(object):
         print >>sys.stderr, s
         f.close()
             
-                             
+                            
         return not errors
     
     def test(self, sourcefile, reffile):
@@ -1298,7 +1322,7 @@ class MTWrapper(object):
         if not os.path.isfile(sourcefile):
             self.log("Error: Source file " + sourcefile + " not found!" ,red)
             return False        
-             
+            
         if not os.path.isfile(reffile):
             self.log("Error: Reference file " + reffile + " not found!" ,red)
             return False        
@@ -1331,7 +1355,7 @@ class MTWrapper(object):
             return False
         return True
 
-   
+
     def branch(self,expname, conf=None, useparentdir=True, quiet = False, writebatches=True):
         
         parentdir = self.WORKDIR
@@ -1355,7 +1379,7 @@ class MTWrapper(object):
                 
         return (workdir, settingsfile)
         
-   
+
     def writesettings(self,expname=None, workdir = None, writebatches=True):    
         if not workdir: 
             workdir = self.WORKDIR
