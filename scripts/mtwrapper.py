@@ -713,20 +713,27 @@ class MTWrapper(object):
                     scores.append( ( blue, meteor, nist, ter, wer, per) )
                     names.append(batch)
                     f.close()
+	
+	def autolabel(rects):
+	    # attach some text labels
+	    for rect in rects:
+	        height = rect.get_height()
+	        matplotlib.pyplot.text(rect.get_x()+rect.get_width()/2., height+0.001, '%.3f'%height,ha='center', va='bottom')
 
-        fig = matplotlib.pyplot.figure() 
-	matplotlib.pyplot.gcf().subplots_adjust(bottom=0.4, left=0.3)        
+
+        fig = matplotlib.pyplot.figure(figsize=(15,10)) 
+	matplotlib.pyplot.gcf().subplots_adjust(bottom=0.4, left=0.2)        
         xlocations = numpy.arange(len(scores))    # the x locations for the groups
         width = 0.9       # the width of the bars: can also be len(x) sequence
 	matplotlib.pyplot.grid(True)
-        matplotlib.pyplot.bar(xlocations, [ x[0] for x in scores] ,  width, color='b')        
+        p_bleu = matplotlib.pyplot.bar(xlocations, [ x[0] for x in scores] ,  width, color='b')        
         matplotlib.pyplot.ylabel('BLEU score')
         matplotlib.pyplot.title('BLEU scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
         #matplotlib.pyplot.xticks(xlocations+width/2., names,rotation=60 )
-        matplotlib.pyplot.xticks(xlocations+width/2., names)
+        matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
         fig.autofmt_xdate()
         matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in scores)),0.01))
-        #matplotlib.pyplot.legend( (p1[0], p2[0]), ('Men', 'Women') )
+	autolabel(p_bleu)
         fig.savefig(self.WORKDIR + '/batchreport-bleu.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
         matplotlib.pyplot.clf()
 
