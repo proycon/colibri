@@ -14,6 +14,8 @@ import codecs
 import glob
 import datetime
 import shutil
+import numpy
+import matplotlib.pyplot
 from pynlpl.evaluation import filesampler
  
 def bold(s):
@@ -681,9 +683,8 @@ class MTWrapper(object):
                 selectedbatches= None   
                 
             self.batchreport(selectedbatches)                
-                
-                    
-                         
+            self.log("Done")
+                                             
             
         elif cmd == 'help' or cmd == '-h':
             self.usage()
@@ -695,10 +696,43 @@ class MTWrapper(object):
         sys.exit(0)
 
     def batchreport(self, selectedbatches):
+        scores = []
+        names = []
         for batch, conf in self.batches:
             if not selectedbatches or batch in selectedbatches:
-                batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch           
-                #TODO: finish
+                batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch
+                if os.path.isfile(batchdir + '/summary.score'):    
+                    f = open(batchdir + '/summary.score','r')
+                    blue, meteor, nist, ter, wer, per = [ int(x) for x in f.readline().split() ]
+                    scores.append( ( blue, meteor, nist, ter, wer, per) )
+                    names.append(batch)
+                    f.close()
+                    
+
+        
+        ind = numpy.arange(len(scores))    # the x locations for the groups
+        width = 0.35       # the width of the bars: can also be len(x) sequence
+        matplotlib.pyplot.bar(ind, (x[0] for x in scores) ,  width, color='b')        
+        matplotlib.pyplot.ylabel('BLEU score')
+        matplotlib.pyplot.title('BLEU scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
+        matplotlib.pyplot.xticks(ind+width/2., names )
+        matplotlib.pyplot.yticks(numpy.arange(0,81,10))
+        #matplotlib.pyplot.legend( (p1[0], p2[0]), ('Men', 'Women') )
+        matplotlib.pyplot.savefig(self.WORKDIR + '/batchreport-bleu.png', dpi=None, facecolor='w', edgecolor='w', orientation='landscape', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.1)       
+        matplotlib.pyplot.cfg()
+                
+        width = 0.35       # the width of the bars: can also be len(x) sequence
+        p_ter = matplotlib.pyplot.bar(ind, (x[3] for x in scores) ,  width, color='g')
+        p_wer = matplotlib.pyplot.bar(ind, (x[4] for x in scores) ,  width, color='y')
+        p_per = matplotlib.pyplot.bar(ind, (x[5] for x in scores) ,  width, color='m')        
+        matplotlib.pyplot.ylabel('Score')
+        matplotlib.pyplot.title('TER/WER/PER scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
+        matplotlib.pyplot.xticks(ind+width/2., names )
+        matplotlib.pyplot.yticks(numpy.arange(0,81,10))
+        matplotlib.pyplot.legend( (p_ter[0],p_wer[0],p_per[0]), ('TER', 'WER','PER') )
+        matplotlib.pyplot.savefig(self.WORKDIR + '/batchreport-er.png', dpi=None, facecolor='w', edgecolor='w', orientation='landscape', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.1)
+                               
+                
 
             
     def clean(self, targets):            
