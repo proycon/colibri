@@ -716,27 +716,27 @@ class MTWrapper(object):
                     
 
         
-        xlocations = numpy.arange(len(scores)+1)    # the x locations for the groups
-        width = 0.35       # the width of the bars: can also be len(x) sequence
-        matplotlib.pyplot.bar(xlocations, (x[0] for x in scores) ,  width, color='b')        
+        xlocations = numpy.arange(len(scores))    # the x locations for the groups
+        width = 0.9       # the width of the bars: can also be len(x) sequence
+        matplotlib.pyplot.bar(xlocations, [ x[0] for x in scores] ,  width, color='b')        
         matplotlib.pyplot.ylabel('BLEU score')
         matplotlib.pyplot.title('BLEU scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
-        matplotlib.pyplot.xticks(ind+width/2., names )
-        matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in scores)),0.1))
+        matplotlib.pyplot.xticks(xlocations+width/2., names,rotation='vertical' )
+        matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in scores)),0.01))
         #matplotlib.pyplot.legend( (p1[0], p2[0]), ('Men', 'Women') )
-        matplotlib.pyplot.savefig(self.WORKDIR + '/batchreport-bleu.png', dpi=None, facecolor='w', edgecolor='w', orientation='landscape', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.1)       
-        matplotlib.pyplot.cfg()
+        matplotlib.pyplot.savefig(self.WORKDIR + '/batchreport-bleu.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
+        matplotlib.pyplot.clf()
                 
-        width = 0.35       # the width of the bars: can also be len(x) sequence
-        p_ter = matplotlib.pyplot.bar(xlocations, (x[3] for x in scores) ,  width, color='g')
-        p_wer = matplotlib.pyplot.bar(xlocations, (x[4] for x in scores) ,  width, color='y')
-        p_per = matplotlib.pyplot.bar(xlocations, (x[5] for x in scores) ,  width, color='m')        
+        width = 0.9       # the width of the bars: can also be len(x) sequence
+        p_ter = matplotlib.pyplot.bar(xlocations, [x[3] for x in scores] ,  width, color='g')
+        p_wer = matplotlib.pyplot.bar(xlocations, [x[4] for x in scores] ,  width, color='y')
+        p_per = matplotlib.pyplot.bar(xlocations, [x[5] for x in scores] ,  width, color='m')        
         matplotlib.pyplot.ylabel('Score')
         matplotlib.pyplot.title('TER/WER/PER scores for ' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG )
-        matplotlib.pyplot.xticks(ind+width/2., names )
+        matplotlib.pyplot.xticks(xlocations+width/2., names , rotation='vertical')
         matplotlib.pyplot.yticks(numpy.arange(0,max( (max(x[3],x[4],x[5]) for x in scores)),5))
         matplotlib.pyplot.legend( (p_ter[0],p_wer[0],p_per[0]), ('TER', 'WER','PER') )
-        matplotlib.pyplot.savefig(self.WORKDIR + '/batchreport-er.png', dpi=None, facecolor='w', edgecolor='w', orientation='landscape', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.1)
+        matplotlib.pyplot.savefig(self.WORKDIR + '/batchreport-er.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)
                                
                 
 
