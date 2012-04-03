@@ -1520,7 +1520,7 @@ class MTWrapper(object):
     
         for filename in glob.glob(self.WORKDIR + '/*'):
             basefilename = os.path.basename(filename)
-            if (basefilename[-3:] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.':
+            if (basefilename[-3:] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.' or os.path.isdir(filename):
                 continue    
             try:
                 os.symlink(filename, workdir + '/' + basefilename)
