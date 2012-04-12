@@ -69,6 +69,9 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
 		prevsentencenumber = sentencenumber;
     }
 	if (DEBUG) cerr << "\t\tGathered " << targetpatterns.size() << " target-side patterns for given source pattern, computing co-occurence..." << endl;
+	
+	double lowerbound = 0.0;
+	list<double> bestq;
 	for (unordered_set<const EncAnyGram *>::const_iterator iter = targetpatterns.begin(); iter != targetpatterns.end(); iter++) {
 			const EncAnyGram* targetgram = *iter;
 	        multiset<uint32_t> * targetindex;
@@ -85,22 +88,25 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
 		    } else {
 		    	prunedabs++;
 		    }
-		    totalcooc += coocvalue;				
-		    if (coocvalue > bestcooc) bestcooc = coocvalue;
-		    
+		    totalcooc += coocvalue;	
+		    if ((bestn) && ((coocvalue > lowerbound) || (bestq.size() < bestn)))  {
+		    	orderedinsert(bestq, coocvalue);		    	
+				if (bestq.size() == bestn) bestq.pop_front();
+				lowerbound = *bestq.begin();
+		    } 		    
 	}				
-    if ((totalcooc > 0) && (normalize || bestonly || probthreshold > 0)) {
+    if ((totalcooc > 0) && (normalize || bestn || probthreshold > 0)) {
     	//normalisation and pruning step (based on probability threshold)
     	for (std::unordered_map<const EncAnyGram*, double>::const_iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
     		const double alignprob = (double) iter->second / totalcooc;
-			if ((alignprob < probthreshold) || (bestonly && iter->second < bestcooc)) {
-				//prune
+    		if ((alignprob < probthreshold) || (bestn && iter->second < lowerbound))  {
+    			//prune
     			alignmatrix[sourcegram].erase(iter->first);
-    			prunedprob++;    			
+    			prunedprob++;
     		} else if (normalize) {
     			//normalise
     			alignmatrix[sourcegram][iter->first] = alignprob;
-    		}    		    		 
+    		}       		
     	}   
     	if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram); 
     }   
@@ -108,12 +114,12 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
     return found - prunedprob;
 }
 
-CoocAlignmentModel::CoocAlignmentModel(CoocMode mode,SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const double absthreshold, const double probthreshold, bool bestonly, bool normalize, bool DEBUG) {
+CoocAlignmentModel::CoocAlignmentModel(CoocMode mode,SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int bestn ,  const double absthreshold, const double probthreshold, bool normalize, bool DEBUG) {
     this->mode = mode;
     this->absthreshold = absthreshold;
     this->probthreshold = probthreshold;
     this->normalize = normalize;
-    this->bestonly = bestonly;
+    this->bestn = bestn;
     this->DEBUG = DEBUG;
     this->sourcemodel = sourcemodel;
     this->targetmodel = targetmodel;
@@ -234,7 +240,7 @@ void BiAlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, Clas
 
 
 
-EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, double probthreshold, bool bestonly, bool DEBUG) {
+EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, double probthreshold, const int bestn, bool DEBUG) {
 	// Compute p(target|source)      alignmatrix[source][target]
 	/* 
 	initialize t(t|s) uniformly
@@ -356,22 +362,39 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, Selectiv
         prevavdivergence = avdivergence;
     } while (!converged);    
     
-    if ((probthreshold > 0) || (bestonly)) {
+    
+    
+    
+    if ((probthreshold > 0) || (bestn > 0)) {
+    
+    	
+    
 		cerr << "  Pruning stage... ";
 		for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
 			const EncAnyGram * sourcegram = sourceiter->first;
-			double best = 0;
-			for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
-				const EncAnyGram * targetgram = targetiter->first;
-				if (targetiter->second < probthreshold) {
-					alignmatrix[sourcegram].erase(targetgram);
-				} else if (bestonly && targetiter->second > best) best = targetiter->second;
-			}
-			if (bestonly) {
+			
+			if (!bestn) {
 				for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
 					const EncAnyGram * targetgram = targetiter->first;
-					if (targetiter->second < best) alignmatrix[sourcegram].erase(targetgram);
+					if (targetiter->second < probthreshold) {
+						alignmatrix[sourcegram].erase(targetgram);
+					} 
 				}
+			} else {
+				double lowerbound = 0.0;
+				list<double> bestq;
+				for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
+					const EncAnyGram * targetgram = targetiter->first;
+					if ((targetiter->second > lowerbound) || (bestq.size() < bestn)) {
+						orderedinsert(bestq, targetiter->second);
+						if (bestq.size() == bestn) bestq.pop_front();
+						lowerbound = *bestq.begin();
+					}
+				}
+				for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
+					const EncAnyGram * targetgram = targetiter->first;
+					if (targetiter->second < lowerbound) alignmatrix[sourcegram].erase(targetgram);
+				}				
 			}
 			if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram);
 		}    
@@ -557,7 +580,7 @@ const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key) {
 }
 
 
-AlignmentModel::AlignmentModel(const string & filename, const bool bestonly) {
+AlignmentModel::AlignmentModel(const string & filename, const int bestn) {
 	DEBUG = false;
 	unsigned char check;
 	
@@ -603,7 +626,8 @@ AlignmentModel::AlignmentModel(const string & filename, const bool bestonly) {
         uint64_t targetcount;
         f.read( (char*) &targetcount, sizeof(uint64_t));
         const EncAnyGram * besttargetgram = NULL;
-        double bestprob = 0;
+        double lowerbound = 0.0;
+        list<double> bestq;
         for (int j = 0; j < targetcount; j++) {
         	const EncAnyGram * targetgram = NULL;   
             f.read(&gapcount, sizeof(char));	    
@@ -624,21 +648,26 @@ AlignmentModel::AlignmentModel(const string & filename, const bool bestonly) {
 		    }		    
 		    double p;
 		    f.read((char*) &p, sizeof(double));
-		    if (sourcegram != NULL and targetgram != NULL) {		    	
-		    	if (!bestonly) {
-		    		alignmatrix[sourcegram][targetgram] = p;
-		    	} else if (p > bestprob) {
-		    		bestprob = p;
-					besttargetgram = targetgram;
+		    if (sourcegram != NULL and targetgram != NULL) {
+		    	alignmatrix[sourcegram][targetgram] = p;
+		    	if ((bestn) && ((p > lowerbound) || (bestq.size() < bestn))) {
+		    		orderedinsert(bestq, p);
+		    		if (bestq.size() == bestn) bestq.pop_front();
+		    		lowerbound = *bestq.begin();		    			
 		    	}
 		    } else {
 		    	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
 		    	exit(6);
 		    }
         }
-        if ((bestonly) && (besttargetgram != NULL)) {
-        	alignmatrix[sourcegram][besttargetgram] = bestprob;
-        }        
+		if (bestn) {
+			//pruning stage
+			for (unordered_map<const EncAnyGram *, double>::iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
+				if (iter->second < lowerbound) {
+					alignmatrix[sourcegram].erase(iter->first);
+				}				
+			}		
+		}            
 	}
     f.close();
 }
@@ -807,3 +836,14 @@ int AlignmentModel::graphalign(SelectivePatternModel & sourcemodel, SelectivePat
 	return adjustments;	
 }			
 
+
+void orderedinsert(list<double> & l, double value) {
+	size_t index = 0;
+	for (list<double>::iterator iter = l.begin(); iter != l.end(); iter++) {
+		if (value < *iter) {
+			l.insert(iter, value);
+			return;
+		}
+	} 
+	l.push_back(value);
+}

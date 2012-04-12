@@ -1,4 +1,5 @@
 #include <patternmodel.h>
+#include <list>
 
 enum CoocMode {
 	NOCOOC = 0,
@@ -7,6 +8,7 @@ enum CoocMode {
 	QUICK = 3,
 };
 
+void orderedinsert(std::list<double> &, double value);
 
 class AlignmentModel: public AlignConstraintInterface {
    protected:
@@ -17,7 +19,7 @@ class AlignmentModel: public AlignConstraintInterface {
     std::unordered_map<const EncSkipGram,bool> targetskipgrams;
    public:
     AlignmentModel() { DEBUG = false; }
-    AlignmentModel(const std::string & filename, const bool bestonly = false);
+    AlignmentModel(const std::string & filename, const int bestn = 0);
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignmatrix;    
     virtual void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
     virtual void simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT, bool targetfirst = false, bool wordbased = false, bool mosesformat = false);
@@ -62,12 +64,12 @@ class CoocAlignmentModel: public AlignmentModel {
     double absthreshold; //cooc threshold
     double probthreshold;
     bool normalize;
-    bool bestonly; 
+    int bestn;
    public:   
     SelectivePatternModel * sourcemodel;
     SelectivePatternModel * targetmodel;
     CoocMode mode;
-    CoocAlignmentModel(CoocMode mode, SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, double absthreshold = 0,  const double relthreshold = 0, bool BESTONLY = false, bool DONORM = true, bool DEBUG = false);         
+    CoocAlignmentModel(CoocMode mode, SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int bestn = 0, const double absthreshold = 0,  const double relthreshold = 0, bool DONORM = true, bool DEBUG = false);         
    
     void save(const std::string & filename);
    
@@ -83,7 +85,9 @@ class EMAlignmentModel: public AlignmentModel {
    public:
     SelectivePatternModel * sourcemodel;
     SelectivePatternModel * targetmodel;    
-    EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, bool BESTONLY = false, bool DEBUG = false);        
+    EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, bool DEBUG = false);        
     void save(const std::string & filename);
     
 };
+
+ 

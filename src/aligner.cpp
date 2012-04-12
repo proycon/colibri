@@ -71,13 +71,15 @@ int main( int argc, char *argv[] ) {
     bool DOSKIPGRAMS = true;
     bool DODEBUG = false;
     bool DONORM = false;
-    bool BESTONLY = false;
     int MAXROUNDS = 10000;
     double CONVERGENCE = 0.001;
     int DOSIMPLELEX = 0;
     int DOSIMPLETABLE = 0;
     int TARGETFIRST = 0;
     int MOSESFORMAT = 0;
+    int bestn = 0;
+    
+    
     string outputprefix = "";
     
     static struct option long_options[] = {      
@@ -92,7 +94,7 @@ int main( int argc, char *argv[] ) {
     int option_index = 0;
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:bl:L:NVZEI:v:Gi:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEI:v:Gi:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -112,7 +114,7 @@ int main( int argc, char *argv[] ) {
         	DOBIDIRECTIONAL = true;
         	break;
         case 'b':
-        	BESTONLY = true;
+        	bestn = atoi(optarg);
         	break;
         case 'p':
             coocprunevalue = atof(optarg);
@@ -273,13 +275,13 @@ int main( int argc, char *argv[] ) {
 		
 		if (DO_EM) {
 			cerr << "Computing alignment model..." << endl;
-			alignmodel = new EMAlignmentModel(&sourcemodel,&targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
+			alignmodel = new EMAlignmentModel(&sourcemodel,&targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, DODEBUG);
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
 		
 			if (DOBIDIRECTIONAL) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-				AlignmentModel reversealignmodel = EMAlignmentModel(&targetmodel,&sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, BESTONLY, DODEBUG);
+				AlignmentModel reversealignmodel = EMAlignmentModel(&targetmodel,&sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, DODEBUG);
 				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;						
 				cerr << "Computing intersection of both alignment models..." << endl;
@@ -287,13 +289,13 @@ int main( int argc, char *argv[] ) {
 			}	    
 		} else if (COOCMODE) {
 			cerr << "Computing alignment model..." << endl;
-			alignmodel = new CoocAlignmentModel(COOCMODE, &sourcemodel,&targetmodel, coocprunevalue, probprunevalue, BESTONLY, DONORM, DODEBUG);
+			alignmodel = new CoocAlignmentModel(COOCMODE, &sourcemodel,&targetmodel, coocprunevalue, probprunevalue, bestn, DONORM, DODEBUG);
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
 		
 			if (DOBIDIRECTIONAL) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-				AlignmentModel reversealignmodel = CoocAlignmentModel(COOCMODE, &targetmodel,&sourcemodel, coocprunevalue, probprunevalue, BESTONLY, DONORM, DODEBUG);
+				AlignmentModel reversealignmodel = CoocAlignmentModel(COOCMODE, &targetmodel,&sourcemodel, coocprunevalue, bestn, DONORM, DODEBUG);
 				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;
 				cerr << "Computing intersection of both alignment models..." << endl;
@@ -350,7 +352,7 @@ int main( int argc, char *argv[] ) {
     	
     	if (invmodelfile.empty()) {
     	   	cerr << "Loading alignment model..." << endl;
-    		alignmodel = new AlignmentModel(modelfile, BESTONLY);
+    		alignmodel = new AlignmentModel(modelfile, bestn);
     		    	    	
 			cerr << "Decoding..." << endl;
 			if (DOSIMPLETABLE) {
