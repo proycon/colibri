@@ -19,9 +19,9 @@ void usage() {
     cerr << "\t-E                        Use EM alignment method" << endl;       
     cerr << " Generic alignment options:" << endl;    
     cerr << "\t-V				         Verbose debugging output" << endl;
-    cerr << "\t-b                        Best alignment only" << endl;
+    cerr << "\t-b n                      Best n alignments only" << endl;
     cerr << "\t-G 			             Weigh alignment results based on graph information (subsumption relations)" << endl;
-    cerr << "\t-B probability-threshold  Compute bidirectional alignment (intersection), using given probability threshold" << endl;
+    cerr << "\t-B probability-threshold  Compute bidirectional alignment (intersection), using given probability threshold (0 <= x < 1)" << endl;
     cerr << " Co-occurrence alignment options:" << endl;       
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
     cerr << "\t-Z				         Do normalisation; return probabilities instead of co-occurrence scores" << endl;   
@@ -110,7 +110,7 @@ int main( int argc, char *argv[] ) {
         	usage();
         	exit(0);
         case 'B':
-        	bidirprobthreshold = atof(optarg);
+        	bidirprobthreshold = atof(optarg);        	
         	DOBIDIRECTIONAL = true;
         	break;
         case 'b':
@@ -285,7 +285,7 @@ int main( int argc, char *argv[] ) {
 				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;						
 				cerr << "Computing intersection of both alignment models..." << endl;
-				alignmodel->intersect(&reversealignmodel, bidirprobthreshold);
+				alignmodel->intersect(&reversealignmodel, bidirprobthreshold, bestn);
 			}	    
 		} else if (COOCMODE) {
 			cerr << "Computing alignment model..." << endl;
@@ -299,7 +299,7 @@ int main( int argc, char *argv[] ) {
 				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;
 				cerr << "Computing intersection of both alignment models..." << endl;
-				alignmodel->intersect(&reversealignmodel, bidirprobthreshold);	
+				alignmodel->intersect(&reversealignmodel, bidirprobthreshold, bestn);	
 			}	    				
 		}
 
