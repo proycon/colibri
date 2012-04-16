@@ -36,7 +36,7 @@ class AlignmentModel: public AlignConstraintInterface {
     	return c;
 	}
 	
-	void intersect(AlignmentModel * reversemodel, double probthreshold = 0); //Compute intersection with reverse model
+	void intersect(AlignmentModel * reversemodel, double probthreshold = 0, int bestn = 0); //Compute intersection with reverse model
 	
 	
 	int graphalign(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double impactfactor = 1.2);

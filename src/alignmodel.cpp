@@ -464,19 +464,35 @@ void EMAlignmentModel::save(const string & filename) {
     f.close();	
 }
 
-void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthreshold) {
+void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthreshold, int bestn) {
 	 //Compute intersection with reverse model
 	for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
 		const EncAnyGram * sourcegram = sourceiter->first;
+		
+		double lowerbound = 0.0;
+        list<double> bestq;
+		
 		for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
 			const EncAnyGram * targetgram = targetiter->first;
 			if ((reversemodel->alignmatrix.count(targetgram) > 0) && (reversemodel->alignmatrix[targetgram].count(sourcegram) > 0) && (reversemodel->alignmatrix[targetgram][sourcegram] * targetiter->second >= probthreshold)) {
-				alignmatrix[sourcegram][targetgram] = reversemodel->alignmatrix[targetgram][sourcegram] * targetiter->second;
+				const double p = reversemodel->alignmatrix[targetgram][sourcegram] * targetiter->second;
+				alignmatrix[sourcegram][targetgram] = p;
+				if ((bestn) && ((p > lowerbound) || (bestq.size() < bestn))) {
+		    		orderedinsert(bestq, p);
+		    		if (bestq.size() == bestn) bestq.pop_front();
+		    		lowerbound = *bestq.begin();		    			
+		    	}
 			} else {
-				//prune
-				alignmatrix[sourcegram].erase(targetgram);
+				alignmatrix[sourcegram].erase(targetgram); //no intersection, prune
 			} 			
 		}		
+		if (bestn) {
+			//pruning stage
+			for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
+				const EncAnyGram * targetgram = targetiter->first;
+				if (targetiter->second < lowerbound) alignmatrix[sourcegram].erase(targetgram);
+			}
+		}
 		if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram);	
 	}	 
 }	 
