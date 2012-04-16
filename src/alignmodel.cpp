@@ -91,15 +91,16 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
 		    totalcooc += coocvalue;	
 		    if ((bestn) && ((coocvalue > lowerbound) || (bestq.size() < bestn)))  {
 		    	orderedinsert(bestq, coocvalue);		    	
-				if (bestq.size() == bestn) bestq.pop_front();
+				while (bestq.size() > bestn) bestq.pop_front();
 				lowerbound = *bestq.begin();
 		    } 		    
-	}				
+	}
+	if ((DEBUG) && (bestn))  cerr << "\t\tbest-n lowerbound=" << lowerbound << endl;				
     if ((totalcooc > 0) && (normalize || bestn || probthreshold > 0)) {
     	//normalisation and pruning step (based on probability threshold)
     	for (std::unordered_map<const EncAnyGram*, double>::const_iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
     		const double alignprob = (double) iter->second / totalcooc;
-    		if ((alignprob < probthreshold) || (bestn && iter->second < lowerbound))  {
+    		if ((alignprob < probthreshold) || ((bestn) && (iter->second < lowerbound)))  {
     			//prune
     			alignmatrix[sourcegram].erase(iter->first);
     			prunedprob++;
@@ -110,7 +111,7 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
     	}   
     	if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram); 
     }   
-    if (DEBUG) cerr << "\t\t" << (found - prunedprob) << " alignments found (after pruning " << prunedabs << " on co-occurence value and " << prunedprob << " on alignment probability)" << endl;
+    if (DEBUG) cerr << "\t\t" << (found - prunedprob) << " alignments found (after pruning " << prunedabs << " on co-occurence value and " << prunedprob << " on alignment probability, including best-n)" << endl;
     return found - prunedprob;
 }
 
@@ -387,7 +388,7 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, Selectiv
 					const EncAnyGram * targetgram = targetiter->first;
 					if ((targetiter->second > lowerbound) || (bestq.size() < bestn)) {
 						orderedinsert(bestq, targetiter->second);
-						if (bestq.size() == bestn) bestq.pop_front();
+						while (bestq.size() > bestn) bestq.pop_front();
 						lowerbound = *bestq.begin();
 					}
 				}
@@ -479,7 +480,7 @@ void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthresho
 				alignmatrix[sourcegram][targetgram] = p;
 				if ((bestn) && ((p > lowerbound) || (bestq.size() < bestn))) {
 		    		orderedinsert(bestq, p);
-		    		if (bestq.size() == bestn) bestq.pop_front();
+		    		while (bestq.size() > bestn) bestq.pop_front();
 		    		lowerbound = *bestq.begin();		    			
 		    	}
 			} else {
@@ -668,7 +669,7 @@ AlignmentModel::AlignmentModel(const string & filename, const int bestn) {
 		    	alignmatrix[sourcegram][targetgram] = p;
 		    	if ((bestn) && ((p > lowerbound) || (bestq.size() < bestn))) {
 		    		orderedinsert(bestq, p);
-		    		if (bestq.size() == bestn) bestq.pop_front();
+		    		while (bestq.size() > bestn) bestq.pop_front();
 		    		lowerbound = *bestq.begin();		    			
 		    	}
 		    } else {

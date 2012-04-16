@@ -289,13 +289,13 @@ int main( int argc, char *argv[] ) {
 			}	    
 		} else if (COOCMODE) {
 			cerr << "Computing alignment model..." << endl;
-			alignmodel = new CoocAlignmentModel(COOCMODE, &sourcemodel,&targetmodel, coocprunevalue, probprunevalue, bestn, DONORM, DODEBUG);
+			alignmodel = new CoocAlignmentModel(COOCMODE, &sourcemodel,&targetmodel, bestn, coocprunevalue, probprunevalue,  DONORM, DODEBUG);
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
 		
 			if (DOBIDIRECTIONAL) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-				AlignmentModel reversealignmodel = CoocAlignmentModel(COOCMODE, &targetmodel,&sourcemodel, coocprunevalue, bestn, DONORM, DODEBUG);
+				AlignmentModel reversealignmodel = CoocAlignmentModel(COOCMODE, &targetmodel,&sourcemodel, bestn, coocprunevalue, probprunevalue, DONORM, DODEBUG);
 				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;
 				cerr << "Computing intersection of both alignment models..." << endl;
