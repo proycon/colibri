@@ -37,6 +37,7 @@ void usage() {
     cerr << "\t-l n                      Minimum N length" << endl; 
     cerr << "\t-L n                      Maximum N length" << endl; 
     cerr << "\t-N                        No skip-grams" << endl;
+    cerr << "\t--null                    Take into account zero-fertility words (null alignments) in EM" << endl;
     cerr << " Output options:" << endl;
     cerr << "\t--simplelex               Output simple word-based lexicon" << endl;
     cerr << "\t--simpletable             Output simple phrase-based translation table" << endl;
@@ -71,6 +72,7 @@ int main( int argc, char *argv[] ) {
     bool DOSKIPGRAMS = true;
     bool DODEBUG = false;
     bool DONORM = false;
+    int EM_NULL = 0;
     int MAXROUNDS = 10000;
     double CONVERGENCE = 0.001;
     int DOSIMPLELEX = 0;
@@ -86,7 +88,8 @@ int main( int argc, char *argv[] ) {
        {"simplelex", no_argument,       &DOSIMPLELEX, 1},
        {"simpletable", no_argument,       &DOSIMPLETABLE, 1},
        {"targetfirst", no_argument,       &TARGETFIRST, 1},
-       {"moses", no_argument,             &MOSESFORMAT, 1}, 
+       {"moses", no_argument,             &MOSESFORMAT, 1},
+       {"null", no_argument,             &EM_NULL, 1}, 
                       
        {0, 0, 0, 0}
      };
@@ -212,6 +215,10 @@ int main( int argc, char *argv[] ) {
 		} else if (COOCMODE == DICE) {
 				cerr << "\tCo-occurrence metric : DICE (-D)" << endl;
 		}
+		
+		if (bestn) {
+	    	cerr << "\tBest-n            (-b): " << bestn << endl;
+		}		
 		cerr << "\tAlig. prob prune  (-P): " << probprunevalue << endl;
 		if (DO_EM) cerr << "\tCo-oc prune value (-p): " << coocprunevalue << endl;    
 		cerr << "\tCount threshold   (-o): " << COUNTTHRESHOLD << endl;
@@ -231,6 +238,13 @@ int main( int argc, char *argv[] ) {
 		}
 		if (DOGRAPHALIGN) {
 			cerr << "\tGraph weighting enabled (-G), weight factor: " << graphweightfactor << endl;
+		}
+		if (DO_EM) {
+			if (EM_NULL) {
+				cerr << "\tNull alignments in EM?  yes" << endl;
+			} else {
+				cerr << "\tNull alignments in EM?  no" << endl;
+			}
 		}
 		cerr << endl;
 	

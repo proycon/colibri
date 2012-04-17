@@ -241,7 +241,7 @@ void BiAlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, Clas
 
 
 
-EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, double probthreshold, const int bestn, bool DEBUG) {
+EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, double probthreshold, const int bestn, bool DONULL, bool DEBUG) {
 	// Compute p(target|source)      alignmatrix[source][target]
 	/* 
 	initialize t(t|s) uniformly
@@ -281,6 +281,7 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, Selectiv
 			if ((DEBUG) || (sentence % 1000 == 0)) cerr << "@" << sentence << " (" << sourcepatterns->size() << "x" << targetpatterns->size() << ")" << endl;			
 			for (vector<const EncAnyGram*>::const_iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {  
     			const EncAnyGram * targetgram = *targetiter;
+    			if (DONULL) alignmatrix[NULL][targetgram] = v;
                 for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
     			    const EncAnyGram * sourcegram = *sourceiter;
 					alignmatrix[sourcegram][targetgram] = v;
@@ -311,6 +312,7 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, Selectiv
         			unordered_map<const EncAnyGram*, double> sentencetotal;      
         			for (vector<const EncAnyGram*>::iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {  
         				const EncAnyGram * targetgram = *targetiter;
+        				if (DONULL) sentencetotal[targetgram] += alignmatrix[NULL][targetgram];
         				for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
         					const EncAnyGram * sourcegram = *sourceiter;
         					sentencetotal[targetgram] += alignmatrix[sourcegram][targetgram]; //compute sum over all source conditions for a targetgram under consideration 
@@ -322,6 +324,14 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, Selectiv
 		            //collect counts to estimate improved model   (for evidence that a targetgram is aligned to a sourcegram)
 		            for (vector<const EncAnyGram*>::const_iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {  
 		    			const EncAnyGram * targetgram = *targetiter;
+		    			
+		    			//the null condition:
+		    			if (DONULL) {
+		    				const double countvalue_null = alignmatrix[NULL][targetgram] / sentencetotal[targetgram];
+		                	count[NULL][targetgram] += countvalue_null;
+							total[NULL] += countvalue_null;
+						}
+						
 		                for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
 		    			    const EncAnyGram * sourcegram = *sourceiter;                                                                 
 		                    const double countvalue = alignmatrix[sourcegram][targetgram] / sentencetotal[targetgram];
@@ -356,6 +366,8 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, Selectiv
                 c++;        		
         	}
         }
+        
+        
 		
         const double avdivergence = (double) totaldivergence / c;
         converged = ((round >= MAXROUNDS) || abs(avdivergence - prevavdivergence) <= CONVERGEDTHRESHOLD);               
@@ -367,8 +379,6 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, Selectiv
     
     
     if ((probthreshold > 0) || (bestn > 0)) {
-    
-    	
     
 		cerr << "  Pruning stage... ";
 		for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
@@ -423,6 +433,8 @@ void EMAlignmentModel::save(const string & filename) {
     f.write( (char*) &sourcecount, sizeof(uint64_t));         
 
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+    	if (iter->first == NULL) continue;
+    	
 		f.write((char*) &check, sizeof(char));
 			  
     	const EncAnyGram * sourcegram = iter->first;
@@ -468,6 +480,7 @@ void EMAlignmentModel::save(const string & filename) {
 void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthreshold, int bestn) {
 	 //Compute intersection with reverse model
 	for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
+		if (sourceiter->first == NULL) continue;
 		const EncAnyGram * sourcegram = sourceiter->first;
 		
 		double lowerbound = 0.0;
