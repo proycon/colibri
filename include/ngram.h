@@ -39,7 +39,7 @@ class EncAnyGram {
      virtual bool operator!=(const EncAnyGram &other) const;
      virtual EncAnyGram & operator =(EncAnyGram other);    
     
-     const size_t hash() const;
+     virtual const size_t hash() const;
     
      //EncNGram * slice(const int begin,const int length) const;
     
@@ -67,6 +67,15 @@ class EncAnyGram {
     
 };
 
+class EncNullGram: public EncAnyGram {
+   public:
+	EncNullGram() { data = new unsigned char[1]; data[0] = 0; _size = 1; }
+	const char n() { return 1; }
+	const char size() { return 1; }
+	const size_t hash() const { return 0; }
+	void writeasbinary(std::ostream * out) const {}
+	virtual std::string decode(ClassDecoder& classdecoder) const { return "{NULL}"; }
+};
 
 class EncNGram: public EncAnyGram {
    public:

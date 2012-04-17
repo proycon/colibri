@@ -2,6 +2,8 @@
 
 using namespace std;
 
+const EncNullGram * NULLGRAM = new EncNullGram();
+
 double CoocAlignmentModel::cooc( const multiset<uint32_t> & sourceindex, const multiset<uint32_t> & targetindex, const double heurthreshold) {    
     //Jaccard co-occurrence    
     int intersectioncount = 0;    
@@ -140,6 +142,7 @@ CoocAlignmentModel::CoocAlignmentModel(CoocMode mode,SelectivePatternModel * sou
     
 void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+    	if (iter->first == NULLGRAM) continue;
         const EncAnyGram* sourcegram = iter->first;
         *OUT << sourcegram->decode(sourceclassdecoder) << "\t";
         map<double, const EncAnyGram*> sorted;        
@@ -156,6 +159,7 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
 
 void BiAlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+    	if (iter->first == NULLGRAM) continue;
         const EncAnyGram* sourcegram = iter->first;
         *OUT << sourcegram->decode(sourceclassdecoder) << "\t";
         map<double, const EncAnyGram*> sorted;        
@@ -179,7 +183,8 @@ void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassD
 	} else {
 		delimiter = " ";
 	}
-    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {    
+    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+    	if (iter->first == NULLGRAM) continue;    
         const EncAnyGram* sourcegram = iter->first;
         if (wordbased && sourcegram->n() > 1) continue;         
         map<double, const EncAnyGram*> sorted;        
@@ -210,7 +215,8 @@ void BiAlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, Clas
 	} else {
 		delimiter = " ";
 	}
-    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double > >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {    
+    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double > >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+    	if (iter->first == NULLGRAM) continue;    
         const EncAnyGram* sourcegram = iter->first;
         if (wordbased && sourcegram->n() > 1) continue;         
         map<double, const EncAnyGram*> sorted;        
@@ -281,7 +287,7 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, Selectiv
 			if ((DEBUG) || (sentence % 1000 == 0)) cerr << "@" << sentence << " (" << sourcepatterns->size() << "x" << targetpatterns->size() << ")" << endl;			
 			for (vector<const EncAnyGram*>::const_iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {  
     			const EncAnyGram * targetgram = *targetiter;
-    			if (DONULL) alignmatrix[NULL][targetgram] = v;
+    			if (DONULL) alignmatrix[NULLGRAM][targetgram] = v;
                 for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
     			    const EncAnyGram * sourcegram = *sourceiter;
 					alignmatrix[sourcegram][targetgram] = v;
@@ -312,7 +318,7 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, Selectiv
         			unordered_map<const EncAnyGram*, double> sentencetotal;      
         			for (vector<const EncAnyGram*>::iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {  
         				const EncAnyGram * targetgram = *targetiter;
-        				if (DONULL) sentencetotal[targetgram] += alignmatrix[NULL][targetgram];
+        				if (DONULL) sentencetotal[targetgram] += alignmatrix[NULLGRAM][targetgram];
         				for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
         					const EncAnyGram * sourcegram = *sourceiter;
         					sentencetotal[targetgram] += alignmatrix[sourcegram][targetgram]; //compute sum over all source conditions for a targetgram under consideration 
@@ -327,9 +333,9 @@ EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, Selectiv
 		    			
 		    			//the null condition:
 		    			if (DONULL) {
-		    				const double countvalue_null = alignmatrix[NULL][targetgram] / sentencetotal[targetgram];
-		                	count[NULL][targetgram] += countvalue_null;
-							total[NULL] += countvalue_null;
+		    				const double countvalue_null = alignmatrix[NULLGRAM][targetgram] / sentencetotal[targetgram];
+		                	count[NULLGRAM][targetgram] += countvalue_null;
+							total[NULLGRAM] += countvalue_null;
 						}
 						
 		                for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
@@ -430,10 +436,12 @@ void EMAlignmentModel::save(const string & filename) {
     f.write( (char*) &_id, sizeof(uint64_t));
             
     uint64_t sourcecount = alignmatrix.size();
+    if (alignmatrix.count(NULLGRAM) > 0) sourcecount--;
     f.write( (char*) &sourcecount, sizeof(uint64_t));         
 
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
-    	if (iter->first == NULL) continue;
+    	if (iter->first == NULLGRAM) continue;
+
     	
 		f.write((char*) &check, sizeof(char));
 			  
@@ -480,7 +488,7 @@ void EMAlignmentModel::save(const string & filename) {
 void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthreshold, int bestn) {
 	 //Compute intersection with reverse model
 	for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
-		if (sourceiter->first == NULL) continue;
+		if (sourceiter->first == NULLGRAM) continue;
 		const EncAnyGram * sourcegram = sourceiter->first;
 		
 		double lowerbound = 0.0;

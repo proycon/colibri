@@ -289,13 +289,13 @@ int main( int argc, char *argv[] ) {
 		
 		if (DO_EM) {
 			cerr << "Computing alignment model..." << endl;
-			alignmodel = new EMAlignmentModel(&sourcemodel,&targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, DODEBUG);
+			alignmodel = new EMAlignmentModel(&sourcemodel,&targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn,EM_NULL, DODEBUG);
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
 		
 			if (DOBIDIRECTIONAL) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-				AlignmentModel reversealignmodel = EMAlignmentModel(&targetmodel,&sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, DODEBUG);
+				AlignmentModel reversealignmodel = EMAlignmentModel(&targetmodel,&sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, EM_NULL, DODEBUG);
 				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;						
 				cerr << "Computing intersection of both alignment models..." << endl;
