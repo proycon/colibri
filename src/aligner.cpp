@@ -20,7 +20,7 @@ void usage() {
     cerr << " Generic alignment options:" << endl;    
     cerr << "\t-V				         Verbose debugging output" << endl;
     cerr << "\t-b n                      Best n alignments only" << endl;
-    cerr << "\t-G 			             Weigh alignment results based on graph information (subsumption relations)" << endl;
+    cerr << "\t-G weight-factor          Weigh alignment results based on graph information (subsumption relations)" << endl;
     cerr << "\t-B probability-threshold  Compute bidirectional alignment (intersection), using given probability threshold (0 <= x < 1)" << endl;
     cerr << " Co-occurrence alignment options:" << endl;       
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
@@ -57,7 +57,7 @@ int main( int argc, char *argv[] ) {
     string invmodelfile="";
     double coocprunevalue = 0.0;
     double probprunevalue = 0.0;
-    double graphweightfactor = 1.2;
+    double graphweightfactor = 0.0; 
     CoocMode COOCMODE = NOCOOC;
     bool DO_EM = false;
     int COUNTTHRESHOLD = 0;
@@ -65,7 +65,6 @@ int main( int argc, char *argv[] ) {
     double XCOUNTTHRESHOLD = 0;
     double XCOUNTRATIOTHRESHOLD = 0;
     bool DOBIDIRECTIONAL = false;
-    bool DOGRAPHALIGN = false;
     double bidirprobthreshold = 0.0;
     int MINLENGTH = 0;
     int MAXLENGTH = 99;
@@ -97,7 +96,7 @@ int main( int argc, char *argv[] ) {
     int option_index = 0;
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEI:v:Gi:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEI:v:G:i:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -135,7 +134,7 @@ int main( int argc, char *argv[] ) {
         	DO_EM = true;
         	break;
 		case 'G':
-			DOGRAPHALIGN = true;
+			graphweightfactor = atof(optarg);
 			break;        	
         case 's':
             sourcemodelfile = optarg;
@@ -236,7 +235,7 @@ int main( int argc, char *argv[] ) {
 		if (DOBIDIRECTIONAL) {
 			cerr << "\tBidirectional alignment enabled (-B)" << endl;
 		}
-		if (DOGRAPHALIGN) {
+		if (graphweightfactor > 0) {
 			cerr << "\tGraph weighting enabled (-G), weight factor: " << graphweightfactor << endl;
 		}
 		if (DO_EM) {
@@ -250,7 +249,7 @@ int main( int argc, char *argv[] ) {
 	
 		
 		cerr << "Loading source model " << sourcemodelfile << endl;
-		SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, DOGRAPHALIGN);
+		SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0));
 		cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
 		cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredtokens << " tokens due to set thresholds" << endl;
 		if (sourcemodel.has_xcount()) {
@@ -269,7 +268,7 @@ int main( int argc, char *argv[] ) {
 		}
 		
 		cerr << "Loading target model " << targetmodelfile << endl;
-		SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, DOGRAPHALIGN);
+		SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0));
 		cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
 		cerr << "  Ignored " << targetmodel.ignoredtypes << " types, " << targetmodel.ignoredtokens << " tokens due to set thresholds" << endl;
 		if (targetmodel.has_xcount()) {
@@ -319,7 +318,7 @@ int main( int argc, char *argv[] ) {
 
 
 
-		if (DOGRAPHALIGN) {
+		if (graphweightfactor > 0) {
 			cerr << "Weighting based on graph subsumption relations..." << endl;
 			const int adjustments = alignmodel->graphalign(sourcemodel, targetmodel, graphweightfactor);
 			cerr << "   Made " << adjustments << " adjustments" << endl;			
