@@ -85,9 +85,14 @@ class EMAlignmentModel: public AlignmentModel {
    public:
     SelectivePatternModel * sourcemodel;
     SelectivePatternModel * targetmodel;    
+    EMAlignmentModel() {};
     EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, bool DONULL=true, bool DEBUG = false);        
     void save(const std::string & filename);
-    
+};
+
+class ItEMAlignmentModel: public EMAlignmentModel {
+   public:
+    ItEMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, bool DONULL=true, bool DEBUG = false);        
 };
 
  

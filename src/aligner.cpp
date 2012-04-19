@@ -16,7 +16,8 @@ void usage() {
     cerr << " Alignment method (choose one):" << endl;
     cerr << "\t-J                        Use Jaccard co-occurrence method (simplest)" << endl;
     cerr << "\t-D                        Use Dice co-occurrence method" << endl;
-    cerr << "\t-E                        Use EM alignment method" << endl;       
+    cerr << "\t-E                        Use EM alignment method" << endl;
+    cerr << "\t-3                        Use Iterative EM alignment method" << endl;       
     cerr << " Generic alignment options:" << endl;    
     cerr << "\t-V				         Verbose debugging output" << endl;
     cerr << "\t-b n                      Best n alignments only" << endl;
@@ -60,6 +61,7 @@ int main( int argc, char *argv[] ) {
     double graphweightfactor = 0.0; 
     CoocMode COOCMODE = NOCOOC;
     bool DO_EM = false;
+    bool DO_ITEREM = false;
     int COUNTTHRESHOLD = 0;
     int FREQTHRESHOLD = 0; 
     double XCOUNTTHRESHOLD = 0;
@@ -96,7 +98,7 @@ int main( int argc, char *argv[] ) {
     int option_index = 0;
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEI:v:G:i:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEI:v:G:i:3",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -133,6 +135,9 @@ int main( int argc, char *argv[] ) {
         case 'E':
         	DO_EM = true;
         	break;
+        case '3':
+        	DO_ITEREM = true;
+        	break;        	
 		case 'G':
 			graphweightfactor = atof(optarg);
 			break;        	
@@ -209,6 +214,8 @@ int main( int argc, char *argv[] ) {
 		cerr << "Configuration: " << endl;
 		if (DO_EM) {
 			cerr << "\tEM-alignment" << endl;
+		} else if (DO_ITEREM) {
+			cerr << "\tIterative EM-alignment" << endl;
 		} else if (COOCMODE == JACCARD) {
 			cerr << "\tCo-occurrence metric : JACCARD (-J)" << endl;	
 		} else if (COOCMODE == DICE) {
@@ -238,7 +245,7 @@ int main( int argc, char *argv[] ) {
 		if (graphweightfactor > 0) {
 			cerr << "\tGraph weighting enabled (-G), weight factor: " << graphweightfactor << endl;
 		}
-		if (DO_EM) {
+		if ((DO_EM) || (DO_ITEREM)) {
 			if (EM_NULL) {
 				cerr << "\tNull alignments in EM?  yes" << endl;
 			} else {
@@ -300,6 +307,20 @@ int main( int argc, char *argv[] ) {
 				cerr << "Computing intersection of both alignment models..." << endl;
 				alignmodel->intersect(&reversealignmodel, bidirprobthreshold, bestn);
 			}	    
+		} else if (DO_ITEREM) {
+			cerr << "Computing alignment model..." << endl;
+			alignmodel = new ItEMAlignmentModel(&sourcemodel,&targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn,EM_NULL, DODEBUG);
+			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
+			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
+		
+			if (DOBIDIRECTIONAL) {
+				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
+				AlignmentModel reversealignmodel = ItEMAlignmentModel(&targetmodel,&sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, EM_NULL, DODEBUG);
+				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
+				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;						
+				cerr << "Computing intersection of both alignment models..." << endl;
+				alignmodel->intersect(&reversealignmodel, bidirprobthreshold, bestn);
+			}	    			
 		} else if (COOCMODE) {
 			cerr << "Computing alignment model..." << endl;
 			alignmodel = new CoocAlignmentModel(COOCMODE, &sourcemodel,&targetmodel, bestn, coocprunevalue, probprunevalue,  DONORM, DODEBUG);
