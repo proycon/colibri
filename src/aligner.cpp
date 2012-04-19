@@ -202,7 +202,7 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
-    if (modelfile.empty() && ((!DO_EM) && (!COOCMODE))) {
+    if (modelfile.empty() && ((!DO_EM) && (!DO_ITEREM) && (!COOCMODE))) {
     	cerr << "Error: No alignment method selected (select -J or -D)" << endl;
     	usage();
     	exit(3);
