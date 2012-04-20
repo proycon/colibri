@@ -673,6 +673,10 @@ class MTWrapper(object):
                             
                     self.log("----------------------------------------------------",white)
         elif cmd == 'batchconf':
+            self.initlog('conf')
+            if self.parseconf(sys.argv[2:]):
+                self.log("Writing new configuration...")
+                self.writesettings()            
             for batch, conf in self.batches:
                 r = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py conf ' + ' '.join(sys.argv[2:]))
                 if r == 0: 
@@ -1062,6 +1066,9 @@ class MTWrapper(object):
             for i in range(0,len(conf) - 1):
                 key = conf[i]
                 value = conf[i+1]
+                if value == "True": value = True
+                if value == "False": value = False
+                if value == "None": value = None                
                 try:
                     getattr(self, key)
                     setattr(self,key,value)
