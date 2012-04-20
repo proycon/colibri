@@ -791,6 +791,8 @@ class MTWrapper(object):
                     
         scores = []
         names = []
+        phrasetablesize = []
+        names_phrasetable = []
         for batch, conf in self.batches:
             if not selectedbatches or batch in selectedbatches:
                 batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch
@@ -801,6 +803,20 @@ class MTWrapper(object):
                     scores.append( ( blue, meteor, nist, ter, wer, per) )
                     names.append(batch)
                     f.close()
+                if os.path.isfile(batchdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG  + '.phrasetable'):   
+                    count = 0
+                    uniquecount = 0
+                    f = open(batchdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG  + '.phrasetable')
+                    prev = ''
+                    for line in f:
+                        sourcephrase = line.split('|||').strip()
+                        if sourcephrase == prev:
+                            uniquecount += 1
+                            prev = sourcephrase
+                        count += 1
+                    f.close()
+                    phrasetablesize.append( (count, uniquecount) )
+                    names_phrasetable.append(batch)                    
         
         if not scores:
             self.log("Error, no scores found! Did you forget to train/test/score the batches first?", red)
@@ -864,7 +880,11 @@ class MTWrapper(object):
         f.write("\\begin{figure}\n")        
         f.write("\\includegraphics[width=18cm]{batchreport-er.png}\n")
         f.write("\\caption{TER/WER/PER scores for " + title + "}\n")        
-        f.write("\\end{figure}\n")      
+        f.write("\\end{figure}\n")
+        f.write("\\begin{figure}\n")        
+        f.write("\\includegraphics[width=18cm]{batchreport-phrasetable.png}\n")
+        f.write("\\caption{Phrasetable size for " + title + "}\n")        
+        f.write("\\end{figure}\n")                        
         f.write("\\end{document}\n")
         f.close()
             
@@ -931,6 +951,19 @@ class MTWrapper(object):
         fig.autofmt_xdate()
         fig.savefig(self.WORKDIR + '/batchreport-er.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)
                             
+        matplotlib.pyplot.grid(True)
+        p_count = matplotlib.pyplot.bar(xlocations, [ x[0] for x in phrasetablesize ] ,  width, color='b')
+        p_uniquecount = matplotlib.pyplot.bar(xlocations, [ x[1] for x in phrasetablesize ] ,  width, color='m')        
+        matplotlib.pyplot.ylabel('Number of phrase pairs in phrase table')
+        matplotlib.pyplot.title('Phrase table size for ' + title)
+        matplotlib.pyplot.xticks(xlocations+width/2., names_phrasetable)# size='small')
+        fig.autofmt_xdate()
+        matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in phrasetablesize)),1000))
+        matplotlib.pyplot.legend( (p_count[0],p_uniquecount[0]), ('Count', 'Unique') )
+        autolabel(p_count)
+        fig.savefig(self.WORKDIR + '/batchreport-phrasetable.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
+        matplotlib.pyplot.clf()
+
                 
 
             
