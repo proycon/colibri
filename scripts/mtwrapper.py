@@ -1111,10 +1111,10 @@ class MTWrapper(object):
         return True        
 
     def parseconf(self, conf):        
-        changed = False
-        if isinstance(conf,list):
-            conf = ' '.join(conf)
-        if isinstance(conf,str) or isinstance(conf,unicode):        
+        changed = False        
+        if isinstance(conf,str) or isinstance(conf,unicode):
+            conf = conf.split(' ')
+        if isinstance(conf,list):        
             for i in range(0,len(conf) - 1):
                 key = conf[i]
                 value = conf[i+1]
