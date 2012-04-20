@@ -824,7 +824,7 @@ class MTWrapper(object):
             self.log("Error, no scores found! Did you forget to train/test/score the batches first?", red)
             sys.exit(2)
     
-        f = open(self.WORKDIR + '/batchreport.tex','w')
+        f = open(self.WORKDIR + '/' + title + '.batchreport.tex','w')
         f.write("\\documentclass[a4paper,10pt]{article}\n\\usepackage{graphicx}\n")        
         f.write("\\begin{document}\n\n")
         f.write('\\section*{Results for ' + title + '}\n\n')
@@ -1574,7 +1574,7 @@ class MTWrapper(object):
             os.mkdir(workdir)
             for filename in glob.glob(self.WORKDIR + '/*'):
                 basefilename = os.path.basename(filename)
-                if (basefilename[-3:] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.' or os.path.isdir(filename) or basefilename[-4:] == '.log':
+                if (basefilename[-3:] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.' or os.path.isdir(filename) or basefilename[-4:] in ['.log','.tex','.png','.jpg','.aux','.pdf']:
                     continue    
                 try:
                     os.symlink(filename, workdir + '/' + basefilename)
