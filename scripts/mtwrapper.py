@@ -483,7 +483,7 @@ class MTWrapper(object):
         print >>sys.stderr,"\t\t-t                               Tokenise the input file"
         print >>sys.stderr,"\t\t-o <outputfile>                  Output file (default: stdout)"        
         print >>sys.stderr,"\ttest <inputfile> <referencefile>   Run and evaluate the MT system on the specified input file and reference file (one sentence per line). If <inputfile> and <referencefile> are not given, the default test files from the system configuration are used."                               
-        print >>sys.stderr,"\tscore <inputfile> <referencefile>  Like test, but work on a pre-run system, does  not run the translation again."                   
+        print >>sys.stderr,"\tscore <inputfile> <referencefile>  Like test, but work on a pre-run system, does not run the translation again."                   
         print >>sys.stderr,"\tclean [all|giza|moses|colibri|score|batch]    Clean generated files"
         print >>sys.stderr,"\tbranch <expname> [VARIABLE value]       Create a new branch based on this project (files are symlinked instead of copied)"
         print >>sys.stderr,"\tconf VARIABLE value [VARIABLE2 value2]  Change configuration"
@@ -672,6 +672,13 @@ class MTWrapper(object):
                             self.log("Testing batch " + batch + " finished with error code " + str(rtest) + " " + self.timestamp(),red,True)
                             
                     self.log("----------------------------------------------------",white)
+        elif cmd == 'batchconf':
+            for batch, conf in self.batches:
+                r = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py conf ' + ' '.join(sys.argv[2:]))
+                if r == 0: 
+                    self.log("Configuring batch " + batch + " finished succesfully " + self.timestamp(),green,True)
+                else:
+                    self.log("Configuring batch " + batch + " finished with error code " + str(rtrain) + " " + self.timestamp(),red,True)
         elif cmd == 'batchscore':                                        
             self.initlog('batchscore')
             if not self.batches:

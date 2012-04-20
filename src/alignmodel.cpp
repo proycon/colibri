@@ -543,13 +543,13 @@ ItEMAlignmentModel::ItEMAlignmentModel(SelectivePatternModel * sourcemodel, Sele
     do {       
         round++; 
         c = 0;        
-        cerr << "  EM Round " << round << "... ";
+        cerr << "  EM Round " << round << "... " << endl;
         
         std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > count;                
 		unordered_map<const EncAnyGram*, double> total;
 			
         for (int n = 1; n <= maxn; n++) {
-        
+        	cerr << "      n=" << n << endl;
 		    
 		    //EXPECTATION STEP: collect counts to estimate improved model -- use reverse index to iterate over all sentences in training data 
 		    for ( unordered_map<uint32_t,std::vector<const EncAnyGram*> >::const_iterator reviter_source = sourcemodel->reverseindex.begin(); reviter_source != sourcemodel->reverseindex.end(); reviter_source++) {   //iterate over sentences    		
@@ -572,14 +572,15 @@ ItEMAlignmentModel::ItEMAlignmentModel(SelectivePatternModel * sourcemodel, Sele
 		    			}
 		    			
 							
-							
 				        //collect counts to estimate improved model   (for evidence that a targetgram is aligned to a sourcegram)
-				        for (vector<const EncAnyGram*>::const_iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {  
-							const EncAnyGram * targetgram = *targetiter;
+				        //for (vector<const EncAnyGram*>::const_iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {
+				        
+				        for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sentencetotal.begin(); targetiter != sentencetotal.end(); targetiter++) {  
+							const EncAnyGram * targetgram = targetiter->first;
 							
 							//the null condition:
 							if (DONULL) {
-								const double countvalue_null = alignmatrix[NULLGRAM][targetgram] / sentencetotal[targetgram];
+								const double countvalue_null = alignmatrix[NULLGRAM][targetgram] / targetiter->second;
 				            	count[NULLGRAM][targetgram] += countvalue_null;
 								total[NULLGRAM] += countvalue_null;
 							}
@@ -587,7 +588,7 @@ ItEMAlignmentModel::ItEMAlignmentModel(SelectivePatternModel * sourcemodel, Sele
 				            for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
 							    const EncAnyGram * sourcegram = *sourceiter;
 							    if (sourcegram->n() == n) {                                                                 
-				                	const double countvalue = alignmatrix[sourcegram][targetgram] / sentencetotal[targetgram];
+				                	const double countvalue = alignmatrix[sourcegram][targetgram] / targetiter->second;
 				                	count[sourcegram][targetgram] += countvalue;
 				                	total[sourcegram] += countvalue;
 				                }
