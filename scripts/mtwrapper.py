@@ -1634,7 +1634,7 @@ class MTWrapper(object):
         f.write(")\n")
         if writebatches:
             for batch, conf in self.batches:                     
-                f.write("mtwrapper.addbatch('" + batch + "', **"+repr(conf)+")")
+                f.write("mtwrapper.addbatch('" + batch + "', **"+repr(conf)+")\n\n")
         f.write("mtwrapper.start()\n")
         f.close()
         os.chmod(settingsfile, 0754)
