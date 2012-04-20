@@ -1112,6 +1112,8 @@ class MTWrapper(object):
 
     def parseconf(self, conf):        
         changed = False
+        if isinstance(conf,list):
+            conf = ' '.join(conf)
         if isinstance(conf,str) or isinstance(conf,unicode):        
             for i in range(0,len(conf) - 1):
                 key = conf[i]
