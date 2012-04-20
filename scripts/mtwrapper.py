@@ -1125,7 +1125,7 @@ class MTWrapper(object):
                     getattr(self, key)
                     setattr(self,key,value)
                     changed = True
-                    self.log("Set variable " + key + " to \"" + value +"\"")
+                    self.log("Set variable " + key + " to \"" + str(value) +"\"")
                 except AttributeError:
                     self.log("ERROR: No such variable exists: " + key,red)
                     sys.exit(2)
@@ -1135,7 +1135,7 @@ class MTWrapper(object):
                     getattr(self, key)
                     setattr(self,key,value)
                     changed = True
-                    self.log("Set variable " + key + " to \"" + value +"\"")
+                    self.log("Set variable " + key + " to \"" + str(value) +"\"")
                 except AttributeError:
                     self.log("ERROR: No such variable exists: " + key,red)
                     sys.exit(2)      
