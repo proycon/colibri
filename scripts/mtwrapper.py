@@ -894,7 +894,10 @@ class MTWrapper(object):
             # attach some text labels
             for rect in rects:
                 height = rect.get_height()
-                matplotlib.pyplot.text(rect.get_x()+rect.get_width()/2., height+0.001, '%.3f'%height,ha='center', va='bottom')
+                if height == round(height):
+                    matplotlib.pyplot.text(rect.get_x()+rect.get_width()/2., height+0.001, '%d'%height,ha='center', va='bottom')
+                else:
+                    matplotlib.pyplot.text(rect.get_x()+rect.get_width()/2., height+0.001, '%.3f'%height,ha='center', va='bottom')
 
 
         width = 0.9       # the width of the bars: can also be len(x) sequence
@@ -952,14 +955,16 @@ class MTWrapper(object):
         fig.autofmt_xdate()
         fig.savefig(self.WORKDIR + '/batchreport-er.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)
                             
-        matplotlib.pyplot.grid(True)
+        fig = matplotlib.pyplot.figure(figsize=(15,10))
+        xlocations2 = numpy.arange(len(phrasetablesize))    # the x locations for the groups
+        matplotlib.pyplot.grid(True)       
         p_count = matplotlib.pyplot.bar(xlocations, [ x[0] for x in phrasetablesize ] ,  width, color='b')
         p_uniquecount = matplotlib.pyplot.bar(xlocations, [ x[1] for x in phrasetablesize ] ,  width, color='m')        
         matplotlib.pyplot.ylabel('Number of phrase pairs in phrase table')
         matplotlib.pyplot.title('Phrase table size for ' + title)
-        matplotlib.pyplot.xticks(xlocations+width/2., names_phrasetable)# size='small')
+        matplotlib.pyplot.xticks(xlocations2+width/2., names_phrasetable)# size='small')
         fig.autofmt_xdate()
-        matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in phrasetablesize)),1000))
+        matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in phrasetablesize)),100000))
         matplotlib.pyplot.legend( (p_count[0],p_uniquecount[0]), ('Count', 'Unique') )
         autolabel(p_count)
         fig.savefig(self.WORKDIR + '/batchreport-phrasetable.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
