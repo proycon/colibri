@@ -810,7 +810,7 @@ class MTWrapper(object):
                     f = open(batchdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG  + '.phrasetable')
                     prev = ''
                     for line in f:
-                        sourcephrase = line.split('|||').strip()
+                        sourcephrase = line.split('|||')[0].strip()
                         if sourcephrase == prev:
                             uniquecount += 1
                             prev = sourcephrase
