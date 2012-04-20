@@ -694,6 +694,7 @@ class MTWrapper(object):
                 self.writesettings()            
             for batch, conf in self.batches:
                 if not selectedbatches or batch in selectedbatches:
+                    batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch
                     r = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py conf ' + ' '.join(confargs))
                     if r == 0: 
                         self.log("Configuring batch " + batch + " finished succesfully " + self.timestamp(),green,True)
