@@ -1564,8 +1564,17 @@ class MTWrapper(object):
                 
         workdir = parentdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + expname
         if workdir and not os.path.isdir(workdir):            
-            self.log("Creating branched work directory (as sibling): " + workdir,white)
+            self.log("Creating branched work directory (as sibling): " + workdir,white)           
             os.mkdir(workdir)
+            for filename in glob.glob(self.WORKDIR + '/*'):
+                basefilename = os.path.basename(filename)
+                if (basefilename[-3:] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.' or os.path.isdir(filename) or basefilename[-4:] == '.log':
+                    continue    
+                try:
+                    os.symlink(filename, workdir + '/' + basefilename)
+                    self.log("Branched file " + basefilename + " (symlink)",green)
+                except:
+                    self.log("Error making symlink for " + basefilename,red)            
         elif workdir and not quiet:
             self.log("WARNING: work directory " +  workdir + " already exists! Press ENTER to continue or ctrl-C to abort",white)
             raw_input()
@@ -1575,15 +1584,7 @@ class MTWrapper(object):
 
         settingsfile = self.writesettings(expname, workdir, writebatches) 
                 
-        for filename in glob.glob(self.WORKDIR + '/*'):
-            basefilename = os.path.basename(filename)
-            if (basefilename[-3:] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.' or os.path.isdir(filename):
-                continue    
-            try:
-                os.symlink(filename, workdir + '/' + basefilename)
-                self.log("Branched file " + basefilename + " (symlink)",green)
-            except:
-                self.log("Error making symlink for " + basefilename,red)
+        
                 
         return (workdir, settingsfile)
         
