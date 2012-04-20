@@ -794,8 +794,9 @@ class MTWrapper(object):
         names = []
         phrasetablesize = []
         names_phrasetable = []
-        for batch, conf in self.batches:
+        for batch, conf in self.batches:            
             if not selectedbatches or batch in selectedbatches:
+                self.log("Gathering scores from " + batch)
                 batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch
                 if os.path.isfile(batchdir + '/summary.score'):    
                     f = open(batchdir + '/summary.score','r')
@@ -811,9 +812,9 @@ class MTWrapper(object):
                     prev = ''
                     for line in f:
                         sourcephrase = line.split('|||')[0].strip()
-                        if sourcephrase == prev:
+                        if sourcephrase != prev:
                             uniquecount += 1
-                            prev = sourcephrase
+                        prev = sourcephrase
                         count += 1
                     f.close()
                     phrasetablesize.append( (count, uniquecount) )
@@ -958,8 +959,8 @@ class MTWrapper(object):
         fig = matplotlib.pyplot.figure(figsize=(15,10))
         xlocations2 = numpy.arange(len(phrasetablesize))    # the x locations for the groups
         matplotlib.pyplot.grid(True)       
-        p_count = matplotlib.pyplot.bar(xlocations, [ x[0] for x in phrasetablesize ] ,  width, color='b')
-        p_uniquecount = matplotlib.pyplot.bar(xlocations, [ x[1] for x in phrasetablesize ] ,  width, color='m')        
+        p_count = matplotlib.pyplot.bar(xlocations2, [ x[0] for x in phrasetablesize ] ,  width, color='b')
+        p_uniquecount = matplotlib.pyplot.bar(xlocations2, [ x[1] for x in phrasetablesize ] ,  width, color='m')        
         matplotlib.pyplot.ylabel('Number of phrase pairs in phrase table')
         matplotlib.pyplot.title('Phrase table size for ' + title)
         matplotlib.pyplot.xticks(xlocations2+width/2., names_phrasetable)# size='small')
