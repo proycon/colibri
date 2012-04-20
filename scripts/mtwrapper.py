@@ -673,16 +673,32 @@ class MTWrapper(object):
                             
                     self.log("----------------------------------------------------",white)
         elif cmd == 'batchconf':
+            
+            
+            if sys.argv[2:]:                
+                selectedbatches = []
+                confargs = []
+                for x in sys.argv[:2]:
+                    if x in self.batches:
+                        selectedbatches.append(x)
+                    else:
+                        conf.append(x)
+            else:
+                selectedbatches= None
+                confargs = []
+            
+            
             self.initlog('conf')
             if self.parseconf(sys.argv[2:]):
                 self.log("Writing new configuration...")
                 self.writesettings()            
             for batch, conf in self.batches:
-                r = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py conf ' + ' '.join(sys.argv[2:]))
-                if r == 0: 
-                    self.log("Configuring batch " + batch + " finished succesfully " + self.timestamp(),green,True)
-                else:
-                    self.log("Configuring batch " + batch + " finished with error code " + str(rtrain) + " " + self.timestamp(),red,True)
+                if not selectedbatches or batch in selectedbatches:
+                    r = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py conf ' + ' '.join(confargs))
+                    if r == 0: 
+                        self.log("Configuring batch " + batch + " finished succesfully " + self.timestamp(),green,True)
+                    else:
+                        self.log("Configuring batch " + batch + " finished with error code " + str(rtrain) + " " + self.timestamp(),red,True)
         elif cmd == 'batchscore':                                        
             self.initlog('batchscore')
             if not self.batches:
