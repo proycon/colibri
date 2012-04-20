@@ -678,7 +678,7 @@ class MTWrapper(object):
             if sys.argv[2:]:                
                 selectedbatches = []
                 confargs = []
-                for x in sys.argv[:2]:
+                for x in sys.argv[2:]:
                     if x in self.batches:
                         selectedbatches.append(x)
                     else:
