@@ -1575,6 +1575,16 @@ class MTWrapper(object):
 
         settingsfile = self.writesettings(expname, workdir, writebatches) 
                 
+        for filename in glob.glob(self.WORKDIR + '/*'):
+            basefilename = os.path.basename(filename)
+            if (basefilename[-3:] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.' or os.path.isdir(filename):
+                continue    
+            try:
+                os.symlink(filename, workdir + '/' + basefilename)
+                self.log("Branched file " + basefilename + " (symlink)",green)
+            except:
+                self.log("Error making symlink for " + basefilename,red)
+                
         return (workdir, settingsfile)
         
 
@@ -1588,17 +1598,7 @@ class MTWrapper(object):
         else:
             settingsfile = workdir + '/mt-' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '.py'
     
-        for filename in glob.glob(self.WORKDIR + '/*'):
-            basefilename = os.path.basename(filename)
-            if (basefilename[-3:] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.' or os.path.isdir(filename):
-                continue    
-            try:
-                os.symlink(filename, workdir + '/' + basefilename)
-                self.log("Branched file " + basefilename + " (symlink)",green)
-            except:
-                self.log("Error making symlink for " + basefilename,red)
-
-        
+            
         f = codecs.open(settingsfile,'w','utf-8')
         f.write("#! /usr/bin/env python\n# -*- coding: utf8 -*-#\n\n")
         f.write("#Generated as branch of " + self.WORKDIR + "\n\n")         
