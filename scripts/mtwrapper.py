@@ -1114,7 +1114,7 @@ class MTWrapper(object):
         changed = False        
         if isinstance(conf,str) or isinstance(conf,unicode):
             conf = conf.split(' ')
-        if isinstance(conf,list):        
+        if isinstance(conf,list) or isinstance(conf, tuple):        
             for i in range(0,len(conf) - 1):
                 key = conf[i]
                 value = conf[i+1]
@@ -1138,7 +1138,11 @@ class MTWrapper(object):
                     self.log("Set variable " + key + " to \"" + value +"\"")
                 except AttributeError:
                     self.log("ERROR: No such variable exists: " + key,red)
-                    sys.exit(2)                
+                    sys.exit(2)      
+        if changed:          
+            self.log("Configuration updated")
+        else:
+            self.log("Configuration unchanged")
         return changed
                                         
         
