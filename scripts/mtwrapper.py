@@ -682,7 +682,7 @@ class MTWrapper(object):
                     if x in self.batches:
                         selectedbatches.append(x)
                     else:
-                        conf.append(x)
+                        confargs.append(x)
             else:
                 selectedbatches= None
                 confargs = []
