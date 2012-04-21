@@ -670,6 +670,193 @@ ItEMAlignmentModel::ItEMAlignmentModel(SelectivePatternModel * sourcemodel, Sele
 }
 
 
+EMAlignmentModel2::EMAlignmentModel2(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, double probthreshold, const int bestn, bool DONULL, bool DEBUG) {
+	// Compute p(target|source)      alignmatrix[source][target]
+	/* 
+	initialize t(t|s) uniformly
+   do until convergence
+   	  set count(t|s) to 0 for all t,s
+  	  set total(s) to 0 for all s
+      for all sentence pairs (t_s,s_s)
+         set total_s(t) = 0 for all t
+         for all words t in t_s
+            for all words s in s_s
+              total_s(t) += t(t|s)
+         for all words t in t_s
+             for all words s in s_s
+                count(t|s) += t(t|s) / total_s(t)
+                total(s)   += t(t|s) / total_s(t)
+      for all s
+     	for all t
+           t(t|s) = count(t|s) / total(s)
+	*/
+
+	this->sourcemodel = sourcemodel;
+	this->targetmodel = targetmodel;
+
+    int round = 0;    
+    unsigned long c;
+    double prevavdivergence = 0;
+    bool converged = false;
+    
+    
+    
+    
+    //initialise uniformly
+    cerr << "  Initialisation step" << endl;
+    double v = (double) 1 / targetmodel->types();     
+    for ( unordered_map<uint32_t,std::vector<const EncAnyGram*> >::const_iterator reviter_source = sourcemodel->reverseindex.begin(); reviter_source != sourcemodel->reverseindex.end(); reviter_source++) {
+    	uint32_t sentence = reviter_source->first;
+		const vector<const EncAnyGram*> * sourcepatterns = &reviter_source->second;
+		if (targetmodel->reverseindex.count(sentence) > 0) {
+			vector<const EncAnyGram*> * targetpatterns = &targetmodel->reverseindex[sentence];
+			if ((DEBUG) || (sentence % 1000 == 0)) cerr << "@" << sentence << " (" << sourcepatterns->size() << "x" << targetpatterns->size() << ")" << endl;			
+			for (vector<const EncAnyGram*>::const_iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {  
+    			const EncAnyGram * targetgram = *targetiter;
+    			if (DONULL) alignmatrix[NULLGRAM][targetgram] = v;
+                for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
+    			    const EncAnyGram * sourcegram = *sourceiter;
+					alignmatrix[sourcegram][targetgram] = v;
+    			}
+    		}
+		}
+    }
+          
+            
+            
+    do {       
+        round++; 
+        c = 0;        
+        cerr << "  EM Round " << round << "... ";
+        
+		std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > count;                
+		unordered_map<const EncAnyGram*, double> total;
+		unsigned int found = 0;
+
+		//EXPECTATION STEP: collect counts to estimate improved model
+		for (unordered_map<EncNGram,IndexCountData >::const_iterator iter = sourcemodel->ngrams.begin();  iter != sourcemodel->ngrams.end(); iter++) {
+			c++;
+		    if ((c % 1000 == 0) || (DEBUG)) cerr << "\t@" << c << " (ngram) -- " << found << " alignment possibilities thus-far" << endl;
+		    found += expectation(&iter->first, iter->second.sentences, targetmodel, count, total);
+		}    
+		for (unordered_map<EncSkipGram,IndexCountData >::const_iterator iter = sourcemodel->skipgrams.begin();  iter != sourcemodel->skipgrams.end(); iter++) {
+			c++;
+			if ((c % 1000 == 0) || (DEBUG)) cerr << "\t@" << c << " (skipgram) -- " << found << " alignment possibilities thus-far" << endl;
+		    found += expectation(&iter->first, iter->second.sentences, targetmodel, count, total);
+		}            
+
+        		
+		
+        double prevtransprob;                
+        double totaldivergence = 0;
+        //MAXIMISATION STEP: improved model  update probability estimates (Maximum Likelihood Estimation) (normalised count is the new estimated probability)
+        for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
+        	const EncAnyGram * sourcegram = sourceiter->first;
+        	for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
+        		const EncAnyGram * targetgram = targetiter->first;
+        		
+				prevtransprob = targetiter->second;
+                const double newtransprob = (double) count[sourcegram][targetgram] / total[sourcegram];
+                alignmatrix[sourcegram][targetgram] = newtransprob;
+                
+                //for computation of convergence
+                const double divergence = abs(newtransprob - prevtransprob);
+                if (DEBUG) {/*
+	                cerr << " prevtransprob=" << prevtransprob << " ";
+	                cerr << " newtransprob=" << newtransprob << " ";
+	                cerr << " div=" << divergence << " " << endl;*/
+                }
+                totaldivergence += divergence;
+                c++;        		
+        	}
+        }
+        
+        
+		
+        const double avdivergence = (double) totaldivergence / c;
+        converged = ((round >= MAXROUNDS) || abs(avdivergence - prevavdivergence) <= CONVERGEDTHRESHOLD);               
+        cerr << "   average divergence = " << avdivergence << ", delta with prev divergence = " << abs(avdivergence - prevavdivergence) << " > " << CONVERGEDTHRESHOLD << ", alignprob size = " << alignmatrix.size() << endl;
+        prevavdivergence = avdivergence;
+    } while (!converged);    
+    
+    
+    
+    
+    if ((probthreshold > 0) || (bestn > 0)) {
+    
+		cerr << "  Pruning stage... ";
+		for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
+			const EncAnyGram * sourcegram = sourceiter->first;
+			
+			if (!bestn) {
+				for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
+					const EncAnyGram * targetgram = targetiter->first;
+					if (targetiter->second < probthreshold) {
+						alignmatrix[sourcegram].erase(targetgram);
+					} 
+				}
+			} else {
+				double lowerbound = 0.0;
+				list<double> bestq;
+				for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
+					const EncAnyGram * targetgram = targetiter->first;
+					if ((targetiter->second > lowerbound) || (bestq.size() < bestn)) {
+						orderedinsert(bestq, targetiter->second);
+						while (bestq.size() > bestn) bestq.pop_front();
+						lowerbound = *bestq.begin();
+					}
+				}
+				for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
+					const EncAnyGram * targetgram = targetiter->first;
+					if (targetiter->second < lowerbound) alignmatrix[sourcegram].erase(targetgram);
+				}				
+			}
+			if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram);
+		}    
+    }
+}
+
+
+unsigned int EMAlignmentModel2::expectation(const EncAnyGram * sourcegram, const multiset<uint32_t> & sourceindex, SelectivePatternModel * targetmodel, std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > & count, unordered_map<const EncAnyGram*, double> & total) {        
+   
+    uint32_t prevsentencenumber = 0;
+    
+    unordered_map<const EncAnyGram*, double> sourcegramtotal;   
+	unordered_set<const EncAnyGram *> targetpatterns;	
+    //cerr << "Processing new construction" << endl;
+    
+    //compute sourcegramtotal for normalisation later in count step, sum_s(p(t|s))
+    if (DEBUG) cerr << "\t\tForward index yields " << sourceindex.size() << " sentence references" << endl;
+    for (multiset<uint32_t>::const_iterator iter = sourceindex.begin(); iter != sourceindex.end(); iter++) {
+        const uint32_t sentencenumber = *iter;        
+        if (sentencenumber == prevsentencenumber) continue;
+		if (targetmodel->reverseindex.count(sentencenumber) > 0) {
+			if (DEBUG) cerr << "\t\t\tReverseindex for sentence " << sentencenumber << " yields " << targetmodel->reverseindex[sentencenumber].size() << " target-side patterns" << endl;
+			for (vector<const EncAnyGram*>::const_iterator reviter = targetmodel->reverseindex[sentencenumber].begin(); reviter != targetmodel->reverseindex[sentencenumber].end(); reviter++) {
+				const EncAnyGram* targetgram = *reviter;
+				targetpatterns.insert(targetgram);
+				sourcegramtotal[targetgram] += alignmatrix[sourcegram][targetgram];
+			}
+		}
+		prevsentencenumber = sentencenumber;
+    }
+	if (DEBUG) cerr << "\t\tGathered " << targetpatterns.size() << " target-side patterns for given source pattern, computing expectation..." << endl;
+
+
+	unsigned int found = 0;
+	
+    //collect counts to estimate improved model   (for evidence that a targetgram is aligned to a sourcegram)
+    for (unordered_set<const EncAnyGram *>::const_iterator targetiter = targetpatterns.begin(); targetiter != targetpatterns.end(); targetiter++) {  
+		const EncAnyGram * targetgram = *targetiter;		
+
+        const double countvalue = alignmatrix[sourcegram][targetgram] / sourcegramtotal[targetgram];
+        count[sourcegram][targetgram] += countvalue;
+        total[sourcegram] += countvalue;        
+        found++;
+    }
+	return found;
+}
+
 void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthreshold, int bestn) {
 	 //Compute intersection with reverse model
 	for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {

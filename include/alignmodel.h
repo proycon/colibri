@@ -95,4 +95,9 @@ class ItEMAlignmentModel: public EMAlignmentModel {
     ItEMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, bool DONULL=true, bool DEBUG = false);        
 };
 
- 
+
+class EMAlignmentModel2: public EMAlignmentModel {
+   public:
+    EMAlignmentModel2(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, bool DONULL=true, bool DEBUG = false);        
+    unsigned int expectation(const EncAnyGram * sourcegram, const std::multiset<uint32_t> & sourceindex, SelectivePatternModel * targetmodel, std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > & count, std::unordered_map<const EncAnyGram*, double> & total);
+};
