@@ -245,6 +245,7 @@ void BiAlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, Clas
     }	
 }
 
+/***************************** BEGIN EM ************************************/
 
 EMAlignmentModel::EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, bool INIT, bool DONULL, bool DEBUG) {
 	this->sourcemodel = sourcemodel;
@@ -324,16 +325,17 @@ void EMAlignmentModel::train(const int MAXROUNDS, const double CONVERGEDTHRESHOL
         			vector<const EncAnyGram*> * targetpatterns = &targetmodel->reverseindex[sentence];
         			if ((DEBUG) || (sentence % 1000 == 0)) cerr << "@" << sentence << " (" << sourcepatterns->size() << "x" << targetpatterns->size() << ")" << endl;
         			//compute sentencetotal for normalisation later in count step, sum_s(p(t|s))
-        			unordered_map<const EncAnyGram*, double> sentencetotal;      
-        			for (vector<const EncAnyGram*>::iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {        				  
-        				const EncAnyGram * targetgram = *targetiter;
-        				if (DONULL) sentencetotal[targetgram] += alignmatrix[NULLGRAM][targetgram];
-        				for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
-        					const EncAnyGram * sourcegram = *sourceiter;
-        					sentencetotal[targetgram] += alignmatrix[sourcegram][targetgram]; //compute sum over all source conditions for a targetgram under consideration 
-        				} 
+        			unordered_map<const EncAnyGram*, double> sentencetotal; 
+        			for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
+		    			const EncAnyGram * sourcegram = *sourceiter;
+		    			if (alignmatrix.count(sourcegram)) {
+							for (vector<const EncAnyGram*>::iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {        				  
+									const EncAnyGram * targetgram = *targetiter;
+									if (alignmatrix[sourcegram].count(targetgram)) sentencetotal[targetgram] += alignmatrix[sourcegram][targetgram]; //compute sum over all source conditions for a targetgram under consideration																	 
+							}
+						}
         			}
-        			
+		    			
 		    			
 		    			
 		            //collect counts to estimate improved model   (for evidence that a targetgram is aligned to a sourcegram)
@@ -342,16 +344,20 @@ void EMAlignmentModel::train(const int MAXROUNDS, const double CONVERGEDTHRESHOL
 		    			
 		    			//the null condition:
 		    			if (DONULL) {
+		    				if (alignmatrix[NULLGRAM].count(targetgram)) sentencetotal[targetgram] += alignmatrix[NULLGRAM][targetgram]; //belongs to previous step technically, but moved into this loop for efficieny
+		    			
 		    				const double countvalue_null = alignmatrix[NULLGRAM][targetgram] / sentencetotal[targetgram];
 		                	count[NULLGRAM][targetgram] += countvalue_null;
 							total[NULLGRAM] += countvalue_null;
 						}
 						
-		                for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
+		                for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {		                	
 		    			    const EncAnyGram * sourcegram = *sourceiter;                                                                 
-		                    const double countvalue = alignmatrix[sourcegram][targetgram] / sentencetotal[targetgram];
-		                    count[sourcegram][targetgram] += countvalue;
-		                    total[sourcegram] += countvalue;
+		    			    if ((alignmatrix.count(sourcegram) && alignmatrix[sourcegram].count(targetgram))) {
+		                    	const double countvalue = alignmatrix[sourcegram][targetgram] / sentencetotal[targetgram];
+		                    	count[sourcegram][targetgram] += countvalue;
+		                    	total[sourcegram] += countvalue;
+		                    }
 		                }
 		            }
 		       
@@ -494,6 +500,8 @@ void EMAlignmentModel::save(const string & filename) {
     f.close();	
 }
 
+
+/************************************************* END EM ***************/
 
 ItEMAlignmentModel::ItEMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS, const double CONVERGEDTHRESHOLD, double probthreshold, const int bestn, bool DONULL, bool DEBUG) {
 	// Compute p(target|source)      alignmatrix[source][target]
@@ -1274,6 +1282,8 @@ void orderedinsert(list<double> & l, double value) {
 
 
 
+
+
 EMAlignmentModel2::EMAlignmentModel2(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, bool INIT, bool DONULL, bool DEBUG) {
 	this->sourcemodel = sourcemodel;
 	this->targetmodel = targetmodel;
@@ -1352,16 +1362,17 @@ void EMAlignmentModel2::train(const int MAXROUNDS, const double CONVERGEDTHRESHO
         			vector<const EncAnyGram*> * targetpatterns = &targetmodel->reverseindex[sentence];
         			if ((DEBUG) || (sentence % 1000 == 0)) cerr << "@" << sentence << " (" << sourcepatterns->size() << "x" << targetpatterns->size() << ")" << endl;
         			//compute sentencetotal for normalisation later in count step, sum_s(p(t|s))
-        			unordered_map<const EncAnyGram*, double> sentencetotal;      
-        			for (vector<const EncAnyGram*>::iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {        				  
-        				const EncAnyGram * targetgram = *targetiter;
-        				if (DONULL) sentencetotal[targetgram] += alignmatrix[NULLGRAM][targetgram];
-        				for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
-        					const EncAnyGram * sourcegram = *sourceiter;
-        					sentencetotal[targetgram] += alignmatrix[sourcegram][targetgram]; //compute sum over all source conditions for a targetgram under consideration 
-        				} 
+        			unordered_map<const EncAnyGram*, double> sentencetotal; 
+        			for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
+		    			const EncAnyGram * sourcegram = *sourceiter;
+		    			if (alignmatrix.count(sourcegram)) {
+							for (vector<const EncAnyGram*>::iterator targetiter = targetpatterns->begin(); targetiter != targetpatterns->end(); targetiter++) {        				  
+									const EncAnyGram * targetgram = *targetiter;
+									if (alignmatrix[sourcegram].count(targetgram)) sentencetotal[targetgram] += alignmatrix[sourcegram][targetgram]; //compute sum over all source conditions for a targetgram under consideration																	 
+							}
+						}
         			}
-        			
+		    			
 		    			
 		    			
 		            //collect counts to estimate improved model   (for evidence that a targetgram is aligned to a sourcegram)
@@ -1370,16 +1381,20 @@ void EMAlignmentModel2::train(const int MAXROUNDS, const double CONVERGEDTHRESHO
 		    			
 		    			//the null condition:
 		    			if (DONULL) {
+		    				if (alignmatrix[NULLGRAM].count(targetgram)) sentencetotal[targetgram] += alignmatrix[NULLGRAM][targetgram]; //belongs to previous step technically, but moved into this loop for efficieny
+		    			
 		    				const double countvalue_null = alignmatrix[NULLGRAM][targetgram] / sentencetotal[targetgram];
 		                	count[NULLGRAM][targetgram] += countvalue_null;
 							total[NULLGRAM] += countvalue_null;
 						}
 						
-		                for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
+		                for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {		                	
 		    			    const EncAnyGram * sourcegram = *sourceiter;                                                                 
-		                    const double countvalue = alignmatrix[sourcegram][targetgram] / sentencetotal[targetgram];
-		                    count[sourcegram][targetgram] += countvalue;
-		                    total[sourcegram] += countvalue;
+		    			    if ((alignmatrix.count(sourcegram) && alignmatrix[sourcegram].count(targetgram))) {
+		                    	const double countvalue = alignmatrix[sourcegram][targetgram] / sentencetotal[targetgram];
+		                    	count[sourcegram][targetgram] += countvalue;
+		                    	total[sourcegram] += countvalue;
+		                    }
 		                }
 		            }
 		       
@@ -1521,6 +1536,4 @@ void EMAlignmentModel2::save(const string & filename) {
     }    
     f.close();	
 }
-
-
 
