@@ -1612,7 +1612,7 @@ class MTWrapper(object):
 
         settingsfile = self.writesettings(expname, workdir, writebatches) 
                 
-        self.setargs(**self.dataconf) #reset
+        self.setargs(**self.confdata) #reset
                 
         return (workdir, settingsfile)
         
