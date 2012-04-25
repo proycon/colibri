@@ -1560,6 +1560,16 @@ class MTWrapper(object):
         return True
 
 
+    def downsize(self, sourcefile, targetfile, lines):
+        fin = open(sourcefile,'r')
+        fout = open(targetfile,'w')
+        for i, line in enumerate(fin):
+            if i < lines:
+                fout.write(fout)
+        fin.close()
+        fout.close()
+        self.log("Branched file " + sourcefile + " (downsized to " + str(lines)+")",green)
+
     def branch(self,expname, conf=None, useparentdir=True, quiet = False, writebatches=True):
         
         parentdir = self.WORKDIR
@@ -1567,26 +1577,33 @@ class MTWrapper(object):
             if parentdir[-1] == '/':
                 parentdir = parentdir[:-1]
             parentdir = os.path.dirname(parentdir)
+        
+        if conf:
+            self.parseconf(conf)        
                 
         workdir = parentdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + expname
         if workdir and not os.path.isdir(workdir):            
             self.log("Creating branched work directory (as sibling): " + workdir,white)           
             os.mkdir(workdir)
             for filename in glob.glob(self.WORKDIR + '/*'):
-                basefilename = os.path.basename(filename)
+                basefilename = os.path.basename(filename)                
                 if (basefilename[-3:] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.' or os.path.isdir(filename) or basefilename[-4:] in ['.log','.tex','.png','.jpg','.aux','.pdf']:
                     continue    
-                try:
-                    os.symlink(filename, workdir + '/' + basefilename)
-                    self.log("Branched file " + basefilename + " (symlink)",green)
-                except:
-                    self.log("Error making symlink for " + basefilename,red)            
+                elif 'TRAINSOURCECORPUS' in conf and basefilename == os.path.basename(conf['TRAINSOURCECORPUS']) and 'TRAINSIZE' in conf:
+                    self.downsize(filename, workdir + '/' + basefilename, int(conf['TRAINSIZE']))
+                elif 'TRAINTARGETCORPUS' in conf and basefilename == os.path.basename(conf['TRAINTARGETCORPUS']) and 'TRAINSIZE' in conf:
+                    self.downsize(filename, workdir + '/' + basefilename, int(conf['TRAINSIZE']))                    
+                else:
+                    try:
+                        os.symlink(filename, workdir + '/' + basefilename)
+                        self.log("Branched file " + basefilename + " (symlink)",green)
+                    except:
+                        self.log("Error making symlink for " + basefilename,red)            
         elif workdir and not quiet:
             self.log("WARNING: work directory " +  workdir + " already exists! Press ENTER to continue or ctrl-C to abort",white)
             raw_input()
 
-        if conf:
-            self.parseconf(conf)
+        
 
         settingsfile = self.writesettings(expname, workdir, writebatches) 
                 
