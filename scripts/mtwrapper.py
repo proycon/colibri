@@ -1594,10 +1594,10 @@ class MTWrapper(object):
                 basefilename = os.path.basename(filename)                
                 if (basefilename[-3:] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.' or os.path.isdir(filename) or basefilename[-4:] in ['.log','.tex','.png','.jpg','.aux','.pdf']:
                     continue    
-                elif 'TRAINSOURCECORPUS' in conf and basefilename == os.path.basename(conf['TRAINSOURCECORPUS']) and 'TRAINSIZE' in conf:
-                    self.downsize(filename, workdir + '/' + basefilename, int(conf['TRAINSIZE']))
-                elif 'TRAINTARGETCORPUS' in conf and basefilename == os.path.basename(conf['TRAINTARGETCORPUS']) and 'TRAINSIZE' in conf:
-                    self.downsize(filename, workdir + '/' + basefilename, int(conf['TRAINSIZE']))                    
+                #elif 'TRAINSOURCECORPUS' in conf and basefilename == os.path.basename(conf['TRAINSOURCECORPUS']) and 'TRAINSIZE' in conf:
+                #    self.downsize(filename, workdir + '/' + basefilename, int(conf['TRAINSIZE']))
+                #elif 'TRAINTARGETCORPUS' in conf and basefilename == os.path.basename(conf['TRAINTARGETCORPUS']) and 'TRAINSIZE' in conf:
+                #    self.downsize(filename, workdir + '/' + basefilename, int(conf['TRAINSIZE']))                    
                 else:
                     try:
                         os.symlink(filename, workdir + '/' + basefilename)
