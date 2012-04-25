@@ -41,6 +41,8 @@ class AlignmentModel: public AlignConstraintInterface {
 	
 	int graphalign(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double impactfactor = 1.2);
 	
+	double cooc( CoocMode mode, const std::multiset<uint32_t> & sourceindex, const std::multiset<uint32_t> & targetindex,  const double threshold = 0); //multiset instead of vector cause we want the ordering to easily compute co-occurence
+	
 	virtual void save(const std::string & filename) {};	
 };
 
@@ -73,7 +75,7 @@ class CoocAlignmentModel: public AlignmentModel {
    
     void save(const std::string & filename);
    
-    double cooc( const std::multiset<uint32_t> & sourceindex, const std::multiset<uint32_t> & targetindex,  const double threshold = 0); //multiset instead of vector cause we want the ordering to easily compute co-occurence 
+     
     unsigned int compute(const EncAnyGram * sourcegram, const std::multiset<uint32_t> & sourceindex, SelectivePatternModel * targetmodel);
     
 
@@ -93,6 +95,8 @@ class EMAlignmentModel: public AlignmentModel {
     void train(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0);     
     void save(const std::string & filename);
 };
+
+
 
 
 class EMAlignmentModel2: public AlignmentModel {

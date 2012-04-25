@@ -4,7 +4,7 @@ using namespace std;
 
 const EncNullGram * NULLGRAM = new EncNullGram();
 
-double CoocAlignmentModel::cooc( const multiset<uint32_t> & sourceindex, const multiset<uint32_t> & targetindex, const double heurthreshold) {    
+double AlignmentModel::cooc( CoocMode mode, const multiset<uint32_t> & sourceindex, const multiset<uint32_t> & targetindex, const double heurthreshold) {    
     //Jaccard co-occurrence    
     int intersectioncount = 0;    
   	
@@ -82,7 +82,7 @@ unsigned int CoocAlignmentModel::compute(const EncAnyGram * sourcegram, const mu
 		    } else {
 		       targetindex = &targetmodel->skipgrams[*( (EncSkipGram*) targetgram)].sentences;
 		    }				    
-		    const double coocvalue = cooc(sourceindex, *targetindex, absthreshold);                    
+		    const double coocvalue = cooc(mode, sourceindex, *targetindex, absthreshold);                    
 		    if (coocvalue >= absthreshold) {
 		    	//prune based on absolute co-occurrence value
 		    	found++;
