@@ -207,7 +207,7 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
-    if (modelfile.empty() && ((!DO_EM) && (!DO_ITEREM) && (!COOCMODE))) {
+    if (modelfile.empty() && ((!DO_EM) && (!DO_EM2) && (!DO_ITEREM) && (!COOCMODE))) {
     	cerr << "Error: No alignment method selected (select -J or -D)" << endl;
     	usage();
     	exit(3);
@@ -302,32 +302,38 @@ int main( int argc, char *argv[] ) {
 		
 		if (DO_EM) {
 			cerr << "Computing alignment model..." << endl;
-			alignmodel = new EMAlignmentModel(&sourcemodel,&targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn,EM_NULL, DODEBUG);
+			alignmodel = new EMAlignmentModel(&sourcemodel,&targetmodel, true,EM_NULL, DODEBUG);
+			((EMAlignmentModel *) alignmodel)->train(MAXROUNDS,  CONVERGENCE, probprunevalue, bestn);	
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
 		
 			if (DOBIDIRECTIONAL) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-				AlignmentModel reversealignmodel = EMAlignmentModel(&targetmodel,&sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, EM_NULL, DODEBUG);
-				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
-				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;						
+				AlignmentModel * reversealignmodel = new EMAlignmentModel(&targetmodel,&sourcemodel, true,EM_NULL, DODEBUG);
+				((EMAlignmentModel *) reversealignmodel)->train(MAXROUNDS, CONVERGENCE, probprunevalue, bestn);
+				cerr << "   Found alignment targets for  " << reversealignmodel->alignmatrix.size() << " source constructions" << endl;
+				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel->totalsize() << endl;						
 				cerr << "Computing intersection of both alignment models..." << endl;
-				alignmodel->intersect(&reversealignmodel, bidirprobthreshold, bestn);
+				alignmodel->intersect(reversealignmodel, bidirprobthreshold, bestn);
+				delete reversealignmodel;
 			}	    
 		} else if (DO_EM2) {
 			cerr << "Computing alignment model..." << endl;
-			alignmodel = new EMAlignmentModel2(&sourcemodel,&targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn,EM_NULL, DODEBUG);
+			alignmodel = new EMAlignmentModel2(&sourcemodel,&targetmodel, true,EM_NULL, DODEBUG);
+			((EMAlignmentModel *) alignmodel)->train(MAXROUNDS,  CONVERGENCE, probprunevalue, bestn);	
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
 		
 			if (DOBIDIRECTIONAL) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-				AlignmentModel reversealignmodel = EMAlignmentModel2(&targetmodel,&sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, EM_NULL, DODEBUG);
-				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
-				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;						
+				AlignmentModel * reversealignmodel = new EMAlignmentModel2(&targetmodel,&sourcemodel, true,EM_NULL, DODEBUG);
+				((EMAlignmentModel2 *) reversealignmodel)->train(MAXROUNDS, CONVERGENCE, probprunevalue, bestn);
+				cerr << "   Found alignment targets for  " << reversealignmodel->alignmatrix.size() << " source constructions" << endl;
+				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel->totalsize() << endl;						
 				cerr << "Computing intersection of both alignment models..." << endl;
-				alignmodel->intersect(&reversealignmodel, bidirprobthreshold, bestn);
-			}				
+				alignmodel->intersect(reversealignmodel, bidirprobthreshold, bestn);
+				delete reversealignmodel;
+			}
 		} else if (DO_ITEREM) {
 			cerr << "Computing alignment model..." << endl;
 			alignmodel = new ItEMAlignmentModel(&sourcemodel,&targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn,EM_NULL, DODEBUG);

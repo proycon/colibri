@@ -82,11 +82,29 @@ class CoocAlignmentModel: public AlignmentModel {
 
 
 class EMAlignmentModel: public AlignmentModel {
+   protected:
+    bool INIT;
+    bool DONULL;
    public:
     SelectivePatternModel * sourcemodel;
     SelectivePatternModel * targetmodel;    
     EMAlignmentModel() {};
-    EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, bool DONULL=true, bool DEBUG = false);        
+    EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, bool INIT=true, bool DONULL=true, bool DEBUG = false);   
+    void train(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0);     
+    void save(const std::string & filename);
+};
+
+
+class EMAlignmentModel2: public AlignmentModel {
+   protected:
+    bool INIT;
+    bool DONULL;
+   public:
+    SelectivePatternModel * sourcemodel;
+    SelectivePatternModel * targetmodel;    
+    EMAlignmentModel2() {};
+    EMAlignmentModel2(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, bool INIT=true, bool DONULL=true, bool DEBUG = false);   
+    void train(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0);     
     void save(const std::string & filename);
 };
 
@@ -96,8 +114,9 @@ class ItEMAlignmentModel: public EMAlignmentModel {
 };
 
 
-class EMAlignmentModel2: public EMAlignmentModel {
+class EMAlignmentModel3: public EMAlignmentModel {
+   /* barely-functional EM trial based on a weird idea, will probably be removed */
    public:
-    EMAlignmentModel2(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, bool DONULL=true, bool DEBUG = false);        
+    EMAlignmentModel3(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, bool DONULL=true, bool DEBUG = false);        
     unsigned int expectation(const EncAnyGram * sourcegram, const std::multiset<uint32_t> & sourceindex, SelectivePatternModel * targetmodel, std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > & count, std::unordered_map<const EncAnyGram*, double> & total);
 };
