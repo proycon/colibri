@@ -18,8 +18,13 @@ class AlignmentModel: public AlignConstraintInterface {
     std::unordered_map<const EncSkipGram,bool> sourceskipgrams;
     std::unordered_map<const EncSkipGram,bool> targetskipgrams;
    public:
+    SelectivePatternModel * sourcemodel;
+    SelectivePatternModel * targetmodel; 
+   
     AlignmentModel() { DEBUG = false; }
     AlignmentModel(const std::string & filename, const int bestn = 0);
+    AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const bool DEBUG = false);
+    
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignmatrix;    
     virtual void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
     virtual void simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT, bool targetfirst = false, bool wordbased = false, bool mosesformat = false);
@@ -36,14 +41,21 @@ class AlignmentModel: public AlignConstraintInterface {
     	return c;
 	}
 	
-	void intersect(AlignmentModel * reversemodel, double probthreshold = 0, int bestn = 0); //Compute intersection with reverse model
-	
-	
+	void intersect(AlignmentModel * reversemodel, double probthreshold = 0, int bestn = 0); //Compute intersection with reverse model	
 	int graphalign(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double impactfactor = 1.2);
+	
 	
 	double cooc( CoocMode mode, const std::multiset<uint32_t> & sourceindex, const std::multiset<uint32_t> & targetindex,  const double threshold = 0); //multiset instead of vector cause we want the ordering to easily compute co-occurence
 	
-	virtual void save(const std::string & filename) {};	
+	
+	//void normalize();
+	
+	unsigned int trainCooc(CoocMode mode, const int bestn = 0, const double absthreshold = 0,  const double relthreshold = 0);
+	unsigned int trainCooc(CoocMode mode, const EncAnyGram * sourcegram, const std::multiset<uint32_t> & sourceindex, SelectivePatternModel * targetmodel, const int bestn = 0, const double absthreshold = 0,  const double relthreshold = 0, const bool normalize = false);
+		
+	void trainEM(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, const bool DONULL = true, const bool INIT=true);	
+	
+	void save(const std::string & filename);	
 };
 
 class BiAlignmentModel: public AlignmentModel {
@@ -55,12 +67,11 @@ class BiAlignmentModel: public AlignmentModel {
     virtual void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
     virtual void simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT, bool targetfirst = false, bool wordbased = false, bool mosesformat = false);    
 	
-	//void intersect(AlignmentModel * reversemodel, double probthreshold = 0); //Compute intersection with reverse model			
-	virtual void save(const std::string & filename) {};	
+	
 };
 
 
-
+/*
 class CoocAlignmentModel: public AlignmentModel {
    private:
     double absthreshold; //cooc threshold
@@ -92,20 +103,17 @@ class EMAlignmentModel: public AlignmentModel {
     SelectivePatternModel * targetmodel;    
     EMAlignmentModel() {};
     EMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, bool INIT=true, bool DONULL=true, bool DEBUG = false);   
-    void train(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0);     
+    void trainEM(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0);     
     void save(const std::string & filename);
 };
-
-
+*/
 
 
 class EMAlignmentModel2: public AlignmentModel {
    protected:
     bool INIT;
     bool DONULL;
-   public:
-    SelectivePatternModel * sourcemodel;
-    SelectivePatternModel * targetmodel;    
+   public:    
     EMAlignmentModel2() {};
     EMAlignmentModel2(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, bool INIT=true, bool DONULL=true, bool DEBUG = false);   
     void train(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0);     
@@ -113,15 +121,16 @@ class EMAlignmentModel2: public AlignmentModel {
 };
 
 
-class ItEMAlignmentModel: public EMAlignmentModel {
+/*class ItEMAlignmentModel: public EMAlignmentModel {
    public:
     ItEMAlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, bool DONULL=true, bool DEBUG = false);        
-};
+};*/
 
-
+/*
 class EMAlignmentModel3: public EMAlignmentModel {
-   /* barely-functional EM trial based on a weird idea, will probably be removed */
+   // barely-functional EM trial based on a weird idea, will probably be removed 
    public:
     EMAlignmentModel3(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, bool DONULL=true, bool DEBUG = false);        
     unsigned int expectation(const EncAnyGram * sourcegram, const std::multiset<uint32_t> & sourceindex, SelectivePatternModel * targetmodel, std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > & count, std::unordered_map<const EncAnyGram*, double> & total);
 };
+*/

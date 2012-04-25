@@ -265,7 +265,7 @@ int main( int argc, char *argv[] ) {
 		cerr << "Loading source model " << sourcemodelfile << endl;
 		SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0));
 		cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
-		cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredtokens << " tokens due to set thresholds" << endl;
+	 	cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredtokens << " tokens due to set thresholds" << endl;
 		if (sourcemodel.has_xcount()) {
 			cerr << "  Exclusive count available? YES" << endl;
 		} else {
@@ -300,72 +300,47 @@ int main( int argc, char *argv[] ) {
 			cerr << "  Parent relations available for  " << targetmodel.rel_subsumption_parents.size() << " patterns" << endl;
 		}		
 		
+		
+		
+		alignmodel = new AlignmentModel(&sourcemodel,&targetmodel, DODEBUG);
+		AlignmentModel * reversealignmodel = new AlignmentModel(&targetmodel,&sourcemodel, DODEBUG); 
+				
+		bool EM_INIT = true;
+		
+		if (COOCMODE) {
+			cerr << "Computing Cooc alignment model..." << endl;
+			alignmodel->trainCooc(COOCMODE, bestn, coocprunevalue, 0);
+			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
+			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
+			
+			if (DOBIDIRECTIONAL) {
+				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
+				reversealignmodel->trainCooc(COOCMODE, bestn, coocprunevalue, 0);
+				cerr << "   Found alignment targets for  " << reversealignmodel->alignmatrix.size() << " source constructions" << endl;
+				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel->totalsize() << endl;	
+			}	    					
+			EM_INIT = false;
+
+		}		
 		if (DO_EM) {
-			cerr << "Computing alignment model..." << endl;
-			alignmodel = new EMAlignmentModel(&sourcemodel,&targetmodel, true,EM_NULL, DODEBUG);
-			((EMAlignmentModel *) alignmodel)->train(MAXROUNDS,  CONVERGENCE, probprunevalue, bestn);	
+			cerr << "Computing EM alignment model..." << endl;		
+			alignmodel->trainEM(MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, EM_NULL, EM_INIT);	
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
-		
+						
 			if (DOBIDIRECTIONAL) {
-				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-				AlignmentModel * reversealignmodel = new EMAlignmentModel(&targetmodel,&sourcemodel, true,EM_NULL, DODEBUG);
-				((EMAlignmentModel *) reversealignmodel)->train(MAXROUNDS, CONVERGENCE, probprunevalue, bestn);
+				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;				
+				reversealignmodel->trainEM(MAXROUNDS, CONVERGENCE, probprunevalue, bestn, EM_NULL, EM_INIT);
 				cerr << "   Found alignment targets for  " << reversealignmodel->alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel->totalsize() << endl;						
-				cerr << "Computing intersection of both alignment models..." << endl;
-				alignmodel->intersect(reversealignmodel, bidirprobthreshold, bestn);
-				delete reversealignmodel;
-			}	    
-		} else if (DO_EM2) {
-			cerr << "Computing alignment model..." << endl;
-			alignmodel = new EMAlignmentModel2(&sourcemodel,&targetmodel, true,EM_NULL, DODEBUG);
-			((EMAlignmentModel *) alignmodel)->train(MAXROUNDS,  CONVERGENCE, probprunevalue, bestn);	
-			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
-			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
-		
-			if (DOBIDIRECTIONAL) {
-				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-				AlignmentModel * reversealignmodel = new EMAlignmentModel2(&targetmodel,&sourcemodel, true,EM_NULL, DODEBUG);
-				((EMAlignmentModel2 *) reversealignmodel)->train(MAXROUNDS, CONVERGENCE, probprunevalue, bestn);
-				cerr << "   Found alignment targets for  " << reversealignmodel->alignmatrix.size() << " source constructions" << endl;
-				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel->totalsize() << endl;						
-				cerr << "Computing intersection of both alignment models..." << endl;
-				alignmodel->intersect(reversealignmodel, bidirprobthreshold, bestn);
-				delete reversealignmodel;
-			}
-		} else if (DO_ITEREM) {
-			cerr << "Computing alignment model..." << endl;
-			alignmodel = new ItEMAlignmentModel(&sourcemodel,&targetmodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn,EM_NULL, DODEBUG);
-			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
-			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
-		
-			if (DOBIDIRECTIONAL) {
-				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-				AlignmentModel reversealignmodel = ItEMAlignmentModel(&targetmodel,&sourcemodel, MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, EM_NULL, DODEBUG);
-				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
-				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;						
-				cerr << "Computing intersection of both alignment models..." << endl;
-				alignmodel->intersect(&reversealignmodel, bidirprobthreshold, bestn);
-			}	    			
-		} else if (COOCMODE) {
-			cerr << "Computing alignment model..." << endl;
-			alignmodel = new CoocAlignmentModel(COOCMODE, &sourcemodel,&targetmodel, bestn, coocprunevalue, probprunevalue,  DONORM, DODEBUG);
-			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
-			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
-		
-			if (DOBIDIRECTIONAL) {
-				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-				AlignmentModel reversealignmodel = CoocAlignmentModel(COOCMODE, &targetmodel,&sourcemodel, bestn, coocprunevalue, probprunevalue, DONORM, DODEBUG);
-				cerr << "   Found alignment targets for  " << reversealignmodel.alignmatrix.size() << " source constructions" << endl;
-				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel.totalsize() << endl;
-				cerr << "Computing intersection of both alignment models..." << endl;
-				alignmodel->intersect(&reversealignmodel, bidirprobthreshold, bestn);	
-			}	    				
+			}	    			    		
 		}
-
-
-
+		if (DOBIDIRECTIONAL) {
+			cerr << "Computing intersection of both alignment models..." << endl;
+			alignmodel->intersect(reversealignmodel, bidirprobthreshold, bestn);
+		}
+			
+			
 		if (graphweightfactor > 0) {
 			cerr << "Weighting based on graph subsumption relations..." << endl;
 			const int adjustments = alignmodel->graphalign(sourcemodel, targetmodel, graphweightfactor);
