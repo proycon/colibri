@@ -26,7 +26,7 @@ void usage() {
     cerr << "\t-B probability-threshold  Compute bidirectional alignment (intersection), using given probability threshold (0 <= x < 1)" << endl;
     cerr << " Co-occurrence alignment options:" << endl;       
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
-    cerr << "\t-Z				         Do normalisation; return probabilities instead of co-occurrence scores" << endl;   
+    cerr << "\t-Z				         Do normalisation" << endl;   
     cerr << " EM Alignment Options:" << endl;
     cerr << "\t-P probability-threshold  Prune all alignments with an alignment probability lower than specified (0 <= x <= 1)" << endl;
     cerr << "\t-I n				         Maximum number of iterations (for EM method, default: 10000)" << endl;
@@ -308,29 +308,41 @@ int main( int argc, char *argv[] ) {
 		bool EM_INIT = true;
 		
 		if (COOCMODE) {
+			int tmpbestn;
+			if (DO_EM) {
+			 	tmpbestn = 0;
+			} else {
+				tmpbestn = bestn;
+			}
+		
 			cerr << "Computing Cooc alignment model..." << endl;
-			alignmodel->trainCooc(COOCMODE, bestn, coocprunevalue, 0);
+			alignmodel->trainCooc(COOCMODE, tmpbestn, coocprunevalue, 0);
+			if ((DONORM) || (DO_EM)) alignmodel->normalize();
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
-			
+
+
 			if (DOBIDIRECTIONAL) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
-				reversealignmodel->trainCooc(COOCMODE, bestn, coocprunevalue, 0);
+				reversealignmodel->trainCooc(COOCMODE, tmpbestn, coocprunevalue, 0);
+				if ((DONORM) || (DO_EM)) reversealignmodel->normalize();
 				cerr << "   Found alignment targets for  " << reversealignmodel->alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel->totalsize() << endl;	
 			}	    					
 			EM_INIT = false;
-
+			
 		}		
 		if (DO_EM) {
 			cerr << "Computing EM alignment model..." << endl;		
-			alignmodel->trainEM(MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, EM_NULL, EM_INIT);	
+			alignmodel->trainEM(MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, EM_NULL, EM_INIT);
+			if (DONORM) alignmodel->normalize();	
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
 						
 			if (DOBIDIRECTIONAL) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;				
 				reversealignmodel->trainEM(MAXROUNDS, CONVERGENCE, probprunevalue, bestn, EM_NULL, EM_INIT);
+				if (DONORM) reversealignmodel->normalize();
 				cerr << "   Found alignment targets for  " << reversealignmodel->alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel->totalsize() << endl;						
 			}	    			    		
@@ -338,6 +350,7 @@ int main( int argc, char *argv[] ) {
 		if (DOBIDIRECTIONAL) {
 			cerr << "Computing intersection of both alignment models..." << endl;
 			alignmodel->intersect(reversealignmodel, bidirprobthreshold, bestn);
+			if (DONORM) alignmodel->normalize();
 		}
 			
 			

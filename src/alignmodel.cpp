@@ -485,6 +485,23 @@ void AlignmentModel::trainEM(const int MAXROUNDS, const double CONVERGEDTHRESHOL
     }
 }
 
+void AlignmentModel::normalize() {
+	for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
+		const EncAnyGram * sourcegram = sourceiter->first;
+		//compute sum
+		double sum = 0;
+		for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
+			const EncAnyGram * targetgram = targetiter->first;
+			sum += targetiter->second;			
+		}
+		//normalize
+		for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
+			const EncAnyGram * targetgram = targetiter->first;
+			alignmatrix[sourcegram][targetgram] = alignmatrix[sourcegram][targetgram] / sum; 
+		}
+	}
+}
+
 void AlignmentModel::save(const string & filename) {
 	//TODO: Merge with CoocAlignMentModel::save()
 
