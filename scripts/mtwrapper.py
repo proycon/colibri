@@ -170,12 +170,18 @@ class MTWrapper(object):
         self.batches = []
         self.logfile = None
         
+        self.confdata = kwargs
+        self.setargs(**self.confdata)    
+    
+
+    
+    def setargs(self, **kwargs):            
         for key, default, help in MTWrapper.defaults:
             if key in kwargs:
                 setattr(self,key,kwargs[key])
                 del kwargs[key]
             else:
-                setattr(self,key,default)
+                setattr(self,key,default) 
         
         self.EXEC_PERL = self.findpath(self.EXEC_PERL)
         self.EXEC_JAVA = self.findpath(self.EXEC_JAVA)    
@@ -221,8 +227,7 @@ class MTWrapper(object):
         
         for key in kwargs:
             self.log("Unknown configuration directive: " + key,red)
-            sys.exit(2)
-        
+            sys.exit(2)        
 
             
     def addbatch(self, batchname, **kwargs):
@@ -1579,7 +1584,7 @@ class MTWrapper(object):
             parentdir = os.path.dirname(parentdir)
         
         if conf:
-            self.parseconf(conf)        
+            conf = self.parseconf(conf)        
                 
         workdir = parentdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + expname
         if workdir and not os.path.isdir(workdir):            
@@ -1607,7 +1612,7 @@ class MTWrapper(object):
 
         settingsfile = self.writesettings(expname, workdir, writebatches) 
                 
-        
+        self.setargs(**self.dataconf) #reset
                 
         return (workdir, settingsfile)
         

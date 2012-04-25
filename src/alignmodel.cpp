@@ -485,7 +485,7 @@ void AlignmentModel::trainEM(const int MAXROUNDS, const double CONVERGEDTHRESHOL
     }
 }
 
-void AlignmentModel::normalize() {
+lvoid AlignmentModel::normalize() {
 	for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
 		const EncAnyGram * sourcegram = sourceiter->first;
 		//compute sum
