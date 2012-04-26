@@ -49,6 +49,13 @@ void ModelReader::readfile(const string & filename, const bool DEBUG ) {
     f.read( (char*) &totaltokens, sizeof(uint64_t));        
     f.read( (char*) &totaltypes, sizeof(uint64_t)); 
     
+    if (DEBUG) {
+    	cerr << "\tLOADING MODEL " << filename << endl;
+    	cerr << "\tMODEL-ID=" << model_id << endl;
+    	cerr << "\tTOKENS=" << totaltokens << endl;
+    	cerr << "\tTOTALTYPES=" << totaltypes << endl;
+    }
+    
     readheader(&f);
     unsigned char check;    
     for (int i = 0; i < totaltypes; i++) {           
@@ -2008,11 +2015,13 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool
 
 
 void SelectivePatternModel::readheader(std::istream * in, bool ignore) {
-	if ((model_id == GRAPHPATTERNMODEL) || (model_id <= GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION)) { 
+	if ((model_id == GRAPHPATTERNMODEL) || (model_id <= GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION)) {
+		if (DEBUG) cerr << "READING GRAPHMODEL HEADER " << endl; 
     	in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
 	    in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
 	    in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
 		if (model_id >= GRAPHPATTERNMODEL+1 ) {
+			if (DEBUG) cerr << "READING EXTENDED GRAPHMODEL HEADER" << endl;
 			in->read((char*) &HASTEMPLATES, sizeof(bool)); //1 byte, not 1 bit
 			in->read((char*) &HASINSTANCES, sizeof(bool)); //1 byte, not 1 bit
 			in->read((char*) &HASSKIPUSAGE, sizeof(bool)); //1 byte, not 1 bit
@@ -2021,6 +2030,7 @@ void SelectivePatternModel::readheader(std::istream * in, bool ignore) {
 			in->read((char*) &HASPREDECESSORS, sizeof(bool)); //1 byte, not 1 bit
     	}
 	} else {
+		if (DEBUG) cerr << "NOT A GRAPHMODEL HEADER" << endl;
 		HASPARENTS = false;
 		HASCHILDREN = false;
 		HASXCOUNT = false;
