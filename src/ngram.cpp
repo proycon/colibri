@@ -196,7 +196,7 @@ bool EncAnyGram::out() const {
                 return true;
             } else {  
                 //cout << " CLASS " << cls << " (length " << l << ") DECODES TO " << classdecoder[cls] << endl;
-                cout << cls << ' ';
+                cerr << cls << ' ';
             }
             begin = i + 1;           
             l = 0;
@@ -204,7 +204,7 @@ bool EncAnyGram::out() const {
     }
     if (l > 0) {
         const unsigned int cls = bytestoint(data + begin, l);  
-        cout << cls << ' ';
+        cerr << cls << ' ';
         //cout << "FINAL CLASS " << cls << " DECODES TO " << classdecoder[cls] << endl;
     }    
     return true;
@@ -457,13 +457,13 @@ bool EncSkipGram::out() const {
         l++;
         if ((data[i] == 0) && (l > 0)) {            
             if ((i > 0) && (data[i-1] == 0)) {
-                cout << "{*" << (int) skipsize[skipnum++] << "*} ";                
+                cerr << "{*" << (int) skipsize[skipnum++] << "*} ";                
             } else {            
                 const unsigned int cls = bytestoint(data + begin, l);              
                 if (cls == 1) {
                     return true;
                 } else if (cls > 0) {  
-                    cout << cls << ' ';
+                    cerr << cls << ' ';
                 }
             }
             begin = i + 1;            
@@ -472,7 +472,7 @@ bool EncSkipGram::out() const {
     }
     if (l > 0) {
         const unsigned int cls = bytestoint(data + begin, l);  
-        cout << cls;
+        cerr << cls;
     }    
     return true;
 }
