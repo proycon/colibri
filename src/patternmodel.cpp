@@ -2015,13 +2015,13 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool
 
 
 void SelectivePatternModel::readheader(std::istream * in, bool ignore) {
-	if ((model_id == GRAPHPATTERNMODEL) || (model_id <= GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION)) {
+	if ((model_id >= GRAPHPATTERNMODEL) && (model_id <= GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION)) {
 		if (DEBUG) cerr << "READING GRAPHMODEL HEADER " << endl; 
     	in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
 	    in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
 	    in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
 		if (model_id >= GRAPHPATTERNMODEL+1 ) {
-			if (DEBUG) cerr << "READING EXTENDED GRAPHMODEL HEADER" << endl;
+			if (DEBUG) cerr << "READING EXTENDED GRAPHMODEL HEADER (v1)" << endl;
 			in->read((char*) &HASTEMPLATES, sizeof(bool)); //1 byte, not 1 bit
 			in->read((char*) &HASINSTANCES, sizeof(bool)); //1 byte, not 1 bit
 			in->read((char*) &HASSKIPUSAGE, sizeof(bool)); //1 byte, not 1 bit
