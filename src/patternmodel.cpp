@@ -1553,18 +1553,32 @@ void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * any
 
 
 void GraphPatternModel::readheader(std::istream * in, bool ignore) {
-    in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
-    in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
-    in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
-    //cerr << "DEBUG: " << model_id << " vs " << (GRAPHPATTERNMODEL+1) << endl;
-    if (model_id >= GRAPHPATTERNMODEL+1 ) {
-	    in->read((char*) &HASTEMPLATES, sizeof(bool)); //1 byte, not 1 bit
-	    in->read((char*) &HASINSTANCES, sizeof(bool)); //1 byte, not 1 bit
-    	in->read((char*) &HASSKIPUSAGE, sizeof(bool)); //1 byte, not 1 bit
-    	in->read((char*) &HASSKIPCONTENT, sizeof(bool)); //1 byte, not 1 bit
-    	in->read((char*) &HASSUCCESSORS, sizeof(bool)); //1 byte, not 1 bit
-    	in->read((char*) &HASPREDECESSORS, sizeof(bool)); //1 byte, not 1 bit
-    }
+	if ((model_id >= GRAPHPATTERNMODEL) && (model_id <= GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION)) {
+		if (DEBUG) cerr << "READING GRAPHMODEL HEADER " << endl; 
+    	in->read((char*) &HASPARENTS,  sizeof(bool)); //1 byte, not 1 bit
+	    in->read((char*) &HASCHILDREN, sizeof(bool)); //1 byte, not 1 bit
+	    in->read((char*) &HASXCOUNT, sizeof(bool)); //1 byte, not 1 bit
+		if (model_id >= GRAPHPATTERNMODEL+1 ) {
+			if (DEBUG) cerr << "READING EXTENDED GRAPHMODEL HEADER (v1)" << endl;
+			in->read((char*) &HASTEMPLATES, sizeof(bool)); //1 byte, not 1 bit
+			in->read((char*) &HASINSTANCES, sizeof(bool)); //1 byte, not 1 bit
+			in->read((char*) &HASSKIPUSAGE, sizeof(bool)); //1 byte, not 1 bit
+			in->read((char*) &HASSKIPCONTENT, sizeof(bool)); //1 byte, not 1 bit
+			in->read((char*) &HASSUCCESSORS, sizeof(bool)); //1 byte, not 1 bit
+			in->read((char*) &HASPREDECESSORS, sizeof(bool)); //1 byte, not 1 bit
+    	}
+	} else {
+		if (DEBUG) cerr << "NOT A GRAPHMODEL HEADER" << endl;
+		HASPARENTS = false;
+		HASCHILDREN = false;
+		HASXCOUNT = false;
+		HASTEMPLATES = false;
+		HASINSTANCES = false;
+		HASSKIPUSAGE = false;
+		HASSKIPCONTENT = false;
+		HASSUCCESSORS = false;
+		HASPREDECESSORS = false;
+	}	
 }
 
 void GraphPatternModel::writeheader(std::ostream * out) {
