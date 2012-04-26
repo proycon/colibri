@@ -15,7 +15,7 @@ void usage() {
     cerr << "\t-i inv-alignmodelfile     Use inverse alignment model as well (*.alignmodel.colibri), specify -S and -T as well" << endl;
     cerr << " Alignment method (choose one, though some may be combined):" << endl;
     cerr << "\t-J                        Use Jaccard co-occurrence method (simplest)" << endl;
-    cerr << "\t-D                        Use Dice co-occurrence method" << endl;
+    //cerr << "\t-D                        Use Dice co-occurrence method" << endl;
     cerr << "\t-E                        Use EM alignment method (sentence-based)" << endl;
     cerr << "\t-2                        Use Alternative EM alignment method (type-based)" << endl;
     cerr << "\t-3                        Use Iterative EM alignment method" << endl;       
@@ -83,6 +83,7 @@ int main( int argc, char *argv[] ) {
     int TARGETFIRST = 0;
     int MOSESFORMAT = 0;
     int bestn = 0;
+    bool DEBUG = false;
     
     
     string outputprefix = "";
@@ -133,8 +134,11 @@ int main( int argc, char *argv[] ) {
             COOCMODE = JACCARD;
             break;
         case 'D':
+        	DEBUG = true;
+        	break;
+        /*case 'D':
             COOCMODE = DICE;
-            break;            
+            break;*/            
         case 'E':
         	DO_EM = true;
         	break;
@@ -264,7 +268,7 @@ int main( int argc, char *argv[] ) {
 	
 		
 		cerr << "Loading source model " << sourcemodelfile << endl;
-		SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0));
+		SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
 		cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
 	 	cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredtokens << " tokens due to set thresholds" << endl;
 		if (sourcemodel.has_xcount()) {
@@ -283,7 +287,7 @@ int main( int argc, char *argv[] ) {
 		}
 		
 		cerr << "Loading target model " << targetmodelfile << endl;
-		SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0));
+		SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
 		cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
 		cerr << "  Ignored " << targetmodel.ignoredtypes << " types, " << targetmodel.ignoredtokens << " tokens due to set thresholds" << endl;
 		if (targetmodel.has_xcount()) {

@@ -32,9 +32,9 @@ void NGramData::writeasbinary(ostream * out) const {
 
 
 
-void ModelReader::readfile(const string & filename) {
-    const bool DEBUG = false;
+void ModelReader::readfile(const string & filename, const bool DEBUG ) {
 	int last = 0;
+	this->DEBUG = DEBUG;
 	//EncNGram lastngram;
 	//EncSkipGram lastskipgram;
 	
@@ -500,8 +500,8 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
 }
 
 
-IndexedPatternModel::IndexedPatternModel(const string & filename) {    
-    const bool DEBUG = true;
+IndexedPatternModel::IndexedPatternModel(const string & filename, const bool DEBUG) {    
+   
       
     
     ngramtokencount = 0;
@@ -510,7 +510,7 @@ IndexedPatternModel::IndexedPatternModel(const string & filename) {
     skipgramtypecount = 0;
     MAXLENGTH = 0;
     
-    if (!filename.empty()) readfile(filename);
+    if (!filename.empty()) readfile(filename, DEBUG);
 }
 
 void IndexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, bool ignore) {
@@ -1070,16 +1070,15 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
 }
 
 
-UnindexedPatternModel::UnindexedPatternModel(const string & filename) {    
-    const bool DEBUG = true;    
-    
+UnindexedPatternModel::UnindexedPatternModel(const string & filename, const bool DEBUG) {    
+
     ngramtokencount = 0;
     skipgramtokencount = 0; 
     ngramtypecount = 0;
     skipgramtypecount = 0;
     MAXLENGTH = 0;
     
-    readfile(filename);
+    readfile(filename, DEBUG);
 }
 
 void UnindexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, bool ignore ) {    
@@ -1274,7 +1273,7 @@ int intersection( set<CorpusReference> & a, set<CorpusReference> & b) {
 
 
 
-GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS, bool DOCHILDREN, bool DOXCOUNT, bool DOTEMPLATES, bool DOINSTANCES, bool DOSKIPUSAGE, bool DOSKIPCONTENT, bool DOSUCCESSORS, bool DOPREDECESSORS ) {
+GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS, bool DOCHILDREN, bool DOXCOUNT, bool DOTEMPLATES, bool DOINSTANCES, bool DOSKIPUSAGE, bool DOSKIPCONTENT, bool DOSUCCESSORS, bool DOPREDECESSORS) {
     this->model = model;
     model->model_id = GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION;
     this->DOPARENTS = DOPARENTS;
@@ -1934,7 +1933,7 @@ void GraphPatternModel::outputgraphvizrelations( const unordered_set<const EncAn
 
 /****************************************************************************************************************************************/
 
-SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool DOFORWARDINDEX,  bool DOREVERSEINDEX, bool DOXCOUNT, int COUNTTHRESHOLD, double FREQTHRESHOLD, double XCOUNTRATIOTHRESHOLD, int XCOUNTTHRESHOLD, bool DOSKIPGRAMS,  int MINLENGTH, int MAXLENGTH, bool DOPARENTS, bool DOCHILDREN, AlignConstraintInterface * alignconstrain, bool alignconstrainsource) { //read a normal graph pattern model in another way optimised for Cooc alignment
+SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool DOFORWARDINDEX,  bool DOREVERSEINDEX, bool DOXCOUNT, int COUNTTHRESHOLD, double FREQTHRESHOLD, double XCOUNTRATIOTHRESHOLD, int XCOUNTTHRESHOLD, bool DOSKIPGRAMS,  int MINLENGTH, int MAXLENGTH, bool DOPARENTS, bool DOCHILDREN, AlignConstraintInterface * alignconstrain, bool alignconstrainsource, const bool DEBUG) { //read a normal graph pattern model in another way optimised for Cooc alignment
 	this->DOFORWARDINDEX = DOFORWARDINDEX;
 	this->DOREVERSEINDEX = DOREVERSEINDEX;
 	this->DOXCOUNT = DOXCOUNT;
@@ -1958,10 +1957,10 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool
 	ignoredtokens = 0;
 	        
     secondpass = false;       
-	readfile(filename);	
+	readfile(filename,DEBUG);	
 	secondpass = DOPARENTS;
 	if (secondpass) {
-		readfile(filename);
+		readfile(filename, DEBUG);
 	}
 }
 

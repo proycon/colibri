@@ -62,9 +62,9 @@ int main( int argc, char *argv[] ) {
     bool DOFINALONLYSKIP = true;
     bool DOQUERIER = false;
     //bool DOCOMPOSITIONALITY = false;
-    
+    bool DEBUG = false;
     char c;    
-    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQ")) != -1)
+    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQD")) != -1)
         switch (c)
         {
         case 'c':
@@ -73,6 +73,9 @@ int main( int argc, char *argv[] ) {
         case 'd':
             modelfile = optarg;
             break;
+        case 'D':
+        	DEBUG = true;
+        	break;
         case 'f':
             corpusfile = optarg;
             break;        
@@ -196,7 +199,7 @@ int main( int argc, char *argv[] ) {
         }
     } else if ( (!modelfile.empty()) && (!classfile.empty()) ) {
     	if (DOINDEX) {
-		    IndexedPatternModel model = IndexedPatternModel(modelfile);
+		    IndexedPatternModel model = IndexedPatternModel(modelfile, DEBUG);
 		    if (!classfile.empty()) {
 		        cerr << "Loading class decoder " << classfile << endl;
 		        ClassDecoder classdecoder = ClassDecoder(classfile);
@@ -213,7 +216,7 @@ int main( int argc, char *argv[] ) {
 		    }
 		    
 		} else {
-		    UnindexedPatternModel model = UnindexedPatternModel(modelfile);
+		    UnindexedPatternModel model = UnindexedPatternModel(modelfile, DEBUG);
 		    if (!classfile.empty()) {
 		        cerr << "Loading class decoder " << classfile << endl;
 		        ClassDecoder classdecoder = ClassDecoder(classfile);

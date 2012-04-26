@@ -54,9 +54,9 @@ int main( int argc, char *argv[] ) {
     bool DOINSTANCES = false;
     
     bool DOGRAPHVIZ = false; 
-    
+    bool DEBUG = false;
     char c;    
-    while ((c = getopt(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgIT")) != -1)
+    while ((c = getopt(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgITD")) != -1)
         switch (c)
         {
         case 'a':
@@ -78,7 +78,10 @@ int main( int argc, char *argv[] ) {
             break;
         case 'd':
             modelfile = optarg;
-            break;            
+            break;
+        case 'D':
+            DEBUG = true;
+            break;               
         case 'o': 
             outputprefix = optarg;
             break;
@@ -161,7 +164,7 @@ int main( int argc, char *argv[] ) {
         }
         
         cerr << "Loading pattern model " << patternmodelfile << endl;
-        IndexedPatternModel patternmodel = IndexedPatternModel(patternmodelfile);
+        IndexedPatternModel patternmodel = IndexedPatternModel(patternmodelfile, DEBUG);
     
         cerr << "Loaded " << patternmodel.types() << " types, " << patternmodel.tokens() << " tokens" << endl;
             
@@ -197,7 +200,7 @@ int main( int argc, char *argv[] ) {
     } else {
         if (!classfile.empty()) {           
             cerr << "Loading graph model " << modelfile << endl;
-            GraphPatternModel graphmodel = GraphPatternModel(modelfile, DOPARENTS, DOCHILDREN, DOXCOUNT, DOTEMPLATES, DOINSTANCES,DOSKIPUSAGE,DOSKIPCONTENT,DOSUCCESSORS,DOPREDECESSORS);  
+            GraphPatternModel graphmodel = GraphPatternModel(modelfile, DOPARENTS, DOCHILDREN, DOXCOUNT, DOTEMPLATES, DOINSTANCES,DOSKIPUSAGE,DOSKIPCONTENT,DOSUCCESSORS,DOPREDECESSORS, DEBUG);  
             
             graphmodel.stats( (ostream*) &cerr );
                                          

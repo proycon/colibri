@@ -29,14 +29,18 @@ int main( int argc, char *argv[] ) {
     int MINLENGTH = 0;
     int MAXLENGTH = 99;
     bool DOSKIPGRAMS = true;
+	bool DEBUG = false;
 	
     char c;    
-    while ((c = getopt(argc, argv, "d:c:l:L:No:F:x:X:")) != -1)
+    while ((c = getopt(argc, argv, "d:c:l:L:No:F:x:X:D")) != -1)
         switch (c)
         {
         case 'd':
             modelfile = optarg;
             break;        
+        case 'D':
+        	DEBUG = true;
+        	break;
         case 'c':
             classfile = optarg;
             break;
@@ -85,7 +89,7 @@ int main( int argc, char *argv[] ) {
 	cerr << endl;
 	
 	cerr << "Loading model " << modelfile << endl;
-    SelectivePatternModel model = SelectivePatternModel(modelfile, false,false, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH);
+    SelectivePatternModel model = SelectivePatternModel(modelfile, false,false, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH,false, false,NULL, false ,DEBUG);
     cerr << "  Loaded " << model.types() << " types, " << model.tokens() << " tokens" << endl;
     cerr << "  Ignored " << model.ignoredtypes << " types, " << model.ignoredtokens << " tokens due to set thresholds" << endl;
     if (model.has_xcount()) {
