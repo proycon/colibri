@@ -148,7 +148,27 @@ int main( int argc, char *argv[] ) {
     }
 
     
-    if (!corpusfile.empty()) {
+    if ((!corpusfile.empty()) && (!modelfile.empty())) {
+    
+
+
+        if (DOINDEX) {
+            //not implemented yet
+            cerr << "Generating indexed models on the basis of existing models is not supported yet, please generate an unindexed model (-u)" << endl;
+            exit(2);
+        } else {
+            cerr << "Loading reference model" << endl;
+		    UnindexedPatternModel refmodel = UnindexedPatternModel(modelfile, DEBUG);
+		    
+		    cerr << "Computing model on " << corpusfile << endl;
+		    UnindexedPatternModel model = UnindexedPatternModel(corpusfile, refmodel, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS, MINSKIPTYPES, DOINITIALONLYSKIP,DOFINALONLYSKIP);
+
+		    cerr << "Saving " << outputprefix << ".unindexedpatternmodel.colibri"  << endl;
+		    const string outputfile = outputprefix + ".unindexedpatternmodel.colibri";
+		    model.save(outputfile);       		  
+        }
+    
+    } else if (!corpusfile.empty()) {
     	if (DOINDEX) {
     
 		    cerr << "Computing model on " << corpusfile << endl;

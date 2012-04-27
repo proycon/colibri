@@ -159,6 +159,7 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
            
     IndexedPatternModel(const std::string & filename = "", const bool DEBUG=false);
     IndexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
+    //IndexedPatternModel(const std::string & corpusfile, const IndexedPatternModel & refmodel, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
     
     int maxlength() const { return MAXLENGTH; }
     
@@ -239,7 +240,9 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
             
     UnindexedPatternModel(const std::string & filename, const bool DEBUG=false);
     UnindexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
+    UnindexedPatternModel(const std::string & corpusfile, UnindexedPatternModel & refmodel, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true);
     
+        
     int maxlength() const { return MAXLENGTH; }
     
     uint64_t types() const { return ngrams.size() + skipgrams.size(); }

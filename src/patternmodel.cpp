@@ -520,6 +520,71 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
 }
 
 
+UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, UnindexedPatternModel & refmodel, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {    
+    if (MAXLENGTH > refmodel.getmaxn()) MAXLENGTH = refmodel.getmaxn();
+    if (MINTOKENS < refmodel.getminn()) MINTOKENS = refmodel.getminn(); 
+
+    this->MAXLENGTH = MAXLENGTH;
+    this->MINTOKENS = MINTOKENS;
+    this->DOSKIPGRAMS = DOSKIPGRAMS;
+    this->MINSKIPTOKENS = MINSKIPTOKENS;
+    this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
+    this->DOFINALONLYSKIP = DOFINALONLYSKIP;
+    
+    ngramtokencount = 0;
+    skipgramtokencount = 0; 
+    ngramtypecount = 0;
+    skipgramtypecount = 0;
+    
+    int sentence = 0;
+    const int BUFFERSIZE = 65536;
+    unsigned char line[BUFFERSIZE];
+    
+    ifstream *IN =  new ifstream( corpusfile.c_str() );
+    if (!IN->good()) {
+    	cerr << "ERROR: Unable to open file " << corpusfile << endl;
+    	exit(5);
+    }    
+    vector<unsigned int> words;
+    while (IN->good()) {
+        const int linesize = readline(IN, line, BUFFERSIZE );            
+                
+        sentence++;
+
+        if (sentence % 10000 == 0) {
+            cerr << "\t@" << sentence << endl;
+        }
+                                
+        const int l = countwords(line, linesize);            
+        if (l >= 256) {
+            cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping! (" << linesize << " bytes)" << endl;
+            continue;
+       } else if (l == 0) {
+        	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping! (" << linesize << " bytes)" << endl;
+            continue;                
+        }
+        
+		vector<pair<const EncAnyGram*, CorpusReference> > patterns = refmodel.getpatterns(line,BUFFERSIZE, true, sentence,MINTOKENS,MAXLENGTH);
+		for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = patterns.begin(); iter != patterns.end(); iter++) {
+			const EncAnyGram * anygram = iter->first;			
+			const CorpusReference ref = iter->second;			
+			if (getkey(anygram) || refmodel.getkey(anygram)) {			
+			    if (anygram->isskipgram()) {
+			        const EncSkipGram skipgram = *( (const EncSkipGram*) refmodel.getkey(anygram) );
+			        skipgrams[skipgram]++;
+			    } else {
+			        const EncNGram ngram = *( (const EncNGram*) refmodel.getkey(anygram) );
+			        ngrams[ngram]++;
+			    }
+			    //refmodel.outputinstance(anygram, ref, decoder);			
+			 }			
+		} 
+    }
+   
+    
+}
+
+
 IndexedPatternModel::IndexedPatternModel(const string & filename, const bool DEBUG) {    
    
       
@@ -1101,29 +1166,46 @@ UnindexedPatternModel::UnindexedPatternModel(const string & filename, const bool
     readfile(filename, DEBUG);
 }
 
-void UnindexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, bool ignore ) {    
+void UnindexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, bool ignore ) {
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
+    if (model_id >= INDEXEDPATTERNMODEL) { //read and ignore references        
+        for (int j = 0; j < count; j++) {
+            CorpusReference ref = CorpusReference(f); //read from file (and ignore)
+        }
+    }
     if (!ignore) {
     	ngramtypecount++;
     	ngrams[ngram] = count;
     	ngramtokencount += count;
         if (ngram.n() > MAXLENGTH) MAXLENGTH = ngram.n();
     	tokencount[ngram.n()] += count;
-    }
+    }    
 }
 
 
 
-void UnindexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram & skipgram, bool ignore) {    
+void UnindexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram & skipgram, bool ignore) {
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
+    if (model_id >= INDEXEDPATTERNMODEL) { //read and ignore references
+        uint32_t skipcontentcount;
+        f->read((char*) &skipcontentcount, sizeof(uint32_t));
+        uint32_t occount;   
+        for (int j = 0; j < skipcontentcount; j++) {                                
+            EncSkipGram skipcontent = EncSkipGram(f);  
+            f->read((char*) &occount, sizeof(uint32_t)); //read occurrence count                
+            for (int k = 0; k < count; k++) {
+                CorpusReference ref = CorpusReference(f); //read from file
+            }        
+        }        
+    }
     if (!ignore) {
         skipgramtypecount++;    
     	skipgrams[skipgram] = count; //assign
-	    skipgramtokencount += count;
-	    skiptokencount[skipgram.n()] += count;
-	}            
+        skipgramtokencount += count;
+        skiptokencount[skipgram.n()] += count;
+    }            
 }
 
 void UnindexedPatternModel::writengramdata(std::ostream * f, const EncNGram & ngram) {
