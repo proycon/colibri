@@ -641,6 +641,7 @@ EncSkipGram::EncSkipGram(istream * in, const char _skipcount) {
     in->read(&_size, sizeof(char));
     if (_size <= 0) {
         cerr << "INTERNAL ERROR: EncSkipGram(): data has to have size >0, read " << (int) _size << ", not possible!" << endl;;
+        cerr << "skipcount=" << (int) skipcount << endl;
         exit(13);
     }
     data = new unsigned char[_size];

@@ -1193,10 +1193,10 @@ void UnindexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram
         uint32_t skipcontentcount;
         f->read((char*) &skipcontentcount, sizeof(uint32_t));
         uint32_t occount;   
-        for (int j = 0; j < skipcontentcount; j++) {                                
+        for (int j = 0; j < skipcontentcount; j++) {   
             EncSkipGram skipcontent = EncSkipGram(f);  
             f->read((char*) &occount, sizeof(uint32_t)); //read occurrence count                
-            for (int k = 0; k < count; k++) {
+            for (int k = 0; k < occount; k++) {
                 CorpusReference ref = CorpusReference(f); //read from file
             }        
         }        
