@@ -55,8 +55,8 @@ int main( int argc, char *argv[] ) {
         allowunknown = true;
     } else {
         cerr << "Building class encoder from corpus" << endl;
-        classencoder.build(corpusfile);
         classencoder = ClassEncoder();
+        classencoder.build(corpusfile);        
     }    
     classencoder.save(outputprefix + ".cls");
     classencoder.encodefile(corpusfile, outputprefix + ".clsenc", allowunknown);
