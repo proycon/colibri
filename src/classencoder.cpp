@@ -9,6 +9,7 @@
 using namespace std;
 
 
+
 bool validclass(unsigned int cls) {
 	/* checks if the integer value is a valid class that has no null bytes in its representation */
     do {
@@ -38,9 +39,13 @@ unsigned char * inttobytes(unsigned int cls, int & length) {
 }
 
 ClassEncoder::ClassEncoder() {
+    unknownclass = 2;
 }
 
 ClassEncoder::ClassEncoder(const string & filename) {
+       unknownclass = 2;
+       highestclass = 0;
+    
 	   ifstream IN;
 	   IN.open( filename.c_str() );    
        if (!(IN)) {
@@ -56,12 +61,22 @@ ClassEncoder::ClassEncoder(const string & filename) {
                   unsigned int cls = (unsigned int) atoi(cls_s.c_str());
                   const string word = string(line.begin() + i + 1, line.end());                  
                   classes[word] = cls;
+                  if (cls == 2) {
+                    unknownclass = 0;
+                  }
+                  if (cls > highestclass) highestclass = cls;
                   //cerr << "CLASS=" << cls << " WORD=" << word << endl;
               }
               
           }
         }        
         IN.close();  
+        
+        if (unknownclass == 0) {
+            highestclass++;
+            unknownclass = highestclass;
+            classes["{UNKNOWN}"] = unknownclass;
+        }
 }
 
 void ClassEncoder::build(const string & filename) {
@@ -100,7 +115,7 @@ void ClassEncoder::build(const string & filename) {
         
         freqlist.clear();
         
-        int cls = 1; //one is reserved
+        int cls = 5; //one is reserved for /n, two is reserved for {UNKNOWN}, three, four, five are reserved for future use
         for (multimap<const int,const string>::iterator iter = revfreqlist.begin(); iter != revfreqlist.end(); iter++) {
         	cls++;
         	while (!validclass(cls)) cls++;
@@ -112,7 +127,7 @@ void ClassEncoder::save(const string & filename) {
 	ofstream OUT;
 	OUT.open( filename.c_str() );
 	for (std::unordered_map<std::string,unsigned int>::iterator iter = classes.begin(); iter != classes.end(); iter++) {
-		OUT << iter->second << '\t' << iter->first << endl;
+	    if (iter->second != unknownclass) OUT << iter->second << '\t' << iter->first << endl;
 	}
 	OUT.close();
 }
@@ -126,7 +141,7 @@ vector<unsigned int> ClassEncoder::encodeseq(const vector<string> & seq) {
     return result;
 }
 
-int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer, int unknownclass) {
+int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer, bool allowunknown) {
 	  int outputcursor = 0;
       int begin = 0;      
       for (int i = 0; i < line.length(); i++) {
@@ -141,7 +156,7 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
           	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
           	    unsigned int cls;
           	    if (classes.count(word) == 0) {
-          	    	if (unknownclass == 0) { 	
+          	    	if (!allowunknown) {	
   	        			cerr << "ERROR: Unknown word '" << word << "', does not occur in model" << endl;
   	        			return 0;         
 	  	        	} else {
@@ -171,7 +186,7 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
       return outputcursor;
 }
 
-int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer, unsigned char * skipconf, char * skipcount, int unknownclass) {
+int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer, unsigned char * skipconf, char * skipcount,  bool allowunknown) {
 	  int outputcursor = 0;
 	  *skipcount = 0;
       int begin = 0;      
@@ -205,7 +220,7 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
           	    } else if (word == "{*9*}") {
           	    	skipconf[(*skipcount)++] = 9;
           	    } else if (classes.count(word) == 0) {
-          	    	if (unknownclass == 0) { 	
+          	    	if (!allowunknown) { 	
   	        			cerr << "ERROR: Unknown word '" << word << "', does not occur in model" << endl;
   	        			return 0;         
 	  	        	} else {
@@ -239,27 +254,27 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
       return outputcursor;
 }
 
-EncSkipGram ClassEncoder::input2skipgram(const std::string & querystring) {
+EncSkipGram ClassEncoder::input2skipgram(const std::string & querystring, bool allowunknown) {
 	unsigned char buffer[65536];
 	unsigned char skipref[4];
 	char skipcount = 0;
-	char buffersize = encodestring(querystring, buffer, skipref, &skipcount);
+	char buffersize = encodestring(querystring, buffer, skipref, &skipcount, allowunknown);
 	EncSkipGram skipgram = EncSkipGram(buffer,buffersize-1,skipref,skipcount); //-1 to strip last \0 byte
 	return skipgram;
 }
 
-EncNGram ClassEncoder::input2ngram(const std::string & querystring) {
+EncNGram ClassEncoder::input2ngram(const std::string & querystring, bool allowunknown) {
 	unsigned char buffer[65536];
-	char buffersize = encodestring(querystring, buffer);
+	char buffersize = encodestring(querystring, buffer, allowunknown);
 	EncNGram ngram = EncNGram(buffer,buffersize-1); //-1 to strip last \0 byte
 	return ngram;
 }
 
-EncAnyGram * ClassEncoder::input2anygram(const std::string & querystring) {
+EncAnyGram * ClassEncoder::input2anygram(const std::string & querystring, bool allowunknown) {
 	unsigned char buffer[65536];
 	unsigned char skipref[4];
 	char skipcount = 0;
-	char buffersize = encodestring(querystring, buffer, skipref, &skipcount);
+	char buffersize = encodestring(querystring, buffer, skipref, &skipcount, allowunknown);
 	if (skipcount == 0) {
 		return new EncNGram(buffer,buffersize-1); //-1 to strip last \0 byte;
 	} else {
@@ -267,7 +282,7 @@ EncAnyGram * ClassEncoder::input2anygram(const std::string & querystring) {
 	}
 }
 
-void ClassEncoder::encodefile(const std::string & inputfilename, const std::string & outputfilename) {
+void ClassEncoder::encodefile(const std::string & inputfilename, const std::string & outputfilename, bool allowunknown) {
 	const char zero = 0;
 	const char one = 1;
 	ofstream OUT;
@@ -286,7 +301,7 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
       	 OUT.write(&zero, sizeof(char)); //write separator
       	 linenum++;      	 
       }           
-      outputsize = encodestring(line, outputbuffer);
+      outputsize = encodestring(line, outputbuffer, allowunknown);
       if (outputsize > 0) OUT.write((const char *) outputbuffer, outputsize);                        
     }
       /*

@@ -10,6 +10,8 @@
 class ClassEncoder {
     private:
      std::unordered_map<std::string,unsigned int> classes;
+     int unknownclass;
+     int highestclass;
     public:
     ClassEncoder();
     ClassEncoder(const std::string &); //load an existing classer
@@ -18,12 +20,12 @@ class ClassEncoder {
     
     
     std::vector<unsigned int> encodeseq(const std::vector<std::string> & seq); //not really used yet
-    int encodestring(const std::string & line, unsigned char * outputbuffer, int unknownclass=0);
-    int encodestring(const std::string & line, unsigned char * outputbuffer, unsigned char * skipconf, char * skipcount, int unknownclass=0);
-    void encodefile(const std::string &, const std::string &);
-    EncSkipGram input2skipgram(const std::string &);
-    EncNGram input2ngram(const std::string &);
-    EncAnyGram * input2anygram(const std::string &);
+    int encodestring(const std::string & line, unsigned char * outputbuffer, bool allowunknown);
+    int encodestring(const std::string & line, unsigned char * outputbuffer, unsigned char * skipconf, char * skipcount, bool allowunknown);
+    void encodefile(const std::string &, const std::string &, bool allowunknown);
+    EncSkipGram input2skipgram(const std::string &,  bool allowunknown);
+    EncNGram input2ngram(const std::string &,  bool allowunknown);
+    EncAnyGram * input2anygram(const std::string &,  bool allowunknown);
     
     
     void save(const std::string & filename);

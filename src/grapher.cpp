@@ -215,7 +215,7 @@ int main( int argc, char *argv[] ) {
             		ClassEncoder encoder = ClassEncoder(classfile);
             		
             		
-            		const EncAnyGram * anygram = encoder.input2anygram(querystring);
+            		const EncAnyGram * anygram = encoder.input2anygram(querystring, true);
             		cerr << "Outputting graph for \"" << anygram->decode(classdecoder) << "\"" << endl;
             		//unsigned char buffer[65536];
             		//char buffersize = encoder.encodestring(querystring, buffer);
@@ -230,7 +230,7 @@ int main( int argc, char *argv[] ) {
             		ClassEncoder encoder = ClassEncoder(classfile);
             		
             		
-            		const EncAnyGram * anygram = encoder.input2anygram(querystring);
+            		const EncAnyGram * anygram = encoder.input2anygram(querystring, true);
             		cerr << "Outputting graph for \"" << anygram->decode(classdecoder) << "\"" << endl;
             		graphmodel.outputrelations(classdecoder,(ostream*) &cout, anygram); //(EncAnyGram*) &ngram);
             	} else {            	

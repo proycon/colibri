@@ -7,8 +7,8 @@
 using namespace std;
 
 void usage() {
-    cerr << "Syntax: classencoder -f corpus" << endl;
-    cerr << "Descriptions: Encodes a corpus" << endl;
+    cerr << "Syntax: classencoder -f corpus [ -c classmodel ]" << endl;
+    cerr << "Description: Encodes a corpus. If used with -c, encodes a corpus according to the specified pre-existing class model" << endl;
 }
 
 int main( int argc, char *argv[] ) {    
@@ -17,12 +17,15 @@ int main( int argc, char *argv[] ) {
     string outputprefix = "";
        
     char c;    
-    while ((c = getopt(argc, argv, "f:h")) != -1)
+    while ((c = getopt(argc, argv, "f:h:c:")) != -1)
         switch (c)
         {
         case 'f':
             corpusfile = optarg;
-            break;        
+            break;
+        case 'c':
+            classfile = optarg;
+            break;                
         case 'h':
             usage();
             exit(0);
@@ -41,8 +44,20 @@ int main( int argc, char *argv[] ) {
         strip_extension(outputprefix,"txt");    
     }
 
-    ClassEncoder classencoder = ClassEncoder();
-    classencoder.build(corpusfile);
+
+    ClassEncoder classencoder;
+    
+    bool allowunknown = false;
+    
+    if (!classfile.empty()) {
+        cerr << "Loading class encoder from file" << endl;
+        classencoder = ClassEncoder(classfile);
+        allowunknown = true;
+    } else {
+        cerr << "Building class encoder from corpus" << endl;
+        classencoder.build(corpusfile);
+        classencoder = ClassEncoder();
+    }    
     classencoder.save(outputprefix + ".cls");
-    classencoder.encodefile(corpusfile, outputprefix + ".clsenc");
+    classencoder.encodefile(corpusfile, outputprefix + ".clsenc", allowunknown);
 }

@@ -32,7 +32,7 @@ int main( int argc, char *argv[] ) {
  	
  	cerr << "Encoding n-gram from string input" << endl;
  	string querystring = "To be or not to be";
-	EncNGram ngram = encoder.input2ngram(querystring); 	
+	EncNGram ngram = encoder.input2ngram(querystring, true); 	
 
 	cerr << "Ngram: " << ngram.decode(classdecoder) << endl;
 	cerr << "N: " << (int) ngram.n() << endl;
@@ -49,7 +49,7 @@ int main( int argc, char *argv[] ) {
     cerr << "Encoding skip-gram from string input" << endl;
 	string querystring2 = "To {*1*} or {*1*} to be";
 	
-	EncSkipGram skipgram = encoder.input2skipgram(querystring2);
+	EncSkipGram skipgram = encoder.input2skipgram(querystring2, true);
 	
 	cerr << "Skipgram: " << skipgram.decode(classdecoder) << endl;
 	cerr << "N: " << (int) skipgram.n() << endl;
@@ -86,7 +86,7 @@ int main( int argc, char *argv[] ) {
     cerr << "Encoding skip-gram from string input" << endl;
 	string querystring4 = "be {*1*} not";
 	
-	EncSkipGram skipgraminv2 = encoder.input2skipgram(querystring4);
+	EncSkipGram skipgraminv2 = encoder.input2skipgram(querystring4, true);
 	
 	cerr << "Skipgram: " << skipgraminv2.decode(classdecoder) << endl;
 	cerr << "N: " << (int) skipgraminv2.n() << endl;

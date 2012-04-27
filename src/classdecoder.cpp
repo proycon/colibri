@@ -15,7 +15,9 @@ unsigned int bytestoint(const unsigned char* a, const int l) {
 
 
 ClassDecoder::ClassDecoder(const string & filename) {
-        
+       unknownclass = 2;
+       highestclass = 0;
+       
        ifstream *IN =  new ifstream( filename.c_str() );    
        if (!(*IN)) {
            cerr << "File does not exist: " << filename << endl;
@@ -30,6 +32,8 @@ ClassDecoder::ClassDecoder(const string & filename) {
                   unsigned int cls = (unsigned int) atoi(cls_s.c_str());
                   const string word = string(line.begin() + i + 1, line.end());
                   classes[cls] = word;
+                  if (cls == 2) unknownclass = 0;                
+                  if (cls > highestclass) highestclass = cls;
                   //cerr << "CLASS=" << cls << " WORD=" << word << endl;
               }
               
@@ -37,6 +41,11 @@ ClassDecoder::ClassDecoder(const string & filename) {
         }        
         IN->close();  
 
+        if (unknownclass == 0) {
+            highestclass++;
+            unknownclass = highestclass;
+            classes[unknownclass] = "{UNKNOWN}";
+        }
 }
 
         

@@ -9,6 +9,8 @@
 class ClassDecoder {
     private:
      std::unordered_map<unsigned int,std::string> classes;
+     int unknownclass;
+     int highestclass;
     public:
     
     ClassDecoder(const std::string & filename);

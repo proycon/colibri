@@ -227,6 +227,7 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerier::getpatterns
 }
 
 void ModelQuerier::querier(ClassEncoder & encoder, ClassDecoder & decoder, bool exact, bool repeat, const int minn, const int maxn) {
+	const bool allowunknown = true;
 	unsigned char buffer[65536];
 	uint32_t linenum = 0;
     std::string line;
@@ -235,7 +236,7 @@ void ModelQuerier::querier(ClassEncoder & encoder, ClassDecoder & decoder, bool 
     	cout << linenum << ">> "; 
     	getline(cin,line);    	
     	if (!line.empty()) {
-			int buffersize = encoder.encodestring(line, buffer);
+			int buffersize = encoder.encodestring(line, buffer, allowunknown); //last bool is
 			if (exact) {
 				//TODO
 			} else {    	
