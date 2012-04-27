@@ -44,8 +44,8 @@ ClassDecoder::ClassDecoder(const string & filename) {
         if (unknownclass == 0) {
             highestclass++;
             unknownclass = highestclass;
-            classes[unknownclass] = "{UNKNOWN}";
         }
+        classes[unknownclass] = "{UNKNOWN}";
 }
 
         
