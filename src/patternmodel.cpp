@@ -600,6 +600,11 @@ IndexedPatternModel::IndexedPatternModel(const string & filename, const bool DEB
     ngramtypecount = 0;
     skipgramtypecount = 0;
     MAXLENGTH = 0;
+
+    for (int n = 0; n < MAXN; n++) {
+        tokencount[n] = 0;
+        skiptokencount[n] = 0;
+    }
     
     if (!filename.empty()) readfile(filename, DEBUG);
 }
@@ -1168,6 +1173,11 @@ UnindexedPatternModel::UnindexedPatternModel(const string & filename, const bool
     ngramtypecount = 0;
     skipgramtypecount = 0;
     MAXLENGTH = 0;
+    
+    for (int n = 0; n < MAXN; n++) {
+        tokencount[n] = 0;
+        skiptokencount[n] = 0;
+    }
     
     readfile(filename, DEBUG);
 }
