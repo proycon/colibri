@@ -193,7 +193,7 @@ int main( int argc, char *argv[] ) {
             if (DOGRAPHVIZ) {
             	graphmodel.outputgraph(classdecoder, (ostream*) &cout );
             } else {
-            	graphmodel.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
+            	graphmodel.decode(classdecoder, (ostream*) &cout);
             }
             
         }        
@@ -237,7 +237,7 @@ int main( int argc, char *argv[] ) {
             		cerr << "Specify a query string with -q" << endl;
             	}             
             } else {
-            	graphmodel.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
+            	graphmodel.decode(classdecoder, (ostream*) &cout);
             }
         } else {
             cerr << "No classer specified" << endl;

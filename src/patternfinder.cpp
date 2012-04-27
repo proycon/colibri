@@ -41,7 +41,7 @@ void decode(IndexedPatternModel & model, string classfile) {
     ofstream *SKIPGRAMSOUT = NULL;*/
     //if (DOSKIPGRAMS) SKIPGRAMSOUT = new ofstream( skipgramoutputfile.c_str() );      
     cerr << "Decoding" << endl;
-    model.decode(classdecoder, (ostream*) &stdout, (ostream*) &stdout);   
+    model.decode(classdecoder, (ostream*) &stdout);   
 }
 
 
@@ -189,7 +189,7 @@ int main( int argc, char *argv[] ) {
 		        	model.querier(classencoder, classdecoder);
 		        } else {
 		        	cerr << "Decoding" << endl;
-		        	model.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
+		        	model.decode(classdecoder, (ostream*) &cout);
 		        }   
 		    }
 		    
@@ -212,7 +212,7 @@ int main( int argc, char *argv[] ) {
 		        	model.querier(classencoder, classdecoder);
 		        } else {
 		        	cerr << "Decoding" << endl;
-			        model.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
+			        model.decode(classdecoder, (ostream*) &cout);
 			    }   
 		    }
 		            	
@@ -230,7 +230,7 @@ int main( int argc, char *argv[] ) {
 		        	model.querier(classencoder, classdecoder);
 		        } else {		        
 		        	cerr << "Decoding" << endl;
-		        	model.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
+		        	model.decode(classdecoder, (ostream*) &cout);
 		        }
 		        	   
 		    }
@@ -247,7 +247,7 @@ int main( int argc, char *argv[] ) {
 		        	model.querier(classencoder, classdecoder);
 		        } else {
 			        cerr << "Decoding" << endl;
-			        model.decode(classdecoder, (ostream*) &cout, (ostream*) &cout);
+			        model.decode(classdecoder, (ostream*) &cout);
 			    }   
 		    }			
 		}

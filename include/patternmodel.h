@@ -107,8 +107,9 @@ class ModelWriter {
     virtual void writeskipgramdata(std::ostream * out, const EncSkipGram & skipgram) =0;
     virtual void writefooter(std::ostream * out) =0;
     
-    virtual uint64_t tokens() const =0;
+
     virtual uint64_t types() const =0;
+    virtual uint64_t tokens() const =0;
     virtual void writefile(const std::string & filename);
 };
 
@@ -164,14 +165,14 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     int maxlength() const { return MAXLENGTH; }
     
     uint64_t types() const { return ngrams.size() + skipgrams.size(); }
-    uint64_t tokens() const { return ngramtokencount + skipgramtokencount; }
+    uint64_t tokens() const { return totaltokens; }    
     
     bool exists(const EncAnyGram* key) const;
     const EncAnyGram* getkey(const EncAnyGram* key);
     const AnyGramData* getdata(const EncAnyGram* key);
     int count(const EncAnyGram* key);
     double freq(const EncAnyGram* key);    
-    double relfreq(const EncAnyGram* key);        
+    //double relfreq(const EncAnyGram* key);        
     //std::set<int> * index(const EncAnyGram* key);    
     //int index_size() const;
     
@@ -206,7 +207,7 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     size_t hash();
     
     
-    void decode(ClassDecoder & classdecoder, std::ostream *NGRAMSOUT, std::ostream *SKIPGRAMSOUT);    
+    void decode(ClassDecoder & classdecoder, std::ostream *OUT);    
 };
 
 
@@ -246,13 +247,13 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
     int maxlength() const { return MAXLENGTH; }
     
     uint64_t types() const { return ngrams.size() + skipgrams.size(); }
-    uint64_t tokens() const { return ngramtokencount + skipgramtokencount; }
+    uint64_t tokens() const { return totaltokens; }
     
     bool exists(const EncAnyGram* key) const;
     const EncAnyGram* getkey(const EncAnyGram* key);
     int count(const EncAnyGram* key);
     double freq(const EncAnyGram* key);    
-    double relfreq(const EncAnyGram* key);        
+    //double relfreq(const EncAnyGram* key);        
     //std::set<int> * index(const EncAnyGram* key);    
     //int index_size() const;
 
@@ -275,7 +276,7 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
     
     size_t hash();
     
-    void decode(ClassDecoder & classdecoder, std::ostream *NGRAMSOUT, std::ostream *SKIPGRAMSOUT);    
+    void decode(ClassDecoder & classdecoder, std::ostream *OUT);    
 };
 
 
@@ -407,7 +408,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     virtual void writeskipgrams(std::ostream * out);
     virtual void writefooter(std::ostream * out) {};    
     
-    void decode(ClassDecoder & classdecoder, std::ostream *NGRAMSOUT, std::ostream *SKIPGRAMSOUT);
+    void decode(ClassDecoder & classdecoder, std::ostream *OUT);
     void stats(std::ostream *OUT);
     void outputgraph(ClassDecoder & classdecoder, std::ostream *OUT);
     void outputgraph(ClassDecoder & classdecoder, std::ostream *OUT, const EncAnyGram *);
@@ -500,7 +501,7 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
      SelectivePatternModel(const std::string & filename, bool DOFORWARDINDEX = true, bool DOREVERSEINDEX = true, bool DOXCOUNT = true, int COUNTTHRESHOLD = 0, double FREQTHRESHOLD = 0, double XCOUNTRATIOTHRESHOLD = 0, int XCOUNTTHRESHOLD = 0, bool DOSKIPGRAMS = true,  int MINLENGTH = 0, int MAXLENGTH=99, bool DOPARENTS = false, bool DOCHILDREN = false, AlignConstraintInterface * alignconstrain = NULL, bool alignconstrainsource = true , const bool DEBUG=false); //read a graph pattern model
   
      uint64_t types() const { return ngrams.size() + skipgrams.size(); }
-     uint64_t tokens() const { return ngramtokencount + skipgramtokencount; }
+     uint64_t tokens() const { return totaltokens; }
      
     virtual uint64_t id() { return 0; }
     
