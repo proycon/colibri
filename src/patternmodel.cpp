@@ -140,7 +140,6 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerier::getpatterns
 	
 	std::vector<pair<const EncAnyGram*, CorpusReference> > patterns;
 
-    cerr << "MINN=" << minn << endl;
 
 	//extract all patterns in an input string
 	if (maxn > MAXN) {
@@ -535,7 +534,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, Unindexe
     this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
     this->DOFINALONLYSKIP = DOFINALONLYSKIP;
     
-    cerr << "MINTOKENS=" << MINTOKENS << endl;
+    
     
     ngramtokencount = 0;
     skipgramtokencount = 0; 
@@ -557,9 +556,9 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, Unindexe
                 
         sentence++;
 
-        //if (sentence % 10000 == 0) {
-            cerr << "\t@" << sentence;
-        //}
+        if (sentence % 10000 == 0) {
+            cerr << "\t@" << sentence << endl;
+        }
                                 
         const int l = countwords(line, linesize);            
         if (l >= 256) {
