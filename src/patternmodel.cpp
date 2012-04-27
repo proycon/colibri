@@ -140,18 +140,21 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerier::getpatterns
 	
 	std::vector<pair<const EncAnyGram*, CorpusReference> > patterns;
 
+    cerr << "MINN=" << minn << endl;
+
 	//extract all patterns in an input string
 	if (maxn > MAXN) {
        	cerr << "FATAL ERROR: Maximum n-gram size " << maxn << " exceeds the internal maximum MAXN="  << (int) MAXN << endl;
        	exit(14);
     }   
-    
 	const int l = countwords(data, datasize);
 	for (int begin = 0; begin <= l; begin++) {
 		for (int length = minn; (length <= maxn) && (begin+length <= l);  length++) {
+		    //cerr << "TRYING PATTERN " << begin << " " << length << endl;
 			EncNGram * ngram = getencngram(begin,length, data, datasize);
 			const EncAnyGram * anygram =  ngram;			
 			if (count(anygram) > 0) {
+			    ///cerr << "FOUND" << endl;
 				patterns.push_back( make_pair<const EncAnyGram*,CorpusReference>(getkey(anygram), CorpusReference(linenum, (char) begin) ) ); //stores the actual pointer used by the model
 				if (doskipgrams) {
 					//TODO: make more efficient for complete models that are guaranteed not to prune sub-parts
@@ -532,6 +535,8 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, Unindexe
     this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
     this->DOFINALONLYSKIP = DOFINALONLYSKIP;
     
+    cerr << "MINTOKENS=" << MINTOKENS << endl;
+    
     ngramtokencount = 0;
     skipgramtokencount = 0; 
     ngramtypecount = 0;
@@ -552,9 +557,9 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, Unindexe
                 
         sentence++;
 
-        if (sentence % 10000 == 0) {
-            cerr << "\t@" << sentence << endl;
-        }
+        //if (sentence % 10000 == 0) {
+            cerr << "\t@" << sentence;
+        //}
                                 
         const int l = countwords(line, linesize);            
         if (l >= 256) {
@@ -564,12 +569,13 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, Unindexe
         	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping! (" << linesize << " bytes)" << endl;
             continue;                
         }
-        
-		vector<pair<const EncAnyGram*, CorpusReference> > patterns = refmodel.getpatterns(line,BUFFERSIZE, true, sentence,MINTOKENS,MAXLENGTH);
+		vector<pair<const EncAnyGram*, CorpusReference> > patterns = refmodel.getpatterns(line,linesize, true, sentence,1,MAXLENGTH);
+		//cerr << "   " << patterns.size() << " patterns..." << endl;
 		for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = patterns.begin(); iter != patterns.end(); iter++) {
 			const EncAnyGram * anygram = iter->first;			
 			const CorpusReference ref = iter->second;			
-			if (getkey(anygram) || refmodel.getkey(anygram)) {			
+			if (getkey(anygram) || refmodel.getkey(anygram)) {		
+			    //cerr << "Found pattern" << endl;	
 			    if (anygram->isskipgram()) {
 			        const EncSkipGram skipgram = *( (const EncSkipGram*) refmodel.getkey(anygram) );
 			        skipgrams[skipgram]++;
