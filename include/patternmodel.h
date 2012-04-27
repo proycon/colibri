@@ -79,6 +79,9 @@ class ModelReader {
     uint64_t totaltokens;
     uint64_t totaltypes;
     bool DEBUG; 
+    
+    int FOUNDMINN; 
+    int FOUNDMAXN; 
    public:
     uint64_t model_id;
     virtual uint64_t id() =0;
@@ -89,6 +92,8 @@ class ModelReader {
     
     virtual void readfile(const std::string & filename, const bool DEBUG=false);
     
+    int getminn() { return FOUNDMINN; };
+    int getmaxn() { return FOUNDMAXN; };
 };
 
 class ModelWriter {
@@ -116,8 +121,8 @@ class ModelQuerier {
 	 virtual int count(const EncAnyGram * anygram) =0;
 	 virtual double freq(const EncAnyGram * anygram) =0;
 	 virtual void outputinstance(const EncAnyGram *, CorpusReference, ClassDecoder &) =0;	 	 
-	 std::vector<std::pair<const EncAnyGram*, CorpusReference> > getpatterns(const unsigned char * data, const unsigned char datasize, bool doskipgrams=true, uint32_t linenum=0); 
-	 void querier(ClassEncoder & encoder, ClassDecoder & decoder, bool exact = false,bool repeat = true);	 	  
+	 std::vector<std::pair<const EncAnyGram*, CorpusReference> > getpatterns(const unsigned char * data, const unsigned char datasize, bool doskipgrams=true, uint32_t linenum=0, const int minn = 1, const int maxn = MAXN); 
+	 void querier(ClassEncoder & encoder, ClassDecoder & decoder, bool exact = false,bool repeat = true, const int minn = 1, const int maxn = MAXN);	 	  
 };
 
 

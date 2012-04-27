@@ -38,6 +38,9 @@ void ModelReader::readfile(const string & filename, const bool DEBUG ) {
 	//EncNGram lastngram;
 	//EncSkipGram lastskipgram;
 	
+	FOUNDMAXN = 0;
+	FOUNDMINN = 99;
+	
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
     if ((!f) || (!f.good())) {
@@ -76,14 +79,20 @@ void ModelReader::readfile(const string & filename, const bool DEBUG ) {
         f.read(&gapcount, sizeof(char));
         if (gapcount == 0) {
             if (DEBUG)  cerr << "\tNGRAM: ";
-            const EncNGram ngram = EncNGram(&f); //read from file            
+            const EncNGram ngram = EncNGram(&f); //read from file
+            const int n = ngram.n();
+            if (n > FOUNDMAXN) FOUNDMAXN = n;
+            if (n < FOUNDMINN) FOUNDMINN = n;
             readngramdata(&f, ngram);     
             if (DEBUG) ngram.out(); 
             last = 1;
             //lastngram = ngram;    
         } else {
             if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps: ";
-            const EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file            
+            const EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file
+            const int n = skipgram.n();
+            if (n > FOUNDMAXN) FOUNDMAXN = n;
+            if (n < FOUNDMINN) FOUNDMINN = n;            
             if (DEBUG) skipgram.out();              
             readskipgramdata(&f, skipgram);
             last = 2;
@@ -93,6 +102,8 @@ void ModelReader::readfile(const string & filename, const bool DEBUG ) {
     }
     readfooter(&f);    
     f.close();
+    if (DEBUG)  cerr << "\tFOUNDMAXN=" << FOUNDMAXN << endl;
+    if (DEBUG)  cerr << "\tFOUNDMINN=" << FOUNDMINN << endl;
 }
 
 void ModelWriter::writefile(const string & filename) {
@@ -125,19 +136,19 @@ ModelQuerier::ModelQuerier() {
     }
 }
 
-std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerier::getpatterns(const unsigned char * data, const unsigned char datasize, bool doskipgrams, uint32_t linenum) {
+std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerier::getpatterns(const unsigned char * data, const unsigned char datasize, bool doskipgrams, uint32_t linenum, const int minn, const int maxn) {
 	
 	std::vector<pair<const EncAnyGram*, CorpusReference> > patterns;
 
 	//extract all patterns in an input string
-	if (maxlength() > MAXN) {
-       	cerr << "FATAL ERROR: Maximum n-gram size " << maxlength() << " exceeds the internal maximum MAXN=" << MAXN << endl;
+	if (maxn > MAXN) {
+       	cerr << "FATAL ERROR: Maximum n-gram size " << maxn << " exceeds the internal maximum MAXN="  << (int) MAXN << endl;
        	exit(14);
-    }    
+    }   
     
 	const int l = countwords(data, datasize);
 	for (int begin = 0; begin <= l; begin++) {
-		for (int length = 1; (length <= maxlength()) && (begin+length <= l);  length++) {
+		for (int length = minn; (length <= maxn) && (begin+length <= l);  length++) {
 			EncNGram * ngram = getencngram(begin,length, data, datasize);
 			const EncAnyGram * anygram =  ngram;			
 			if (count(anygram) > 0) {
@@ -215,7 +226,7 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerier::getpatterns
 	return patterns;
 }
 
-void ModelQuerier::querier(ClassEncoder & encoder, ClassDecoder & decoder, bool exact, bool repeat) {
+void ModelQuerier::querier(ClassEncoder & encoder, ClassDecoder & decoder, bool exact, bool repeat, const int minn, const int maxn) {
 	unsigned char buffer[65536];
 	uint32_t linenum = 0;
     std::string line;
@@ -228,7 +239,7 @@ void ModelQuerier::querier(ClassEncoder & encoder, ClassDecoder & decoder, bool 
 			if (exact) {
 				//TODO
 			} else {    	
-				vector<pair<const EncAnyGram*, CorpusReference> > patterns = getpatterns(buffer,buffersize, true, linenum);
+				vector<pair<const EncAnyGram*, CorpusReference> > patterns = getpatterns(buffer,buffersize, true, linenum,minn,maxn);
 				for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = patterns.begin(); iter != patterns.end(); iter++) {
 					const EncAnyGram * anygram = iter->first;
 					const CorpusReference ref = iter->second;

@@ -109,5 +109,5 @@ int main( int argc, char *argv[] ) {
 	ClassEncoder classencoder = ClassEncoder(classfile);
 	
 	cerr << "Starting query mode:" << endl;
-	model.querier(classencoder, classdecoder);	
+	model.querier(classencoder, classdecoder, false, true, model.getminn(), model.getmaxn());	
 }
