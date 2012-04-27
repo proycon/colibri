@@ -60,7 +60,7 @@ void ModelReader::readfile(const string & filename, const bool DEBUG ) {
     unsigned char check;    
     for (int i = 0; i < totaltypes; i++) {           
         char gapcount;
-        if (DEBUG) cerr << "\t@" << i << '/' << totaltypes;
+        if (DEBUG) cerr << "\t@" << i + 1 << '/' << totaltypes;
         f.read((char*) &check, sizeof(char));
         if (check != 0xff) {
         	cerr << "ERROR processing " + filename + " at construction " << i << " of " << totaltypes << ". Expected check-byte, got " << (int) check << endl;
@@ -2018,11 +2018,14 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool
 	skipgramtypecount = 0;
 	ignoredtypes = 0;
 	ignoredtokens = 0;
-	        
-    secondpass = false;       
+	       
+    	       
+    secondpass = false;      
+    if (DEBUG) cerr << "******* SelectivePatternModel FIRST PASS ******" << endl;
 	readfile(filename,DEBUG);	
 	secondpass = DOPARENTS;
-	if (secondpass) {
+	if (secondpass) {	
+	    if (DEBUG) cerr << "******** SelectivePatternModel SECOND PASS *********" << endl;
 		readfile(filename, DEBUG);
 	}
 }
@@ -2055,6 +2058,13 @@ void SelectivePatternModel::readheader(std::istream * in, bool ignore) {
 		HASSUCCESSORS = false;
 		HASPREDECESSORS = false;
 	}	
+	if (DEBUG) {
+	    if (secondpass) {
+	        cerr << "STARTING SECOND PASS" << endl;
+	    } else {
+	        cerr << "STARTING FIRST PASS" << endl;
+	    }
+	}
 	/*if ((model_id == UNINDEXEDPATTERNMODEL) && (DOFORWARDINDEX || DOREVERSEINDEX)) 
 	  cerr << "WARNING!!! You opted to load indexes but you the model you are loading is unindexed!" << endl;
 	if (!HASXCOUNT && DOXCOUNT) 
@@ -2090,13 +2100,13 @@ int SelectivePatternModel::transitivereduction() {
 void SelectivePatternModel::readrelations(std::istream * in, const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * relationhash, bool ignore) {
     uint32_t count;
     in->read((char*) &count,  sizeof(uint32_t));
-    char gapcount;
-    const EncAnyGram * key = getkey(anygram);
+    char gapcount;        
     for (int i = 0; i < count; i++) {                        
        in->read(&gapcount, sizeof(char));
        if (gapcount == 0) {
         EncNGram ngram = EncNGram(in);
         if ((!ignore) && (secondpass) && (anygram != NULL) && (relationhash != NULL)) {
+            const EncAnyGram * key = getkey(anygram);
         	const EncAnyGram * key2 = getkey((EncAnyGram*) &ngram);
         	if (!key2) {
         		cerr << "INTERNAL WARNING: Ngram not found ";
@@ -2109,6 +2119,7 @@ void SelectivePatternModel::readrelations(std::istream * in, const EncAnyGram * 
        } else {
         EncSkipGram skipgram = EncSkipGram( in, gapcount);
         if ((!ignore) && (secondpass) && (anygram != NULL) && (relationhash != NULL)) {
+            const EncAnyGram * key = getkey(anygram);
         	const EncAnyGram * key2 = getkey((EncAnyGram*) &skipgram);
         	if (!key2) {
         		cerr << "INTERNAL WARNING: Ngram not found ";
@@ -2144,9 +2155,11 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
     if (HASXCOUNT) in->read((char*) &xcount, sizeof(uint32_t)); //read, process later
     
     if (secondpass) {    	
-    	const EncAnyGram * anygram = getkey(&ngram);	
-    	if (HASPARENTS) readrelations(in, anygram, &rel_subsumption_parents);
-    	if (HASCHILDREN) readrelations(in, anygram, &rel_subsumption_children);
+        if (&ngram == NULL) {
+         cerr << "NULL!" << endl;
+        }
+    	if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_parents);
+    	if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_children);
     	if (HASTEMPLATES) readrelations(in);
         if (HASINSTANCES) readrelations(in);
         if (HASSKIPUSAGE) readrelations(in);
@@ -2233,13 +2246,24 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
 	}
     if (HASXCOUNT) in->read((char*) &xcount, sizeof(uint32_t));     
 
-    if (secondpass) {
-    	const EncAnyGram * anygram = getkey(&skipgram);	
-    	if (HASPARENTS) readrelations(in, anygram, &rel_subsumption_parents);
-    	if (HASCHILDREN) readrelations(in, anygram, &rel_subsumption_children);
+    if (secondpass) {    		
+    	if (HASPARENTS) readrelations(in, (const EncAnyGram*) &skipgram, &rel_subsumption_parents);
+    	if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &skipgram, &rel_subsumption_children);
+    	if (HASTEMPLATES) readrelations(in);
+        if (HASINSTANCES) readrelations(in);
+        if (HASSKIPUSAGE) readrelations(in);
+        if (HASSKIPCONTENT) readrelations(in);
+        if (HASSUCCESSORS) readrelations(in);
+        if (HASPREDECESSORS) readrelations(in);
     } else {
     	if (HASPARENTS) readrelations(in); //read and ignore
     	if (HASCHILDREN) readrelations(in);  //read and ignore
+    	if (HASTEMPLATES) readrelations(in);
+        if (HASINSTANCES) readrelations(in);
+        if (HASSKIPUSAGE) readrelations(in);
+        if (HASSKIPCONTENT) readrelations(in);
+        if (HASSUCCESSORS) readrelations(in);
+        if (HASPREDECESSORS) readrelations(in);    	
     }
             
     //THRESHOLD CHECK STAGE - deciding whether to ignore based on unreached thresholds
@@ -2262,7 +2286,7 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
 	
      //STORAGE STAGE
     if (!ignore) {
-    	skipgrams[skipgram]; //will create the ngram if it does not exist yet in the hash
+    	skipgrams[skipgram]; //will create the skipgram if it does not exist yet in the hash
 		std::unordered_map<EncSkipGram,IndexCountData>::iterator iter = skipgrams.find(skipgram); //pointer to the skipgram in the hash
 		const EncAnyGram * anygram = &iter->first;
     	skipgramtypecount++;            
@@ -2340,6 +2364,10 @@ void SelectivePatternModel::outputinstance(const EncAnyGram * anygram, CorpusRef
 
 
 const EncAnyGram* SelectivePatternModel::getkey(const EncAnyGram* key) {
+    if (key == NULL) {
+        cerr << "INTERNAL WARNING: SelectivePatternModel::getkey(NULL)!" << endl;
+        return NULL;
+    }
     if (key->gapcount() == 0) {
         std::unordered_map<const EncNGram,IndexCountData >::iterator iter = ngrams.find(*( (EncNGram*) key) );
         if (iter != ngrams.end()) {
