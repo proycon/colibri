@@ -894,7 +894,8 @@ EncAnyGram* IndexedPatternModel::get_reverse_index_item(const int key, const int
 
 
 void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
-    *OUT << "#N\tVALUE\tCOUNT\tFREQUENCY\\COVERAGE\tSKIPTYPES\tSKIP-ENTROPY\tREFERENCES" << endl;
+    *OUT << "#TYPES=" << types() << ";TOKENS=" << tokens() << endl;
+    *OUT << "#N\tVALUE\tCOUNT\tCOVERAGE\tSKIPTYPES\tSKIP-ENTROPY\tREFERENCES" << endl;
     const int grandtotal = ngramtokencount + skipgramtokencount;   
 
     for(unordered_map<EncNGram,NGramData>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
@@ -1367,6 +1368,7 @@ double UnindexedPatternModel::freq(const EncAnyGram* key) {
 
 void UnindexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
     //const int grandtotal = ngramtokencount + skipgramtokencount;
+    *OUT << "#TYPES=" << types() << ";TOKENS=" << tokens() << endl;
     *OUT << "#N\tVALUE\tCOUNT\tCOVERAGE" << endl;
 
     for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
@@ -1397,8 +1399,8 @@ void UnindexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
 
 void UnindexedPatternModel::decode(UnindexedPatternModel & testmodel,  ClassDecoder & classdecoder, std::ostream *OUT) {
     //const int grandtotal = ngramtokencount + skipgramtokencount;
-    *OUT << "#N\tVALUE\tCOUNT\tCOVERAGE\tCOUNT-TESTMODEL\tCOVERAGE-TESTMODEL" << endl;
-
+    *OUT << "#TYPES=" << types() << ";TOKENS=" << tokens() << ";TYPES(2)=" << testmodel.types() << ";TOKENS(2)=" << testmodel.tokens() << endl;
+    *OUT << "#N\tVALUE\tCOUNT\tCOVERAGE\tCOUNT-TESTMODEL\tCOVERAGE-TESTMODEL" << endl;    
     for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
        const double freq = ((double) (iter->second * iter->first.n()) / totaltokens);
        //const double freq1 = (double) iter->second / tokencount[iter->first.n()];       
