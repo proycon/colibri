@@ -276,7 +276,8 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
     
     size_t hash();
     
-    void decode(ClassDecoder & classdecoder, std::ostream *OUT);    
+    void decode(ClassDecoder & classdecoder, std::ostream *OUT);
+    void decode(UnindexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT);    
 };
 
 

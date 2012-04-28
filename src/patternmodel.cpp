@@ -1367,7 +1367,7 @@ double UnindexedPatternModel::freq(const EncAnyGram* key) {
 
 void UnindexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
     //const int grandtotal = ngramtokencount + skipgramtokencount;
-    *OUT << "#N\tVALUE\tCOUNT\tFREQUENCY\\COVERAGE" << endl;
+    *OUT << "#N\tVALUE\tCOUNT\tCOVERAGE" << endl;
 
     for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
        const double freq = ((double) (iter->second * iter->first.n()) / totaltokens);
@@ -1394,6 +1394,46 @@ void UnindexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
 
 }
 
+
+void UnindexedPatternModel::decode(UnindexedPatternModel & testmodel,  ClassDecoder & classdecoder, std::ostream *OUT) {
+    //const int grandtotal = ngramtokencount + skipgramtokencount;
+    *OUT << "#N\tVALUE\tCOUNT\tCOVERAGE\tCOUNT-TESTMODEL\tCOVERAGE-TESTMODEL" << endl;
+
+    for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
+       const double freq = ((double) (iter->second * iter->first.n()) / totaltokens);
+       //const double freq1 = (double) iter->second / tokencount[iter->first.n()];       
+       //const double freq2 = (double) iter->second / ngramtokencount;
+       //const double freq3 = (double) iter->second / grandtotal;
+       const EncNGram ngram = iter->first;
+        *OUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second << '\t' << freq;
+        
+        const EncAnyGram * key = testmodel.getkey((const EncAnyGram *) &iter->first);
+        if (key) {
+            *OUT << testmodel.count(key) << "\t" << testmodel.freq(key); 
+        } else {
+            *OUT << "0\t0";
+        }
+        *OUT << endl;
+    }
+   
+
+   
+       for(unordered_map<EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {
+           const double freq = ((double) (iter->second * iter->first.n()) / totaltokens);
+           //const double freq1 = (double) iter->second / skiptokencount[iter->first.n()]; 
+           //const double freq2 = (double) iter->second / skipgramtokencount;           
+           //const double freq3 = (double) iter->second / grandtotal;                          
+           const EncSkipGram skipgram = iter->first;                              
+           *OUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second << '\t' << freq;
+            const EncAnyGram * key = testmodel.getkey((const EncAnyGram *) &iter->first);
+            if (key) {
+                *OUT << testmodel.count(key) << "\t" << testmodel.freq(key); 
+            } else {
+                *OUT << "0\t0";
+            }                     
+           *OUT << endl;
+       }  
+}
 
 double SkipGramData::entropy() const {
     double entropy = 0;

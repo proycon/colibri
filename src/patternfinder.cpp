@@ -16,7 +16,7 @@ void usage() {
     cerr << "Options:" << endl;
     cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced (except in query mode)" << endl;
     cerr << "\t-d modelfile     Load and decode this patternmodel (instead of -f)" << endl;
-    
+    cerr << "\t-J modelfile2    Joint decoding of a second (test) model, (using the same classes), use with -d and -c" << endl;   
     cerr << "\t-t <number>      Token threshold: n-grams and skipgrams occuring less than this will be pruned (default: 2)" << endl;
     cerr << "\t-l <number>      Maximum n-gram/skipgram length (in words, default: 9)" << endl;
     cerr << "\t-s               Compute skip-grams (costs extra memory and time)" << endl;    
@@ -51,6 +51,7 @@ int main( int argc, char *argv[] ) {
     string corpusfile = "";
     string outputprefix = "";
     string modelfile = "";
+    string modelfile2 = "";
     
     int MINTOKENS = 2;
     int MINSKIPTOKENS = 2;
@@ -64,7 +65,7 @@ int main( int argc, char *argv[] ) {
     //bool DOCOMPOSITIONALITY = false;
     bool DEBUG = false;
     char c;    
-    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQD")) != -1)
+    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQDJ:")) != -1)
         switch (c)
         {
         case 'c':
@@ -72,6 +73,9 @@ int main( int argc, char *argv[] ) {
             break;
         case 'd':
             modelfile = optarg;
+            break;
+        case 'J':
+            modelfile2 = optarg;
             break;
         case 'D':
         	DEBUG = true;
@@ -219,6 +223,7 @@ int main( int argc, char *argv[] ) {
         }
     } else if ( (!modelfile.empty()) && (!classfile.empty()) ) {
     	if (DOINDEX) {
+    	    cerr << "Loading model" << endl;
 		    IndexedPatternModel model = IndexedPatternModel(modelfile, DEBUG);
 		    if (!classfile.empty()) {
 		        cerr << "Loading class decoder " << classfile << endl;
@@ -236,6 +241,7 @@ int main( int argc, char *argv[] ) {
 		    }
 		    
 		} else {
+		    cerr << "Loading model" << endl;
 		    UnindexedPatternModel model = UnindexedPatternModel(modelfile, DEBUG);
 		    if (!classfile.empty()) {
 		        cerr << "Loading class decoder " << classfile << endl;
@@ -246,8 +252,15 @@ int main( int argc, char *argv[] ) {
 		        	cerr << "Starting query mode:" << endl;
 		        	model.querier(classencoder, classdecoder);
 		        } else {
-			        cerr << "Decoding" << endl;
-			        model.decode(classdecoder, (ostream*) &cout);
+		            if (modelfile2.empty()) {
+			            cerr << "Decoding" << endl;
+    			        model.decode(classdecoder, (ostream*) &cout);
+    			     } else {    			
+    			        cerr << "Loading test model" << endl;     
+    			        UnindexedPatternModel model2 = UnindexedPatternModel(modelfile2, DEBUG);
+    			        cerr << "Joint decoding" << endl;
+    			        model.decode(model2, classdecoder, (ostream*) &cout);
+    			     }
 			    }   
 		    }			
 		}
