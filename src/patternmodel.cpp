@@ -2474,6 +2474,15 @@ double SelectivePatternModel::freq(const EncAnyGram* key) {
     return 0;
 }
 
+int SelectivePatternModel::countforsentence(const EncAnyGram* key, const uint64_t sentence) {
+    if (key->gapcount() == 0) {        
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ].sentences.count(sentence) ;
+    } else {
+        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return skipgrams[ *( (EncSkipGram*) key)].sentences.count(sentence);
+    }
+    return 0;
+}
+
 
 /*set<int> * IndexedPatternModel::index(const EncAnyGram* key) {
     if (key->gapcount() == 0) {        

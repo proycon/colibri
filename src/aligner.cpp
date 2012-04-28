@@ -314,7 +314,7 @@ int main( int argc, char *argv[] ) {
 		
 		if (COOCMODE) {
 			int tmpbestn;
-			if (DO_EM) {
+			if ((DO_EM) || (DO_EM2)) {
 			 	tmpbestn = 0;
 			} else {
 				tmpbestn = bestn;
@@ -324,7 +324,7 @@ int main( int argc, char *argv[] ) {
 			alignmodel->trainCooc(COOCMODE, tmpbestn, coocprunevalue, 0);			
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;			
-			if ((DONORM) || (DO_EM)) {
+			if ((DONORM) || (DO_EM) || (DO_EM2)) {
 				cerr << "   Normalizing... " << endl;
 				alignmodel->normalize();
 			}
@@ -334,7 +334,7 @@ int main( int argc, char *argv[] ) {
 				reversealignmodel->trainCooc(COOCMODE, tmpbestn, coocprunevalue, 0);
 				cerr << "   Found alignment targets for  " << reversealignmodel->alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel->totalsize() << endl;
-				if ((DONORM) || (DO_EM)) {
+				if ((DONORM) || (DO_EM) || (DO_EM2)) {
 					cerr << "   Normalizing... " << endl;
 					reversealignmodel->normalize();
 				}			
@@ -344,9 +344,13 @@ int main( int argc, char *argv[] ) {
 			EM_INIT = false;
 			
 		}		
-		if (DO_EM) {
-			cerr << "Computing EM alignment model..." << endl;		
-			alignmodel->trainEM(MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, EM_NULL, EM_INIT);
+		if ((DO_EM) || (DO_EM2)) {
+			cerr << "Computing EM alignment model..." << endl;
+			if (DO_EM2) {
+			    alignmodel->trainEM2(MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, EM_NULL, EM_INIT); //EM2 (experimental)
+			} else {		
+			    alignmodel->trainEM(MAXROUNDS,  CONVERGENCE, probprunevalue, bestn, EM_NULL, EM_INIT);
+			}
 			if (DONORM) alignmodel->normalize();	
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;

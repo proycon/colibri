@@ -511,7 +511,12 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
     double freq(const EncAnyGram* key);    
     int xcount(const EncAnyGram* key);
     double xcountratio(const EncAnyGram* key);
+    
+    int countforsentence(const EncAnyGram* key, const uint64_t sentence);
+    
 	void outputinstance(const EncAnyGram *, CorpusReference, ClassDecoder &);    
+    
+    
     
     int transitivereduction();
     
