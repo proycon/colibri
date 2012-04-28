@@ -1409,9 +1409,9 @@ void UnindexedPatternModel::decode(UnindexedPatternModel & testmodel,  ClassDeco
         
         const EncAnyGram * key = testmodel.getkey((const EncAnyGram *) &iter->first);
         if (key) {
-            *OUT << testmodel.count(key) << "\t" << testmodel.freq(key); 
+            *OUT << "\t" << testmodel.count(key) << "\t" << testmodel.freq(key); 
         } else {
-            *OUT << "0\t0";
+            *OUT << "\t0\t0";
         }
         *OUT << endl;
     }

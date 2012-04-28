@@ -257,9 +257,9 @@ int main( int argc, char *argv[] ) {
     			        model.decode(classdecoder, (ostream*) &cout);
     			     } else {    			
     			        cerr << "Loading test model" << endl;     
-    			        UnindexedPatternModel model2 = UnindexedPatternModel(modelfile2, DEBUG);
+    			        UnindexedPatternModel testmodel = UnindexedPatternModel(modelfile2, DEBUG);
     			        cerr << "Joint decoding" << endl;
-    			        model.decode(model2, classdecoder, (ostream*) &cout);
+    			        model.decode(testmodel, classdecoder, (ostream*) &cout);
     			     }
 			    }   
 		    }			
