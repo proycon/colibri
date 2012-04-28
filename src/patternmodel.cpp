@@ -525,6 +525,9 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
 }
 
 
+
+
+
 UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, UnindexedPatternModel & refmodel, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {    
     if (MAXLENGTH > refmodel.getmaxn()) MAXLENGTH = refmodel.getmaxn();
     if (MINTOKENS < refmodel.getminn()) MINTOKENS = refmodel.getminn(); 
@@ -592,7 +595,39 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, Unindexe
 		} 
     }
    
+       //prune n-grams
+       int pruned = 0;
+       for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
+                if (iter->second < MINTOKENS) {
+                    //tokencount[n] -= iter->second;
+                    //typecount[n]--;
+                    pruned++;
+                    ngrams.erase(iter->first);                        
+                } else {
+                    //ngramtokencount += iter->second;
+                }
+       }
+       cerr << "Pruned " << pruned << " " << "n-grams" << endl; // << typecount[n] <<  " left" << endl;  //"(" << tokencount[n] << " tokens)" << endl;
     
+       
+       if (DOSKIPGRAMS) {       
+           //prune skipgrams
+           pruned = 0;
+           for(unordered_map<EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {                               
+                    bool pruneskipgram = false;
+                    if (iter->second < MINTOKENS) {
+                        pruneskipgram = true;
+                        //skiptokencount[n] -= iter->second;
+                        //skiptypecount[n]--;
+                        pruned++;
+                        skipgrams.erase(iter->first);
+                    }
+           }
+           cerr << "Pruned " << pruned << " skipgrams" << endl; // << " << skiptypecount[n] <<  " left" << endl; //(" << skiptokencount[n] << " tokens)" << endl;
+           
+        }
+       
+  
 }
 
 
