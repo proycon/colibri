@@ -356,8 +356,12 @@ int main( int argc, char *argv[] ) {
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
 						
 			if (DOBIDIRECTIONAL) {
-				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;				
-				reversealignmodel->trainEM(MAXROUNDS, CONVERGENCE, probprunevalue, bestn, EM_NULL, EM_INIT);
+				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
+				if (DO_EM2) {				
+				    reversealignmodel->trainEM2(MAXROUNDS, CONVERGENCE, probprunevalue, bestn, EM_NULL, EM_INIT);
+				} else {
+				    reversealignmodel->trainEM(MAXROUNDS, CONVERGENCE, probprunevalue, bestn, EM_NULL, EM_INIT);
+				}
 				if (DONORM) reversealignmodel->normalize();
 				cerr << "   Found alignment targets for  " << reversealignmodel->alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel->totalsize() << endl;						
