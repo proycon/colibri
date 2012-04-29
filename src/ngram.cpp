@@ -499,6 +499,49 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
     return container.size();
 }
 
+void EncSkipGram::getgaps(std::vector<std::pair<int,int> > & gaps) const {
+    //TODO
+    int pos = 0;
+    bool prevnull = false;
+    int skipnum = 0;
+    for (int i = 0; i < _size; i++) {
+        //cerr << (int) data[i] << ':' << prevnull << ':' << skipcount << endl;
+        if (data[i] == 0) {
+            if (prevnull) {                  
+                gaps.push_back(pair<int,int>( pos -1 , skipsize[skipnum] ) );
+                pos += skipsize[skipnum];
+                skipnum++;              
+            }
+            prevnull = true;
+        } else {
+            prevnull = false;
+        }
+        pos++;        
+    }  
+}
+
+EncSkipGram EncSkipGram::extractskipcontent(EncNGram & instance) const {
+    if (instance.n() != n()) {
+        cerr << "Extractskipcontent(): instance.n() != skipgram.n() " << endl;
+    }
+    std::vector<std::pair<int,int> > gaps;
+    getgaps(gaps);
+    vector<EncNGram*> subngrams;
+    vector<int> skipcontent_skipref;
+    int cursor = 0;
+    for (std::vector<std::pair<int,int> >::iterator iter = gaps.begin(); iter != gaps.end(); iter++) {
+        EncNGram * subngram = instance.slice(iter->first,iter->second);
+        subngrams.push_back(subngram);
+        if (cursor > 0) skipcontent_skipref.push_back(iter->first - cursor);
+        cursor = iter->first + iter->second;
+    }
+    EncSkipGram sc = EncSkipGram(subngrams, skipcontent_skipref, false, false);
+    for (std::vector<EncNGram*>::iterator iter = subngrams.begin(); iter != subngrams.end(); iter++) {
+        delete *iter;
+    } 
+    return sc;
+}
+
 /*int instantiate(const EncSkipGram * skipcontent,std::vector<EncSkipGram*> & container) const {
 	skipcontent->parts(contentparts); //parts
 	parts(p); //parts

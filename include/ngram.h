@@ -134,12 +134,17 @@ class EncSkipGram: public EncAnyGram {
             //return skipconf.skipsize(); 
       }
       
+      void getgaps(std::vector<std::pair<int,int> > &) const;
+      EncSkipGram extractskipcontent(EncNGram & instance) const;
+      
+      
       int parts(std::vector<EncNGram*> & container) const; //returns all consecutive parts
       //int instantiate(const EncSkipGram * skipcontent, std::vector<EncSkipGram*> & container) const;
       //int instantiate(const EncSkipGram * skipcontent, std::vector<EncSkipGram*> & container, const std::vector<EncNGram*> & parts, const std::vector<EncNGram*> & contentparts) const; //returns all instances (as skipgrams cause instances may be skipgrams) 
 	  EncNGram instantiate(const EncSkipGram * skipcontent) const;
 	  EncNGram instantiate(const EncSkipGram * skipcontent, const std::vector<EncNGram*> & contentparts) const;      
       void writeasbinary(std::ostream * out) const; //write binary output
+      
       
 };
 

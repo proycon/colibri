@@ -649,6 +649,80 @@ IndexedPatternModel::IndexedPatternModel(const string & filename, const bool DEB
     if (!filename.empty()) readfile(filename, DEBUG);
 }
 
+IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatternModel & refmodel, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {    
+    if (MAXLENGTH > refmodel.getmaxn()) MAXLENGTH = refmodel.getmaxn();
+    if (MINTOKENS < refmodel.getminn()) MINTOKENS = refmodel.getminn(); 
+
+    this->MAXLENGTH = MAXLENGTH;
+    this->MINTOKENS = MINTOKENS;
+    this->DOSKIPGRAMS = DOSKIPGRAMS;
+    this->MINSKIPTOKENS = MINSKIPTOKENS;
+    this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
+    this->DOFINALONLYSKIP = DOFINALONLYSKIP;
+    
+    
+    totaltokens = 0;
+    
+    ngramtokencount = 0;
+    skipgramtokencount = 0; 
+    ngramtypecount = 0;
+    skipgramtypecount = 0;
+    
+    int sentence = 0;
+    const int BUFFERSIZE = 65536;
+    unsigned char line[BUFFERSIZE];
+    
+    ifstream *IN =  new ifstream( corpusfile.c_str() );
+    if (!IN->good()) {
+    	cerr << "ERROR: Unable to open file " << corpusfile << endl;
+    	exit(5);
+    }    
+    vector<unsigned int> words;
+    while (IN->good()) {
+        const int linesize = readline(IN, line, BUFFERSIZE );            
+                
+        sentence++;
+
+        if (sentence % 10000 == 0) {
+            cerr << "\t@" << sentence << endl;
+        }
+                                
+        const int l = countwords(line, linesize);            
+        if (l >= 256) {
+            cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping! (" << linesize << " bytes)" << endl;
+            continue;
+       } else if (l == 0) {
+        	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping! (" << linesize << " bytes)" << endl;
+            continue;                
+        }
+        totaltokens += l;
+        
+		vector<pair<const EncAnyGram*, CorpusReference> > patterns = refmodel.getpatterns(line,linesize, true, sentence,1,MAXLENGTH);
+		//cerr << "   " << patterns.size() << " patterns..." << endl;
+		for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = patterns.begin(); iter != patterns.end(); iter++) {
+			const EncAnyGram * anygram = iter->first;			
+			const CorpusReference ref = iter->second;			
+			if (getkey(anygram) || refmodel.getkey(anygram)) {		
+			    //cerr << "Found pattern" << endl;	
+			    if (!anygram->isskipgram()) {
+			    	const EncNGram ngram = *( (const EncNGram*) refmodel.getkey(anygram) );
+			        ngrams[ngram].refs.insert(ref);  
+			    } else {
+			        const EncSkipGram skipgram = *( (const EncSkipGram*) refmodel.getkey(anygram) );
+			        skipgrams[skipgram]._count++;
+			        pair<int,int> wordspos = getwords(line, linesize, skipgram.n(), ref.token);
+			        EncNGram ngram = EncNGram(line + wordspos.first, wordspos.second);
+			        EncSkipGram skipcontent = skipgram.extractskipcontent(ngram);
+                    skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
+			    }		
+			 }			
+		} 
+    }
+    
+}
+
+
+
 void IndexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, bool ignore) {
     if (!ignore) ngramtypecount++;
     uint32_t count;

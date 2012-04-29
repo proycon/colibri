@@ -33,4 +33,5 @@ unsigned int bytestoint(const unsigned char* a, const int l);
 int readline(std::istream* IN, unsigned char* buffer, const int);
 
 const int countwords(const unsigned char* data, const int l);
+std::pair<int,int> getwords(const unsigned char* data, const int datasize, const int n, const int begin = 0);
 #endif
