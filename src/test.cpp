@@ -63,6 +63,16 @@ int main( int argc, char *argv[] ) {
     	cout << "'" << subngram->decode(classdecoder) << "'" << endl;
     }
 	cerr << "----------------------------------------------------" << endl;
+
+    cerr << "Extracting skip content based on skip gram and full instance" << endl;
+    EncSkipGram skipcontent = skipgram.extractskipcontent(ngram);
+    
+    cerr << "Skipcontent: " << skipcontent.decode(classdecoder) << endl;
+	cerr << "N: " << (int) skipcontent.n() << endl;
+	cerr << "Size: " << (int) skipcontent.size() << endl;
+
+
+
 	vector<EncNGram*> parts2;
 /*
     cerr << "Encoding skip-gram from string input" << endl;
@@ -107,5 +117,7 @@ int main( int argc, char *argv[] ) {
 	cerr << "N: " << (int) rengram.n() << endl;
 	cerr << "Size: " << (int) rengram.size() << endl;
 	 
+	 
+	
  		  	
 }
