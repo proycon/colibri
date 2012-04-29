@@ -522,7 +522,9 @@ void EncSkipGram::getgaps(std::vector<std::pair<int,int> > & gaps) const {
 
 EncSkipGram EncSkipGram::extractskipcontent(EncNGram & instance) const {
     if (instance.n() != n()) {
-        cerr << "Extractskipcontent(): instance.n() != skipgram.n() " << endl;
+        cerr << "WARNING: Extractskipcontent(): instance.n() != skipgram.n(), " << instance.n() << " != " << n() << endl;
+        cerr << "INSTANCE: " << instance.out() << endl;
+        cerr << "SKIPGRAM: " << out() << endl;
     }
     std::vector<std::pair<int,int> > gaps;
     getgaps(gaps);

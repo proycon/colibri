@@ -72,6 +72,19 @@ int main( int argc, char *argv[] ) {
 	cerr << "Size: " << (int) skipcontent.size() << endl;
 
 
+	cerr << "----------------------------------------------------" << endl;
+
+    cerr << "Getwords" << endl;
+    pair<int,int> wordspos = getwords(ngram.data, ngram.size(), 2, 2);
+    EncNGram ngram2 = EncNGram(ngram.data + wordspos.first, wordspos.second);
+    
+    cerr << "Ngram: " << ngram2.decode(classdecoder) << endl;
+	cerr << "N: " << (int) ngram2.n() << endl;
+	cerr << "Size: " << (int) ngram2.size() << endl;
+	
+	
+	cerr << "----------------------------------------------------" << endl;
+
 
 	vector<EncNGram*> parts2;
 /*

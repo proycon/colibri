@@ -186,19 +186,31 @@ const int countwords(const unsigned char* data, const int l) {
 
 
 pair<int,int> getwords(const unsigned char* data, const int datasize, const int n, const int begin) {
+    //cerr << "IN DATASIZE=" << datasize << " N=" << n << " BEGIN=" << begin << endl;
     int words = 0; 
     int beginsize = 0;
     for (int i = 0; i < datasize; i++) {
         if (data[i] == 0) {
             words++;
-            if (words == begin) beginsize = i+1;
-            if (words == n-begin) return pair<int,int>(beginsize,i - beginsize + 1);
+            if (words == begin) {
+                beginsize = i;
+                //cerr << "BEGINSIZE: " << beginsize << endl;
+            }
+            //cerr << words << " vs " << beginsize+n << endl;
+            if (words == begin+n) {                
+                //cerr << "BEGIN: "<<  beginsize << endl;
+                //cerr << "LENGTH: "<<  i - beginsize << endl;
+                return pair<int,int>(beginsize,i - beginsize );
+            }
         } 
     }
     words++;
     if (words == n-begin) {
-        return pair<int,int>(beginsize, datasize - beginsize + 1);
+        //cerr << "BEGIN: "<<  beginsize << endl;
+        //cerr << "LENGTH: "<<  datasize - beginsize << endl;
+        return pair<int,int>(beginsize, datasize - beginsize);
     } else {
+        //cerr << "WARNING: getwords not found" << endl;
         return pair<int,int>(0,0); //fragment too small
     }
 }

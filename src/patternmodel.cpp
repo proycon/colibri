@@ -699,7 +699,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatte
         
 		vector<pair<const EncAnyGram*, CorpusReference> > patterns = refmodel.getpatterns(line,linesize, true, sentence,1,MAXLENGTH);
 		//cerr << "   " << patterns.size() << " patterns..." << endl;
-		for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = patterns.begin(); iter != patterns.end(); iter++) {
+		for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = patterns.begin(); iter != patterns.end(); iter++) {		    
 			const EncAnyGram * anygram = iter->first;			
 			const CorpusReference ref = iter->second;			
 			if (getkey(anygram) || refmodel.getkey(anygram)) {		
@@ -708,9 +708,15 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatte
 			    	const EncNGram ngram = *( (const EncNGram*) refmodel.getkey(anygram) );
 			        ngrams[ngram].refs.insert(ref);  
 			    } else {
+			        cerr << "SKIPGRAM" << endl;
 			        const EncSkipGram skipgram = *( (const EncSkipGram*) refmodel.getkey(anygram) );
 			        skipgrams[skipgram]._count++;
 			        pair<int,int> wordspos = getwords(line, linesize, skipgram.n(), ref.token);
+			        if (wordspos.second == 0) {
+			            cerr << "INTERNAL ERROR: Original instantiation not found (length=0)" << endl;
+			            cerr << "BEGIN=" << wordspos.first << ";LENGTH=" << wordspos.second << endl;
+			            exit(6);
+			        }			        
 			        EncNGram ngram = EncNGram(line + wordspos.first, wordspos.second);
 			        EncSkipGram skipcontent = skipgram.extractskipcontent(ngram);
                     skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
