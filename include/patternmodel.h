@@ -207,7 +207,8 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     size_t hash();
     
     
-    void decode(ClassDecoder & classdecoder, std::ostream *OUT);    
+    void decode(ClassDecoder & classdecoder, std::ostream *OUT);
+    void decode(IndexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT);    
 };
 
 
