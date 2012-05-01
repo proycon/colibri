@@ -708,13 +708,17 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatte
 			    	const EncNGram ngram = *( (const EncNGram*) refmodel.getkey(anygram) );
 			        ngrams[ngram].refs.insert(ref);  
 			    } else {
-			        cerr << "SKIPGRAM" << endl;
 			        const EncSkipGram skipgram = *( (const EncSkipGram*) refmodel.getkey(anygram) );
 			        skipgrams[skipgram]._count++;
 			        pair<int,int> wordspos = getwords(line, linesize, skipgram.n(), ref.token);
 			        if (wordspos.second == 0) {
 			            cerr << "INTERNAL ERROR: Original instantiation not found (length=0)" << endl;
 			            cerr << "BEGIN=" << wordspos.first << ";LENGTH=" << wordspos.second << endl;
+			            cerr << "SKIPGRAM=";
+			            skipgram.out();
+			            cerr << endl;\
+			            cerr << "LINESIZE=" << linesize << endl;
+			            cerr << "REQTOKEN=" << (int) ref.token << endl;
 			            exit(6);
 			        }			        
 			        EncNGram ngram = EncNGram(line + wordspos.first, wordspos.second);
