@@ -240,9 +240,16 @@ int main( int argc, char *argv[] ) {
 		        	ClassEncoder classencoder = ClassEncoder(classfile);
 		        	cerr << "Starting query mode:" << endl;
 		        	model.querier(classencoder, classdecoder);
-		        } else {		        
-		        	cerr << "Decoding" << endl;
-		        	model.decode(classdecoder, (ostream*) &cout);
+		        } else {
+		            if (modelfile2.empty()) {		        
+    		        	cerr << "Decoding" << endl;
+		        	    model.decode(classdecoder, (ostream*) &cout);
+    			     } else {    			
+    			        cerr << "Loading test model" << endl;     
+    			        IndexedPatternModel testmodel = IndexedPatternModel(modelfile2, DEBUG);
+    			        cerr << "Joint decoding" << endl;
+    			        model.decode(testmodel, classdecoder, (ostream*) &cout);
+    			     }		        	    
 		        }
 		        	   
 		    }
