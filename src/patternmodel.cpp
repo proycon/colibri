@@ -1056,7 +1056,7 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
     
     if (OUT) {
         const int totalcount =  totalngramcount+totalskipgramcount;  
-        *OUT << setiosflags(ios::fixed) << setprecision(4);       
+        *OUT << setiosflags(ios::fixed) << setprecision(4) << endl;       
         *OUT << "COVERAGE REPORT" << endl;
         *OUT << "----------------------------------" << endl;
         *OUT << "Total number of tokens:   " << setw(10) << totaltokens << endl << endl;
