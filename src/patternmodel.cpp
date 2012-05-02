@@ -2269,8 +2269,8 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
         *OUT << (int) ngram->n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram->decode(classdecoder) << '\t' << iter->second.count() << '\t' << covtokens << '\t' << cov;
         if (DOXCOUNT) {            
             if (data_xcount.count(ngram) ) {
-                int xc = data_xcount[ngram];
-                double xratio = data_xcount[ngram] / (double) iter->second.count() ;
+                const int xc = data_xcount[ngram];
+                const double xratio = (double) xc / iter->second.count();
                 *OUT << '\t' << xc << '\t' << xratio << '\t';                
             } else {            
                 *OUT << '\t' << iter->second.count() << '\t' << 1.0 << '\t';
@@ -2305,7 +2305,7 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
             if (DOXCOUNT) {            
                 if (data_xcount.count( skipgram ) ) {
                     int xc = data_xcount[skipgram];
-                    double xratio = data_xcount[skipgram ] / (double) iter->second.count() ;
+                    double xratio = (double) xc / iter->second.count() ;
                     *OUT << '\t' << xc << '\t' << xratio << '\t';                
                 } else {            
                     *OUT << '\t' << iter->second.count() << '\t' << 1.0 << '\t';
