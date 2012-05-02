@@ -2470,7 +2470,7 @@ void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OU
 void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OUT, unordered_set<const EncAnyGram*>   & relations ) {
 	for (std::unordered_set<const EncAnyGram*>::iterator iter = relations.begin(); iter != relations.end(); iter++) {
 		const EncAnyGram * anygram = *iter;
-		*OUT << "\t" << anygram->decode(classdecoder) << "\t" << model->occurrencecount(anygram);
+		*OUT << "\t" << anygram->decode(classdecoder) << "\t" << model->occurrencecount(anygram) << "\t" << model->coveragecount(anygram) << "\t" << model->coverage(anygram);
 		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[anygram];
 		*OUT << endl;		
 	}
