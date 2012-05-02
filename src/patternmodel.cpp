@@ -2252,18 +2252,21 @@ GraphPatternModel::~GraphPatternModel() {
 void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
     const int grandtotal = model->tokens();
 
-    *OUT << "#N\tVALUE\tCOUNT\tFREQUENCY\\COVERAGE";
-    if (DOXCOUNT) *OUT << "\tXCOUNT\tXRATIO";  
-    *OUT << "\tSKIPTYPES\tSKIP-ENTROPY\tREFERENCES" << endl;
+    *OUT << "#N\tVALUE\tOCC.COUNT\tTOKENS\tCOVERAGE";
+    if (DOXCOUNT) *OUT << "\tXCOUNT\tXRATIO";
+    *OUT << "\tPARENTS\tCHILDREN\tTEMPLATES\tINSTANCES\tSKIPUSAGE\tSKIPCONTENT\tSUCCESSORS\tPREDECESSORS" << endl;
 
     cerr << "Outputting n-grams" << endl;    
     for(unordered_map<const EncNGram,NGramData>::const_iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
-       const double freq = ((double) (iter->second.count() * iter->first.n()) / totaltokens);
+       const int covtokens = iter->second.count() * iter->first.n();
+       const double cov = (double) covtokens / totaltokens;
+       
+       
        //const double freq1 = (double) iter->second.count() / model->tokencount[iter->first.n()];
        //const double freq2 = (double) iter->second.count() / model->ngramtokencount;
        //const double freq3 = (double) iter->second.count() / grandtotal;
        const EncAnyGram * ngram = &iter->first;       
-        *OUT << (int) ngram->n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram->decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq;
+        *OUT << (int) ngram->n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram->decode(classdecoder) << '\t' << iter->second.count() << '\t' << covtokens << '\t' << cov;
         if (DOXCOUNT) {            
             if (data_xcount.count(ngram) ) {
                 int xc = data_xcount[ngram];
@@ -2273,9 +2276,18 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
                 *OUT << iter->second.count() << '\t' << 1.0 << '\t';
             }
         }
-        for (set<CorpusReference>::iterator iter2 = iter->second.refs.begin() ; iter2 != iter->second.refs.end(); iter2++) {
+        
+        if (rel_subsumption_parents.count(ngram)) *OUT << rel_subsumption_parents[ngram].size() << '\t'; else  *OUT << "0\t";
+        if (rel_subsumption_children.count(ngram)) *OUT << rel_subsumption_children[ngram].size() << '\t'; else  *OUT << "0\t";
+        if (rel_templates.count(ngram)) *OUT << rel_templates[ngram].size() << '\t'; else  *OUT << "0\t";
+        if (rel_templates.count(ngram)) *OUT << rel_templates[ngram].size() << '\t'; else  *OUT << "0\t";
+        if (rel_skipusage.count(ngram)) *OUT << rel_skipusage[ngram].size() << '\t'; else  *OUT << "0\t";
+        if (rel_skipcontent.count(ngram)) *OUT << rel_skipcontent[ngram].size() << '\t'; else  *OUT << "0\t";
+        if (rel_successors.count(ngram)) *OUT << rel_successors[ngram].size() << '\t'; else  *OUT << "0\t";
+        if (rel_predecessors.count(ngram)) *OUT << rel_predecessors[ngram].size() << '\t'; else  *OUT << "0\t";
+        /*for (set<CorpusReference>::iterator iter2 = iter->second.refs.begin() ; iter2 != iter->second.refs.end(); iter2++) {
             *OUT << iter2->sentence << ':' << (int) iter2->token << ' ';
-        }                
+        } */               
         *OUT << endl;
     }
    
@@ -2283,12 +2295,13 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
    
        cerr << "Outputting skip-grams" << endl;
        for(unordered_map<const EncSkipGram,SkipGramData>::const_iterator iter =  model->skipgrams.begin(); iter !=  model->skipgrams.end(); iter++ ) {
-           const double freq = ((double) (iter->second.count() * iter->first.n()) / totaltokens);
+            const int covtokens = iter->second.count() * iter->first.n();
+            const double cov = (double) covtokens / totaltokens;
            //const double freq1 = (double) iter->second.count() / model->skiptokencount[iter->first.n()]; 
            //const double freq2 = (double) iter->second.count() / model->skipgramtokencount;           
            //const double freq3 = (double) iter->second.count() / grandtotal;                          
            const EncAnyGram * skipgram = &iter->first;                              
-           *OUT << (int) skipgram->n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram->decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq << '\t';
+           *OUT << (int) skipgram->n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram->decode(classdecoder) << '\t' << iter->second.count() << '\t' << covtokens << '\t' << cov << '\t';
             if (DOXCOUNT) {            
                 if (data_xcount.count( skipgram ) ) {
                     int xc = data_xcount[skipgram];
@@ -2298,6 +2311,8 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
                     *OUT << iter->second.count() << '\t' << 1.0 << '\t';
                 }
             }           	
+            
+            /*
            const int skiptypes = iter->second.skipcontent.size();               
            const double entropy = iter->second.entropy();
            *OUT << skiptypes << '\t' << iter->second.count() << '\t' << entropy << '\t';
@@ -2309,7 +2324,17 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
                     //if (iter3 != iter2->second.refs.end() - 1) 
                 }
                 //MAYBE TODO: output references?
-            }
+            }*/
+            
+            if (rel_subsumption_parents.count(skipgram)) *OUT << rel_subsumption_parents[skipgram].size() << '\t'; else  *OUT << "0\t";
+            if (rel_subsumption_children.count(skipgram)) *OUT << rel_subsumption_children[skipgram].size() << '\t'; else  *OUT << "0\t";
+            if (rel_templates.count(skipgram)) *OUT << rel_templates[skipgram].size() << '\t'; else  *OUT << "0\t";
+            if (rel_templates.count(skipgram)) *OUT << rel_templates[skipgram].size() << '\t'; else  *OUT << "0\t";
+            if (rel_skipusage.count(skipgram)) *OUT << rel_skipusage[skipgram].size() << '\t'; else  *OUT << "0\t";
+            if (rel_skipcontent.count(skipgram)) *OUT << rel_skipcontent[skipgram].size() << '\t'; else  *OUT << "0\t";
+            if (rel_successors.count(skipgram)) *OUT << rel_successors[skipgram].size() << '\t'; else  *OUT << "0\t";
+            if (rel_predecessors.count(skipgram)) *OUT << rel_predecessors[skipgram].size() << '\t'; else  *OUT << "0\t";            
+            
            *OUT << endl;
        }
     
