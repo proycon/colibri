@@ -1046,22 +1046,29 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
     
     
     if (OUT) {
+        
         *OUT << "COVERAGE REPORT" << endl;
         *OUT << "----------------------------------" << endl;
         *OUT << "Total number of tokens:   \t" << totaltokens << endl;
-        *OUT << "Total coverage:           \t" << covered << "\t" << (double) covered / totaltokens << endl;
-        *OUT << "Uncovered:                \t" << uncovered << "\t" << (double) uncovered / totaltokens << endl;
-        *OUT << "N-gram coverage:          \t" << totalngramcoverage << "\t" << (double) totalngramcoverage / totaltokens << endl;
-        for (int n = 1; n <= MAXN; n++) { 
-         if (ngramcoverage[n] > 0)
-            *OUT << " " << n << "-gram coverage:         \t" << ngramcoverage[n] << "\t" << (double) ngramcoverage[n] / totaltokens << endl;
+        *OUT << "                          \tTOKENS\tCOVERAGE\tTYPES\tTTR" << endl;    
+        *OUT << "Total coverage:           \t" << covered << "\t" << (double) covered / totaltokens << '\t' << ngrams.size() + skipgrams.size()  << '\t' << (double)  covered / ngrams.size() + skipgrams.size() <<  endl;
+        *OUT << "Uncovered:                \t" << uncovered << "\t" << (double) uncovered / totaltokens << "\t0\t-" << endl;
+        *OUT << "N-gram coverage:          \t" << totalngramcoverage << "\t" << (double) totalngramcoverage / totaltokens << '\t' << ngrams.size() << '\t' << (double) totalngramcoverage / ngrams.size() << endl;
+        for (int n = 1; n <= MAXN; n++) {
+         if (ngramcoverage[n] > 0) {
+            int t = 0;
+            for (unordered_map<const EncNGram,NGramData >::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) if (iter->first.n() == n) t++;
+            *OUT << " " << n << "-gram coverage:         \t" << ngramcoverage[n] << "\t" << (double) ngramcoverage[n] / totaltokens << "\t" << t << '\t' <<  (double) t / ngramcoverage[n] << endl;
+         }
         }
-        *OUT << "Skipgram coverage:          \t" << totalskipgramcoverage << "\t" << (double) totalskipgramcoverage / totaltokens << endl;
-        for (int n = 2; n <= MAXN; n++) {
-         if (skipgramcoverage[n] > 0) 
-          *OUT << " " << n << "-skipgram coverage:         \t" << skipgramcoverage[n] << "\t" << (double) skipgramcoverage[n] / totaltokens << endl;
-        }
-        
+        *OUT << "Skipgram coverage:          \t" << totalskipgramcoverage << "\t" << (double) totalskipgramcoverage / totaltokens << '\t' << skipgrams.size() << '\t' << (double) totalskipgramcoverage / skipgrams.size() <<  endl;
+        for (int n = 2; n <= MAXN; n++) {         
+         if (skipgramcoverage[n] > 0) {
+          int t = 0;
+          for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) if (iter->first.n() == n) t++; 
+          *OUT << " " << n << "-skipgram coverage:         \t" << skipgramcoverage[n] << "\t" << (double) skipgramcoverage[n] / totaltokens << '\t' << t << '\t' <<  (double) t / skipgramcoverage[n] <<  endl;
+         }
+        }        
     }
 }
 
