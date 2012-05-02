@@ -16,7 +16,8 @@ void usage() {
     cerr << "Options:" << endl;
     cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced (except in query mode)" << endl;
     cerr << "\t-d modelfile     Load and decode this patternmodel (instead of -f)" << endl;
-    cerr << "\t-J modelfile2    Joint decoding of a second (test) model, (using the same classes), use with -d and -c" << endl;   
+    cerr << "\t-J modelfile2    Joint decoding of a second (test) model, (using the same classes), use with -d and -c" << endl;
+    cerr << "\t-C               Generate a coverage report" << endl;   
     cerr << "\t-t <number>      Token threshold: n-grams and skipgrams occuring less than this will be pruned (default: 2)" << endl;
     cerr << "\t-l <number>      Maximum n-gram/skipgram length (in words, default: 9)" << endl;
     cerr << "\t-s               Compute skip-grams (costs extra memory and time)" << endl;    
@@ -62,10 +63,11 @@ int main( int argc, char *argv[] ) {
     bool DOINITIALONLYSKIP = true;
     bool DOFINALONLYSKIP = true;
     bool DOQUERIER = false;
+    bool DOCOVERAGE = false;
     //bool DOCOMPOSITIONALITY = false;
     bool DEBUG = false;
     char c;    
-    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQDJ:")) != -1)
+    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQDJ:C")) != -1)
         switch (c)
         {
         case 'c':
@@ -80,6 +82,9 @@ int main( int argc, char *argv[] ) {
         case 'D':
         	DEBUG = true;
         	break;
+        case 'C':
+            DOCOVERAGE = true;
+            break;
         case 'f':
             corpusfile = optarg;
             break;        
@@ -135,13 +140,13 @@ int main( int argc, char *argv[] ) {
             exit(2);    	
     }
     
-    if (corpusfile.empty() ) {
+    /*if (corpusfile.empty() ) {
         if (modelfile.empty() || classfile.empty()) {
             cerr << "ERROR: Need to specify -f corpusfile to compute pattern, or -d modelfile -c classfile to decode an existing model" << endl;
             usage();
             exit(2);
         }
-    }
+    }*/
     
     if (outputprefix.empty()) {
         outputprefix = corpusfile; //TODO: strip .clsenc. .bin?
@@ -228,7 +233,7 @@ int main( int argc, char *argv[] ) {
 		    }
 		            	
         }
-    } else if ( (!modelfile.empty()) && (!classfile.empty()) ) {
+    } else if ( (!modelfile.empty()) && ((!classfile.empty()) || DOCOVERAGE  ) ) {
     	if (DOINDEX) {
     	    cerr << "Loading model" << endl;
 		    IndexedPatternModel model = IndexedPatternModel(modelfile, DEBUG);
@@ -250,8 +255,10 @@ int main( int argc, char *argv[] ) {
     			        cerr << "Joint decoding" << endl;
     			        model.decode(testmodel, classdecoder, (ostream*) &cout);
     			     }		        	    
-		        }
-		        	   
+		        }		      	   
+		    }
+		    if (DOCOVERAGE) {
+		        model.coveragereport((ostream*) &cout);
 		    }
 		    
 		} else {
@@ -279,6 +286,8 @@ int main( int argc, char *argv[] ) {
 		    }			
 		}
         
+    } else {
+        cerr << "Nothing to do?" << endl;
     }
 
 
