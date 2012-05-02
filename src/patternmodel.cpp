@@ -1049,10 +1049,10 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
         
         *OUT << "COVERAGE REPORT" << endl;
         *OUT << "----------------------------------" << endl;
-        *OUT << "Total number of tokens:   \t" << totaltokens << endl;
+        *OUT << "Total number of tokens:   \t" << totaltokens << endl << endl;
         *OUT << "                          \tTOKENS\tCOVERAGE\tTYPES\tTTR" << endl;    
         *OUT << "Total coverage:           \t" << covered << "\t" << (double) covered / totaltokens << '\t' << ngrams.size() + skipgrams.size()  << '\t' << (double)  covered / ngrams.size() + skipgrams.size() <<  endl;
-        *OUT << "Uncovered:                \t" << uncovered << "\t" << (double) uncovered / totaltokens << "\t0\t-" << endl;
+        *OUT << "Uncovered:                \t" << uncovered << "\t" << (double) uncovered / totaltokens << "\t0\t-" << endl << endl;
         *OUT << "N-gram coverage:          \t" << totalngramcoverage << "\t" << (double) totalngramcoverage / totaltokens << '\t' << ngrams.size() << '\t' << (double) totalngramcoverage / ngrams.size() << endl;
         for (int n = 1; n <= MAXN; n++) {
          if (ngramcoverage[n] > 0) {
@@ -1061,7 +1061,8 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
             *OUT << " " << n << "-gram coverage:         \t" << ngramcoverage[n] << "\t" << (double) ngramcoverage[n] / totaltokens << "\t" << t << '\t' <<  (double) t / ngramcoverage[n] << endl;
          }
         }
-        *OUT << "Skipgram coverage:          \t" << totalskipgramcoverage << "\t" << (double) totalskipgramcoverage / totaltokens << '\t' << skipgrams.size() << '\t' << (double) totalskipgramcoverage / skipgrams.size() <<  endl;
+        
+        *OUT << endl << "Skipgram coverage:          \t" << totalskipgramcoverage << "\t" << (double) totalskipgramcoverage / totaltokens << '\t' << skipgrams.size() << '\t' << (double) totalskipgramcoverage / skipgrams.size() <<  endl;
         for (int n = 2; n <= MAXN; n++) {         
          if (skipgramcoverage[n] > 0) {
           int t = 0;
