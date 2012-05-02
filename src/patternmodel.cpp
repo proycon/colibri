@@ -2271,16 +2271,16 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
             if (data_xcount.count(ngram) ) {
                 int xc = data_xcount[ngram];
                 double xratio = data_xcount[ngram] / (double) iter->second.count() ;
-                *OUT << xc << '\t' << xratio << '\t';                
+                *OUT << '\t' << xc << '\t' << xratio << '\t';                
             } else {            
-                *OUT << iter->second.count() << '\t' << 1.0 << '\t';
+                *OUT << '\t' << iter->second.count() << '\t' << 1.0 << '\t';
             }
         }
         
         if (rel_subsumption_parents.count(ngram)) *OUT << rel_subsumption_parents[ngram].size() << '\t'; else  *OUT << "0\t";
         if (rel_subsumption_children.count(ngram)) *OUT << rel_subsumption_children[ngram].size() << '\t'; else  *OUT << "0\t";
         if (rel_templates.count(ngram)) *OUT << rel_templates[ngram].size() << '\t'; else  *OUT << "0\t";
-        if (rel_templates.count(ngram)) *OUT << rel_templates[ngram].size() << '\t'; else  *OUT << "0\t";
+        if (rel_instances.count(ngram)) *OUT << rel_instances[ngram].size() << '\t'; else  *OUT << "0\t";
         if (rel_skipusage.count(ngram)) *OUT << rel_skipusage[ngram].size() << '\t'; else  *OUT << "0\t";
         if (rel_skipcontent.count(ngram)) *OUT << rel_skipcontent[ngram].size() << '\t'; else  *OUT << "0\t";
         if (rel_successors.count(ngram)) *OUT << rel_successors[ngram].size() << '\t'; else  *OUT << "0\t";
@@ -2306,9 +2306,9 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
                 if (data_xcount.count( skipgram ) ) {
                     int xc = data_xcount[skipgram];
                     double xratio = data_xcount[skipgram ] / (double) iter->second.count() ;
-                    *OUT << xc << '\t' << xratio << '\t';                
+                    *OUT << '\t' << xc << '\t' << xratio << '\t';                
                 } else {            
-                    *OUT << iter->second.count() << '\t' << 1.0 << '\t';
+                    *OUT << '\t' << iter->second.count() << '\t' << 1.0 << '\t';
                 }
             }           	
             
@@ -2329,7 +2329,7 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
             if (rel_subsumption_parents.count(skipgram)) *OUT << rel_subsumption_parents[skipgram].size() << '\t'; else  *OUT << "0\t";
             if (rel_subsumption_children.count(skipgram)) *OUT << rel_subsumption_children[skipgram].size() << '\t'; else  *OUT << "0\t";
             if (rel_templates.count(skipgram)) *OUT << rel_templates[skipgram].size() << '\t'; else  *OUT << "0\t";
-            if (rel_templates.count(skipgram)) *OUT << rel_templates[skipgram].size() << '\t'; else  *OUT << "0\t";
+            if (rel_instances.count(skipgram)) *OUT << rel_instances[skipgram].size() << '\t'; else  *OUT << "0\t";
             if (rel_skipusage.count(skipgram)) *OUT << rel_skipusage[skipgram].size() << '\t'; else  *OUT << "0\t";
             if (rel_skipcontent.count(skipgram)) *OUT << rel_skipcontent[skipgram].size() << '\t'; else  *OUT << "0\t";
             if (rel_successors.count(skipgram)) *OUT << rel_successors[skipgram].size() << '\t'; else  *OUT << "0\t";
