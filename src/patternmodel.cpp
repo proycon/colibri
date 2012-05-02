@@ -152,7 +152,7 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerier::getpatterns
 		    //cerr << "TRYING PATTERN " << begin << " " << length << endl;
 			EncNGram * ngram = getencngram(begin,length, data, datasize);
 			const EncAnyGram * anygram =  ngram;			
-			if (count(anygram) > 0) {
+			if (occurrencecount(anygram) > 0) {
 			    ///cerr << "FOUND" << endl;
 				patterns.push_back( make_pair<const EncAnyGram*,CorpusReference>(getkey(anygram), CorpusReference(linenum, (char) begin) ) ); //stores the actual pointer used by the model
 				if (doskipgrams) {
@@ -209,7 +209,7 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerier::getpatterns
                         if (docount) {
                             EncSkipGram skipgram = EncSkipGram(subngrams, skipref, initialskip, finalskip);
                             const EncAnyGram * anygram2 = &skipgram;			
-							if (count(anygram2) > 0) {
+							if (occurrencecount(anygram2) > 0) {
 								patterns.push_back( make_pair<const EncAnyGram*,CorpusReference>(getkey(anygram2), CorpusReference(linenum, (char) begin)) ); //stores the actual pointer used by the model
 							}			
 						}
@@ -263,11 +263,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
     this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
     this->DOFINALONLYSKIP = DOFINALONLYSKIP;
     
-    totaltokens = 0;
-    ngramtokencount = 0;
-    skipgramtokencount = 0; 
-    ngramtypecount = 0;
-    skipgramtypecount = 0;
+    totaltokens = 0; //includes tokens not covered by the model!
 
     const int BUFFERSIZE = 65536;
     unsigned char line[BUFFERSIZE];
@@ -283,16 +279,15 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
         cerr << "Counting " << n << "-grams" << endl;            
         
         uint32_t sentence = 0;
-    
-        tokencount[n] = 0;
-        skiptokencount[n] = 0;
-        typecount[n] = 0;
-        skiptypecount[n] = 0;
                 
         vector< vector< pair<int,int> > > gaps;
         compute_multi_skips(gaps, vector<pair<int,int> >(), n);    
+                    
+                    
+        int foundngrams = 0; //types
+        int foundskipgrams = 0; //types;
         
-            
+                            
         ifstream *IN =  new ifstream( corpusfile.c_str() );
         if (!IN->good()) {
         	cerr << "ERROR: Unable to open file " << corpusfile << endl;
@@ -351,7 +346,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                 
                 
                 CorpusReference ref = CorpusReference(sentence,i);
-                if (ngrams[*ngram].refs.empty()) typecount[n]++;
+                if (ngrams[*ngram].refs.empty()) foundngrams++;
                 ngrams[*ngram].refs.insert(ref);            
                 //tokencount[n]++;            
 
@@ -436,7 +431,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                             }   
                             if (docount) { //second check, we might have aborted
 		                        EncSkipGram skipcontent = EncSkipGram(skipcontent_subngrams, skipcontent_skipref, false, false);                                                        
-		                        if (skipgrams[skipgram].count() == 0) skiptypecount[n]++;                            
+		                        if (skipgrams[skipgram].count() == 0) foundskipgrams++;                            
 		                        skipgrams[skipgram]._count++;
 		                        skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
 		                        //skiptokencount[n]++;                            
@@ -457,9 +452,9 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
             
         };
 
-       cerr << "Found " << typecount[n] << " " << n << "-grams"; // (" << tokencount[n] << " tokens)";
+       cerr << "Found " << foundngrams << " distinct " << n << "-grams"; // (" << tokencount[n] << " tokens)";
        if (DOSKIPGRAMS) {
-        cerr << " and " << skiptypecount[n] << " skipgrams" << endl; // (" << skiptokencount[n] << " tokens)" << endl;
+        cerr << " and " << foundskipgrams << " distinct skipgrams" << endl; // (" << skiptokencount[n] << " tokens)" << endl;
        } else {
         cerr << endl;
        }
@@ -470,16 +465,12 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
        for(unordered_map<EncNGram,NGramData>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
             if (iter->first.n() == n) {
                 if (iter->second.count() < MINTOKENS) {
-                    //tokencount[n] -= iter->second.count();
-                    typecount[n]--;
                     pruned++;
                     ngrams.erase(iter->first);                        
-                } else {
-                    //ngramtokencount += iter->second.count();
                 }
             }
        }
-       cerr << "Pruned " << pruned << " " << n << "-grams, " << typecount[n] <<  " left" << endl; //" (" << tokencount[n] << " tokens)" << endl;
+       cerr << "Pruned " << pruned << " " << n << "-grams" << endl; //" (" << tokencount[n] << " tokens)" << endl;
     
        
        if (DOSKIPGRAMS) {       
@@ -508,149 +499,44 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                         }
                     }
                     if (pruneskipgram) {
-                        //skiptokencount[n] -= iter->second.count();
-                        skiptypecount[n]--;
                         pruned++;
                         skipgrams.erase(iter->first);
                     }
                }
            }
-           cerr << "Pruned " << pruned << " skipgrams, " << skiptypecount[n] <<  " left" << endl; // (" << skiptokencount[n] << " tokens)" << endl;
+           cerr << "Pruned " << pruned << " skipgrams" << endl; // (" << skiptokencount[n] << " tokens)" << endl;
            
         }
-        //ngramtokencount += tokencount[n];
-        ngramtypecount += typecount[n];
-        //skipgramtokencount += skiptokencount[n];
-        skipgramtypecount += skiptypecount[n];
     }
-
-
-        
+    cerr << "Computing general statistics..." << endl;
+    computestats();
 }
 
 
 
 
-
-UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, UnindexedPatternModel & refmodel, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {    
-    if (MAXLENGTH > refmodel.getmaxn()) MAXLENGTH = refmodel.getmaxn();
-    if (MINTOKENS < refmodel.getminn()) MINTOKENS = refmodel.getminn(); 
-
-    this->MAXLENGTH = MAXLENGTH;
-    this->MINTOKENS = MINTOKENS;
-    this->DOSKIPGRAMS = DOSKIPGRAMS;
-    this->MINSKIPTOKENS = MINSKIPTOKENS;
-    this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
-    this->DOFINALONLYSKIP = DOFINALONLYSKIP;
-    
-    
-    totaltokens = 0;
-    
-    ngramtokencount = 0;
-    skipgramtokencount = 0; 
-    ngramtypecount = 0;
-    skipgramtypecount = 0;
-    
-    int sentence = 0;
-    const int BUFFERSIZE = 65536;
-    unsigned char line[BUFFERSIZE];
-    
-    ifstream *IN =  new ifstream( corpusfile.c_str() );
-    if (!IN->good()) {
-    	cerr << "ERROR: Unable to open file " << corpusfile << endl;
-    	exit(5);
-    }    
-    vector<unsigned int> words;
-    while (IN->good()) {
-        const int linesize = readline(IN, line, BUFFERSIZE );            
-                
-        sentence++;
-
-        if (sentence % 10000 == 0) {
-            cerr << "\t@" << sentence << endl;
-        }
-                                
-        const int l = countwords(line, linesize);            
-        if (l >= 256) {
-            cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping! (" << linesize << " bytes)" << endl;
-            continue;
-       } else if (l == 0) {
-        	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping! (" << linesize << " bytes)" << endl;
-            continue;                
-        }
-        totaltokens += l;
-        
-		vector<pair<const EncAnyGram*, CorpusReference> > patterns = refmodel.getpatterns(line,linesize, true, sentence,1,MAXLENGTH);
-		//cerr << "   " << patterns.size() << " patterns..." << endl;
-		for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = patterns.begin(); iter != patterns.end(); iter++) {
-			const EncAnyGram * anygram = iter->first;			
-			const CorpusReference ref = iter->second;			
-			if (getkey(anygram) || refmodel.getkey(anygram)) {		
-			    //cerr << "Found pattern" << endl;	
-			    if (anygram->isskipgram()) {
-			        const EncSkipGram skipgram = *( (const EncSkipGram*) refmodel.getkey(anygram) );
-			        skipgrams[skipgram]++;
-			    } else {
-			        const EncNGram ngram = *( (const EncNGram*) refmodel.getkey(anygram) );
-			        ngrams[ngram]++;
-			    }
-			    //refmodel.outputinstance(anygram, ref, decoder);			
-			 }			
-		} 
-    }
-   
-       //prune n-grams
-       int pruned = 0;
-       for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
-                if (iter->second < MINTOKENS) {
-                    //tokencount[n] -= iter->second;
-                    //typecount[n]--;
-                    pruned++;
-                    ngrams.erase(iter->first);                        
-                } else {
-                    //ngramtokencount += iter->second;
-                }
-       }
-       cerr << "Pruned " << pruned << " " << "n-grams" << endl; // << typecount[n] <<  " left" << endl;  //"(" << tokencount[n] << " tokens)" << endl;
-    
-       
-       if (DOSKIPGRAMS) {       
-           //prune skipgrams
-           pruned = 0;
-           for(unordered_map<EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {                               
-                    bool pruneskipgram = false;
-                    if (iter->second < MINTOKENS) {
-                        pruneskipgram = true;
-                        //skiptokencount[n] -= iter->second;
-                        //skiptypecount[n]--;
-                        pruned++;
-                        skipgrams.erase(iter->first);
-                    }
-           }
-           cerr << "Pruned " << pruned << " skipgrams" << endl; // << " << skiptypecount[n] <<  " left" << endl; //(" << skiptokencount[n] << " tokens)" << endl;
-           
-        }
-       
-  
-}
 
 
 IndexedPatternModel::IndexedPatternModel(const string & filename, const bool DEBUG) {    
    
     totaltokens = 0;  
     
-    ngramtokencount = 0;
-    skipgramtokencount = 0; 
-    ngramtypecount = 0;
-    skipgramtypecount = 0;
     MAXLENGTH = 0;
 
+    totalngramcount = 0;
+    totalskipgramcount = 0;
+
     for (int n = 0; n < MAXN; n++) {
-        tokencount[n] = 0;
-        skiptokencount[n] = 0;
+        ngramcount[n] = 0;
+        skipgramcount[n] = 0;
+        ngramtypes[n] = 0;
+        skipgramtypes[n] = 0;
     }
     
-    if (!filename.empty()) readfile(filename, DEBUG);
+    if (!filename.empty()) {
+        readfile(filename, DEBUG);
+        computestats();
+    }
 }
 
 IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatternModel & refmodel, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {    
@@ -667,11 +553,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatte
     
     totaltokens = 0;
     
-    ngramtokencount = 0;
-    skipgramtokencount = 0; 
-    ngramtypecount = 0;
-    skipgramtypecount = 0;
-    
+
     int sentence = 0;
     const int BUFFERSIZE = 65536;
     unsigned char line[BUFFERSIZE];
@@ -743,7 +625,6 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatte
 
 
 void IndexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, bool ignore) {
-    if (!ignore) ngramtypecount++;
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
     for (int j = 0; j < count; j++) {
@@ -756,15 +637,13 @@ void IndexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram
         }*/
                
     }
-    if (!ignore)  {
-    	ngramtokencount += ngrams[ngram].count();    
+    if (!ignore)  {    
     	const char n = ngram.n();
     	if (n > MAXN) {
       		cerr << "FATAL ERROR: N-gram size " << n << " exceeds the internal maximum MAXN=" << MAXN << endl;
 	       	exit(14);
     	}
     	if (n > MAXLENGTH) MAXLENGTH = n;    	
-    	tokencount[n] += ngrams[ngram].count();
     }    
 }
 
@@ -774,15 +653,12 @@ void IndexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram &
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count            
     if (!ignore) {
-     	skipgramtypecount++;
     	skipgrams[skipgram]._count = count; //assign
-    	skipgramtokencount += count;
     	const char n = skipgram.n();
     	if (n > MAXN) {
       		cerr << "FATAL ERROR: N-gram size " << n << " exceeds the internal maximum MAXN=" << MAXN << endl;
 	       	exit(14);
     	}
-    	skiptokencount[n] += count;
     }            
     uint32_t skipcontentcount;
     f->read((char*) &skipcontentcount, sizeof(uint32_t));   
@@ -915,7 +791,7 @@ const AnyGramData* IndexedPatternModel::getdata(const EncAnyGram* key) {
 
 
 
-int IndexedPatternModel::count(const EncAnyGram* key) {    
+int IndexedPatternModel::occurrencecount(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
         if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ].count();
     } else {
@@ -924,8 +800,16 @@ int IndexedPatternModel::count(const EncAnyGram* key) {
     return 0;
 }
 
+int IndexedPatternModel::coveragecount(const EncAnyGram* key) {    
+    if (key->gapcount() == 0) {        
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ].count() * key->n();
+    } else {
+        if (skipgrams.count(*( (EncSkipGram*) key) ) > 0) return skipgrams[*( (EncSkipGram*) key) ].count() * key->n();   
+    }
+    return 0;
+}
 
-double IndexedPatternModel::freq(const EncAnyGram* key) {    
+double IndexedPatternModel::coverage(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
         if (ngrams.count(*( (EncNGram*) key) ) > 0) return ((double) (ngrams[*( (EncNGram*) key) ].count() * key->n())  / tokens());
     } else {
@@ -953,6 +837,27 @@ double IndexedPatternModel::freq(const EncAnyGram* key) {
     }
 }*/
 
+void IndexedPatternModel::computestats() {
+    totalngramcount = 0;
+    totalskipgramcount = 0;
+    for (int n = 1; n <= MAXN; n++) { ngramcount[n] = 0;  skipgramcount[n] = 0; ngramtypes[n] = 0; skipgramcount[n] = 0; }
+
+    for (unordered_map<const EncNGram,NGramData >::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
+        const EncAnyGram * anygram = &iter->first;
+        ngramtypes[anygram->n()]++;
+        ngramcount[anygram->n()] += iter->second.refs.size();  
+        totalngramcount += iter->second.refs.size();   
+    }
+    for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
+        const EncAnyGram * anygram = &iter->first;
+        skipgramtypes[anygram->n()]++;
+        for(unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {
+          skipgramcount[anygram->n()] += iter2->second.refs.size();  
+          totalskipgramcount += iter2->second.refs.size();                        
+        }
+    }    
+}
+
 void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
     unordered_map<CorpusReference, unordered_set<const EncAnyGram *> > reverseindex;
     
@@ -961,11 +866,8 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
     int ngramcoverage[MAXN+1];    
     int skipgramcoverage[MAXN+1];
     for (int n = 1; n <= MAXN; n++) { ngramcoverage[n] = 0;  skipgramcoverage[n] = 0; }
-    int totalngramcount = 0;
-    int totalskipgramcount = 0;
-    int ngramcount[MAXN+1];    
-    int skipgramcount[MAXN+1];
-    for (int n = 1; n <= MAXN; n++) { ngramcount[n] = 0;  skipgramcount[n] = 0; }        
+
+            
     int covered = 0 ;
     int uncovered = 0;
 
@@ -981,9 +883,7 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
                 for (set<CorpusReference>::iterator iter2 = iter->second.refs.begin() ; iter2 != iter->second.refs.end(); iter2++) {
                     CorpusReference ref = *iter2;
                     if ((ref.sentence >= sentence) && (ref.sentence < sentence+segmentsize)) {
-                        reverseindex[ref].insert(anygram);
-                        ngramcount[anygram->n()]++;  
-                        totalngramcount++;                        
+                        reverseindex[ref].insert(anygram);                   
                     }                     
                 }
             }
@@ -994,8 +894,6 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
                         CorpusReference ref = *iter3;
                         if ((ref.sentence >= sentence) && (ref.sentence < sentence+segmentsize)) {
                             reverseindex[ref].insert(anygram);
-                            skipgramcount[anygram->n()]++;  
-                            totalskipgramcount++;
                         }                        
                     }                     
                 }
@@ -1087,7 +985,7 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
 
 
 void IndexedPatternModel::outputinstance(const EncAnyGram * anygram, CorpusReference ref, ClassDecoder & decoder) {
-	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << count(anygram) << "\t" << setprecision(numeric_limits<double>::digits10 + 1) << freq(anygram) << endl; 
+	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << occurrencecount(anygram) << "\t" << setprecision(numeric_limits<double>::digits10 + 1) << coverage(anygram) << endl; 
 }
 
 
@@ -1148,18 +1046,21 @@ EncAnyGram* IndexedPatternModel::get_reverse_index_item(const int key, const int
 
 
 void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
-    *OUT << "#TYPES=" << types() << ";TOKENS=" << tokens() << endl;
-    *OUT << "#N\tVALUE\tCOUNT\tCOVERAGE\tSKIPTYPES\tSKIP-ENTROPY\tREFERENCES" << endl;
-    const int grandtotal = ngramtokencount + skipgramtokencount;   
+    *OUT << "#TYPES=" << types() << ";TOTALTOKENS=" << tokens() << endl;
+    *OUT << "#N\tCLASS\tOCC.COUNT\tTOKENS\tCOVERAGE\tFREQ-ALL\tFREQ-G\tFREQ-N\tSKIPTYPES\tENTROPY\tREFERENCES" << endl;
+       
 
     for(unordered_map<EncNGram,NGramData>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
-       const double freq = ((double) (iter->second.count() * iter->first.n()) / totaltokens);
+       const double covtokens = iter->second.count() * iter->first.n(); 
+       const double cov = (double) covtokens / totaltokens;
     
-       //const double freq1 = (double) iter->second.count() / tokencount[iter->first.n()];
-       //const double freq2 = (double) iter->second.count() / ngramtokencount;
-       //const double freq3 = (double) iter->second.count() / grandtotal;
+       const double freqall = (double) iter->second.count() / occurrences();
+       const double freqg = (double) iter->second.count() / totalngramcount;
+       const double freqn = (double) iter->second.count() / ngramcount[iter->first.n()];
+    
+       
        const EncNGram ngram = iter->first;
-        *OUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq;
+        *OUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << covtokens << '\t' <<  cov << '\t' << freqall << '\t' << freqg << '\t' << freqn;
         *OUT << "\t0\t-\t";
         for (set<CorpusReference>::iterator iter2 = iter->second.refs.begin() ; iter2 != iter->second.refs.end(); iter2++) {
             *OUT << iter2->sentence << ':' << (int) iter2->token << ' ';
@@ -1170,13 +1071,15 @@ void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
 
    
        for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {
-           const double freq = ((double) (iter->second.count() * iter->first.n()) / totaltokens);
-           //const double freq0 = (double) iter->second.count() / totaltokens;
-           //const double freq1 = (double) iter->second.count() / skiptokencount[iter->first.n()]; 
-           //const double freq2 = (double) iter->second.count() / skipgramtokencount;           
-           //const double freq3 = (double) iter->second.count() / grandtotal;                          
+            const double covtokens = iter->second.count() * iter->first.n(); 
+            const double cov = (double) covtokens / totaltokens;
+           
+            const double freqall = (double) iter->second.count() / occurrences();
+            const double freqg = (double) iter->second.count() / totalskipgramcount;
+            const double freqn = (double) iter->second.count() / skipgramcount[iter->first.n()];
+                          
            const EncSkipGram skipgram = iter->first;                              
-           *OUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq << '\t';
+           *OUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << covtokens << '\t' << cov << '\t' << freqall << '\t' << freqg << '\t' << freqn;
            const int skiptypes = iter->second.skipcontent.size();               
            const double entropy = iter->second.entropy();
            *OUT << skiptypes << '\t' << entropy << '\t';
@@ -1184,10 +1087,8 @@ void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
                 *OUT << iter2->first.decode(classdecoder) << '|' << iter2->second.count() << '|';
                 for (set<CorpusReference>::iterator iter3 = iter2->second.refs.begin() ; iter3 != iter2->second.refs.end(); iter3++) {
                     *OUT << iter3->sentence << ':' << (int) iter3->token;        
-                    *OUT << ',';
-                    //if (iter3 != iter2->second.refs.end() - 1) 
+                    *OUT << ','; 
                 }
-                //MAYBE TODO: output references?
             }
            *OUT << endl;
        }
@@ -1199,19 +1100,19 @@ void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
 void IndexedPatternModel::decode(IndexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT) {
     
     *OUT << "#TYPES=" << types() << ";TOKENS=" << tokens() << endl;
-    *OUT << "#N\tVALUE\tCOUNT\tCOVERAGE\tCOUNT-TEST\tCOVERAGE-TEST\tSKIPTYPES\tSKIP-ENTROPY\tSKIPTYPES-TEST\tSKIP-ENTROPY-TEST\tREFERENCES\tREFERENCES-TEST" << endl;
-    const int grandtotal = ngramtokencount + skipgramtokencount;   
+    *OUT << "#N\tTEXT\tOCC.COUNT\tTOKENS\tCOVERAGE\tOCC.COUNT-TEST\tTOKENS-TEST\tCOVERAGE-TEST\tSKIPTYPES\tSKIP-ENTROPY\tSKIPTYPES-TEST\tSKIP-ENTROPY-TEST\tREFERENCES\tREFERENCES-TEST" << endl;
 
     for(unordered_map<EncNGram,NGramData>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
-       const double freq = ((double) (iter->second.count() * iter->first.n()) / totaltokens);
+       const int covtokens = iter->second.count() * iter->first.n();
+       const double cov = (double) covtokens / totaltokens;
        const EncNGram ngram = iter->first;
-        *OUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq;
+        *OUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << covtokens << '\t' << cov;
         
         const EncAnyGram * key = testmodel.getkey(&ngram);
         if (key) {
-            *OUT << '\t' << testmodel.count(key) << '\t' << testmodel.freq(key);
+            *OUT << '\t' << testmodel.occurrencecount(key) << '\t' << testmodel.coveragecount(key) << '\t' << testmodel.coverage(key);
         } else {
-            *OUT << "\t0\t0";
+            *OUT << "\t0\t0\t0";
         }        
         *OUT << "\t0\t-\t0\t-\t";                
         for (set<CorpusReference>::iterator iter2 = iter->second.refs.begin() ; iter2 != iter->second.refs.end(); iter2++) {
@@ -1230,14 +1131,15 @@ void IndexedPatternModel::decode(IndexedPatternModel & testmodel, ClassDecoder &
 
    
        for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {
-           const double freq = ((double) (iter->second.count() * iter->first.n()) / totaltokens);
+           const int covtokens = iter->second.count() * iter->first.n();
+           const double cov = (double) covtokens / totaltokens;
            const EncSkipGram skipgram = iter->first;                              
-           *OUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << freq;
+           *OUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << covtokens << '\t' << cov;
             const EncAnyGram * key = testmodel.getkey(&skipgram);
             if (key) {
-                *OUT << '\t' << testmodel.count(key) << '\t' << testmodel.freq(key);
+                *OUT << '\t' << testmodel.occurrencecount(key) << '\t' << testmodel.coveragecount(key) << '\t' << testmodel.coverage(key);
             } else {
-                *OUT << "\t0\t0";
+                *OUT << "\t0\t0\t0";
             }       
            const int skiptypes = iter->second.skipcontent.size();               
            const double entropy = iter->second.entropy();
@@ -1302,11 +1204,8 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
     this->MINSKIPTOKENS = MINSKIPTOKENS;
     this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
     this->DOFINALONLYSKIP = DOFINALONLYSKIP;
-    
-    ngramtokencount = 0;
-    skipgramtokencount = 0; 
-    ngramtypecount = 0;
-    skipgramtypecount = 0;
+
+    totaltokens = 0;
 
     const int BUFFERSIZE = 65536;
     unsigned char line[BUFFERSIZE];
@@ -1316,11 +1215,9 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
         cerr << "Counting " << n << "-grams" << endl;            
         
         uint32_t sentence = 0;
-    
-        tokencount[n] = 0;
-        skiptokencount[n] = 0;
-        typecount[n] = 0;
-        skiptypecount[n] = 0;
+
+        int foundngrams = 0;
+        int foundskipgrams = 0;
                 
         vector< vector< pair<int,int> > > gaps;
         compute_multi_skips(gaps, vector<pair<int,int> >(), n);    
@@ -1379,7 +1276,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
                 }
                 
                 
-                if (ngrams[*ngram] == 0) typecount[n]++;
+                if (ngrams[*ngram] == 0) foundngrams++;
                 ngrams[*ngram]++; //increase occurence count                     
                 //tokencount[n]++;            
 
@@ -1441,7 +1338,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
                         if (initialskip && finalskip && skipref.size() <= 1) docount = false; //the whole n-gram is a skip, discard
                         if (docount) {                        
                             EncSkipGram skipgram = EncSkipGram(subngrams, skipref, initialskip, finalskip);
-                            if (skipgrams[skipgram] == 0) skiptypecount[n]++;                            
+                            if (skipgrams[skipgram] == 0) foundskipgrams++;                            
                             skipgrams[skipgram]++;
                             //skiptokencount[n]++;                            
                         }
@@ -1474,7 +1371,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
                                 cursor = begin+length;                                
                             }   
                             if (docount) { //second check, we might have aborted                                                        
-		                        if (skipgrams[skipgram] == 0) skiptypecount[n]++;                            
+		                        if (skipgrams[skipgram] == 0) foundskipgrams++;                            
 		                        skipgrams[skipgram]++; //increase count
 		                        //skiptokencount[n]++;                            		                        
                             }
@@ -1492,9 +1389,9 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
             
         };
 
-       cerr << "Found " << typecount[n] << " " << n << "-grams"; // (" << tokencount[n] << " tokens)";
+       cerr << "Found " << foundngrams << " distinct " << n << "-grams"; // (" << tokencount[n] << " tokens)";
        if (DOSKIPGRAMS) {
-        cerr << " and " << skiptypecount[n] << " skipgrams" << endl; // (" << skiptokencount[n] << " tokens)" << endl;
+        cerr << " and " << foundskipgrams << " distinct skipgrams" << endl; // (" << skiptokencount[n] << " tokens)" << endl;
        } else {
         cerr << endl;
        }
@@ -1505,16 +1402,12 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
        for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
             if (iter->first.n() == n) {
                 if (iter->second < MINTOKENS) {
-                    tokencount[n] -= iter->second;
-                    typecount[n]--;
                     pruned++;
                     ngrams.erase(iter->first);                        
-                } else {
-                    ngramtokencount += iter->second;
                 }
             }
        }
-       cerr << "Pruned " << pruned << " " << n << "-grams, " << typecount[n] <<  " left" << endl;  //"(" << tokencount[n] << " tokens)" << endl;
+       cerr << "Pruned " << pruned << " " << n << "-grams";  //"(" << tokencount[n] << " tokens)" << endl;
     
        
        if (DOSKIPGRAMS) {       
@@ -1526,39 +1419,121 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
                     if ( (iter->second < MINTOKENS) || (lastskipcontenthash[iter->first] != 1) ) {
                         pruneskipgram = true;
                         //skiptokencount[n] -= iter->second;
-                        skiptypecount[n]--;
                         pruned++;
                         skipgrams.erase(iter->first);
                     }
                }
            }
-           cerr << "Pruned " << pruned << " skipgrams, " << skiptypecount[n] <<  " left" << endl; //(" << skiptokencount[n] << " tokens)" << endl;
+           cerr << "Pruned " << pruned << " skipgrams" << endl; //(" << skiptokencount[n] << " tokens)" << endl;
            
         }
-        //ngramtokencount += tokencount[n];
-        ngramtypecount += typecount[n];
-        //skipgramtokencount += skiptokencount[n];
-        skipgramtypecount += skiptypecount[n];
-    }
 
-        
+    }
+    computestats();        
 }
 
 
 UnindexedPatternModel::UnindexedPatternModel(const string & filename, const bool DEBUG) {    
-
-    ngramtokencount = 0;
-    skipgramtokencount = 0; 
-    ngramtypecount = 0;
-    skipgramtypecount = 0;
+    totaltokens = 0;
     MAXLENGTH = 0;
     
-    for (int n = 0; n < MAXN; n++) {
-        tokencount[n] = 0;
-        skiptokencount[n] = 0;
-    }
-    
     readfile(filename, DEBUG);
+    computestats();
+}
+
+
+
+UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, UnindexedPatternModel & refmodel, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {    
+    if (MAXLENGTH > refmodel.getmaxn()) MAXLENGTH = refmodel.getmaxn();
+    if (MINTOKENS < refmodel.getminn()) MINTOKENS = refmodel.getminn(); 
+
+    this->MAXLENGTH = MAXLENGTH;
+    this->MINTOKENS = MINTOKENS;
+    this->DOSKIPGRAMS = DOSKIPGRAMS;
+    this->MINSKIPTOKENS = MINSKIPTOKENS;
+    this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
+    this->DOFINALONLYSKIP = DOFINALONLYSKIP;
+    
+    
+    totaltokens = 0;
+    
+    
+    int sentence = 0;
+    const int BUFFERSIZE = 65536;
+    unsigned char line[BUFFERSIZE];
+    
+    ifstream *IN =  new ifstream( corpusfile.c_str() );
+    if (!IN->good()) {
+    	cerr << "ERROR: Unable to open file " << corpusfile << endl;
+    	exit(5);
+    }    
+    vector<unsigned int> words;
+    while (IN->good()) {
+        const int linesize = readline(IN, line, BUFFERSIZE );            
+                
+        sentence++;
+
+        if (sentence % 10000 == 0) {
+            cerr << "\t@" << sentence << endl;
+        }
+                                
+        const int l = countwords(line, linesize);            
+        if (l >= 256) {
+            cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping! (" << linesize << " bytes)" << endl;
+            continue;
+       } else if (l == 0) {
+        	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping! (" << linesize << " bytes)" << endl;
+            continue;                
+        }
+        totaltokens += l;
+        
+		vector<pair<const EncAnyGram*, CorpusReference> > patterns = refmodel.getpatterns(line,linesize, true, sentence,1,MAXLENGTH);
+		//cerr << "   " << patterns.size() << " patterns..." << endl;
+		for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = patterns.begin(); iter != patterns.end(); iter++) {
+			const EncAnyGram * anygram = iter->first;			
+			const CorpusReference ref = iter->second;			
+			if (getkey(anygram) || refmodel.getkey(anygram)) {		
+			    //cerr << "Found pattern" << endl;	
+			    if (anygram->isskipgram()) {
+			        const EncSkipGram skipgram = *( (const EncSkipGram*) refmodel.getkey(anygram) );
+			        skipgrams[skipgram]++;
+			    } else {
+			        const EncNGram ngram = *( (const EncNGram*) refmodel.getkey(anygram) );
+			        ngrams[ngram]++;
+			    }
+			    //refmodel.outputinstance(anygram, ref, decoder);			
+			 }			
+		} 
+    }
+   
+       //prune n-grams
+       int pruned = 0;
+       for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
+                if (iter->second < MINTOKENS) {
+                    pruned++;
+                    ngrams.erase(iter->first);                        
+                }
+       }
+       cerr << "Pruned " << pruned << " " << "n-grams" << endl; 
+    
+       
+       if (DOSKIPGRAMS) {       
+           //prune skipgrams
+           pruned = 0;
+           for(unordered_map<EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {                               
+                    bool pruneskipgram = false;
+                    if (iter->second < MINTOKENS) {
+                        pruneskipgram = true;
+                        pruned++;
+                        skipgrams.erase(iter->first);
+                    }
+           }
+           cerr << "Pruned " << pruned << " skipgrams" << endl;
+           
+        }
+       
+        
+  
 }
 
 void UnindexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, bool ignore ) {
@@ -1570,11 +1545,8 @@ void UnindexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngr
         }
     }
     if (!ignore) {
-    	ngramtypecount++;
     	ngrams[ngram] = count;
-    	ngramtokencount += count;
         if (ngram.n() > MAXLENGTH) MAXLENGTH = ngram.n();
-    	tokencount[ngram.n()] += count;
     }    
 }
 
@@ -1596,10 +1568,7 @@ void UnindexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram
         }        
     }
     if (!ignore) {
-        skipgramtypecount++;    
     	skipgrams[skipgram] = count; //assign
-        skipgramtokencount += count;
-        skiptokencount[skipgram.n()] += count;
     }            
 }
 
@@ -1637,7 +1606,7 @@ void UnindexedPatternModel::writeskipgrams(std::ostream * f) {
 }
 
 void UnindexedPatternModel::outputinstance(const EncAnyGram * anygram, CorpusReference ref, ClassDecoder & decoder) {
-	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << count(anygram) << "\t" << setprecision(numeric_limits<double>::digits10 + 1) << freq(anygram) << endl; 
+	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << occurrencecount(anygram) << "\t" << setprecision(numeric_limits<double>::digits10 + 1) << coverage(anygram) << endl; 
 }
 
 
@@ -1670,7 +1639,7 @@ const EncAnyGram* UnindexedPatternModel::getkey(const EncAnyGram* key) {
 }
 
 
-int UnindexedPatternModel::count(const EncAnyGram* key) {    
+int UnindexedPatternModel::occurrencecount(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
         if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ];
     } else {
@@ -1679,8 +1648,18 @@ int UnindexedPatternModel::count(const EncAnyGram* key) {
     return 0;
 }
 
+int UnindexedPatternModel::coveragecount(const EncAnyGram* key) {    
+    if (key->gapcount() == 0) {        
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return ngrams[*( (EncNGram*) key) ] * key->n();
+    } else {
+        if (skipgrams.count(*( (EncSkipGram*) key) ) > 0) return skipgrams[*( (EncSkipGram*) key) ] * key->n();   
+    }
+    return 0;
+}
 
-double UnindexedPatternModel::freq(const EncAnyGram* key) {    
+
+
+double UnindexedPatternModel::coverage(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
         if (ngrams.count(*( (EncNGram*) key) ) > 0) return ((double) (ngrams[*( (EncNGram*) key) ] * key->n())  / tokens());
     } else {
@@ -1699,30 +1678,61 @@ double UnindexedPatternModel::freq(const EncAnyGram* key) {
     return 0;
 }*/
 
+
+void UnindexedPatternModel::computestats() {
+    totalngramcount = 0;
+    totalskipgramcount = 0;
+    for (int n = 1; n <= MAXN; n++) { ngramcount[n] = 0;  skipgramcount[n] = 0; ngramtypes[n] = 0; skipgramcount[n] = 0; }
+
+    for (unordered_map<const EncNGram,uint32_t >::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
+        const EncAnyGram * anygram = &iter->first;
+        ngramtypes[anygram->n()]++;
+        ngramcount[anygram->n()] += iter->second;  
+        totalngramcount += iter->second;   
+    }
+    for (unordered_map<const EncSkipGram,uint32_t >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
+        const EncAnyGram * anygram = &iter->first;
+        skipgramtypes[anygram->n()]++;
+        skipgramcount[anygram->n()] += iter->second;  
+        totalskipgramcount += iter->second;
+    }    
+}
+
 void UnindexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
     //const int grandtotal = ngramtokencount + skipgramtokencount;
     *OUT << "#TYPES=" << types() << ";TOKENS=" << tokens() << endl;
-    *OUT << "#N\tVALUE\tCOUNT\tCOVERAGE" << endl;
+    *OUT << "#N\tVALUE\tOCC.COUNT\tTOKENS\tCOVERAGE\tFREQ-ALL\tFREQ-G\fFREQ-N\t" << endl;
 
     for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
-       const double freq = ((double) (iter->second * iter->first.n()) / totaltokens);
+       const int tokens = iter->second * iter->first.n();
+       const double cov = (double) tokens / totaltokens;
+        
+       const double freqall = (double) iter->second / occurrences();
+       const double freqg = (double) iter->second / totalngramcount;
+       const double freqn = (double) iter->second / ngramcount[iter->first.n()];
        //const double freq1 = (double) iter->second / tokencount[iter->first.n()];       
        //const double freq2 = (double) iter->second / ngramtokencount;
        //const double freq3 = (double) iter->second / grandtotal;
        const EncNGram ngram = iter->first;
-        *OUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second << '\t' << freq;
+        *OUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << iter->second << '\t' << tokens << '\t' << cov << '\t' << freqall << '\t' << freqg << '\t' << freqn;
         *OUT << endl;
     }
    
 
    
        for(unordered_map<EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {
-           const double freq = ((double) (iter->second * iter->first.n()) / totaltokens);
+            const int tokens = iter->second * iter->first.n();
+            const double cov = (double) tokens / totaltokens;
+           
+           
+            const double freqall = (double) iter->second / occurrences();
+            const double freqg = (double) iter->second / totalskipgramcount;
+            const double freqn = (double) iter->second / skipgramcount[iter->first.n()];
            //const double freq1 = (double) iter->second / skiptokencount[iter->first.n()]; 
            //const double freq2 = (double) iter->second / skipgramtokencount;           
            //const double freq3 = (double) iter->second / grandtotal;                          
            const EncSkipGram skipgram = iter->first;                              
-           *OUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second << '\t' << freq;          
+           *OUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second << '\t' << tokens << cov << '\t' << freqall << '\t' << freqg << '\t' << freqn;          
            *OUT << endl;
        }
     
@@ -1733,7 +1743,7 @@ void UnindexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
 void UnindexedPatternModel::decode(UnindexedPatternModel & testmodel,  ClassDecoder & classdecoder, std::ostream *OUT) {
     //const int grandtotal = ngramtokencount + skipgramtokencount;
     *OUT << "#TYPES=" << types() << ";TOKENS=" << tokens() << ";TYPES(2)=" << testmodel.types() << ";TOKENS(2)=" << testmodel.tokens() << endl;
-    *OUT << "#N\tVALUE\tCOUNT\tCOVERAGE\tCOUNT-TESTMODEL\tCOVERAGE-TESTMODEL" << endl;    
+    *OUT << "#N\tVALUE\tOCC.COUNT\tTOKENS\tCOVERAGE\tCOUNT-TESTMODEL\tCOVERAGE-TESTMODEL" << endl;    
     for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
        const double freq = ((double) (iter->second * iter->first.n()) / totaltokens);
        //const double freq1 = (double) iter->second / tokencount[iter->first.n()];       
@@ -1744,7 +1754,7 @@ void UnindexedPatternModel::decode(UnindexedPatternModel & testmodel,  ClassDeco
         
         const EncAnyGram * key = testmodel.getkey((const EncAnyGram *) &iter->first);
         if (key) {
-            *OUT << "\t" << testmodel.count(key) << "\t" << testmodel.freq(key); 
+            *OUT << "\t" << testmodel.occurrencecount(key) << "\t" << testmodel.coveragecount(key)  << testmodel.occurrencecount(key) << testmodel.coverage(key); 
         } else {
             *OUT << "\t0\t0";
         }
@@ -1762,7 +1772,7 @@ void UnindexedPatternModel::decode(UnindexedPatternModel & testmodel,  ClassDeco
            *OUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second << '\t' << freq;
             const EncAnyGram * key = testmodel.getkey((const EncAnyGram *) &iter->first);
             if (key) {
-                *OUT << "\t" << testmodel.count(key) << "\t" << testmodel.freq(key); 
+                *OUT << "\t" << testmodel.occurrencecount(key) << "\t" << testmodel.coveragecount(key)  << testmodel.occurrencecount(key) << testmodel.coverage(key);
             } else {
                 *OUT << "\t0\t0";
             }                     
@@ -2435,7 +2445,7 @@ void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OU
 void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OUT, unordered_set<const EncAnyGram*>   & relations ) {
 	for (std::unordered_set<const EncAnyGram*>::iterator iter = relations.begin(); iter != relations.end(); iter++) {
 		const EncAnyGram * anygram = *iter;
-		*OUT << "\t" << anygram->decode(classdecoder) << "\t" << model->count(anygram);
+		*OUT << "\t" << anygram->decode(classdecoder) << "\t" << model->occurrencecount(anygram);
 		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[anygram];
 		*OUT << endl;		
 	}
@@ -2469,8 +2479,8 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	string focuslabel = focus->decode(classdecoder);
 	replaceAll(focuslabel,"\"","\\\"");
 
-	*OUT << "c" << focus->hash() << " [label=\"" << focuslabel << "\\n" << model->count(focus);
-	if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " <<  setprecision(2) << fixed << (double) data_xcount[focus] / (double) model->count(focus);// << " " << data_xcount[focus];
+	*OUT << "c" << focus->hash() << " [label=\"" << focuslabel << "\\n" << model->occurrencecount(focus);
+	if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " " <<  setprecision(2) << fixed << (double) data_xcount[focus] / (double) model->occurrencecount(focus);// << " " << data_xcount[focus];
 	if (focus->isskipgram()) {
 		*OUT <<  "\",shape=circle,color=yellow,style=filled];" << endl;
 	} else {
@@ -2483,9 +2493,9 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 		if (anygram != focus) {
 			string label = anygram->decode(classdecoder);
 			replaceAll(label,"\"","\\\"");
-			*OUT << "c" << anygram->hash() << " [label=\"" << label << "\\n" << model->count(anygram);
-			*OUT << " " << setprecision(2) << fixed << ((double) model->count(anygram) / (double) model->count(focus)) * 100.0 << "%";
-			if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " "<<  setprecision(2) << fixed  << (double) data_xcount[anygram] / (double) model->count(anygram);// << " " << data_xcount[anygram];	
+			*OUT << "c" << anygram->hash() << " [label=\"" << label << "\\n" << model->occurrencecount(anygram);
+			*OUT << " " << setprecision(2) << fixed << ((double) model->occurrencecount(anygram) / (double) model->occurrencecount(focus)) * 100.0 << "%";
+			if ((DOXCOUNT) && (HASXCOUNT)) *OUT << " "<<  setprecision(2) << fixed  << (double) data_xcount[anygram] / (double) model->occurrencecount(anygram);// << " " << data_xcount[anygram];	
 			if (anygram->isskipgram()) {
 				*OUT << "\",shape=circle];" << endl;
 			} else {
@@ -2550,12 +2560,9 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool
 	this->alignconstrainsource = alignconstrainsource;
 	
 
-	ngramtokencount = 0;
-	skipgramtokencount = 0;
-	ngramtypecount = 0;
-	skipgramtypecount = 0;
+	totaltokens = 0;
 	ignoredtypes = 0;
-	ignoredtokens = 0;
+	ignoredoccurrences = 0;
 	       
     	       
     secondpass = false;      
@@ -2566,6 +2573,7 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool
 	    if (DEBUG) cerr << "******** SelectivePatternModel SECOND PASS *********" << endl;
 		readfile(filename, DEBUG);
 	}
+	computestats();
 }
 
 
@@ -2739,8 +2747,6 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
 		ngrams[ngram]; //will create the ngram if it does not exist yet in the hash
 		std::unordered_map<EncNGram,IndexCountData>::iterator iter = ngrams.find(ngram); //pointer to the ngram in the hash
 		const EncAnyGram * anygram = &iter->first;	
-		ngramtypecount++;
-		//ngramtokencount += count;
 		ngrams[ngram].count = count; // 0 if n/a
 		ngrams[ngram].xcount = xcount; // 0 if n/a
 		if (!index.empty()) {			
@@ -2751,7 +2757,7 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
 		}	
 	} else {
 		ignoredtypes++;
-		ignoredtokens += count;
+		ignoredoccurrences += count;
 	}        	        
 }
 
@@ -2826,9 +2832,7 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
     if (!ignore) {
     	skipgrams[skipgram]; //will create the skipgram if it does not exist yet in the hash
 		std::unordered_map<EncSkipGram,IndexCountData>::iterator iter = skipgrams.find(skipgram); //pointer to the skipgram in the hash
-		const EncAnyGram * anygram = &iter->first;
-    	skipgramtypecount++;            
-    	//skipgramtokencount += count;
+		const EncAnyGram * anygram = &iter->first;         
     	skipgrams[skipgram].count = count; // 0 if n/a
     	skipgrams[skipgram].xcount = xcount;  // 0 if n/a
 		if (!index.empty()) {			
@@ -2839,14 +2843,14 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
 		}	    	
     } else {
 		ignoredtypes++;
-		ignoredtokens += count;
+		ignoredoccurrences += count;
 	}   
     
         
 }
 
 
-int SelectivePatternModel::count(const EncAnyGram* key) {    
+int SelectivePatternModel::occurrencecount(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
         if (ngrams.count(*( (EncNGram*) key)) > 0) return ngrams[*( (EncNGram*) key) ].count;
     } else {
@@ -2854,6 +2858,29 @@ int SelectivePatternModel::count(const EncAnyGram* key) {
     }
     return 0;
 }
+
+int SelectivePatternModel::coveragecount(const EncAnyGram* key) {    
+    if (key->gapcount() == 0) {        
+        if (ngrams.count(*( (EncNGram*) key)) > 0) return ngrams[*( (EncNGram*) key) ].count * key->n();
+    } else {
+        if (skipgrams.count(*( (EncSkipGram*) key) ) > 0) return skipgrams[*( (EncSkipGram*) key) ].count * key->n();   
+    }
+    return 0;
+}
+
+
+
+double SelectivePatternModel::coverage(const EncAnyGram* key) {    
+    if (key->gapcount() == 0) {        
+        if (ngrams.count(*( (EncNGram*) key) ) > 0) return  ((double) (ngrams[*( (EncNGram*) key) ].count * key->n())  / tokens());
+    } else {
+        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return ((double) (skipgrams[ *( (EncSkipGram*) key)].count * key->n()) / tokens());
+    }
+    return 0;
+}
+
+
+
 
 int SelectivePatternModel::xcount(const EncAnyGram* key) {    
     if (key->gapcount() == 0) {        
@@ -2875,14 +2902,6 @@ double SelectivePatternModel::xcountratio(const EncAnyGram* key) {
 
 
 
-double SelectivePatternModel::freq(const EncAnyGram* key) {    
-    if (key->gapcount() == 0) {        
-        if (ngrams.count(*( (EncNGram*) key) ) > 0) return  ((double) (ngrams[*( (EncNGram*) key) ].count * key->n())  / tokens());
-    } else {
-        if (skipgrams.count( *( (EncSkipGram*) key)) > 0) return ((double) (skipgrams[ *( (EncSkipGram*) key)].count * key->n()) / tokens());
-    }
-    return 0;
-}
 
 int SelectivePatternModel::countforsentence(const EncAnyGram* key, const uint64_t sentence) {
     if (key->gapcount() == 0) {        
@@ -2902,9 +2921,31 @@ int SelectivePatternModel::countforsentence(const EncAnyGram* key, const uint64_
     }
 }*/
 
+
+void SelectivePatternModel::computestats() {
+    totalngramcount = 0;
+    totalskipgramcount = 0;
+    for (int n = 1; n <= MAXN; n++) { ngramcount[n] = 0;  skipgramcount[n] = 0; ngramtypes[n] = 0; skipgramcount[n] = 0; }
+
+    for (unordered_map<const EncNGram,IndexCountData >::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
+        const EncAnyGram * anygram = &iter->first;
+        ngramtypes[anygram->n()]++;
+        ngramcount[anygram->n()] += iter->second.count;  
+        totalngramcount += iter->second.count;   
+    }
+    for (unordered_map<const EncSkipGram,IndexCountData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
+        const EncAnyGram * anygram = &iter->first;
+        skipgramtypes[anygram->n()]++;
+        skipgramcount[anygram->n()] += iter->second.count;  
+        totalskipgramcount += iter->second.count;
+    }    
+}
+
+
+
 void SelectivePatternModel::outputinstance(const EncAnyGram * anygram, CorpusReference ref, ClassDecoder & decoder) {
-	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << count(anygram) << "\t";	
-	cout << "\t" << setprecision(numeric_limits<double>::digits10 + 1) << freq(anygram);
+	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << occurrencecount(anygram) << "\t";	
+	cout << "\t" << setprecision(numeric_limits<double>::digits10 + 1) << coverage(anygram);
 	if (DOXCOUNT) cout << "\t" << xcount(anygram) << "\t" << xcountratio(anygram) << endl;
 	cout << endl;	
 }

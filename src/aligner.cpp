@@ -270,7 +270,7 @@ int main( int argc, char *argv[] ) {
 		cerr << "Loading source model " << sourcemodelfile << endl;
 		SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
 		cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
-	 	cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredtokens << " tokens due to set thresholds" << endl;
+	 	cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;
 		if (sourcemodel.has_xcount()) {
 			cerr << "  Exclusive count available? YES" << endl;
 		} else {
@@ -289,7 +289,7 @@ int main( int argc, char *argv[] ) {
 		cerr << "Loading target model " << targetmodelfile << endl;
 		SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
 		cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
-		cerr << "  Ignored " << targetmodel.ignoredtypes << " types, " << targetmodel.ignoredtokens << " tokens due to set thresholds" << endl;
+		cerr << "  Ignored " << targetmodel.ignoredtypes << " types, " << targetmodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;
 		if (targetmodel.has_xcount()) {
 			cerr << "  Exclusive count available? YES" << endl;
 		} else {

@@ -1,6 +1,7 @@
 #include <common.h>
 
 
+
 std::string trim(const std::string &t, const std::string &ws) {
     std::string str = t;
     size_t found;

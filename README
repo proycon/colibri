@@ -11,13 +11,13 @@ COLIBRI: Construction as Linguistic Bridges
 
 Encode your plain-text corpus data to a compressed binary form. Make sure your input is tokenised and each sentence is on one line!
  
-	classencode -f yourcorpus
+	$ classencode -f yourcorpus
 
 This results in a class file (yourcorpus.cls) and the encoded corpus (yourcorpus.clsenc). These can be used by the patternfinder. 
 
 To decode an encoded corpus back to it's normal textual form:
 
- 	classdecode -f yourcorpus.clsenc -c yourcorpus.cls
+ 	$ classdecode -f yourcorpus.clsenc -c yourcorpus.cls
  	
 If your corpus is not tokenised yet, you can use ucto (distributed seperately), this will also do sentence detection and output one line per sentence. 
 
@@ -25,32 +25,95 @@ If your corpus is not tokenised yet, you can use ucto (distributed seperately), 
 	
 	(for English, several other languages are also supported )
 
+Often, you want to encode a corpus using a pre-existing class file. This occurs especially when you are working with a training set and a separate test set. The initial class file is built on the training set, and it can be reused to encode the test set:
+
+   $ classencode -f trainset
+   $ classencode -f testset -c trainset.cls
+
+The first step build trainset.cls and trainset.clsenc , the second step builds testset.clsenc. The encoder will automatically assign a single class to all unknown symbols it encounteres in the testset.
+
+
 2. FINDING PATTERNS
 -------------------------
  
  1) Make sure to have a properly encoded corpus (see previous section)
  
- 2) Invoke the pattern finder your encoded corpus. You can create either an indexed model or an unindexed model, the latter will consume significantly less memory as it does not retain an index to where ngrams/skipgrams occur in the corpus, it does not retain skip content either and is less configurable.
+ 2) Invoke the pattern finder your encoded corpus. You can create either an indexed model or an unindexed model, the latter will consume significantly less memory as it does not retain an index to where ngrams/skipgrams occur in the corpus, it does not retain skip content either and is less configurable and limited in use.
 
   To make an indexed model with skipgrams (-s):	
-	 patternfinder -f yourcorpus.clsenc -t 10 -s
+	 $ patternfinder -f yourcorpus.clsenc -t 10 -s -B -E
 
-  To make an unindexed model (add -u) with skipgrams (-s):
-	 patternfinder -u -f yourcorpus.clsenc -t 10 -s
+  To make an unindexed model add -u:
+	 $ patternfinder -u -f yourcorpus.clsenc -t 10 -s -B -E
  
- (-t specified the pruning threshold in number of tokens per construction. To omit skipgrams and do only n-grams, leave -s out. See patternfinder -h for all options)
+ (-t specified the pruning threshold in number of tokens per construction. To omit skipgrams and do only n-grams, leave -s out. See patternfinder -h for all options. When generating skipgrams, you may want to add -B and -E to omit skipgrams that start and/or end with a skip)
 
- This results in an ngram/skipgram model yourcorpus.indexedpatternmodel.colibri or yourcorpus.unindexedpatternmodel.colibri .
+The above steps results in an ngram/skipgram model yourcorpus.indexedpatternmodel.colibri or yourcorpus.unindexedpatternmodel.colibri . These are stored in a binary format for efficient processing and minimal disk/memory space.
  
- 3) Decode the model back (to stdout) using the -d and -c options 
+ 3) Decode the model back (to stdout) using the -d and -c options. This will generate a table with all found patterns and associated scores and indices:
  
    For indexed models:
-    patternfinder -d your.indexedpatternmodel.colibri -c yourcorpus.cls > patterns.txt
+    $ patternfinder -d yourcorpus.indexedpatternmodel.colibri -c yourcorpus.cls > patterns.txt
 	
    For unindexed models add -u:
-    patternfinder -u -d your.unindexedpatternmodel.colibri -c yourcorpus.cls > patterns.txt
+    $ patternfinder -u -d yourcorpus.unindexedpatternmodel.colibri -c yourcorpus.cls > patterns.txt
      
-    
+  Note that indexed models can be always read (and decoded) in an unindexed way (with -u), but unindexed models can not be read in an indexed way, as they simply lack indices.
+	
+ 4) Compute coverage statistics using -C , this provides valuable generalised statistics on the model. It only works with indexed models:
+ 
+   $ patternfinder -d yourcorpus.indexedpatternmodel.colibri -C
+  
+  
+
+	EXAMPLE OUTPUT:
+
+		  COVERAGE REPORT
+	----------------------------------
+	Total number of tokens:      6258043
+
+		                          TOKENS  COVERAGE  TYPES        TTR     COUNT FREQUENCY
+	Total coverage:              6095775    0.9741 298298 123969.960  23769771    1.0000
+	Uncovered:                    162268    0.0259
+
+	N-gram coverage:             6095772    0.9741 174363    34.9602  13357746    0.5620
+	 1-gram coverage:            6095772    0.9741  16977     0.0028   6095772    0.2565
+	 2-gram coverage:            5399143    0.8628  66845     0.0124   4353264    0.1831
+	 3-gram coverage:            2298818    0.3673  55001     0.0239   1918446    0.0807
+	 4-gram coverage:             615552    0.0984  22227     0.0361    633196    0.0266
+	 5-gram coverage:              80184    0.0128   8002     0.0998    213206    0.0090
+	 6-gram coverage:              19643    0.0031   3046     0.1551     81033    0.0034
+	 7-gram coverage:               5174    0.0008   1414     0.2733     39487    0.0017
+	 8-gram coverage:               2732    0.0004    851     0.3115     23342    0.0010
+
+	Skipgram coverage:           2871204    0.4588 123935    23.1670  10412025    0.4380
+	 3-skipgram coverage:        1819730    0.2908  23063     0.0127   2088113    0.0878
+	 4-skipgram coverage:        1380211    0.2205  19573     0.0142   1494049    0.0629
+	 5-skipgram coverage:         757273    0.1210  21957     0.0290   1994542    0.0839
+	 6-skipgram coverage:         299785    0.0479  20698     0.0690   1669473    0.0702
+	 7-skipgram coverage:         137551    0.0220  18281     0.1329   1525863    0.0642
+	 8-skipgram coverage:          81042    0.0130  20363     0.2513   1639985    0.0690
+
+
+ 5) If you work with separate training and test sets. Then you can build a test model as follows: 
+
+  For indexed models:
+   $ patternfinder -f trainset.clsenc -t 10 -s -B -E
+   $ patternfinder -d trainset.indexedpatternmodel.colibri -f testset.clsenc -t 10 -s -B -E
+
+  For unindexed models:
+   $ patternfinder -f trainset.clsenc -t 10 -s -B -E -u
+   $ patternfinder -d trainset.unindexedpatternmodel.colibri -f testset.clsenc -t 10 -s -B -E -u
+  
+
+ Always make sure that both models use the exact same class file, as seen in the previous section, otherwise this will not work.
+ 
+ The test model that is learned in this step will contain only patterns that were also found during training. 
+
+
+ 
+
+
 3. BUILDING A GRAPH MODEL    
 -------------------------
 

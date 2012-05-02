@@ -91,7 +91,7 @@ int main( int argc, char *argv[] ) {
 	cerr << "Loading model " << modelfile << endl;
     SelectivePatternModel model = SelectivePatternModel(modelfile, false,false, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH,false, false,NULL, false ,DEBUG);
     cerr << "  Loaded " << model.types() << " types, " << model.tokens() << " tokens" << endl;
-    cerr << "  Ignored " << model.ignoredtypes << " types, " << model.ignoredtokens << " tokens due to set thresholds" << endl;
+    cerr << "  Ignored " << model.ignoredtypes << " types, " << model.ignoredoccurrences << " occurrences due to set thresholds" << endl;
     if (model.has_xcount()) {
     	cerr << "  Exclusive count available? YES" << endl;
     } else {

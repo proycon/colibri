@@ -77,7 +77,7 @@ class SkipGramData: public AnyGramData {
 
 class ModelReader {
    protected:
-    uint64_t totaltokens;
+    uint64_t totaltokens; //INCLUDES TOKENS NOT COVERED BY THE MODEL!
     uint64_t totaltypes;
     bool DEBUG; 
     
@@ -120,8 +120,9 @@ class ModelQuerier {
 	 ModelQuerier();
 	 virtual const EncAnyGram * getkey(const EncAnyGram * anygram) =0;
 	 virtual int maxlength() const =0;
-	 virtual int count(const EncAnyGram * anygram) =0;
-	 virtual double freq(const EncAnyGram * anygram) =0;
+     virtual int occurrencecount(const EncAnyGram* key) =0;
+     virtual int coveragecount(const EncAnyGram* key) =0;    
+     virtual double coverage(const EncAnyGram* key) =0;	 
 	 virtual void outputinstance(const EncAnyGram *, CorpusReference, ClassDecoder &) =0;	 	 
 	 std::vector<std::pair<const EncAnyGram*, CorpusReference> > getpatterns(const unsigned char * data, const unsigned char datasize, bool doskipgrams=true, uint32_t linenum=0, const int minn = 1, const int maxn = MAXN); 
 	 void querier(ClassEncoder & encoder, ClassDecoder & decoder, bool exact = false,bool repeat = true, const int minn = 1, const int maxn = MAXN);	 	  
@@ -138,21 +139,18 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     bool DOINITIALONLYSKIP; //= true;
     bool DOFINALONLYSKIP; //= true;
 
-    
-    
-    int ngramtypecount;
-    int skipgramtypecount;    
 
+    void computestats(); //compute occurrence count sums
    public:
 
-    unsigned long ngramtokencount;
-    unsigned long skipgramtokencount; 
+    //occurence counts
+    unsigned long totalngramcount;
+    unsigned long totalskipgramcount;     
+    unsigned int ngramcount[MAXN]; 
+    unsigned int skipgramcount[MAXN];    
+    unsigned int ngramtypes[MAXN]; 
+    unsigned int skipgramtypes[MAXN];
     
-    int tokencount[MAXN]; //relative token count
-    int skiptokencount[MAXN];
-    int typecount[MAXN]; //relative token count
-    int skiptypecount[MAXN];   
-   
     std::unordered_map<const EncNGram,NGramData > ngrams;
     std::unordered_map<const EncSkipGram,SkipGramData > skipgrams;    
     
@@ -168,16 +166,18 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     std::vector<unsigned char> sentencesize;
     
     uint64_t types() const { return ngrams.size() + skipgrams.size(); }    
-    uint64_t tokens() const { return totaltokens; }    
+    uint64_t tokens() const { return totaltokens; }
+    uint64_t occurrences() const { return totalngramcount + totalskipgramcount; }    
     
     bool exists(const EncAnyGram* key) const;
     const EncAnyGram* getkey(const EncAnyGram* key);
     const AnyGramData* getdata(const EncAnyGram* key);
-    int count(const EncAnyGram* key);
-    double freq(const EncAnyGram* key);    
-    //double relfreq(const EncAnyGram* key);        
-    //std::set<int> * index(const EncAnyGram* key);    
-    //int index_size() const;
+    
+    
+    int occurrencecount(const EncAnyGram* key);
+    int coveragecount(const EncAnyGram* key);    
+    double coverage(const EncAnyGram* key);    
+
     
     void outputinstance(const EncAnyGram *, CorpusReference, ClassDecoder &);	 	 
 
@@ -213,6 +213,7 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     void decode(ClassDecoder & classdecoder, std::ostream *OUT);
     void decode(IndexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT);
     
+    
     void coveragereport(std::ostream *OUT, int segmentsize = 100000);    
 };
 
@@ -228,19 +229,19 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
     bool DOINITIALONLYSKIP; //= true;
     bool DOFINALONLYSKIP; //= true;
 
-    
-    int ngramtypecount;
-    int skipgramtypecount;   
 
+    void computestats(); //compute occurrence count sums
    public:
-    unsigned long ngramtokencount;
-    unsigned long skipgramtokencount; 
+
+    //occurence counts
+    unsigned long totalngramcount;
+    unsigned long totalskipgramcount;     
+    unsigned int ngramcount[MAXN]; 
+    unsigned int skipgramcount[MAXN];    
+    unsigned int ngramtypes[MAXN]; 
+    unsigned int skipgramtypes[MAXN];
     
-    int tokencount[MAXN]; //relative token count
-    int skiptokencount[MAXN];
-    int typecount[MAXN]; //relative token count
-    int skiptypecount[MAXN];   
-   
+    
     std::unordered_map<const EncNGram,uint32_t > ngrams;
     std::unordered_map<const EncSkipGram,uint32_t > skipgrams;    
             
@@ -253,12 +254,15 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
     
     uint64_t types() const { return ngrams.size() + skipgrams.size(); }
     uint64_t tokens() const { return totaltokens; }
+    uint64_t occurrences() const { return totalngramcount + totalskipgramcount; }
     
     bool exists(const EncAnyGram* key) const;
     const EncAnyGram* getkey(const EncAnyGram* key);
-    int count(const EncAnyGram* key);
-    double freq(const EncAnyGram* key);    
-    //double relfreq(const EncAnyGram* key);        
+
+
+    int occurrencecount(const EncAnyGram* key);
+    int coveragecount(const EncAnyGram* key);    
+    double coverage(const EncAnyGram* key);           
     //std::set<int> * index(const EncAnyGram* key);    
     //int index_size() const;
 
@@ -282,7 +286,10 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
     size_t hash();
     
     void decode(ClassDecoder & classdecoder, std::ostream *OUT);
-    void decode(UnindexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT);    
+    void decode(UnindexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT);
+    
+    
+        
 };
 
 
@@ -344,6 +351,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     
     uint64_t types() const { return model->types(); }
     uint64_t tokens() const { return model->tokens(); }
+    uint64_t occurrences() const { return model->occurrences(); }
     
 
    
@@ -491,11 +499,21 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
      bool alignconstrainsource;
      
      void readrelations(std::istream * in, const EncAnyGram * anygram = NULL, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * relationhash = NULL, bool ignore = false);
-    public:
-     unsigned long ngramtokencount;
-     unsigned long skipgramtokencount;  
+    
+     void computestats(); //compute occurrence count sums
+   public:
+
+    //occurence counts
+    unsigned long totalngramcount;
+    unsigned long totalskipgramcount;     
+    unsigned int ngramcount[MAXN]; 
+    unsigned int skipgramcount[MAXN];    
+    unsigned int ngramtypes[MAXN]; 
+    unsigned int skipgramtypes[MAXN];
+    
+      
      unsigned long ignoredtypes;
-     unsigned long ignoredtokens;
+     unsigned long ignoredoccurrences;
      std::unordered_map<const EncNGram, IndexCountData> ngrams;
      std::unordered_map<const EncSkipGram,IndexCountData> skipgrams;
      
@@ -515,8 +533,12 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
     
     int maxlength() const { return MAXLENGTH; }
     const EncAnyGram* getkey(const EncAnyGram* key);
-    int count(const EncAnyGram* key);
-    double freq(const EncAnyGram* key);    
+    
+    
+    int occurrencecount(const EncAnyGram* key);
+    int coveragecount(const EncAnyGram* key);    
+    double coverage(const EncAnyGram* key);
+        
     int xcount(const EncAnyGram* key);
     double xcountratio(const EncAnyGram* key);
     
