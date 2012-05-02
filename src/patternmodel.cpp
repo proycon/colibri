@@ -272,7 +272,8 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
     const int BUFFERSIZE = 65536;
     unsigned char line[BUFFERSIZE];
 
-
+    sentencesize.push_back(0); //dummy element for index 0 (starts at 1)
+    
     if (MAXLENGTH > MAXN) {
        	cerr << "FATAL ERROR: Maximum n-gram size " << MAXLENGTH << " exceeds the internal maximum MAXN=" << MAXN << endl;
        	exit(14);
@@ -310,12 +311,15 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
             
             const int l = countwords(line, linesize);            
             if (l >= 256) {
+                sentencesize.push_back(0);
                 cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping! (" << linesize << " bytes)" << endl;
                 continue;
            } else if (l == 0) {
+                sentencesize.push_back(0);
             	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping! (" << linesize << " bytes)" << endl;
                 continue;                
             }
+            sentencesize.push_back(l);
             totaltokens += l;
             
             if (linesize > 0) //no { on purpose! applies to next for loop
@@ -786,6 +790,29 @@ void IndexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram &
         }        
     }    
 }
+
+void IndexedPatternModel::readfooter(std::istream * f, bool ignore) {
+    if (!ignore) sentencesize.clear();
+    if (model_id >= INDEXEDPATTERNMODEL+1) {
+        uint64_t count;
+        f->read( (char*) &count, sizeof(uint64_t));
+        for (int i = 1; i <= count; i++) {
+            unsigned char slen;
+            f->read((char*) &slen, sizeof(unsigned char));
+            if (!ignore) sentencesize.push_back(slen);       
+        }
+    }
+}
+
+void IndexedPatternModel::writefooter(std::ostream * f) {
+   uint64_t count = sentencesize.size() - 1; //minus 0-index dummy
+   f->write( (char*) &count, sizeof(uint64_t));
+   for (int i = 1; i <= count; i++) {
+        unsigned char slen = sentencesize[i];
+        f->write( (char*) &slen, sizeof(unsigned char));
+   }    
+}
+
 
 void IndexedPatternModel::writengramdata(std::ostream * f, const EncNGram & ngram) {
     const uint32_t c = ngrams[ngram].count();

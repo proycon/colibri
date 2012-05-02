@@ -10,6 +10,7 @@
 const char MAXN = 20;
 
 const short GRAPHPATTERNMODELVERSION = 1;
+const short INDEXEDPATTERNMODELVERSION = 2;
 
 enum ModelType {
 	UNINDEXEDPATTERNMODEL = 10, 
@@ -164,7 +165,9 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     
     int maxlength() const { return MAXLENGTH; }
     
-    uint64_t types() const { return ngrams.size() + skipgrams.size(); }
+    std::vector<unsigned char> sentencesize;
+    
+    uint64_t types() const { return ngrams.size() + skipgrams.size(); }    
     uint64_t tokens() const { return totaltokens; }    
     
     bool exists(const EncAnyGram* key) const;
@@ -187,18 +190,18 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     std::vector<EncAnyGram*> reverse_index(const int i);
     EncAnyGram* get_reverse_index_item(const int, const int);
     
-    virtual uint64_t id() { return INDEXEDPATTERNMODEL; }
+    virtual uint64_t id() { return INDEXEDPATTERNMODEL + INDEXEDPATTERNMODELVERSION; }
     virtual void readheader(std::istream * in, bool ignore = false) {};
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
     virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
-    virtual void readfooter(std::istream * in, bool ignore = false) {};    
+    virtual void readfooter(std::istream * in, bool ignore = false);    
     
     virtual void writeheader(std::ostream * out) {};
     virtual void writengrams(std::ostream * out);
     virtual void writengramdata(std::ostream * out, const EncNGram & ngram);
     virtual void writeskipgrams(std::ostream * out);
     virtual void writeskipgramdata(std::ostream * out, const EncSkipGram & skipgram);
-    virtual void writefooter(std::ostream * out) {}; 
+    virtual void writefooter(std::ostream * out); 
         
     void writeanygram(const EncAnyGram * anygram, std::ostream * out); //write the anygram itself (not its data!)
         
@@ -225,8 +228,7 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
 
     
     int ngramtypecount;
-    int skipgramtypecount;
-    
+    int skipgramtypecount;   
 
    public:
     unsigned long ngramtokencount;
@@ -419,6 +421,8 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
   
     void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, const EncAnyGram * focusinput);
     void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, std::unordered_set<const EncAnyGram*>   & relations );
+
+    void outputcoverage(ClassDecoder & classdecoder, std::ostream *OUT);
     
     void findincomingnodes(const EncAnyGram * focus, std::unordered_set<const EncAnyGram *> & relatednodes);
     void findincomingnodes(const EncAnyGram * focus, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram *> & relatednodes, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> >  & relationhash );
