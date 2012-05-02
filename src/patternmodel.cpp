@@ -311,16 +311,16 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
             
             const int l = countwords(line, linesize);            
             if (l >= 256) {
-                sentencesize.push_back(0);
+                if (n == 1) sentencesize.push_back(0);
                 cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping! (" << linesize << " bytes)" << endl;
                 continue;
            } else if (l == 0) {
-                sentencesize.push_back(0);
+                if (n == 1) sentencesize.push_back(0);
             	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping! (" << linesize << " bytes)" << endl;
                 continue;                
             }
-            sentencesize.push_back((unsigned char) l);
-            totaltokens += l;
+            if (n == 1) sentencesize.push_back((unsigned char) l);
+            if (n == 1) totaltokens += l;
             
             if (linesize > 0) //no { on purpose! applies to next for loop
             for (unsigned char i = 0; ((i < l - n + 1) && (i < 256)); i++) {                
@@ -797,7 +797,10 @@ void IndexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram &
 }
 
 void IndexedPatternModel::readfooter(std::istream * f, bool ignore) {
-    if (!ignore) sentencesize.clear();
+    if (!ignore) {
+         sentencesize.clear();
+         sentencesize.push_back(0); //dummy
+    }
     if (model_id >= INDEXEDPATTERNMODEL+1) {
         uint64_t count;
         f->read( (char*) &count, sizeof(uint64_t));
@@ -961,8 +964,9 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
     int covered = 0 ;
     int uncovered = 0;
 
-    for (int sentence = 1; sentence <= sentencesize.size(); sentence++) {
+    for (int sentence = 1; sentence < sentencesize.size(); sentence++) {
         unsigned char slen = sentencesize[sentence];
+        //cerr << "SENTENCE=" << sentence << ";SLEN=" << (int) slen << endl;
         
         if (sentence % segmentsize == 1) {
             if (OUT) *OUT << "Computing reverse index for next segment..." << endl;
@@ -979,9 +983,11 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
             for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
                 const EncAnyGram * anygram = &iter->first;
                 for(unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {                
-                    for (set<CorpusReference>::iterator iter3 = iter2->second.refs.begin() ; iter3 != iter2->second.refs.end(); iter3++) {                
+                    for (set<CorpusReference>::iterator iter3 = iter2->second.refs.begin() ; iter3 != iter2->second.refs.end(); iter3++) {
                         CorpusReference ref = *iter3;
-                        reverseindex[ref].insert(anygram);
+                        if ((ref.sentence >= sentence) && (ref.sentence < sentence+segmentsize)) {
+                            reverseindex[ref].insert(anygram);
+                        }
                     }                     
                 }
             }                                        
