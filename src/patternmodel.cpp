@@ -319,7 +319,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
             	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping! (" << linesize << " bytes)" << endl;
                 continue;                
             }
-            sentencesize.push_back(l);
+            sentencesize.push_back((unsigned char) l);
             totaltokens += l;
             
             if (linesize > 0) //no { on purpose! applies to next for loop
@@ -676,6 +676,8 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatte
     const int BUFFERSIZE = 65536;
     unsigned char line[BUFFERSIZE];
     
+    sentencesize.push_back(0); //dummy
+    
     ifstream *IN =  new ifstream( corpusfile.c_str() );
     if (!IN->good()) {
     	cerr << "ERROR: Unable to open file " << corpusfile << endl;
@@ -694,11 +696,14 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatte
         const int l = countwords(line, linesize);            
         if (l >= 256) {
             cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping! (" << linesize << " bytes)" << endl;
+            sentencesize.push_back(0);
             continue;
-       } else if (l == 0) {
+       } else if (l == 0) {        
         	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping! (" << linesize << " bytes)" << endl;
+        	sentencesize.push_back(0);
             continue;                
         }
+        sentencesize.push_back((unsigned char) l);
         totaltokens += l;
         
 		vector<pair<const EncAnyGram*, CorpusReference> > patterns = refmodel.getpatterns(line,linesize, true, sentence,1,MAXLENGTH);
