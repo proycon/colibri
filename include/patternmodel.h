@@ -211,7 +211,9 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     
     
     void decode(ClassDecoder & classdecoder, std::ostream *OUT);
-    void decode(IndexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT);    
+    void decode(IndexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT);
+    
+    void coveragereport(std::ostream *OUT, int segmentsize = 100000);    
 };
 
 
@@ -536,4 +538,15 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
     virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};
 };
+
+namespace std {
+    template <>
+    struct hash<CorpusReference> {
+     public: 
+            size_t operator()(CorpusReference ref) const throw() {            
+                return (ref.sentence * 1000) + ref.token;
+            }
+    };    
+}
+
 #endif

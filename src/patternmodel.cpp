@@ -871,6 +871,8 @@ bool IndexedPatternModel::exists(const EncAnyGram* key) const {
     return false;
 }
 
+
+
 const EncAnyGram* IndexedPatternModel::getkey(const EncAnyGram* key) {
     if (key->gapcount() == 0) {
         std::unordered_map<EncNGram,NGramData >::iterator iter = ngrams.find(*( (EncNGram*) key) );
@@ -947,6 +949,108 @@ double IndexedPatternModel::freq(const EncAnyGram* key) {
         if (skipgram_index.count( *( (EncSkipGram*) key)) > 0) return &skipgram_index[ *( (EncSkipGram*) key)];
     }
 }*/
+
+void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
+    unordered_map<CorpusReference, unordered_set<const EncAnyGram *> > reverseindex;
+    
+    int totalngramcoverage = 0;
+    int totalskipgramcoverage = 0;
+    int ngramcoverage[MAXN+1];    
+    int skipgramcoverage[MAXN+1];
+    for (int n = 1; n <= MAXN; n++) { ngramcoverage[n] = 0;  skipgramcoverage[n] = 0; }
+    int covered = 0 ;
+    int uncovered = 0;
+
+    for (int sentence = 1; sentence <= sentencesize.size(); sentence++) {
+        unsigned char slen = sentencesize[sentence];
+        
+        if (sentence % segmentsize == 1) {
+            if (OUT) *OUT << "Computing reverse index for next segment..." << endl;
+            reverseindex.clear();
+            for (unordered_map<const EncNGram,NGramData >::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
+                const EncAnyGram * anygram = &iter->first;
+                bool include = false;
+                for (set<CorpusReference>::iterator iter2 = iter->second.refs.begin() ; iter2 != iter->second.refs.end(); iter2++) {
+                    CorpusReference ref = *iter2;
+                    if ((ref.sentence >= sentence) && (ref.sentence < sentence+segmentsize)) {
+                        reverseindex[ref].insert(anygram);                        
+                    }                     
+                }
+            }                              
+        }
+        
+        
+        unordered_map<unsigned char, unordered_set<const EncAnyGram *> > sentencecoverage; //exact coverage for this sentence
+        
+        for (unsigned char token = 0; token < slen; token++) {
+            CorpusReference ref = CorpusReference( (uint32_t) sentence, token);
+            if ( reverseindex.count(ref) ) {
+                for (unordered_set<const EncAnyGram *>::const_iterator iter = reverseindex[ref].begin(); iter != reverseindex[ref].end(); iter++) {
+                    const EncAnyGram * anygram = *iter;
+                    for (unsigned char token2 = token; token2 < token+ anygram->n(); token2++) {
+                        sentencecoverage[token2].insert(anygram);
+                    }
+                } 
+            }
+        }
+        
+                
+        
+        for (unsigned char token = 0; token < slen; token++) {
+            if ( sentencecoverage.count(token) ) {
+                covered++;
+                bool foundskipgram = false;
+                bool foundngram = false;
+                for (int n = 1; n < MAXN; n++) {
+                    for (unordered_set<const EncAnyGram *>::const_iterator iter = sentencecoverage[token].begin(); iter != sentencecoverage[token].end(); iter++) {
+                        const EncAnyGram * anygram = *iter;
+                        if (anygram->n() == n) {
+                            if (anygram->isskipgram()) {                                                
+                                skipgramcoverage[n]++;
+                                foundskipgram = true;
+                                break; //only count once per n
+                            } else {
+                                ngramcoverage[n]++;
+                                foundngram = true;
+                                break; //only count once per n
+                            }
+                        }
+                    }          
+                }
+                if (foundskipgram) {
+                    totalskipgramcoverage++;
+                }
+                if (foundngram) {
+                    totalngramcoverage++;
+                }
+            } else {
+                uncovered++;
+            }
+        }
+        
+    }
+    
+    
+    if (OUT) {
+        *OUT << "COVERAGE REPORT" << endl;
+        *OUT << "----------------------------------" << endl;
+        *OUT << "Total number of tokens:   \t" << totaltokens << endl;
+        *OUT << "Total coverage:           \t" << covered << "\t" << (double) covered / totaltokens << endl;
+        *OUT << "Uncovered:                \t" << uncovered << "\t" << (double) uncovered / totaltokens << endl;
+        *OUT << "N-gram coverage:          \t" << totalngramcoverage << "\t" << (double) totalngramcoverage / totaltokens << endl;
+        for (int n = 1; n <= MAXN; n++) { 
+         *OUT << " " << n << "-gram coverage:         \t" << ngramcoverage[n] << "\t" << (double) ngramcoverage[n] / totaltokens << endl;
+        }
+        *OUT << "Skipgram coverage:          \t" << totalskipgramcoverage << "\t" << (double) totalskipgramcoverage / totaltokens << endl;
+        for (int n = 2; n <= MAXN; n++) { 
+         *OUT << " " << n << "-skipgram coverage:         \t" << skipgramcoverage[n] << "\t" << (double) skipgramcoverage[n] / totaltokens << endl;
+        }
+        
+    }
+}
+
+
+
 
 void IndexedPatternModel::outputinstance(const EncAnyGram * anygram, CorpusReference ref, ClassDecoder & decoder) {
 	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << count(anygram) << "\t" << setprecision(numeric_limits<double>::digits10 + 1) << freq(anygram) << endl; 
