@@ -1,14 +1,15 @@
-
+EXPERIMENT LOG
+----------------------
 
 
 
 Alignment experiments:
-	EM experiments (MT evaluation with moses):
-		2012-03											- Graph model (post-alignment adjustment of weights according to subsumption relations) -> unexpected and significant negative impact 
-		2012-04    	- europarl25k-nl-en-EMexp3 - 		- inclusion of null model (1 NULL position in source sentence) -> negligable impact (slightly positive, expected more though)
-		2012-04											- EM on type rather than sentence basis -> complete failure, bad idea
-		2012-04-27  - europarl25k-nl-en-EMexp2  		- EM initialised with a Jaccard run rather than uniform initialisation -> positive impact
-		2012-04-28  - europarl25k-nl-en-experimental	- considering multiple occurrences of types in the same sentence pair (EM) -> unexpected slightly NEGATIVE effect
-		2012-04		- europarl25k-nl-en-EMexp3			- EM with best-n thresholding, at increasingly higher values (i.e. less pruning) -> slightly positive impact, even at b20, 40   
+		2012-03											- EM-IBM1 followed by graph adjustment of weights according to subsumption relations) -> unexpected and significant negative impact 
+		2012-04    	- europarl25k-nl-en-EMexp/EMExp3	- EM-IBM1 with inclusion of null model (1 NULL position in source sentence) -> negligable impact (slightly positive, expected more though)
+		2012-04											- EM-IBM1 on type rather than sentence basis -> complete failure, bad idea
+		2012-04-27  - europarl25k-nl-en-EMexp2  		- EM-IBM1 initialised with a Jaccard run rather than uniform initialisation -> positive impact
+		2012-04-28  - europarl25k-nl-en-experimental	- considering multiple occurrences of types in the same sentence pair (EM-IBM1) -> unexpected slightly NEGATIVE effect
+		2012-04 	- europarl25k-nl-en-EMexp/EMExp2/3	- best-n thresholding compared to P thresholding -> 'well-picked' P values have more effect
+		2012-04		- europarl25k-nl-en-EMexp3			- EM-IBM1 with best-n thresholding, at increasingly higher values (i.e. less pruning) -> slightly positive impact, even at b20, 40   
 
 
