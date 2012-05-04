@@ -51,9 +51,8 @@ for x in itertools.chain( *( x.keys() for x in pairs ) ):
             if not (x in pairs[i]):
                 overlap = False
                 break
-        if overlap:
-            if not x in overlapmem:                
-                print "PAIR MATCH:", x
+        if overlap:      
+            print "PAIR MATCH:", x
             pairoverlap += 1
             
             
@@ -68,9 +67,8 @@ for x in itertools.chain( *( x.keys() for x in source ) ):
             if not (x in source[i]):
                 overlap = False
                 break
-        if overlap:
-            if not x in overlapmem:                
-                print "SOURCE MATCH:", x
+        if overlap:                
+            print "SOURCE MATCH:", x
             sourceoverlap += 1
             
             
@@ -87,9 +85,8 @@ for x in itertools.chain( *( x.keys() for x in target ) ):
             if not (x in target[i]):
                 overlap = False
                 break
-        if overlap:
-            if not x in overlapmem:                
-                print "TARGET MATCH:", x
+        if overlap:      
+            print "TARGET MATCH:", x
             targetoverlap += 1
             
 
