@@ -1824,6 +1824,25 @@ int intersection( set<CorpusReference> & a, set<CorpusReference> & b) {
 
 
 
+int intersection( set<ExtCorpusReference> & a, set<ExtCorpusReference> & b) {    
+    //Jaccard co-occurrence    
+    int intersectioncount = 0;        
+    set<ExtCorpusReference>::iterator iter_a = a.begin();    
+    set<ExtCorpusReference>::iterator iter_b = b.begin();
+    while ((iter_a !=a.end()) && (iter_b!=b.end())) {    
+        if (iter_a->contains(*iter_b)) {
+            intersectioncount++;
+            iter_b++;
+        } else if (*iter_b > *iter_a) {
+            iter_a++;
+        } else if (*iter_b < *iter_a) {
+            iter_b++;
+        } 
+    }
+    return intersectioncount;
+}
+
+
 GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS, bool DOCHILDREN, bool DOXCOUNT, bool DOTEMPLATES, bool DOINSTANCES, bool DOSKIPUSAGE, bool DOSKIPCONTENT, bool DOSUCCESSORS, bool DOPREDECESSORS) {
     this->model = model;
     model->model_id = GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION;
@@ -1956,10 +1975,30 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
 
     if (DOXCOUNT) {
         cerr << "Computing exclusive count" << endl;
+        
+        for(std::unordered_map<EncNGram,NGramData >::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
+            const EncAnyGram * anygram = (const EncAnyGram *) &(iter->first);
+            if (rel_subsumption_parents.count(anygram)) {
+                data_xcount[anygram] = computexcount(anygram);
+            } else {
+                data_xcount[anygram] =  iter->second.count();
+            } 
+        }
+        for(std::unordered_map<EncSkipGram,SkipGramData >::iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {
+            const EncAnyGram * anygram = (const EncAnyGram *) &(iter->first);
+            if (rel_subsumption_parents.count(anygram)) {
+                data_xcount[anygram] = computexcount(anygram);
+            } else {
+                data_xcount[anygram] =  iter->second.count();
+            } 
+        }        
+        
+        /*
         for (std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> >::const_iterator iter = rel_subsumption_parents.begin(); iter != rel_subsumption_parents.end(); iter++) {
             const EncAnyGram* anygram = iter->first;
             data_xcount[anygram] = computexcount(anygram);
-        }        
+        } 
+        */       
         if (!DOPARENTS) rel_subsumption_parents.clear();
     }
 }
@@ -2012,25 +2051,41 @@ int GraphPatternModel::transitivereduction() {
 int GraphPatternModel::computexcount(const EncAnyGram* anygram) {
     const AnyGramData* data = model->getdata(anygram);
     if (data == NULL) throw "xcount: No such anygram";
-    set<CorpusReference> allrefs = data->get_refs(); 
-        
+    
+    
     //compute union of all parent references
-    set<CorpusReference> allparentrefs;
+    set<ExtCorpusReference> allparentrefs;
     for (std::unordered_set<const EncAnyGram*>::iterator iter = rel_subsumption_parents[anygram].begin(); iter != rel_subsumption_parents[anygram].end(); iter++) {
-        const AnyGramData * parentdata = model->getdata(*iter);
+        const EncAnyGram * parentgram = *iter;
+        const AnyGramData * parentdata = model->getdata(parentgram);
         if (parentdata != NULL) {
             set<CorpusReference> parentrefs = parentdata->get_refs();
             for (set<CorpusReference>::iterator iter2 = parentrefs.begin(); iter2 != parentrefs.end(); iter2++) {
-                CorpusReference r = *iter2; 
-                allparentrefs.insert(r);
+                CorpusReference r = *iter2;
+                allparentrefs.insert( ExtCorpusReference(r,parentgram->n()) );
             }
         }        
     }
-    
-    
-        
-    //compute: union - intersection
-    return allrefs.size() - intersection(allrefs, allparentrefs);
+   
+   
+   
+   set<CorpusReference> allrefs = data->get_refs();
+
+   
+   set<ExtCorpusReference> allrefs_ext;
+   for (set<CorpusReference>::iterator iter = allrefs.begin(); iter != allrefs.end(); iter++) {
+        allrefs_ext.insert(ExtCorpusReference(*iter,anygram->n()));
+        //cerr << "ALLREFS: " <<  iter->sentence << ':' << (int) iter->token << ':' << (int) anygram->n() << endl;
+   }
+   /*for (set<ExtCorpusReference>::iterator iter = allparentrefs.begin(); iter != allparentrefs.end(); iter++) {
+        cerr << "PARREFS: " <<  iter->sentence << ':' << (int) iter->token << ':' << (int) iter->n << endl;
+   }*/
+   
+   //const int i = intersection(allparentrefs,allrefs_ext);
+   //cerr << "INTERSECTION: " << i << endl;
+   //cerr << "XCOUNT: " << allrefs_ext.size() - i << endl << endl;
+   //compute: union - intersection
+   return allrefs_ext.size() - intersection(allparentrefs,allrefs_ext);;
 }
 
 

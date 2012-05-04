@@ -44,6 +44,40 @@ class CorpusReference {
     bool operator!=(const CorpusReference &other) const { return ( (sentence != other.sentence) || (token != other.token)); };
 };
 
+class ExtCorpusReference {
+    public:
+     uint32_t sentence;
+     unsigned char token;
+     char n;
+     ExtCorpusReference(const CorpusReference & ref, char n) { sentence = ref.sentence; token = ref.token; this->n = n; };
+     
+     bool contains(const ExtCorpusReference& other) const {
+        if (sentence != other.sentence) return false;        
+        return ((other.token >= token) && (other.token + other.n <= token + n));
+     }
+     
+     bool operator< (const ExtCorpusReference& other) const {
+        if (sentence < other.sentence) {
+            return true;
+        } else if (sentence == other.sentence) {
+            return (token < other.token);
+        } else {
+            return false;
+        }
+    } 
+    
+    bool operator> (const ExtCorpusReference& other) const {
+        if (sentence > other.sentence) {
+            return true;
+        } else if (sentence == other.sentence) {
+            return (token + n > other.token + other.n);
+        } else {
+            return false;
+        }
+    } 
+};
+
+
 class AnyGramData {
     public: 
      virtual std::set<CorpusReference> get_refs() const =0;
