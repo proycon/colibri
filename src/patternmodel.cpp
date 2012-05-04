@@ -2012,7 +2012,7 @@ int GraphPatternModel::transitivereduction() {
 int GraphPatternModel::xcount(const EncAnyGram* anygram) {
     const AnyGramData* data = model->getdata(anygram);
     if (data == NULL) throw "xcount: No such anygram";
-    set<CorpusReference> allrefs = data->get_refs();
+    set<CorpusReference> allrefs = data->get_refs(); 
         
     //compute union of all parent references
     set<CorpusReference> parentrefs;
