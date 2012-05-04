@@ -42,7 +42,7 @@ targettotal = 0
 
 print >>sys.stderr, "Computing pair overlap"
 overlapmem = {}    
-for x in itertools.chain( ( x.keys() for x in pairs ) ):    
+for x in itertools.chain( *( x.keys() for x in pairs ) ):    
     if not x in overlapmem:
         overlapmem[x] = True        
         pairtotal += 1
@@ -59,7 +59,7 @@ for x in itertools.chain( ( x.keys() for x in pairs ) ):
             
 print >>sys.stderr, "Computing source overlap"                    
 overlapmem = {}
-for x in itertools.chain( ( x.keys() for x in source ) ):    
+for x in itertools.chain( *( x.keys() for x in source ) ):    
     if not x in overlapmem:
         overlapmem[x] = True        
         sourcetotal += 1
@@ -78,7 +78,7 @@ for x in itertools.chain( ( x.keys() for x in source ) ):
 
 print >>sys.stderr, "Computing target overlap"
 overlapmem = {}
-for x in itertools.chain( ( x.keys() for x in target ) ):    
+for x in itertools.chain( *( x.keys() for x in target ) ):    
     if not x in overlapmem:
         overlapmem[x] = True        
         targettotal += 1
