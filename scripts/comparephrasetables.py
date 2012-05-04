@@ -9,7 +9,7 @@ import itertools
 try:
     phrasetables = sys.argv[1:]
 except:
-    print >>sys.stderr, "Usage: comparephrasetable.py phrasetable1 phrasetable2"
+    print >>sys.stderr, "Usage: comparephrasetables.py phrasetable1 phrasetable2"
 
 pairs = []
 source = []
