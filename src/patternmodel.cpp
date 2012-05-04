@@ -1958,7 +1958,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS
         cerr << "Computing exclusive count" << endl;
         for (std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> >::const_iterator iter = rel_subsumption_parents.begin(); iter != rel_subsumption_parents.end(); iter++) {
             const EncAnyGram* anygram = iter->first;
-            data_xcount[anygram] = xcount(anygram);
+            data_xcount[anygram] = computexcount(anygram);
         }        
         if (!DOPARENTS) rel_subsumption_parents.clear();
     }
@@ -2009,26 +2009,28 @@ int GraphPatternModel::transitivereduction() {
     return pruned;	
 }
 
-int GraphPatternModel::xcount(const EncAnyGram* anygram) {
+int GraphPatternModel::computexcount(const EncAnyGram* anygram) {
     const AnyGramData* data = model->getdata(anygram);
     if (data == NULL) throw "xcount: No such anygram";
     set<CorpusReference> allrefs = data->get_refs(); 
         
     //compute union of all parent references
-    set<CorpusReference> parentrefs;
+    set<CorpusReference> allparentrefs;
     for (std::unordered_set<const EncAnyGram*>::iterator iter = rel_subsumption_parents[anygram].begin(); iter != rel_subsumption_parents[anygram].end(); iter++) {
         const AnyGramData * parentdata = model->getdata(*iter);
         if (parentdata != NULL) {
-            parentrefs = parentdata->get_refs();
+            set<CorpusReference> parentrefs = parentdata->get_refs();
             for (set<CorpusReference>::iterator iter2 = parentrefs.begin(); iter2 != parentrefs.end(); iter2++) {
                 CorpusReference r = *iter2; 
-                parentrefs.insert(r);
+                allparentrefs.insert(r);
             }
         }        
     }
+    
+    
         
     //compute: union - intersection
-    return allrefs.size() - intersection(allrefs, parentrefs);
+    return allrefs.size() - intersection(allrefs, allparentrefs);
 }
 
 
@@ -2191,7 +2193,7 @@ void GraphPatternModel::readskipgramdata(std::istream * in, const EncSkipGram & 
 void GraphPatternModel::writengramdata(std::ostream * out, const EncNGram & ngram) {
 	model->writengramdata(out,ngram);
     if (DOXCOUNT) {
-        uint32_t _xcount = xcount((const EncAnyGram*) &ngram);
+        uint32_t _xcount = data_xcount[(const EncAnyGram*) &ngram]; //;xcount((const EncAnyGram*) &ngram);
         out->write( (char*) &_xcount, sizeof(uint32_t));
     }
     
@@ -2208,7 +2210,7 @@ void GraphPatternModel::writengramdata(std::ostream * out, const EncNGram & ngra
 void GraphPatternModel::writeskipgramdata(std::ostream * out, const EncSkipGram & skipgram) {
 	model->writeskipgramdata(out,skipgram);    
     if (DOXCOUNT) {
-        uint32_t _xcount = xcount((const EncAnyGram*) &skipgram);
+        uint32_t _xcount = data_xcount[(const EncAnyGram*) &skipgram];// xcount((const EncAnyGram*) &skipgram);
         out->write( (char*) &_xcount, sizeof(uint32_t));
     }
     if (DOPARENTS)  writerelations(out, (const EncAnyGram*) &skipgram, rel_subsumption_parents);        
@@ -2448,6 +2450,10 @@ void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OU
 		cerr << "Query word not found" << endl;
 		return;
 	} 
+	cerr << "Query:" << endl;
+    *OUT << "\t" << focus->decode(classdecoder) << "\t" << model->occurrencecount(focus) << "\t" << model->coveragecount(focus) << "\t" << model->coverage(focus);
+	if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[focus] << '\t' << (double) data_xcount[focus] / model->occurrencecount(focus);
+	*OUT << endl;		
 	cerr << "Parent relations - " << rel_subsumption_parents[focus].size() << endl;
 	outputrelations(classdecoder,OUT,  rel_subsumption_parents[focus]);
 	cerr << "Child relations - " << rel_subsumption_children[focus].size() << endl;

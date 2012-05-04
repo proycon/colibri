@@ -405,7 +405,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     
     int transitivereduction();
     
-    int xcount(const EncAnyGram* anygram); //exclusive count    
+    int computexcount(const EncAnyGram* anygram); //exclusive count    
         
     void save(const std::string & filename) { writefile(filename); }
     
