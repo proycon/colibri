@@ -1173,7 +1173,7 @@ class MTWrapper(object):
         if not self.runcmd(self.EXEC_COLIBRI_GRAPHER + ' -f ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHER_OPTIONS, "Building target-side graph model",self.gettargetfilename('graphpatternmodel.colibri') ): return False
         
         if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -t ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -N ' + self.COLIBRI_ALIGNER_OPTIONS, "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
-P        if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -t ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -s ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gett2sfilename('alignmodel.colibri') + ' -N ' + self.COLIBRI_ALIGNER_OPTIONS, "Building reverse alignment model",self.gett2sfilename('alignmodel.colibri') ): return False
+        if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -t ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -s ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gett2sfilename('alignmodel.colibri') + ' -N ' + self.COLIBRI_ALIGNER_OPTIONS, "Building reverse alignment model",self.gett2sfilename('alignmodel.colibri') ): return False
         
                 
         if self.BUILD_COLIBRI_MOSESPHRASETABLE:            
