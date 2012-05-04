@@ -12,6 +12,6 @@ Alignment experiments:
 		2012-04 	- europarl25k-nl-en-EMexp/EMExp2/3	- best-n thresholding compared to P thresholding -> 'well-picked' P values have more effect
 		2012-04		- europarl25k-nl-en-EMexp3			- EM-IBM1 with best-n thresholding, at increasingly higher values (i.e. less pruning) -> slightly positive impact, even at b20, 40   
 	
-		2012-05		- europarl25k-nl-en-EMexp4			- Different iterations of EM-IBM1 -> RUNNING
-		2012-05		- europarl25k-nl-en-EMexp2b			- Overall EM-IBM1 test with lowest pattern-finding threshold (t2), including Jaccard initialisation, best-n thresholding -> RUNNING
-
+		2012-05		- europarl25k-nl-en-EMexp4			- Different iterations of EM-IBM1 -> Better results around 10 iterations, more iterations
+		2012-05		- europarl25k-nl-en-EMexp2b			- Overall EM-IBM1 test with lowest pattern-finding threshold (t2), including Jaccard initialisation, best-n thresholding -> jaccard initialisation has positive impact / scores comparable to t3
+		2012-05		- europarl25k-nl-en-EMexp4			- Simplified baseline run without lexical weighting scores -> scores better than original baseline! 

@@ -1266,8 +1266,8 @@ class MTWrapper(object):
                     
             if not self.runcmd(self.EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE + ' ' + self.gets2tfilename('half.s2t') + ' ' + self.gets2tfilename('half.t2s.sorted') + ' ' + self.gets2tfilename('phrasetable') + ' ' + self.PHRASESCORE_OPTIONS, 'Consolidating two phrase table halves', self.gets2tfilename('phrasetable') ): return False
                 
-        #if self.MOSES_PRUNELEXWEIGHT:             
-#            self.moses_prunelexweight(self.gets2tfilename('phrasetable'))
+        #if self.MOSES_SIMPLIFYPHRASETABLE:             
+            #self.moses_prunelexweight(self.gets2tfilename('phrasetable'))
                         
         return True
         
