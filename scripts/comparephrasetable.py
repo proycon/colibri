@@ -4,6 +4,7 @@
 import sys
 import codecs
 from collections import defaultdict
+import itertools
 
 try:
     phrasetables = sys.argv[1:]
@@ -29,7 +30,7 @@ for phrasetable in phrasetables:
     
 
 overlapmem = {}    
-for pair in ( x.keys() for x in pairs ):    
+for pair in itertools.chain( ( x.keys() for x in pairs ) ):    
     overlap = True
     for i, phrasetable in enumerate(phrasetables): 
         if not (pair in pairs[i]):
@@ -41,7 +42,7 @@ for pair in ( x.keys() for x in pairs ):
         overlapmem[pair] = True
         
 overlapmem = {}        
-for s in ( x.keys() for x in source ):    
+for s in  itertools.chain( ( x.keys() for x in source ) ):    
     overlap = True
     for i, phrasetable in enumerate(phrasetables): 
         if not (s in source[i]):
@@ -53,7 +54,7 @@ for s in ( x.keys() for x in source ):
         overlapmem[s] = True
 
 overlapmem = {}
-for t in ( x.keys() for x in target ):    
+for t in  itertools.chain( ( x.keys() for x in target ) ):    
     overlap = True
     for i, phrasetable in enumerate(phrasetables): 
         if not (t in target[i]):
