@@ -77,13 +77,15 @@ class SkipGramData: public AnyGramData {
 
 class ModelReader {
    protected:
-    uint64_t totaltokens; //INCLUDES TOKENS NOT COVERED BY THE MODEL!
+    
     uint64_t totaltypes;
     bool DEBUG; 
     
     int FOUNDMINN; 
     int FOUNDMAXN; 
    public:
+    uint64_t totaltokens; //INCLUDES TOKENS NOT COVERED BY THE MODEL!
+   
     uint64_t model_id;
     virtual uint64_t id() =0;
     virtual void readheader(std::istream * in, bool ignore=false) =0;
@@ -391,7 +393,8 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     	std::cerr << "Pass one, reading implied indexedpatternmodel..." << std::endl;
     	//reading is done in two passes
     	secondpass = false;
-    	readfile(graphmodelfilename, DEBUG);    
+    	readfile(graphmodelfilename, DEBUG);
+    	model->totaltokens = totaltokens;    
         std::cerr << "Pass two, reading graph data..." << std::endl;
         secondpass = true;
         readfile(graphmodelfilename, DEBUG);
