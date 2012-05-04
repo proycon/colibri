@@ -90,18 +90,25 @@ for x in itertools.chain( *( x.keys() for x in target ) ):
             targetoverlap += 1
             
 
-print >>sys.stderr, "Total combined pairs: " , pairtotal
+print >>sys.stderr, "Total combined pairs:\t" , pairtotal
 for i, phrasetable in enumerate(phrasetables):
-    print >>sys.stderr, "Total pairs in " + phrasetable + ": ", len(pairs[i]), len(pairs[i]) / float(pairtotal)
-print >>sys.stderr, "Overlapping pairs: " , pairoverlap,  pairoverlap / float(pairtotal)
+    print >>sys.stderr, "Total pairs in " + phrasetable + ":\t", len(pairs[i]), len(pairs[i]) / float(pairtotal)
+print >>sys.stderr, "Overlapping pairs:\t" , pairoverlap,  pairoverlap / float(pairtotal)
+for i, phrasetable in enumerate(phrasetables):
+    print >>sys.stderr, "   ...as fraction of " + phrasetable + ":\t",pairoverlap / float(len(pairs[i]))
 
 print >>sys.stderr, "Total combined source patterns: " , sourcetotal
 for i, phrasetable in enumerate(phrasetables):
     print >>sys.stderr, "Total source patterns in " + phrasetable + ": ", len(source[i]), len(source[i]) / float(sourcetotal)
 print >>sys.stderr, "Overlapping source patterns: " , sourceoverlap,  sourceoverlap / float(sourcetotal)
-
+for i, phrasetable in enumerate(phrasetables):
+    print >>sys.stderr, "   ...as fraction of " + phrasetable + ":\t",sourceoverlap / float(len(source[i]))
 
 print >>sys.stderr, "Total combined target patterns: " , targettotal
 for i, phrasetable in enumerate(phrasetables):
     print >>sys.stderr, "Total target patterns in " + phrasetable + ": ", len(target[i]), len(target[i]) / float(targettotal)
 print >>sys.stderr, "Overlapping target patterns: " , targetoverlap,  targetoverlap / float(targettotal)
+for i, phrasetable in enumerate(phrasetables):
+    print >>sys.stderr, "   ...as fraction of " + phrasetable + ":\t",targetoverlap / float(len(target[i]))
+    
+    
