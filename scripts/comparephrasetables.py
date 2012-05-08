@@ -52,7 +52,8 @@ for x in itertools.chain( *( x.keys() for x in pairs ) ):
                 overlap = False
                 break
         if overlap:      
-            print "PAIR MATCH:", x[0] ,"<--->", x[1]
+            s =  "PAIR MATCH:", x[0] ,"<--->", x[1]
+            print s.encode('utf-8')
             pairoverlap += 1
             
             
@@ -68,7 +69,8 @@ for x in itertools.chain( *( x.keys() for x in source ) ):
                 overlap = False
                 break
         if overlap:                
-            print "SOURCE MATCH:", x
+            s =  "SOURCE MATCH:", x
+            print s.encode('utf-8')
             sourceoverlap += 1
             
             
@@ -86,7 +88,8 @@ for x in itertools.chain( *( x.keys() for x in target ) ):
                 overlap = False
                 break
         if overlap:      
-            print "TARGET MATCH:", x
+            s  = "TARGET MATCH:", x
+            print s.encode('utf-8')
             targetoverlap += 1
             
 
