@@ -52,7 +52,7 @@ for x in itertools.chain( *( x.keys() for x in pairs ) ):
                 overlap = False
                 break
         if overlap:      
-            s =  "PAIR MATCH: " +  x[0]  +  "<---> " +  x[1]
+            s =  "PAIR MATCH: " +  x[0]  +  " <---> " +  x[1]
             print s.encode('utf-8')
             pairoverlap += 1
             
