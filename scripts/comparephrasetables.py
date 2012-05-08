@@ -31,67 +31,48 @@ for phrasetable in phrasetables:
         target[-1][t] += 1
         
 
-    
-pairoverlap = 0
-pairtotal = 0
-sourceoverlap = 0
-sourcetotal = 0
-targetoverlap = 0
-targettotal = 0
+# def shorten(item, items, pivot = 0):    
+    # if isinstance(item, tuple):
+        #TODO: all permutations
+    # else:
+        # words = item.split(' ')
+        # l = 
+        # while l >= 1:
+            # words
+        # yie
+        
+        
+
+def computeoverlap(items, label= 'PAIR', pivot = 0):    
+    total = 0
+    overlap = 0
+    overlapmem = {}    
+    for item in itertools.chain( *( x.keys() for x in items ) ):    
+        if not item in overlapmem:
+            total += 1
+            overlap = True
+            for i, _ in enumerate(items): 
+                if not (item in items[i]):
+                    overlap = False
+                    break
+            if overlap:      
+                s =  label + ' MATCH:' + '\t' + item[0]  +  "\t<--->\t" +  item[1]
+                print s.encode('utf-8')
+                overlap += 1
+            overlapmem[item] = overlap 
+    return total, overlap
+
     
 
-print >>sys.stderr, "Computing pair overlap"
-overlapmem = {}    
-for x in itertools.chain( *( x.keys() for x in pairs ) ):    
-    if not x in overlapmem:
-        overlapmem[x] = True        
-        pairtotal += 1
-        overlap = True
-        for i, phrasetable in enumerate(phrasetables): 
-            if not (x in pairs[i]):
-                overlap = False
-                break
-        if overlap:      
-            s =  "PAIR MATCH: " +  x[0]  +  " <---> " +  x[1]
-            print s.encode('utf-8')
-            pairoverlap += 1
-            
-            
-print >>sys.stderr, "Computing source overlap"                    
-overlapmem = {}
-for x in itertools.chain( *( x.keys() for x in source ) ):    
-    if not x in overlapmem:
-        overlapmem[x] = True        
-        sourcetotal += 1
-        overlap = True
-        for i, phrasetable in enumerate(phrasetables): 
-            if not (x in source[i]):
-                overlap = False
-                break
-        if overlap:                
-            s =  "SOURCE MATCH: " +  x
-            print s.encode('utf-8')
-            sourceoverlap += 1
-            
-            
-                    
+print >>sys.stderr, "Computing source overlap"     
+sourcetotal, sourceoverlap = computeoverlap(source, 'SOURCE')
+               
+print >>sys.stderr, "Computing target overlap"     
+targettotal, targetoverlap = computeoverlap(target, 'TARGET')
+                                
+print >>sys.stderr, "Computing pair overlap"     
+pairtotal, pairoverlap = computeoverlap(pairs, 'PAIR')
 
-print >>sys.stderr, "Computing target overlap"
-overlapmem = {}
-for x in itertools.chain( *( x.keys() for x in target ) ):    
-    if not x in overlapmem:
-        overlapmem[x] = True        
-        targettotal += 1
-        overlap = True
-        for i, phrasetable in enumerate(phrasetables): 
-            if not (x in target[i]):
-                overlap = False
-                break
-        if overlap:      
-            s  = "TARGET MATCH: " +  x
-            print s.encode('utf-8')
-            targetoverlap += 1
-            
 
 print >>sys.stderr, "Total combined pairs:\t" , pairtotal
 for i, phrasetable in enumerate(phrasetables):
