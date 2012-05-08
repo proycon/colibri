@@ -7,7 +7,7 @@ import itertools
 
 try:
     phrasetable = sys.argv[1]
-    column = sys.argv[2]
+    column = int(sys.argv[2])
     patternmodel = sys.argv[3]
 except:
     print >>sys.stderr, "Usage: comparephrasetables.py phrasetable column patternmodel"
