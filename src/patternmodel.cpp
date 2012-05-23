@@ -859,17 +859,22 @@ void IndexedPatternModel::computestats() {
 }
 
 void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
-    unordered_map<CorpusReference, unordered_set<const EncAnyGram *> > reverseindex;
+    unordered_map<CorpusReference, unordered_set<const EncAnyGram *> > reverseindex; //for coverage
     
     int totalngramcoverage = 0;
     int totalskipgramcoverage = 0;
+    int totalskipgramencapsulation = 0;
+    int totalskipgramoutside = 0;
     int ngramcoverage[MAXN+1];    
     int skipgramcoverage[MAXN+1];
-    for (int n = 1; n <= MAXN; n++) { ngramcoverage[n] = 0;  skipgramcoverage[n] = 0; }
+    int skipgramencapsulation[MAXN+1];
+    for (int n = 1; n <= MAXN; n++) { ngramcoverage[n] = 0;  skipgramcoverage[n] = 0; skipgramencapsulation[n] = 0; }
 
             
-    int covered = 0 ;
+    int covered = 0;
+    int encapsulated = 0;
     int uncovered = 0;
+    int outside = 0; // uncovered + unencapsulated
 
     for (int sentence = 1; sentence < sentencesize.size(); sentence++) {
         unsigned char slen = sentencesize[sentence];
@@ -902,14 +907,32 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
         
         
         unordered_map<unsigned char, unordered_set<const EncAnyGram *> > sentencecoverage; //exact coverage for this sentence
+        unordered_map<unsigned char, unordered_set<const EncAnyGram *> > sentenceencapsulation; //exact coverage for this sentence
         
         for (unsigned char token = 0; token < slen; token++) {
             CorpusReference ref = CorpusReference( (uint32_t) sentence, token);
             if ( reverseindex.count(ref) ) {
                 for (unordered_set<const EncAnyGram *>::const_iterator iter = reverseindex[ref].begin(); iter != reverseindex[ref].end(); iter++) {
                     const EncAnyGram * anygram = *iter;
-                    for (unsigned char token2 = token; token2 < token+ anygram->n(); token2++) {
-                        sentencecoverage[token2].insert(anygram);
+                    if (anygram->isskipgram()) {
+                        //skipgram
+                        const EncSkipGram * skipgram = (const EncSkipGram *) anygram;
+                        vector<bool> mask;
+                        skipgram->mask(mask);
+                        int offset = 0;
+                        for (vector<bool>::iterator maskiter = mask.begin(); maskiter != mask.end(); maskiter++) {
+                            if (*maskiter) {
+                                sentencecoverage[token+offset].insert(anygram);
+                            } else {
+                                sentenceencapsulation[token+offset].insert(anygram);
+                            }
+                            offset++;
+                        }                        
+                    } else {
+                        //ngram
+                        for (unsigned char token2 = token; token2 < token+ anygram->n(); token2++) {
+                            sentencecoverage[token2].insert(anygram);
+                        }
                     }
                 } 
             }
@@ -947,6 +970,21 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
             } else {
                 uncovered++;
             }
+            
+            if ( sentenceencapsulation.count(token)) {
+                encapsulated++;    
+                for (int n = 1; n < MAXN; n++) {
+                    for (unordered_set<const EncAnyGram *>::const_iterator iter = sentencecoverage[token].begin(); iter != sentencecoverage[token].end(); iter++) {
+                        const EncAnyGram * anygram = *iter;
+                        if (anygram->n() == n) {                                              
+                            skipgramencapsulation[n]++;
+                            break; //only count once per n
+                        }
+                    }          
+                }
+            } else if (sentencecoverage.count(token) == 0) {
+                outside++;
+            }            
         }
         
     }
@@ -959,8 +997,11 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
         *OUT << "----------------------------------" << endl;
         *OUT << "Total number of tokens:   " << setw(10) << totaltokens << endl << endl;
         *OUT << "                          " << setw(10) << "TOKENS" << setw(10) << "COVERAGE" << setw(7) << "TYPES" << setw(11) << "TTR" << setw(10) << "COUNT" << setw(10) << "FREQUENCY" << endl;    
-        *OUT << "Total coverage:           " << setw(10) << covered << setw(10) << (double) covered / totaltokens << setw(7) << ngrams.size() + skipgrams.size()  << setw(11)<< (double)  covered / ngrams.size() + skipgrams.size() << setw(10) << totalngramcount+totalskipgramcount << setw(10) << (double) (totalngramcount+totalskipgramcount) / totalcount << endl;
+        *OUT << "Total coverage:           " << setw(10) << covered << setw(10) << (double) covered / totaltokens << setw(7) << ngrams.size() + skipgrams.size()  << setw(11)<< (double)  covered / (ngrams.size() + skipgrams.size()) << setw(10) << totalngramcount+totalskipgramcount << setw(10) << (double) (totalngramcount+totalskipgramcount) / totalcount << endl;
         *OUT << "Uncovered:                " << setw(10) << uncovered << setw(10) << (double) uncovered / totaltokens <<endl << endl;
+        
+        
+        
         *OUT << "N-gram coverage:          " << setw(10) << totalngramcoverage << setw(10) << (double) totalngramcoverage / totaltokens << setw(7) << ngrams.size() <<setw(11) << (double) totalngramcoverage / ngrams.size() << setw(10) << totalngramcount << setw(10) << (double) totalngramcount / totalcount << endl;
         for (int n = 1; n <= MAXN; n++) {
          if (ngramcoverage[n] > 0) {
@@ -977,7 +1018,20 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
           for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) if (iter->first.n() == n) t++; 
           *OUT << " " << n << "-skipgram coverage:     " << setw(10) << skipgramcoverage[n] << setw(10) << (double) skipgramcoverage[n] / totaltokens << setw(7) << t << setw(11) <<  (double) t / skipgramcoverage[n] << setw(10) << skipgramcount[n] << setw(10) << (double) skipgramcount[n] / totalcount << endl;
          }
-        }        
+        }
+        *OUT << "----------------------------------" << endl;
+        *OUT << "                          " << setw(10) << "TOKENS" << setw(10) << "ENCAPSULATION";    
+        *OUT << "Total encapsulation:           " << setw(10) << encapsulated << setw(10) << (double) encapsulated / totaltokens << endl;
+        *OUT << "Outside (uncovered+unencapsulated):                " << setw(10) << outside << setw(10) << (double) outside / totaltokens << endl << endl;
+        for (int n = 2; n <= MAXN; n++) {         
+         if (skipgramcoverage[n] > 0) {
+          int t = 0;
+          for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) if (iter->first.n() == n) t++; 
+          *OUT << " " << n << "-skipgram coverage:     " << setw(10) << skipgramencapsulation[n] << setw(10) << (double) skipgramencapsulation[n] / totaltokens << endl;
+         }
+        }
+                
+                
     }
 }
 
@@ -2397,6 +2451,14 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
     
 
 }
+
+
+
+
+/*void GraphPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
+   //TODO 
+}*/
+
 
 void replaceAll(std::string& str, const std::string& from, const std::string& to) {
     size_t start_pos = 0;

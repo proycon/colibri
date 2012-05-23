@@ -444,8 +444,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     void save(const std::string & filename) { writefile(filename); }
     
     virtual uint64_t id() { return GRAPHPATTERNMODEL + GRAPHPATTERNMODELVERSION; }
-    
-    
+        
     
     virtual void readheader(std::istream * in, bool ignore = false);
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
@@ -461,6 +460,8 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     
     void decode(ClassDecoder & classdecoder, std::ostream *OUT);
     void stats(std::ostream *OUT);
+    //void coveragereport(std::ostream *OUT, int segmentsize = 100000); //TODO
+    
     void outputgraph(ClassDecoder & classdecoder, std::ostream *OUT);
     void outputgraph(ClassDecoder & classdecoder, std::ostream *OUT, const EncAnyGram *);
     void outputgraphvizrelations( const EncAnyGram * anygram, std::ostream *OUT, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour);

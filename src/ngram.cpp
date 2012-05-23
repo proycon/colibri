@@ -499,6 +499,26 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
     return container.size();
 }
 
+void EncSkipGram::mask(std::vector<bool> & container) const { //returns a boolean mask of the skipgram (0 = gap(encapsulation) , 1 = skipgram coverage)
+    bool prevnull = false;
+    int skipnum = 0;
+    for (int i = 0; i < _size; i++) {
+        //cerr << (int) data[i] << ':' << prevnull << ':' << skipcount << endl;
+        if (data[i] == 0) {
+            if (prevnull) {       
+                for (int j = 0; j < skipsize[skipnum]; j++) {
+                    container.push_back(false);
+                }           
+                skipnum++;              
+            }
+            prevnull = true;
+        } else {
+            prevnull = false;
+            container.push_back(true);
+        }
+    }  
+}
+
 void EncSkipGram::getgaps(std::vector<std::pair<int,int> > & gaps) const {
     //TODO
     int pos = 0;
