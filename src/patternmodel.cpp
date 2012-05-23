@@ -2455,9 +2455,184 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
 
 
 
-/*void GraphPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
-   //TODO 
-}*/
+void GraphPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
+    
+    unordered_map<CorpusReference, unordered_set<const EncAnyGram *> > reverseindex; //for coverage
+    
+    int totalngramcoverage = 0;
+    int totalskipgramcoverage = 0;
+    int totalskipgramencapsulation = 0;
+    int totalskipgramoutside = 0;
+    int ngramcoverage[MAXN+1];    
+    int skipgramcoverage[MAXN+1];
+    int skipgramencapsulation[MAXN+1];
+    for (int n = 1; n <= MAXN; n++) { ngramcoverage[n] = 0;  skipgramcoverage[n] = 0; skipgramencapsulation[n] = 0; }
+
+            
+    int covered = 0;
+    int encapsulated = 0;
+    int uncovered = 0;
+    int outside = 0; // uncovered + unencapsulated
+
+    for (int sentence = 1; sentence < model->sentencesize.size(); sentence++) {
+        unsigned char slen = model->sentencesize[sentence];
+        //cerr << "SENTENCE=" << sentence << ";SLEN=" << (int) slen << endl;
+        
+        if (sentence % segmentsize == 1) {
+            if (OUT) *OUT << "Computing reverse index for next segment..." << endl;
+            reverseindex.clear();
+            for (unordered_map<const EncNGram,NGramData >::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++) {
+                const EncAnyGram * anygram = &iter->first;
+                for (set<CorpusReference>::iterator iter2 = iter->second.refs.begin() ; iter2 != iter->second.refs.end(); iter2++) {
+                    CorpusReference ref = *iter2;
+                    if ((ref.sentence >= sentence) && (ref.sentence < sentence+segmentsize)) {
+                        reverseindex[ref].insert(anygram);                   
+                    }                     
+                }
+            }
+            for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++) {
+                const EncAnyGram * anygram = &iter->first;
+                for(unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {                
+                    for (set<CorpusReference>::iterator iter3 = iter2->second.refs.begin() ; iter3 != iter2->second.refs.end(); iter3++) {
+                        CorpusReference ref = *iter3;
+                        if ((ref.sentence >= sentence) && (ref.sentence < sentence+segmentsize)) {
+                            reverseindex[ref].insert(anygram);
+                        }                        
+                    }                     
+                }
+            }                                        
+        }
+        
+        
+        unordered_map<unsigned char, unordered_set<const EncAnyGram *> > sentencecoverage; //exact coverage for this sentence
+        unordered_map<unsigned char, unordered_set<const EncAnyGram *> > sentenceencapsulation; //exact coverage for this sentence
+        
+        for (unsigned char token = 0; token < slen; token++) {
+            CorpusReference ref = CorpusReference( (uint32_t) sentence, token);
+            if ( reverseindex.count(ref) ) {
+                for (unordered_set<const EncAnyGram *>::const_iterator iter = reverseindex[ref].begin(); iter != reverseindex[ref].end(); iter++) {
+                    const EncAnyGram * anygram = *iter;
+                    if (anygram->isskipgram()) {
+                        //skipgram
+                        const EncSkipGram * skipgram = (const EncSkipGram *) anygram;
+                        vector<bool> mask;
+                        skipgram->mask(mask);
+                        int offset = 0;
+                        for (vector<bool>::iterator maskiter = mask.begin(); maskiter != mask.end(); maskiter++) {
+                            if (*maskiter) {
+                                sentencecoverage[token+offset].insert(anygram);
+                            } else {
+                                sentenceencapsulation[token+offset].insert(anygram);
+                            }
+                            offset++;
+                        }                        
+                    } else {
+                        //ngram
+                        for (unsigned char token2 = token; token2 < token+ anygram->n(); token2++) {
+                            sentencecoverage[token2].insert(anygram);
+                        }
+                    }
+                } 
+            }
+        }
+        
+                
+        
+        for (unsigned char token = 0; token < slen; token++) {
+            if ( sentencecoverage.count(token) ) {
+                covered++;
+                bool foundskipgram = false;
+                bool foundngram = false;
+                for (int n = 1; n < MAXN; n++) {
+                    for (unordered_set<const EncAnyGram *>::const_iterator iter = sentencecoverage[token].begin(); iter != sentencecoverage[token].end(); iter++) {
+                        const EncAnyGram * anygram = *iter;
+                        if (anygram->n() == n) {
+                            if (anygram->isskipgram()) {                                                
+                                skipgramcoverage[n]++;
+                                foundskipgram = true;
+                                break; //only count once per n
+                            } else {
+                                ngramcoverage[n]++;
+                                foundngram = true;
+                                break; //only count once per n
+                            }
+                        }
+                    }          
+                }
+                if (foundskipgram) {
+                    totalskipgramcoverage++;
+                }
+                if (foundngram) {
+                    totalngramcoverage++;
+                }
+            } else {
+                uncovered++;
+            }
+            
+            if ( sentenceencapsulation.count(token)) {
+                encapsulated++;    
+                for (int n = 1; n < MAXN; n++) {
+                    for (unordered_set<const EncAnyGram *>::const_iterator iter = sentencecoverage[token].begin(); iter != sentencecoverage[token].end(); iter++) {
+                        const EncAnyGram * anygram = *iter;
+                        if (anygram->n() == n) {                                              
+                            skipgramencapsulation[n]++;
+                            break; //only count once per n
+                        }
+                    }          
+                }
+            } else if (sentencecoverage.count(token) == 0) {
+                outside++;
+            }            
+        }
+        
+    }
+    
+    
+    if (OUT) {
+        const int totalcount =  model->tokens();  
+        *OUT << setiosflags(ios::fixed) << setprecision(4) << endl;       
+        *OUT << "COVERAGE REPORT" << endl;
+        *OUT << "----------------------------------" << endl;
+        *OUT << "Total number of tokens:   " << setw(10) << model->totaltokens << endl << endl;
+        *OUT << "                          " << setw(10) << "TOKENS" << setw(10) << "COVERAGE" << setw(7) << "TYPES" << setw(11) << "TTR" << setw(10) << "COUNT" << setw(10) << "FREQUENCY" << endl;    
+        *OUT << "Total coverage:           " << setw(10) << covered << setw(10) << (double) covered / model->totaltokens << setw(7) << model->ngrams.size() + model->skipgrams.size()  << setw(11)<< (double)  covered / (model->ngrams.size() + model->skipgrams.size()) << setw(10) << model->totalngramcount+model->totalskipgramcount << setw(10) << (double) model->tokens() / totalcount << endl;
+        *OUT << "Uncovered:                " << setw(10) << uncovered << setw(10) << (double) uncovered / model->totaltokens <<endl << endl;
+        
+        
+        
+        *OUT << "N-gram coverage:          " << setw(10) << totalngramcoverage << setw(10) << (double) totalngramcoverage / model->totaltokens << setw(7) << model->ngrams.size() <<setw(11) << (double) totalngramcoverage / model->ngrams.size() << setw(10) << model->totalngramcount << setw(10) << (double) model->totalngramcount / totalcount << endl;
+        for (int n = 1; n <= MAXN; n++) {
+         if (ngramcoverage[n] > 0) {
+            int t = 0;
+            for (unordered_map<const EncNGram,NGramData >::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++) if (iter->first.n() == n) t++;
+            *OUT << " " << n << "-gram coverage:         " << setw(10) << ngramcoverage[n] << setw(10) << (double) ngramcoverage[n] / model->totaltokens << setw(7) << t << setw(11) <<  (double) t / ngramcoverage[n] << setw(10) << model->ngramcount[n] << setw(10) << (double) model->ngramcount[n] / totalcount  << endl;
+         }
+        }
+        *OUT << endl;
+        *OUT << "Skipgram coverage:        " << setw(10) << totalskipgramcoverage << setw(10) << (double) totalskipgramcoverage / model->totaltokens << setw(7) << model->skipgrams.size() << setw(11) << (double) totalskipgramcoverage / model->skipgrams.size() << setw(10) << model->totalskipgramcount << setw(10) <<  (double) model->totalskipgramcount / totalcount <<   endl;
+        for (int n = 2; n <= MAXN; n++) {         
+         if (skipgramcoverage[n] > 0) {
+          int t = 0;
+          for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++) if (iter->first.n() == n) t++; 
+          *OUT << " " << n << "-skipgram coverage:     " << setw(10) << skipgramcoverage[n] << setw(10) << (double) skipgramcoverage[n] / model->totaltokens << setw(7) << t << setw(11) <<  (double) t / skipgramcoverage[n] << setw(10) << model->skipgramcount[n] << setw(10) << (double) model->skipgramcount[n] / totalcount << endl;
+         }
+        }
+        *OUT << "----------------------------------" << endl;
+        *OUT << "                          " << setw(10) << "TOKENS" << setw(10) << "ENCAPSULATION";    
+        *OUT << "Total encapsulation:           " << setw(10) << encapsulated << setw(10) << (double) encapsulated / model->totaltokens << endl;
+        *OUT << "Outside (uncovered+unencapsulated):                " << setw(10) << outside << setw(10) << (double) outside / model->totaltokens << endl << endl;
+        for (int n = 2; n <= MAXN; n++) {         
+         if (skipgramcoverage[n] > 0) {
+          int t = 0;
+          for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++) if (iter->first.n() == n) t++; 
+          *OUT << " " << n << "-skipgram coverage:     " << setw(10) << skipgramencapsulation[n] << setw(10) << (double) skipgramencapsulation[n] / totaltokens << endl;
+         }
+        }
+                
+                
+    }
+
+}
 
 
 void replaceAll(std::string& str, const std::string& from, const std::string& to) {
