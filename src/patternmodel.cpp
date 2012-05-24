@@ -1020,14 +1020,14 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
          }
         }
         *OUT << "----------------------------------" << endl;
-        *OUT << "                          " << setw(10) << "TOKENS" << setw(15) << "ENCAPSULATION" << endl;    
-        *OUT << "Total encapsulation:           " << setw(10) << encapsulated << setw(15) << (double) encapsulated / totaltokens << endl;
-        *OUT << "Outside (uncovered+unencapsulated):                " << setw(10) << outside << setw(15) << (double) outside / totaltokens << endl << endl;
+        *OUT << "                                    " << setw(10) << "TOKENS" << setw(15) << "ENCAPSULATION" << endl;    
+        *OUT << "Total encapsulation:                " << setw(10) << encapsulated << setw(15) << (double) encapsulated / totaltokens << endl;
+        *OUT << "Outside (uncovered+unencapsulated): " << setw(10) << outside << setw(15) << (double) outside / totaltokens << endl << endl;
         for (int n = 2; n <= MAXN; n++) {         
          if (skipgramcoverage[n] > 0) {
           int t = 0;
           for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) if (iter->first.n() == n) t++; 
-          *OUT << " " << n << "-skipgram coverage:     " << setw(10) << skipgramencapsulation[n] << setw(15) << (double) skipgramencapsulation[n] / totaltokens << endl;
+          *OUT << " " << n << "-skipgram coverage:       " << setw(10) << skipgramencapsulation[n] << setw(15) << (double) skipgramencapsulation[n] / totaltokens << endl;
          }
         }
                 
