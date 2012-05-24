@@ -30,8 +30,7 @@ Often, you want to encode a corpus using a pre-existing class file. This occurs 
    $ classencode -f trainset
    $ classencode -f testset -c trainset.cls
 
-The first step build trainset.cls and trainset.clsenc , the second step builds testset.clsenc. The encoder will automatically assign a single class to all unknown symbols it encounteres in the testset.
-
+The first step built trainset.cls and trainset.clsenc , the second step builds testset.clsenc and produces an extended class file testset.cls, which is compatible with trainset.cls and adds only words that were not present in training. 
 
 2. FINDING PATTERNS
 -------------------------
