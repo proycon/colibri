@@ -55,12 +55,17 @@ int main( int argc, char *argv[] ) {
         allowunknown = true;
         cerr << "Building classes from corpus (extending existing classes)" << endl;
         classencoder.build(corpusfile);
-        classencoder.save(outputprefix + ".cls");          
+        classencoder.save(outputprefix + ".cls");
+        cerr << "Built " << outputprefix << ".cls , extending " << classfile << endl;          
     } else {
         cerr << "Building classes from corpus" << endl;
         classencoder = ClassEncoder();
         classencoder.build(corpusfile);
-        classencoder.save(outputprefix + ".cls");        
-    }        
-    classencoder.encodefile(corpusfile, outputprefix + ".clsenc", allowunknown);
+        classencoder.save(outputprefix + ".cls");
+        cerr << "Built " << outputprefix << ".cls" << endl;            
+    }   
+    
+         
+    classencoder.encodefile(corpusfile, outputprefix + ".clsenc", allowunknown);    
+    cerr << "Encoded corpus as " << outputprefix << ".clsenc" << endl;
 }
