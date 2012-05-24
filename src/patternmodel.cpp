@@ -2455,21 +2455,26 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
 
 
 
-void GraphPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
+void GraphPatternModel::coveragereport(std::ostream *OUT, int segmentsize, double xratiothreshold) {
     
     unordered_map<CorpusReference, unordered_set<const EncAnyGram *> > reverseindex; //for coverage
     
     int totalngramcoverage = 0;
     int totalskipgramcoverage = 0;
+    int totalngramxcoverage = 0;
+    int totalskipgramxcoverage = 0;
     int totalskipgramencapsulation = 0;
     int totalskipgramoutside = 0;
     int ngramcoverage[MAXN+1];    
     int skipgramcoverage[MAXN+1];
+    int ngramxcoverage[MAXN+1];    
+    int skipgramxcoverage[MAXN+1];
     int skipgramencapsulation[MAXN+1];
-    for (int n = 1; n <= MAXN; n++) { ngramcoverage[n] = 0;  skipgramcoverage[n] = 0; skipgramencapsulation[n] = 0; }
+    for (int n = 1; n <= MAXN; n++) { ngramcoverage[n] = 0;  skipgramcoverage[n] = 0; ngramxcoverage[n] = 0;  skipgramxcoverage[n] = 0;  skipgramencapsulation[n] = 0; }
 
             
     int covered = 0;
+    int xcovered = 0;
     int encapsulated = 0;
     int uncovered = 0;
     int outside = 0; // uncovered + unencapsulated
@@ -2541,9 +2546,47 @@ void GraphPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
         for (unsigned char token = 0; token < slen; token++) {
             if ( sentencecoverage.count(token) ) {
                 covered++;
+                bool considerexclusive = false;
+                if (xratiothreshold > 0) {
+                    for (unordered_set<const EncAnyGram *>::const_iterator iter = sentencecoverage[token].begin(); iter != sentencecoverage[token].end(); iter++) {
+                        const EncAnyGram * anygram = *iter;
+                        if (data_xcount.count(anygram)) {
+                            const double xratio = (double) data_xcount.count(anygram) / model->occurrencecount(anygram);
+                            if (xratio > xratiothreshold) {
+                                considerexclusive = true;
+                                break;
+                            }
+                        } 
+                    }
+                    if (considerexclusive) xcovered++;
+                }                
                 bool foundskipgram = false;
                 bool foundngram = false;
+                bool foundxskipgram = false;
+                bool foundxngram = false;
                 for (int n = 1; n < MAXN; n++) {
+                    if (xratiothreshold) {
+                        for (unordered_set<const EncAnyGram *>::const_iterator iter = sentencecoverage[token].begin(); iter != sentencecoverage[token].end(); iter++) {
+                            const EncAnyGram * anygram = *iter;
+                            if (anygram->n() == n) {
+                                if (data_xcount.count(anygram)) {
+                                    const double xratio = (double) data_xcount.count(anygram) / model->occurrencecount(anygram);
+                                    if (xratio > xratiothreshold) {                                
+                                        if (anygram->isskipgram()) {                                                
+                                            skipgramxcoverage[n]++;
+                                            foundxskipgram = true;
+                                            break; //only count once per n
+                                        } else {
+                                            ngramxcoverage[n]++;
+                                            foundxngram = true;
+                                            break; //only count once per n
+                                        }                                                
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     for (unordered_set<const EncAnyGram *>::const_iterator iter = sentencecoverage[token].begin(); iter != sentencecoverage[token].end(); iter++) {
                         const EncAnyGram * anygram = *iter;
                         if (anygram->n() == n) {
@@ -2557,14 +2600,13 @@ void GraphPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
                                 break; //only count once per n
                             }
                         }
-                    }          
+                    }  
+                         
                 }
-                if (foundskipgram) {
-                    totalskipgramcoverage++;
-                }
-                if (foundngram) {
-                    totalngramcoverage++;
-                }
+                if (foundskipgram) totalskipgramcoverage++;
+                if (foundngram) totalngramcoverage++;
+                if (foundxskipgram) totalskipgramxcoverage++;
+                if (foundxngram) totalngramxcoverage++;                
             } else {
                 uncovered++;
             }
@@ -2593,28 +2635,26 @@ void GraphPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
         *OUT << setiosflags(ios::fixed) << setprecision(4) << endl;       
         *OUT << "COVERAGE REPORT" << endl;
         *OUT << "----------------------------------" << endl;
-        *OUT << "Total number of tokens:   " << setw(10) << model->totaltokens << endl << endl;
-        *OUT << "                          " << setw(10) << "TOKENS" << setw(10) << "COVERAGE" << setw(7) << "TYPES" << setw(11) << "TTR" << setw(10) << "COUNT" << setw(10) << "FREQUENCY" << endl;    
-        *OUT << "Total coverage:           " << setw(10) << covered << setw(10) << (double) covered / model->totaltokens << setw(7) << model->ngrams.size() + model->skipgrams.size()  << setw(11)<< (double)  covered / (model->ngrams.size() + model->skipgrams.size()) << setw(10) << model->totalngramcount+model->totalskipgramcount << setw(10) << (double) model->tokens() / totalcount << endl;
-        *OUT << "Uncovered:                " << setw(10) << uncovered << setw(10) << (double) uncovered / model->totaltokens <<endl << endl;
-        
-        
-        
-        *OUT << "N-gram coverage:          " << setw(10) << totalngramcoverage << setw(10) << (double) totalngramcoverage / model->totaltokens << setw(7) << model->ngrams.size() <<setw(11) << (double) totalngramcoverage / model->ngrams.size() << setw(10) << model->totalngramcount << setw(10) << (double) model->totalngramcount / totalcount << endl;
+        *OUT << "Total number of tokens:   " << setw(10) << model->totaltokens << endl;
+        if (xratiothreshold > 0) *OUT << "Exclusivity threshold:    " << setw(10) << xratiothreshold << endl << endl;  
+        *OUT << "                          " << setw(10) << "TOKENS" << setw(10) << "COVERAGE" << setw(10) << "XCOVERAGE" << setw(7) << "TYPES" << setw(11) << "TTR" << setw(10) << "COUNT" << setw(10) << "FREQUENCY" << endl;    
+        *OUT << "Total coverage:           " << setw(10) << covered << setw(10) << (double) covered / model->totaltokens << setw(10) << (double) xcovered / model->totaltokens << setw(7) << model->ngrams.size() + model->skipgrams.size()  << setw(11)<< (double)  covered / (model->ngrams.size() + model->skipgrams.size()) << setw(10) << model->totalngramcount+model->totalskipgramcount << setw(10) << (double) model->tokens() / totalcount << endl;
+        *OUT << "Uncovered:                " << setw(10) << uncovered << setw(10) << (double) uncovered / model->totaltokens <<endl << endl;        
+        *OUT << "N-gram coverage:          " << setw(10) << totalngramcoverage << setw(10) << (double) totalngramcoverage / model->totaltokens << setw(10) << (double) totalngramxcoverage / model->totaltokens << setw(7) << model->ngrams.size() <<setw(11) << (double) totalngramcoverage / model->ngrams.size() << setw(10) << model->totalngramcount << setw(10) << (double) model->totalngramcount / totalcount << endl;
         for (int n = 1; n <= MAXN; n++) {
          if (ngramcoverage[n] > 0) {
             int t = 0;
             for (unordered_map<const EncNGram,NGramData >::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++) if (iter->first.n() == n) t++;
-            *OUT << " " << n << "-gram coverage:         " << setw(10) << ngramcoverage[n] << setw(10) << (double) ngramcoverage[n] / model->totaltokens << setw(7) << t << setw(11) <<  (double) t / ngramcoverage[n] << setw(10) << model->ngramcount[n] << setw(10) << (double) model->ngramcount[n] / totalcount  << endl;
+            *OUT << " " << n << "-gram coverage:         " << setw(10) << ngramcoverage[n] << setw(10) << (double) ngramcoverage[n] / model->totaltokens << setw(10) << (double) ngramxcoverage[n] / model->totaltokens << setw(7) << t << setw(11) <<  (double) t / ngramcoverage[n] << setw(10) << model->ngramcount[n] << setw(10) << (double) model->ngramcount[n] / totalcount  << endl;
          }
         }
         *OUT << endl;
-        *OUT << "Skipgram coverage:        " << setw(10) << totalskipgramcoverage << setw(10) << (double) totalskipgramcoverage / model->totaltokens << setw(7) << model->skipgrams.size() << setw(11) << (double) totalskipgramcoverage / model->skipgrams.size() << setw(10) << model->totalskipgramcount << setw(10) <<  (double) model->totalskipgramcount / totalcount <<   endl;
+        *OUT << "Skipgram coverage:        " << setw(10) << totalskipgramcoverage << setw(10) << (double) totalskipgramcoverage / model->totaltokens << setw(10) << (double) totalskipgramxcoverage / model->totaltokens << setw(7) << model->skipgrams.size() << setw(11) << (double) totalskipgramcoverage / model->skipgrams.size() << setw(10) << model->totalskipgramcount << setw(10) <<  (double) model->totalskipgramcount / totalcount <<   endl;
         for (int n = 2; n <= MAXN; n++) {         
          if (skipgramcoverage[n] > 0) {
           int t = 0;
           for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++) if (iter->first.n() == n) t++; 
-          *OUT << " " << n << "-skipgram coverage:     " << setw(10) << skipgramcoverage[n] << setw(10) << (double) skipgramcoverage[n] / model->totaltokens << setw(7) << t << setw(11) <<  (double) t / skipgramcoverage[n] << setw(10) << model->skipgramcount[n] << setw(10) << (double) model->skipgramcount[n] / totalcount << endl;
+          *OUT << " " << n << "-skipgram coverage:     " << setw(10) << skipgramcoverage[n] << setw(10) << (double) skipgramcoverage[n] / model->totaltokens << setw(10) << (double) skipgramxcoverage[n] / model->totaltokens  << setw(7) << t << setw(11) <<  (double) t / skipgramcoverage[n] << setw(10) << model->skipgramcount[n] << setw(10) << (double) model->skipgramcount[n] / totalcount << endl;
          }
         }
         *OUT << "----------------------------------" << endl;

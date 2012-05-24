@@ -460,7 +460,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     
     void decode(ClassDecoder & classdecoder, std::ostream *OUT);
     void stats(std::ostream *OUT);
-    void coveragereport(std::ostream *OUT, int segmentsize = 100000);
+    void coveragereport(std::ostream *OUT, int segmentsize = 100000, double xratiothreshold = 0.8);
     
     void outputgraph(ClassDecoder & classdecoder, std::ostream *OUT);
     void outputgraph(ClassDecoder & classdecoder, std::ostream *OUT, const EncAnyGram *);
