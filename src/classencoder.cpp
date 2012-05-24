@@ -40,11 +40,12 @@ unsigned char * inttobytes(unsigned int cls, int & length) {
 
 ClassEncoder::ClassEncoder() {
     unknownclass = 2;
+    highestclass = 5; //5 and lower are reserved
 }
 
 ClassEncoder::ClassEncoder(const string & filename) {
        unknownclass = 2;
-       highestclass = 0;
+       highestclass = 0; 
     
 	   ifstream IN;
 	   IN.open( filename.c_str() );    
@@ -115,11 +116,13 @@ void ClassEncoder::build(const string & filename) {
         
         freqlist.clear();
         
-        int cls = 5; //one is reserved for /n, two is reserved for {UNKNOWN}, three, four, five are reserved for future use
+        int cls = highestclass;
         for (multimap<const int,const string>::iterator iter = revfreqlist.begin(); iter != revfreqlist.end(); iter++) {
-        	cls++;
-        	while (!validclass(cls)) cls++;
-        	classes[iter->second] = cls;
+            if (!classes.count(iter->second)) { //check if it doesn't already exist, in case we are expanding on existing classes 
+        	    cls++;
+        	    while (!validclass(cls)) cls++;        	
+        	    classes[iter->second] = cls;
+            }
         }
 }
 

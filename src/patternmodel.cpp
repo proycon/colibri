@@ -858,9 +858,13 @@ void IndexedPatternModel::computestats() {
     }    
 }
 
-void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
-    unordered_map<CorpusReference, unordered_set<const EncAnyGram *> > reverseindex; //for coverage
+void IndexedPatternModel::coveragereport(std::ostream *OUT, std::ostream *HTMLOUT, ClassDecoder * decoder, int segmentsize) {
+
+    if ((HTMLOUT) && (decoder)) *HTMLOUT << "<html>\n<head>\n<title>Colibri: coverage view</title>\n</head>\n<body>\n" << endl;
     
+    unordered_map<CorpusReference, unordered_set<const EncAnyGram *> > reverseindex; //for coverage
+    unordered_map<CorpusReference, const EncAnyGram * > tokens; //for coverage
+        
     int totalngramcoverage = 0;
     int totalskipgramcoverage = 0;
     int totalskipgramencapsulation = 0;
@@ -889,7 +893,8 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
                     CorpusReference ref = *iter2;
                     if ((ref.sentence >= sentence) && (ref.sentence < sentence+segmentsize)) {
                         reverseindex[ref].insert(anygram);                   
-                    }                     
+                    }     
+                    if (anygram->n() == 1) tokens[ref] = anygram;                                    
                 }
             }
             for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
@@ -938,9 +943,17 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
             }
         }
         
-                
-        
+        if ((HTMLOUT) && (decoder)) *HTMLOUT << "<div class=\"s\">"; 
+
         for (unsigned char token = 0; token < slen; token++) {
+            
+            if ((HTMLOUT) && (decoder)) {
+                int valency = sentencecoverage.count(token);
+                if (valency > 10) valency = 10;
+                CorpusReference ref = CorpusReference( (uint32_t) sentence, token);
+                *HTMLOUT << "<span class=\"c" << valency << "\">" << tokens[ref]->decode(*decoder) << "</span> ";     
+            }
+       
             if ( sentencecoverage.count(token) ) {
                 covered++;
                 bool foundskipgram = false;
@@ -970,6 +983,9 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
             } else {
                 uncovered++;
             }
+
+            
+            
             
             if ( sentenceencapsulation.count(token)) {
                 encapsulated++;    
@@ -982,13 +998,14 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
                         }
                     }          
                 }
-            } else if (sentencecoverage.count(token) == 0) {
+            } else if (!sentencecoverage.count(token)) {
                 outside++;
             }            
         }
-        
+        if ((HTMLOUT) && (decoder)) *HTMLOUT << "</div>\n";
     }
     
+    if ((HTMLOUT) && (decoder)) *HTMLOUT << "</body>\n</html>";
     
     if (OUT) {
         const int totalcount =  totalngramcount+totalskipgramcount;  
@@ -1022,7 +1039,7 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
         *OUT << "----------------------------------" << endl;
         *OUT << "                                    " << setw(10) << "TOKENS" << setw(15) << "ENCAPSULATION" << setw(30) << "ENCAPSULATION+COVERAGE" << endl;    
         *OUT << "Total encapsulation:                " << setw(10) << encapsulated << setw(15) << (double) encapsulated / totaltokens << setw(30) <<  (double) (encapsulated + totalskipgramcoverage) / totaltokens << endl;
-        *OUT << "Outside (uncovered+unencapsulated): " << setw(10) << outside << setw(15) << (double) outside / totaltokens << endl << setw(30) << "-" << endl;
+        *OUT << "Outside (uncovered&unencapsulated): " << setw(10) << outside << setw(15) << (double) outside / totaltokens << endl << setw(30) << "-" << endl;
         for (int n = 2; n <= MAXN; n++) {         
          if (skipgramcoverage[n] > 0) {
           int t = 0;
@@ -1030,9 +1047,16 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, int segmentsize) {
           *OUT << " " << n << "-skipgram encapsulation:          " << setw(10) << skipgramencapsulation[n] << setw(15) << (double) skipgramencapsulation[n] / totaltokens << setw(30) << (double) (skipgramencapsulation[n] + skipgramcoverage[n]) / totaltokens << endl;     
          }
         }
-                
-                
+        //*OUT << "----------------------------------" << endl;
+        //*OUT << "                                  " << setw(10) << "VALENCY" << endl;    
+        //*OUT << "Mean token valency:               " << setw(10) << valency;                                                      
     }
+    
+    
+        
+        
+    
+    
 }
 
 

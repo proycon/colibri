@@ -250,7 +250,7 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     void decode(IndexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT);
     
     
-    void coveragereport(std::ostream *OUT, int segmentsize = 100000);    
+    void coveragereport(std::ostream *OUT, std::ostream *HTMLOUT = NULL, ClassDecoder * decoder = NULL, int segmentsize = 100000);    
 };
 
 

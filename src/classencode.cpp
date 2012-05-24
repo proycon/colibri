@@ -50,11 +50,14 @@ int main( int argc, char *argv[] ) {
     bool allowunknown = false;
     
     if (!classfile.empty()) {
-        cerr << "Loading class encoder from file" << endl;
+        cerr << "Loading classes from file" << endl;
         classencoder = ClassEncoder(classfile);
         allowunknown = true;
+        cerr << "Building classes from corpus (extending existing classes)" << endl;
+        classencoder.build(corpusfile);
+        classencoder.save(outputprefix + ".cls");          
     } else {
-        cerr << "Building class encoder from corpus" << endl;
+        cerr << "Building classes from corpus" << endl;
         classencoder = ClassEncoder();
         classencoder.build(corpusfile);
         classencoder.save(outputprefix + ".cls");        
