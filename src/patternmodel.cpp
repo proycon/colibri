@@ -1,6 +1,7 @@
 #include "patternmodel.h"
 #include "algorithms.h"
 #include <limits>
+#include <sstream>
 
 using namespace std;
 
@@ -908,10 +909,14 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, const string & corpu
 
     if ((HTMLOUT != NULL) && (decoder != NULL)) {
         readcorpus(corpusfile, tokens);        
-        *HTMLOUT << "<html>\n<head>\n<title>Colibri: coverage view</title>" << endl;
+        *HTMLOUT << "<html>\n<head>\n <meta http-equiv=\"content-type\" content=\"text/html; charset=UTF-8\" />\n<title>Colibri: coverage view</title>" << endl;
         *HTMLOUT << "<style type=\"text/css\">" << endl;
-        *HTMLOUT << "body { background: #ffffff; padding: 20px; font-family: sans-serif; font-size: 10px; }" << endl;
-        *HTMLOUT << "div.s { margin: 2px; border: 1px #dddddd solid; }" << endl;
+        *HTMLOUT << "body { background: #ffffff; padding: 20px; font-family: sans-serif; font-size: 10px; margin-top: 50px; }" << endl;
+        *HTMLOUT << "div.s { margin: 2px; border: 1px #dddddd solid; width: 75%; }" << endl;
+        *HTMLOUT << "div.s span { padding: 1px; cursor: pointer; border: 1px solid white; }" << endl;
+        *HTMLOUT << "div.s span:hover { border: 1px solid green; cursor: pointer; }" << endl;
+        *HTMLOUT << "div.s:hover { border: 1px #aaaaaa solid; }" << endl;
+        *HTMLOUT << "div#visor { background: #d9d9d9; padding: 10px; position: fixed; opacity: 0.9; border-radius: 0.2; left: 76%;}" << endl;
         *HTMLOUT << "span.c0 { background: #ffffff; }" << endl;
         *HTMLOUT << "span.c1 { background: #ffe5e5; }" << endl;
         *HTMLOUT << "span.c2 { background: #ffcccc; }" << endl;
@@ -923,8 +928,16 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, const string & corpu
         *HTMLOUT << "span.c8 { background: #ff3333; color: white; }" << endl;
         *HTMLOUT << "span.c9 { background: #ff1919; color: white; }" << endl;
         *HTMLOUT << "span.c10 { background: #ff0000; color: white; }" << endl;
+        *HTMLOUT << "span.e { color: yellow; }" << endl;
+        *HTMLOUT << "span.sg { font-weight: bold; }" << endl;
         *HTMLOUT << "</style>" << endl;    
-        *HTMLOUT << "</head>\n<body>\n" << endl;
+        *HTMLOUT << "<script type=\"text/javascript\" src=\"http://code.jquery.com/jquery-1.5.1.min.js\"></script>" << endl;
+        *HTMLOUT << "<script type=\"text/javascript\">" << endl;
+        *HTMLOUT << "function s(hoverlist) { $('#visor').html('<ol>' + hoverlist + '</ol>' ); } " << endl;
+        //*HTMLOUT << "function s(hoverlist) { $('#visor').html('<ol>' + hoverlist + '</ol>' ); var o = $(this).offset(); $('#visor').css('left: ' + o.left + '; top: ' + (o.top + 50) + ';'); } " << endl;
+        *HTMLOUT << "</script>" << endl;
+        *HTMLOUT << "</head>\n<body>" << endl;
+        *HTMLOUT << "<div id=\"visor\"></div>" << endl;
     }
     
     unordered_map<CorpusReference, unordered_set<const EncAnyGram *> > reverseindex; //for coverage
@@ -1014,9 +1027,31 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, const string & corpu
                 int valency = 0;
                 if (sentencecoverage.count(token)) valency = sentencecoverage[token].size();        
                 if (valency > 10) valency = 10;
+                
                 CorpusReference ref = CorpusReference( (uint32_t) sentence, token);
                 if (tokens.count(ref)) {
-                    *HTMLOUT << "<span class=\"c" << valency << "\">" << tokens[ref]->decode(*decoder) << "</span> ";
+                    bool hasskipgram = false;
+                    string hoverlist = "";
+                    for (unordered_set<const EncAnyGram *>::const_iterator iter = sentencecoverage[token].begin(); iter != sentencecoverage[token].end(); iter++) {
+                        const EncAnyGram * anygram = *iter; 
+                        if (anygram->isskipgram()) hasskipgram = true;
+                        string s = anygram->decode(*decoder);
+                        replaceAll(s,"\"","&quot;");
+                        replaceAll(s,"<","&lt;");
+                        replaceAll(s,">","&gt;");
+                        replaceAll(s,"'","`");   
+                        ostringstream convert;
+                        convert << occurrencecount(anygram); 
+                        hoverlist += "<li>" + s + " &mdash; " + convert.str() + "</li>";
+                    }                                         
+                    *HTMLOUT << "<span class=\"c" << valency;
+                    if (sentenceencapsulation.count(token)) *HTMLOUT << " e";                               
+                    if (hasskipgram) *HTMLOUT << " sg";  
+                    string s = tokens[ref]->decode(*decoder);
+                    replaceAll(s,"\"","&quot;");
+                    replaceAll(s,"<","&lt;");
+                    replaceAll(s,">","&gt;");                                
+                    *HTMLOUT << "\" onmouseover=\"s('" + hoverlist + "');\" >" << s << "</span> ";
                 } else {
                     cerr << "MISSING TOKEN: " << sentence << ":" << (int) token << endl;
                 }

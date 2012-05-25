@@ -600,6 +600,7 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
 };
 
 void readcorpus( const std::string & corpusfile, std::unordered_map<CorpusReference, const EncNGram *> & tokens);
+void replaceAll(std::string& str, const std::string& from, const std::string& to);
 
 namespace std {
     template <>
