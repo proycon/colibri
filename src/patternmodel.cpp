@@ -858,12 +858,77 @@ void IndexedPatternModel::computestats() {
     }    
 }
 
-void IndexedPatternModel::coveragereport(std::ostream *OUT, std::ostream *HTMLOUT, ClassDecoder * decoder, int segmentsize) {
 
-    if ((HTMLOUT) && (decoder)) *HTMLOUT << "<html>\n<head>\n<title>Colibri: coverage view</title>\n</head>\n<body>\n" << endl;
+void readcorpus( const string & corpusfile, unordered_map<CorpusReference, const EncNGram *> & tokens) {
+    const int BUFFERSIZE = 65536;
+    unsigned char line[BUFFERSIZE];
+
+
+    //read a whole corpus in memory
+    ifstream *IN =  new ifstream( corpusfile.c_str() );    
+    if (!IN->good()) {
+    	cerr << "ERROR: Unable to open file " << corpusfile << endl;
+    	exit(5);
+    }        
+    int sentence = 0;
+    vector<unsigned int> words;
+    while (IN->good()) {
+        const int linesize = readline(IN, line, BUFFERSIZE );            
+                
+        sentence++;
+
+        if (sentence % 10000 == 0) {
+            cerr << "\t@" << sentence << endl;
+        }
+                        
+        
+        const int l = countwords(line, linesize);
+        if (l >= 256) {
+            cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping!" << endl;
+            continue;
+        } else if (l == 0) {
+        	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping!" << endl;
+            continue;
+        }        
+        if (linesize > 0) //no { on purpose! applies to next for loop
+        for (unsigned char i = 0; ((i < l) && (i < 256)); i++) {                         
+                CorpusReference ref = CorpusReference(sentence, i);                
+                EncNGram * ngram = getencngram(i,1, line, linesize, sentence);                
+                tokens[ref] = ngram;
+        }
+    }  
+    IN->close();
+    delete IN;
+}
+
+
+void IndexedPatternModel::coveragereport(std::ostream *OUT, const string & corpusfile, std::ostream *HTMLOUT, ClassDecoder * decoder, int segmentsize) {
+
+    unordered_map<CorpusReference, const EncNGram *> tokens; //for coverage
+
+    if ((HTMLOUT != NULL) && (decoder != NULL)) {
+        readcorpus(corpusfile, tokens);        
+        *HTMLOUT << "<html>\n<head>\n<title>Colibri: coverage view</title>" << endl;
+        *HTMLOUT << "<style type=\"text/css\">" << endl;
+        *HTMLOUT << "body { background: #ffffff; padding: 20px; font-family: sans-serif; font-size: 10px; }" << endl;
+        *HTMLOUT << "div.s { margin: 2px; border: 1px #dddddd solid; }" << endl;
+        *HTMLOUT << "span.c0 { background: #ffffff; }" << endl;
+        *HTMLOUT << "span.c1 { background: #ffe5e5; }" << endl;
+        *HTMLOUT << "span.c2 { background: #ffcccc; }" << endl;
+        *HTMLOUT << "span.c3 { background: #ffb2b2; }" << endl;
+        *HTMLOUT << "span.c4 { background: #ff9999; }" << endl;
+        *HTMLOUT << "span.c5 { background: #ff7f7f; }" << endl;
+        *HTMLOUT << "span.c6 { background: #ff6666; color: white; }" << endl;
+        *HTMLOUT << "span.c7 { background: #ff4c4c; color: white; }" << endl;
+        *HTMLOUT << "span.c8 { background: #ff3333; color: white; }" << endl;
+        *HTMLOUT << "span.c9 { background: #ff1919; color: white; }" << endl;
+        *HTMLOUT << "span.c10 { background: #ff0000; color: white; }" << endl;
+        *HTMLOUT << "</style>" << endl;    
+        *HTMLOUT << "</head>\n<body>\n" << endl;
+    }
     
     unordered_map<CorpusReference, unordered_set<const EncAnyGram *> > reverseindex; //for coverage
-    unordered_map<CorpusReference, const EncAnyGram * > tokens; //for coverage
+    
         
     int totalngramcoverage = 0;
     int totalskipgramcoverage = 0;
@@ -893,8 +958,7 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, std::ostream *HTMLOU
                     CorpusReference ref = *iter2;
                     if ((ref.sentence >= sentence) && (ref.sentence < sentence+segmentsize)) {
                         reverseindex[ref].insert(anygram);                   
-                    }     
-                    if (anygram->n() == 1) tokens[ref] = anygram;                                    
+                    }                                         
                 }
             }
             for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
@@ -943,15 +1007,19 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, std::ostream *HTMLOU
             }
         }
         
-        if ((HTMLOUT) && (decoder)) *HTMLOUT << "<div class=\"s\">"; 
+        if ((HTMLOUT != NULL) && (decoder != NULL)) *HTMLOUT << "<div class=\"s\">"; 
 
         for (unsigned char token = 0; token < slen; token++) {
-            
-            if ((HTMLOUT) && (decoder)) {
-                int valency = sentencecoverage.count(token);
+            if ((HTMLOUT != NULL) && (decoder != NULL)) {
+                int valency = 0;
+                if (sentencecoverage.count(token)) valency = sentencecoverage[token].size();        
                 if (valency > 10) valency = 10;
                 CorpusReference ref = CorpusReference( (uint32_t) sentence, token);
-                *HTMLOUT << "<span class=\"c" << valency << "\">" << tokens[ref]->decode(*decoder) << "</span> ";     
+                if (tokens.count(ref)) {
+                    *HTMLOUT << "<span class=\"c" << valency << "\">" << tokens[ref]->decode(*decoder) << "</span> ";
+                } else {
+                    cerr << "MISSING TOKEN: " << sentence << ":" << (int) token << endl;
+                }
             }
        
             if ( sentencecoverage.count(token) ) {
@@ -1002,10 +1070,10 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, std::ostream *HTMLOU
                 outside++;
             }            
         }
-        if ((HTMLOUT) && (decoder)) *HTMLOUT << "</div>\n";
+        if ((HTMLOUT != NULL) && (decoder != NULL)) *HTMLOUT << "</div>\n";
     }
     
-    if ((HTMLOUT) && (decoder)) *HTMLOUT << "</body>\n</html>";
+    if ((HTMLOUT != NULL) && (decoder != NULL)) *HTMLOUT << "</body>\n</html>";
     
     if (OUT) {
         const int totalcount =  totalngramcount+totalskipgramcount;  

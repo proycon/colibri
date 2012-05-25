@@ -10,8 +10,6 @@
 using namespace std;
 
 
-//TODO: Computation of skipgramtokens[] is still bugged upon processing a corpus
-
 EncAnyGram::EncAnyGram() {
     _size = 0;
     data = NULL;
@@ -34,7 +32,7 @@ EncAnyGram::EncAnyGram(const unsigned char* dataref, const char size) {
 EncAnyGram::EncAnyGram(const EncAnyGram& ref) {
     _size = ref.size();
     if (_size <= 0) {
-        cerr << "INTERNAL ERROR EncAnyGram(): Data size must be > 0, reference n-gram has " << (int) _size << "!" << endl;
+        cerr << "INTERNAL ERROR EncAnyGram(): Data size must be > 0, reference n-gram has " << (int) _size << " (n=" << (int) ref.n() << ") !" << endl;
         exit(13);    
     }
     data = new unsigned char[_size];   

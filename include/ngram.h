@@ -79,7 +79,7 @@ class EncNullGram: public EncAnyGram {
 
 class EncNGram: public EncAnyGram {
    public:
-    EncNGram(): EncAnyGram() {}; 
+    //EncNGram(): EncAnyGram() {}; 
     EncNGram(const unsigned char* dataref, const char size): EncAnyGram(dataref, size) {};
     EncNGram(const EncNGram& ref): EncAnyGram(ref) {};     
     EncNGram(std::istream * in);

@@ -53,6 +53,7 @@ int main( int argc, char *argv[] ) {
     string outputprefix = "";
     string modelfile = "";
     string modelfile2 = "";
+    string covviewfile = "";
     
     int MINTOKENS = 2;
     int MINSKIPTOKENS = 2;
@@ -64,10 +65,11 @@ int main( int argc, char *argv[] ) {
     bool DOFINALONLYSKIP = true;
     bool DOQUERIER = false;
     bool DOCOVERAGE = false;
+    bool DOCOVVIEW = false;
     //bool DOCOMPOSITIONALITY = false;
     bool DEBUG = false;
     char c;    
-    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQDJ:C")) != -1)
+    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQDJ:CV")) != -1)
         switch (c)
         {
         case 'c':
@@ -84,6 +86,9 @@ int main( int argc, char *argv[] ) {
         	break;
         case 'C':
             DOCOVERAGE = true;
+            break;
+        case 'V':
+            DOCOVVIEW = true;
             break;
         case 'f':
             corpusfile = optarg;
@@ -140,6 +145,11 @@ int main( int argc, char *argv[] ) {
             exit(2);    	
     }
     
+    if (DOCOVVIEW && (classfile.empty() || modelfile.empty() || corpusfile.empty() )) {
+        cerr << "ERROR: When generating a coverage view, you need to specify a class file, model file and corpus file (-c, -d, -f)" << endl;
+        usage();
+        exit(2);
+    }
     /*if (corpusfile.empty() ) {
         if (modelfile.empty() || classfile.empty()) {
             cerr << "ERROR: Need to specify -f corpusfile to compute pattern, or -d modelfile -c classfile to decode an existing model" << endl;
@@ -159,31 +169,36 @@ int main( int argc, char *argv[] ) {
     
     if ((!corpusfile.empty()) && (!modelfile.empty())) {
     
-
-
-        if (DOINDEX) {
-            //not implemented yet
-            cerr << "Loading reference model" << endl;
-		    IndexedPatternModel refmodel = IndexedPatternModel(modelfile, DEBUG);
-		    
-		    cerr << "Computing model on " << corpusfile << endl;
-		    IndexedPatternModel model = IndexedPatternModel(corpusfile, refmodel, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS, MINSKIPTYPES, DOINITIALONLYSKIP,DOFINALONLYSKIP);
-
-		    cerr << "Saving " << outputprefix << ".indexedpatternmodel.colibri"  << endl;
-		    const string outputfile = outputprefix + ".indexedpatternmodel.colibri";
-		    model.save(outputfile);     
+        if (DOCOVVIEW) {
+            IndexedPatternModel model = IndexedPatternModel(modelfile, DEBUG);
+            ClassDecoder classdecoder = ClassDecoder(classfile);
+            model.coveragereport((ostream*) &cerr, corpusfile, (ostream*) &cout, &classdecoder);      
         } else {
-            cerr << "Loading reference model" << endl;
-		    UnindexedPatternModel refmodel = UnindexedPatternModel(modelfile, DEBUG);
-		    
-		    cerr << "Computing model on " << corpusfile << endl;
-		    UnindexedPatternModel model = UnindexedPatternModel(corpusfile, refmodel, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS, MINSKIPTYPES, DOINITIALONLYSKIP,DOFINALONLYSKIP);
 
-		    cerr << "Saving " << outputprefix << ".unindexedpatternmodel.colibri"  << endl;
-		    const string outputfile = outputprefix + ".unindexedpatternmodel.colibri";
-		    model.save(outputfile);       		  
+            if (DOINDEX) {
+                //not implemented yet
+                cerr << "Loading reference model" << endl;
+		        IndexedPatternModel refmodel = IndexedPatternModel(modelfile, DEBUG);
+		        
+		        cerr << "Computing model on " << corpusfile << endl;
+		        IndexedPatternModel model = IndexedPatternModel(corpusfile, refmodel, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS, MINSKIPTYPES, DOINITIALONLYSKIP,DOFINALONLYSKIP);
+
+		        cerr << "Saving " << outputprefix << ".indexedpatternmodel.colibri"  << endl;
+		        const string outputfile = outputprefix + ".indexedpatternmodel.colibri";
+		        model.save(outputfile);     
+            } else {
+                cerr << "Loading reference model" << endl;
+		        UnindexedPatternModel refmodel = UnindexedPatternModel(modelfile, DEBUG);
+		        
+		        cerr << "Computing model on " << corpusfile << endl;
+		        UnindexedPatternModel model = UnindexedPatternModel(corpusfile, refmodel, MAXLENGTH, MINTOKENS, DOSKIPGRAMS, MINSKIPTOKENS, MINSKIPTYPES, DOINITIALONLYSKIP,DOFINALONLYSKIP);
+
+		        cerr << "Saving " << outputprefix << ".unindexedpatternmodel.colibri"  << endl;
+		        const string outputfile = outputprefix + ".unindexedpatternmodel.colibri";
+		        model.save(outputfile);       		  
+            }
         }
-    
+        
     } else if (!corpusfile.empty()) {
     	if (DOINDEX) {
     
@@ -248,18 +263,19 @@ int main( int argc, char *argv[] ) {
 		        } else {
 		            if (modelfile2.empty()) {		        
     		        	cerr << "Decoding" << endl;
-		        	    model.decode(classdecoder, (ostream*) &cout);
+		        	    if (covviewfile.empty()) model.decode(classdecoder, (ostream*) &cout);
     			     } else {    			
     			        cerr << "Loading test model" << endl;     
     			        IndexedPatternModel testmodel = IndexedPatternModel(modelfile2, DEBUG);
     			        cerr << "Joint decoding" << endl;
-    			        model.decode(testmodel, classdecoder, (ostream*) &cout);
+    			        if (covviewfile.empty()) model.decode(testmodel, classdecoder, (ostream*) &cout);
     			     }		        	    
-		        }		      	   
+		        }
+   	   		    if (DOCOVERAGE) {
+   	   		        model.coveragereport((ostream*) &cout);		        
+		        }
 		    }
-		    if (DOCOVERAGE) {
-		        model.coveragereport((ostream*) &cout);
-		    }
+
 		    
 		} else {
 		    cerr << "Loading model" << endl;

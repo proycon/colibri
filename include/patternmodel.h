@@ -250,7 +250,7 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     void decode(IndexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT);
     
     
-    void coveragereport(std::ostream *OUT, std::ostream *HTMLOUT = NULL, ClassDecoder * decoder = NULL, int segmentsize = 100000);    
+    void coveragereport(std::ostream *OUT, const std::string & corpusfile = "", std::ostream *HTMLOUT = NULL, ClassDecoder * decoder = NULL, int segmentsize = 100000);    
 };
 
 
@@ -599,6 +599,8 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
     virtual void readfooter(std::istream * in, bool ignore = false) {};
 };
 
+void readcorpus( const std::string & corpusfile, std::unordered_map<CorpusReference, const EncNGram *> & tokens);
+
 namespace std {
     template <>
     struct hash<CorpusReference> {
@@ -608,5 +610,6 @@ namespace std {
             }
     };    
 }
+
 
 #endif
