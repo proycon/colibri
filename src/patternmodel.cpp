@@ -928,7 +928,7 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, const string & corpu
         *HTMLOUT << "span.c8 { background: #ff3333; color: white; }" << endl;
         *HTMLOUT << "span.c9 { background: #ff1919; color: white; }" << endl;
         *HTMLOUT << "span.c10 { background: #ff0000; color: white; }" << endl;
-        *HTMLOUT << "span.e { color: yellow; }" << endl;
+        *HTMLOUT << "span.e { font-style: italic; }" << endl;
         *HTMLOUT << "span.sg { font-weight: bold; }" << endl;
         *HTMLOUT << "</style>" << endl;    
         *HTMLOUT << "<script type=\"text/javascript\" src=\"http://code.jquery.com/jquery-1.5.1.min.js\"></script>" << endl;
