@@ -55,7 +55,7 @@ def computeoverlap(items, label= 'PAIR', pivot = 0):
                 if not (item in items[i]):
                     overlaps = False
                     break
-            if overlap:      
+            if overlaps:      
                 s =  label + ' MATCH:' + '\t' + repr(item)
                 print s.encode('utf-8')
                 overlap += 1
