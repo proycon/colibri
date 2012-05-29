@@ -317,11 +317,11 @@ void AlignmentModel::trainEM(const int MAXROUNDS, const double CONVERGEDTHRESHOL
   	  set total(s) to 0 for all s
       for all sentence pairs (t_s,s_s)
          set total_s(t) = 0 for all t
-         for all words t in t_s
-            for all words s in s_s
+         for all patterns t in t_s
+            for all patterns s in s_s
               total_s(t) += t(t|s)
-         for all words t in t_s
-             for all words s in s_s
+         for all patterns t in t_s
+             for all patterns s in s_s
                 count(t|s) += t(t|s) / total_s(t)
                 total(s)   += t(t|s) / total_s(t)
       for all s
