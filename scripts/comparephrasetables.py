@@ -50,10 +50,10 @@ def computeoverlap(items, label= 'PAIR', pivot = 0):
     for item in itertools.chain( *( x.keys() for x in items ) ):    
         if not item in overlapmem:
             total += 1
-            overlap = True
+            overlaps = True
             for i, _ in enumerate(items): 
                 if not (item in items[i]):
-                    overlap = False
+                    overlaps = False
                     break
             if overlap:      
                 s =  label + ' MATCH:' + '\t' + repr(item)
