@@ -283,7 +283,7 @@ class MTWrapper(object):
     def check_run(self):        
         if self.BUILD_MOSES:
             if not self.EXEC_MOSES or not os.path.isfile(self.EXEC_MOSES):
-                self.log("Error: Moses not found!",red,True)
+                self.log("Error: Moses not found! (" + self.EXEC_MOSES+")",red,True)
                 return False
             elif not os.path.exists(self.WORKDIR + '/moses.ini'):
                 self.log("Error: No Moses configuration found. Did you forget to train the system first?",red,True)
