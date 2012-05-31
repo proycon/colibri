@@ -53,6 +53,7 @@ def computeoverlap(items, label= 'PAIR', pivot = 0):
                 if not (item in items[i]):
                     overlaps = False
                     break
+    
             if overlaps:      
                 s = item[0] + ' ||| ' + item[1] + ' ||| ' + ' '.join(scores[item]) 
                 print s.encode('utf-8')

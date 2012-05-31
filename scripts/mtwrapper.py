@@ -146,7 +146,11 @@ class MTWrapper(object):
     ]
 
     def initlog(self, logfile):
-        self.logfile = open(self.WORKDIR + '/' + logfile + '.log','w') 
+        try:
+            self.logfile = open(self.WORKDIR + '/' + logfile + '.log','w')
+        except: 
+            print >>sys.stderr,"Unable to write to logfile: " + self.WORKDIR + '/' + logfile + '.log' 
+            
     
     def log(self, msg, color=None, dobold = False):        
         if color:

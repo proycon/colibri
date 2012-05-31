@@ -335,6 +335,7 @@ void AlignmentModel::trainEM(const int MAXROUNDS, const double CONVERGEDTHRESHOL
     unsigned long c;
     double prevavdivergence = 0;
     bool converged = false;
+    unsigned long cells = 0;
     
     if (INIT) {
 		cerr << "  Initialisation step" << endl;
@@ -351,6 +352,7 @@ void AlignmentModel::trainEM(const int MAXROUNDS, const double CONVERGEDTHRESHOL
 		            for (vector<const EncAnyGram*>::const_iterator sourceiter = sourcepatterns->begin(); sourceiter != sourcepatterns->end(); sourceiter++) {
 					    const EncAnyGram * sourcegram = *sourceiter;
 						alignmatrix[sourcegram][targetgram] = v;
+						cells++;
 					}
 				}
 			}
