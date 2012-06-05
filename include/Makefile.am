@@ -1,1 +1,1 @@
-pkginclude_HEADERS = classdecoder.h classencoder.h ngram.h algorithms.h patternmodel.h alignmodel.h
+pkginclude_HEADERS = classdecoder.h classencoder.h ngram.h algorithms.h patternmodel.h gizamodel.h alignmodel.h

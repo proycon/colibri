@@ -5,7 +5,7 @@ bin_PROGRAMS = classdecode classencode patternfinder grapher aligner querier tes
 lib_LTLIBRARIES = libcolibri.la
 
 libcolibri_la_CXXFLAGS = -Wall -std=c++0x
-libcolibri_la_SOURCES = classdecoder.cpp classencoder.cpp ngram.cpp algorithms.cpp patternmodel.cpp alignmodel.cpp common.cpp
+libcolibri_la_SOURCES = classdecoder.cpp classencoder.cpp ngram.cpp algorithms.cpp patternmodel.cpp alignmodel.cpp gizamodel.cpp common.cpp
 
 classdecode_CXXFLAGS = -Wall -std=c++0x
 classdecode_LDADD = libcolibri.la
@@ -37,6 +37,7 @@ querier_CXXFLAGS = -Wall -std=c++0x
 querier_LDADD = libcolibri.la
 querier_SOURCES = querier.cpp
 querier_LDFLAGS = -static
+
 
 test_CXXFLAGS = -Wall -std=c++0x
 test_LDADD = libcolibri.la
