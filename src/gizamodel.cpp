@@ -25,7 +25,7 @@ GizaSentenceAlignment::GizaSentenceAlignment(const string & sourceline,const str
     this->source = new EncNGram(*source);
     this->target = new EncNGram(*target);
     this->index = index;    
-} */
+}*/
      
 GizaSentenceAlignment::GizaSentenceAlignment(const GizaSentenceAlignment& ref) {
     index = ref.index;
@@ -94,7 +94,8 @@ void GizaSentenceAlignment::parsesource(const string & line, ClassEncoder * clas
       	  	} else {
       	  	    int targetindex = atoi(word.c_str());
       	  	    //istringstream(word) >> targetindex;
-      	  	    alignment[sourceindex].push_back((unsigned char) targetindex);      	  	          	  	    
+      	  	    alignment.insert( pair<const unsigned char, const unsigned char>(sourceindex, (unsigned char) targetindex) );
+      	  	    //alignment[sourceindex].push_back((unsigned char) targetindex);      	  	          	  	    
       	  	}
       	  }
       	  begin = i+1; 
@@ -103,3 +104,22 @@ void GizaSentenceAlignment::parsesource(const string & line, ClassEncoder * clas
   
   int size = classencoder->encodestring(cleanline, buffer, true);
 }
+
+
+GizaSentenceAlignment GizaSentenceAlignment::intersect(const GizaSentenceAlignment & other) {
+    GizaSentenceAlignment intersection = *this;
+     
+    for (multimap<const unsigned char, const unsigned char>::const_iterator iter = alignment.begin(); iter != alignment.end(); iter++) {
+        unsigned char sourceindex = iter->first;
+        unsigned char targetindex = iter->second;
+        bool intersects = false;
+        if (other.alignment.count(targetindex)) {
+            for (multimap<const unsigned char, const unsigned char>::const_iterator iter2 = other.alignment.lower_bound(targetindex); iter2 != other.alignment.upper_bound(targetindex); iter2++) {
+                if (iter2->second == sourceindex) {
+                    intersection.alignment.insert( pair<const unsigned char, const unsigned char>(sourceindex, (unsigned char) targetindex) );
+                }
+            } 
+        }
+    }
+    return intersection;
+}  

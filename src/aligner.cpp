@@ -18,7 +18,8 @@ void usage() {
     //cerr << "\t-D                        Use Dice co-occurrence method" << endl;
     cerr << "\t-E                        Use EM alignment method (sentence-based)" << endl;
     cerr << "\t-2                        Use Alternative EM alignment method (type-based)" << endl;
-    cerr << "\t-3                        Use Iterative EM alignment method" << endl;       
+    cerr << "\t-3                        Use Iterative EM alignment method" << endl;
+    cerr << "\t-W                        Extract phrases by matching giza word-alignments with pattern models" << endl;       
     cerr << " Generic alignment options:" << endl;    
     cerr << "\t-V				         Verbose debugging output" << endl;
     cerr << "\t-b n                      Best n alignments only" << endl;
@@ -75,6 +76,7 @@ int main( int argc, char *argv[] ) {
     bool DOSKIPGRAMS = true;
     bool DODEBUG = false;
     bool DONORM = false;
+    bool DOGIZA = false;
     int EM_NULL = 0;
     int MAXROUNDS = 10000;
     double CONVERGENCE = 0.001;
@@ -196,6 +198,9 @@ int main( int argc, char *argv[] ) {
         case 'V':
         	DODEBUG = true;
         	break;
+        case 'W':
+            DOGIZA = true;
+            break;
         case 'Z':
         	DONORM = true;
         	break;        	
