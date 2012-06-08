@@ -3,10 +3,10 @@
 using namespace std;
 
 
-GizaModel::GizaModel(const string & filename, ClassEncoder * classencoder, ClassDecoder * classdecoder) {
+GizaModel::GizaModel(const string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder) {
     IN = new ifstream(filename.c_str(), ios::in);
-    this->classencoder = classencoder;
-    this->classdecoder = classdecoder;    
+    this->sourceencoder = sourceencoder;
+    this->targetencoder = targetencoder;    
     sentenceindex = 0;
 }
 
@@ -15,9 +15,9 @@ GizaModel::~GizaModel() {
     delete IN;
 }
 
-GizaSentenceAlignment::GizaSentenceAlignment(const string & sourceline,const string & targetline, ClassEncoder * classencoder, const int index) {
-    parsesource(sourceline, classencoder);
-    parsetarget(targetline, classencoder);
+GizaSentenceAlignment::GizaSentenceAlignment(const string & sourceline,const string & targetline,ClassEncoder * sourceencoder, ClassEncoder * targetencoder, const int index) {
+    parsesource(sourceline, sourceencoder);
+    parsetarget(targetline, targetencoder);
     this->index = index;
 }
 
@@ -52,7 +52,7 @@ GizaSentenceAlignment GizaModel::readsentence() {
       string sourceline;
       getline(*IN, targetline);
       getline(*IN, sourceline);
-      return GizaSentenceAlignment(sourceline, targetline, classencoder, sentenceindex);    
+      return GizaSentenceAlignment(sourceline, targetline, sourceencoder, targetencoder, sentenceindex);    
 }
 
 void GizaSentenceAlignment::parsetarget(const string & line, ClassEncoder * classencoder) {

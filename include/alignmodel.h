@@ -1,5 +1,6 @@
 #include <patternmodel.h>
 #include <list>
+#include <gizamodel.h>
 
 enum CoocMode {
 	NOCOOC = 0,
@@ -55,6 +56,8 @@ class AlignmentModel: public AlignConstraintInterface {
 		
 	void trainEM(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, const bool DONULL = true, const bool INIT=true);
 	void trainEM2(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, const bool DONULL = true, const bool INIT=true);	
+	
+	void extractgizapatterns(GizaModel & gizamodels2t, GizaModel & gizamodelt2s);
 	
 	void save(const std::string & filename);	
 };

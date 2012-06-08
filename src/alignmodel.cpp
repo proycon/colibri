@@ -2013,3 +2013,15 @@ void AlignmentModel::trainEM2(const int MAXROUNDS, const double CONVERGEDTHRESHO
 }
 
 
+void AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s) {
+
+    while (!gizamodel_s2t.eof() && !gizamodel_t2s.eof()) {         
+        GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
+        GizaSentenceAlignment sentence_t2s = gizamodel_t2s.readsentence();    
+        GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
+        
+        int sentenceindex = gizamodel_s2t.index();
+        
+    }
+
+}

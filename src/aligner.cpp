@@ -19,7 +19,7 @@ void usage() {
     cerr << "\t-E                        Use EM alignment method (sentence-based)" << endl;
     cerr << "\t-2                        Use Alternative EM alignment method (type-based)" << endl;
     cerr << "\t-3                        Use Iterative EM alignment method" << endl;
-    cerr << "\t-W                        Extract phrases by matching giza word-alignments with pattern models" << endl;       
+    cerr << "\t-W giza-s-t.A3:giza-t-s.A3   Extract phrases by matching giza word-alignments with pattern models" << endl;       
     cerr << " Generic alignment options:" << endl;    
     cerr << "\t-V				         Verbose debugging output" << endl;
     cerr << "\t-b n                      Best n alignments only" << endl;
@@ -77,6 +77,8 @@ int main( int argc, char *argv[] ) {
     bool DODEBUG = false;
     bool DONORM = false;
     bool DOGIZA = false;
+    string gizast = "";
+    string gizats = "";
     int EM_NULL = 0;
     int MAXROUNDS = 10000;
     double CONVERGENCE = 0.001;
@@ -102,8 +104,14 @@ int main( int argc, char *argv[] ) {
     /* getopt_long stores the option index here. */
     int option_index = 0;
     
+    
+    string raw;
+    string::size_type pos;
+    
+    
+    
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEI:v:G:i:23",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEI:v:G:i:23W:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -200,6 +208,15 @@ int main( int argc, char *argv[] ) {
         	break;
         case 'W':
             DOGIZA = true;
+            raw = optarg;
+            pos = raw.find(':');
+            if (pos == string::npos) {
+                cerr << "ERROR: -W expects two giza filenames separated by a colon (:)" << endl;
+                usage();
+                exit(2);
+            }
+            gizast = raw.substr(0, pos);
+            gizats = raw.substr(pos); 
             break;
         case 'Z':
         	DONORM = true;
@@ -237,6 +254,9 @@ int main( int argc, char *argv[] ) {
 			cerr << "\tCo-occurrence metric : JACCARD (-J)" << endl;	
 		} else if (COOCMODE == DICE) {
 				cerr << "\tCo-occurrence metric : DICE (-D)" << endl;
+        } else if (DOGIZA) {
+            cerr << "\tGIZA++ source-to-target word-alignment: " << gizast << endl;
+            cerr << "\tGIZA++ target-to-source word-alignment: " << gizats << endl;
 		}
 		
 		if (bestn) {
@@ -371,7 +391,21 @@ int main( int argc, char *argv[] ) {
 				cerr << "   Found alignment targets for  " << reversealignmodel->alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel->totalsize() << endl;						
 			}	    			    		
+		}		
+		if (DOGIZA) {
+			cerr << "Loading source class encoder " << sourceclassfile << endl;
+		    ClassEncoder sourceclassenccoder = ClassEncoder(sourceclassfile);
+    
+		    cerr << "Loading target class encoder " << targetclassfile << endl;
+    		ClassEncoder targetclassencoder = ClassEncoder(targetclassfile);    
+				
+		    cerr << "Initialising GIZA++ Word Alignments" << endl;
+		    GizaModel gizamodels2t = GizaModel(gizast, &sourceclassenccoder, &targetclassencoder);
+		    GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassenccoder);
+		    
+		    alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s);
 		}
+				
 		if (DOBIDIRECTIONAL) {
 			cerr << "Computing intersection of both alignment models..." << endl;
 			alignmodel->intersect(reversealignmodel, bidirprobthreshold, bestn);
@@ -384,6 +418,9 @@ int main( int argc, char *argv[] ) {
 			const int adjustments = alignmodel->graphalign(sourcemodel, targetmodel, graphweightfactor);
 			cerr << "   Made " << adjustments << " adjustments" << endl;			
 		}
+
+
+
 
 		if (!outputprefix.empty()) {
 		    cerr << "Saving alignment model..." << endl;
