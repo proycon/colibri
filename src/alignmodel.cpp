@@ -2022,7 +2022,7 @@ void AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & 
         
         int sentenceindex = gizamodel_s2t.index();
 
-        
+                
         
     }
 

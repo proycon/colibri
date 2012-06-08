@@ -140,3 +140,46 @@ GizaSentenceAlignment GizaSentenceAlignment::unify(const GizaSentenceAlignment &
     return unified;
 }  
 
+void GizaSentenceAlignment::out(std::ostream* OUT, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
+    //OUT << "<html><head><title>Word Alignments</title></head><body>" << endl;
+    *OUT << "<table>";
+    *OUT << "<tr><td></td>";
+        
+    for (int i = 0; i < source->n(); i++) {
+        *OUT << "<td>" << endl;         
+        EncNGram * unigram = source->slice(i, 1);
+        *OUT << unigram->decode(*sourcedecoder);
+        delete unigram;
+        *OUT << "</td>";
+    }
+    *OUT << "</tr>" << endl;
+    
+    //init
+    bool matrix[source->n()+1][target->n()+1];
+    for (int i = 0; i < source->n(); i++) {
+        for (int j = 0; j < target->n(); j++) {
+            matrix[i][j] = false;
+        }
+    }    
+    for (multimap<const unsigned char, const unsigned char>::const_iterator iter = alignment.begin(); iter != alignment.end(); iter++) {
+        unsigned char sourceindex = iter->first;
+        unsigned char targetindex = iter->second;
+        matrix[sourceindex][targetindex] = true;   
+    }
+    for (int i = 0; i < target->n(); i++) {
+        *OUT << "<tr><td>";   
+        EncNGram * unigram = target->slice(i, 1);
+        *OUT << unigram->decode(*targetdecoder);
+        delete unigram;   
+        *OUT << "</td>";
+        for (int j = 0; j < source->n(); j++) {
+            if (matrix[j][i]) {
+                *OUT << "<td style=\"background: black\"></td>" << endl;
+            } else {
+                *OUT << "<td></td>" << endl;
+            } 
+        }
+        *OUT << "</tr>";
+    }            
+    *OUT << "</table>" << endl;
+}
