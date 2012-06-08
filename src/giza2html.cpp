@@ -91,7 +91,7 @@ int main( int argc, char *argv[] ) {
 	    cerr << "Initialising GIZA++ Word Alignments" << endl;
 	    GizaModel gizamodel_s2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);	   
 
-        cout << "<html><head><title>Word Alignments</title><style type=\"text/css\">div { background: #eee; margin-left: auto; margin-right: auto; width: 100%; text-align: center }\ntable { border-collapse: collapse; } \ntable td { border: solid 1px #999; }</style></head><body>" << endl;
+        cout << "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><title>Colibri: Word Alignments</title><style type=\"text/css\">div { background: #eee; margin: 10px; margin-left: auto; margin-right: auto; width: 100%; text-align: center }\ntable { border-collapse: collapse; } \ntable td { border: solid 1px #999; }</style></head><body>" << endl;
 
         unsigned int sentence = 0;
 	    if (!gizats.empty()) {
@@ -104,7 +104,7 @@ int main( int argc, char *argv[] ) {
 	            if ((sentence >= begin) && ((sentence <= end) || (end == 0))) {
 	                cout << "<div>" << endl;	            
                     sentence_s2t.out( (ostream*) &cout,  sourceclassdecoder, targetclassdecoder);
-                    sentence_t2s.out( (ostream*) &cout,  sourceclassdecoder, targetclassdecoder);
+                    sentence_t2s.out( (ostream*) &cout,  targetclassdecoder, sourceclassdecoder);
                     if (INTERSECTION) {
                         GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
                         sentence_i.out( (ostream*) &cout, sourceclassdecoder, targetclassdecoder);
