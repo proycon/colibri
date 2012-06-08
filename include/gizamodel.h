@@ -22,7 +22,8 @@ class GizaSentenceAlignment {
      void parsesource(const std::string & line, ClassEncoder * sourceencoder);
      void parsetarget(const std::string & line, ClassEncoder * targetencoder);
      
-     GizaSentenceAlignment intersect(const GizaSentenceAlignment & other);  
+     GizaSentenceAlignment intersect(const GizaSentenceAlignment & other);
+     GizaSentenceAlignment unify(const GizaSentenceAlignment & other);  
 };
 
 class GizaModel {

@@ -2021,6 +2021,8 @@ void AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & 
         GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
         
         int sentenceindex = gizamodel_s2t.index();
+
+        
         
     }
 

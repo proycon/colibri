@@ -112,7 +112,6 @@ GizaSentenceAlignment GizaSentenceAlignment::intersect(const GizaSentenceAlignme
     for (multimap<const unsigned char, const unsigned char>::const_iterator iter = alignment.begin(); iter != alignment.end(); iter++) {
         unsigned char sourceindex = iter->first;
         unsigned char targetindex = iter->second;
-        bool intersects = false;
         if (other.alignment.count(targetindex)) {
             for (multimap<const unsigned char, const unsigned char>::const_iterator iter2 = other.alignment.lower_bound(targetindex); iter2 != other.alignment.upper_bound(targetindex); iter2++) {
                 if (iter2->second == sourceindex) {
@@ -123,3 +122,21 @@ GizaSentenceAlignment GizaSentenceAlignment::intersect(const GizaSentenceAlignme
     }
     return intersection;
 }  
+
+
+GizaSentenceAlignment GizaSentenceAlignment::unify(const GizaSentenceAlignment & other) {
+    GizaSentenceAlignment unified = *this;     
+    for (multimap<const unsigned char, const unsigned char>::const_iterator iter = alignment.begin(); iter != alignment.end(); iter++) {
+        unsigned char sourceindex = iter->first;
+        unsigned char targetindex = iter->second;
+        unified.alignment.insert( pair<const unsigned char, const unsigned char>(sourceindex, (unsigned char) targetindex) );        
+    }
+
+    for (multimap<const unsigned char, const unsigned char>::const_iterator iter = other.alignment.begin(); iter != other.alignment.end(); iter++) {
+        unsigned char sourceindex = iter->first;
+        unsigned char targetindex = iter->second;        
+        unified.alignment.insert( pair<const unsigned char, const unsigned char>(targetindex, (unsigned char) sourceindex) );
+    }    
+    return unified;
+}  
+
