@@ -8,6 +8,7 @@ GizaModel::GizaModel(const string & filename, ClassEncoder * sourceencoder, Clas
     this->sourceencoder = sourceencoder;
     this->targetencoder = targetencoder;    
     sentenceindex = 0;
+    nextlinebuffer = "{UNDEFINED}";
 }
 
 GizaModel::~GizaModel() {
@@ -22,15 +23,15 @@ GizaSentenceAlignment::GizaSentenceAlignment(const string & sourceline,const str
 }
 
 /*GizaSentenceAlignment::GizaSentenceAlignment(const EncNGram * source, const EncNGram * target, const int index) {
-    this->source = new EncNGram(*source);
-    this->target = new EncNGram(*target);
+    this->source = new EncData(*source);
+    this->target = new EncData(*target);
     this->index = index;    
 }*/
      
 GizaSentenceAlignment::GizaSentenceAlignment(const GizaSentenceAlignment& ref) {
     index = ref.index;
-    source = new EncNGram(*(ref.source));
-    target = new EncNGram(*(ref.target));
+    source = new EncData(*(ref.source));
+    target = new EncData(*(ref.target));
     alignment = ref.alignment; //not sure if this will work?
 }
 
@@ -40,10 +41,13 @@ GizaSentenceAlignment::~GizaSentenceAlignment() {
 }
 
 GizaSentenceAlignment GizaModel::readsentence() {
+
+      if (nextlinebuffer == "{UNDEFINED}") getline(*IN, nextlinebuffer); //nothing in buffer yet, read         
+
       sentenceindex++;
-      string line;
       
-      getline(*IN, line); 
+      string line = nextlinebuffer;
+      
       if (line[0] != '#') {
         cerr << "Error parsing GIZA++ Alignment, excepted new fragment, found: " << line << endl;
       }       
@@ -52,6 +56,9 @@ GizaSentenceAlignment GizaModel::readsentence() {
       string sourceline;
       getline(*IN, targetline);
       getline(*IN, sourceline);
+      
+      getline(*IN, nextlinebuffer); //buffer next linenum
+
       return GizaSentenceAlignment(sourceline, targetline, sourceencoder, targetencoder, sentenceindex);    
 }
 
@@ -59,7 +66,7 @@ void GizaSentenceAlignment::parsetarget(const string & line, ClassEncoder * clas
   unsigned char buffer[65536];
   
   int size = classencoder->encodestring(line, buffer, true);
-  target = new EncNGram(buffer,size-1);  
+  target = new EncData(buffer,size-1);  
 }
   
 void GizaSentenceAlignment::parsesource(const string & line, ClassEncoder * classencoder) {
@@ -68,7 +75,7 @@ void GizaSentenceAlignment::parsesource(const string & line, ClassEncoder * clas
   bool inalignment = false;
    
   int begin = 0;
-  unsigned char sourceindex = 1; //first is 1
+  unsigned char sourceindex = 0;
   for (int i = 0; i < line.size(); i++) {
       if ((line[i] == ' ') || (i == line.size() - 1)) {
       	  int offset = 0;      	        	  
@@ -85,17 +92,16 @@ void GizaSentenceAlignment::parsesource(const string & line, ClassEncoder * clas
       	    begin = i + 1;
       	    continue;   
       	  } 
-      	        	         	  
       	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ") && (word != "NULL")) {
       	    if (!inalignment) {
+      	        sourceindex++;      	    
       	        if (!cleanline.empty()) cleanline += " ";
       	  	    cleanline += word;
-      	  	    sourceindex++;
+      	  	    //cerr << "SOURCEDEBUG: " << word << ":" << (int) sourceindex << endl;      	  	    
       	  	} else {
       	  	    int targetindex = atoi(word.c_str());
-      	  	    //istringstream(word) >> targetindex;
-      	  	    alignment.insert( pair<const unsigned char, const unsigned char>(sourceindex, (unsigned char) targetindex) );
-      	  	    //alignment[sourceindex].push_back((unsigned char) targetindex);      	  	          	  	    
+      	  	    //cerr << "ALIGNDEBUG: " << (int) sourceindex << "->" << (int) targetindex << endl;
+      	  	    alignment.insert( pair<const unsigned char, const unsigned char>(sourceindex, (unsigned char) targetindex) );      	  	          	  	    
       	  	}
       	  }
       	  begin = i+1; 
@@ -104,7 +110,7 @@ void GizaSentenceAlignment::parsesource(const string & line, ClassEncoder * clas
   
   //cerr << endl << "SOURCE=[" << cleanline << "]" << endl;
   int size = classencoder->encodestring(cleanline, buffer, true);
-  source = new EncNGram(buffer,size-1);  
+  source = new EncData(buffer,size-1);  
 }
 
 
@@ -147,7 +153,7 @@ void GizaSentenceAlignment::out(std::ostream* OUT, ClassDecoder & sourcedecoder,
     *OUT << "<table>";
     *OUT << "<tr><td></td>";
         
-    for (int i = 0; i < source->n(); i++) {
+    for (int i = 0; i < source->length(); i++) {
         *OUT << "<td>";         
         EncNGram * unigram = source->slice(i, 1);
         *OUT << unigram->decode(sourcedecoder);
@@ -160,8 +166,8 @@ void GizaSentenceAlignment::out(std::ostream* OUT, ClassDecoder & sourcedecoder,
     //init
      
     map<unsigned char, map<unsigned char, bool>> matrix;     
-    for (int i = 0; i < source->n(); i++) {
-        for (int j = 0; j < target->n(); j++) {
+    for (int i = 1; i <= source->length(); i++) {
+        for (int j = 1; j <= target->length(); j++) {
             matrix[i][j] = false;
         }
     } 
@@ -173,19 +179,18 @@ void GizaSentenceAlignment::out(std::ostream* OUT, ClassDecoder & sourcedecoder,
         unsigned char targetindex = iter->second;
         matrix[sourceindex][targetindex] = true;   
     }
-
     
     
     
-    for (int i = 0; i < target->n(); i++) {    
+    for (int i = 0; i < target->length(); i++) {    
         *OUT << "<tr><td>";   
         EncNGram * unigram = target->slice(i, 1);
         *OUT << unigram->decode(targetdecoder);
         delete unigram;   
         *OUT << "</td>";        
-        for (int j = 0; j < source->n(); j++) {        
-            if (matrix[j][i]) {
-              *OUT << "<td style=\"background: black\"></td>" << endl;
+        for (int j = 0; j < source->length(); j++) {        
+            if (matrix[j+1][i+1]) {
+              *OUT << "<td style=\"background: black\">" << i+1 << "->" << j+1 << "</td>" << endl;
             } else {
                 *OUT << "<td></td>" << endl;
             } 

@@ -718,3 +718,51 @@ EncSkipGram::EncSkipGram(istream * in, const char _skipcount) {
     data = new unsigned char[_size];
     in->read((char*) data, (int) _size); //read data                                                
 }
+
+
+EncData::EncData(const unsigned char* dataref, const int size) {
+   //create a copy of the character data (will take less space than storing pointers anyhow!)
+   if (size <= 0) {
+       cerr << "INTERNAL ERROR EncData(): Data size must be > 0! Parameter says " << (int) size << "!" << endl;
+       exit(13);
+   }
+   _size = size;
+   
+   data = new unsigned char[size];
+   for (int i = 0; i < size; i++) {
+        data[i] = dataref[i];
+   }
+}
+
+EncData::EncData(const EncData& ref) {
+    _size = ref.size();
+    if (_size <= 0) {
+        cerr << "INTERNAL ERROR EncAnyGram(): Data size must be > 0, reference data has " << (int) _size << " length=" << (int) ref.length() << ") !" << endl;
+        exit(13);    
+    }
+    data = new unsigned char[_size];   
+    for (int i = 0; i < _size; i++) {
+        data[i] = ref.data[i];
+    }    
+}
+
+EncData::~EncData() {     
+    if (data != NULL) delete [] data;        
+    data = NULL;
+}
+
+const int EncData::length() const {
+    char count = 1; 
+    for (int i = 0; i < _size; i++) {
+        if (data[i] == 0) count++;
+    }    
+    return count;
+}
+
+EncNGram * EncData::slice(const int begin,const int length) const {    
+    if (length <= 0) {
+        cerr << "INTERNAL ERROR EncNGram::slice(): slice got length argument <= 0! Not possible!" << endl;
+        exit(13);
+    }
+    return getencngram(begin, length, data, _size);
+}

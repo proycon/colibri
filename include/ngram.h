@@ -149,7 +149,22 @@ class EncSkipGram: public EncAnyGram {
       
 };
 
-
+class EncData {
+   private:
+    unsigned char * data;
+    int _size;
+   public:
+    //EncNGram(): EncAnyGram() {};
+    EncData() { data = NULL; _size = 0;}; 
+    EncData(const unsigned char* dataref, const int size);
+    EncData(const EncData& ref);
+    ~EncData();
+     
+     const int length() const;
+     const int size() const { return _size; }     
+    
+    EncNGram * slice(const int begin,const int length) const;    
+};
 namespace std {
 
     template <>

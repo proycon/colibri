@@ -9,8 +9,8 @@
 class GizaSentenceAlignment {
     public:
      int index;
-     EncNGram * source; //holds entire sentence 
-     EncNGram * target; //holds entire sentence
+     EncData * source; //holds entire sentence 
+     EncData * target; //holds entire sentence
      //std::unordered_map<unsigned char , std::vector<unsigned char> > alignment;
      std::multimap<const unsigned char,const unsigned char> alignment;
 
@@ -34,6 +34,7 @@ class GizaModel {
         ClassEncoder * sourceencoder;
         ClassEncoder * targetencoder;
         int sentenceindex; 
+        std::string nextlinebuffer;
     public:
                 
         GizaModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder);
