@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -I@top_srcdir@/include
 
-bin_PROGRAMS = classdecode classencode patternfinder grapher aligner querier test
+bin_PROGRAMS = classdecode classencode patternfinder grapher aligner querier giza2html test
 
 lib_LTLIBRARIES = libcolibri.la
 
@@ -37,6 +37,11 @@ querier_CXXFLAGS = -Wall -std=c++0x
 querier_LDADD = libcolibri.la
 querier_SOURCES = querier.cpp
 querier_LDFLAGS = -static
+
+giza2html_CXXFLAGS = -Wall -std=c++0x
+giza2html_LDADD = libcolibri.la
+giza2html_SOURCES = giza2html.cpp
+giza2html_LDFLAGS = -static
 
 
 test_CXXFLAGS = -Wall -std=c++0x
