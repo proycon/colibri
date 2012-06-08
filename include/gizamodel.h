@@ -25,7 +25,7 @@ class GizaSentenceAlignment {
      GizaSentenceAlignment intersect(const GizaSentenceAlignment & other);
      GizaSentenceAlignment unify(const GizaSentenceAlignment & other);  
      
-     void out(std::ostream*, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder);
+     void out(std::ostream*, ClassDecoder & sourcedecoder, ClassDecoder & targetdecoder);
 };
 
 class GizaModel {

@@ -167,15 +167,23 @@ std::string EncAnyGram::decode(ClassDecoder& classdecoder) const {
                 return result;
             } else {  
                 //cout << " CLASS " << cls << " (length " << l << ") DECODES TO " << classdecoder[cls] << endl;
-                result += classdecoder[cls] + ' ';
+                if (classdecoder.hasclass(cls)) {
+                    result += classdecoder[cls] + ' ';
+                } else {
+                    result += "{NOTFOUND!} ";       //should never happen             
+                }
             }
             begin = i + 1;            
             l = 0;
         }
     }
     if (l > 0) {
-        const unsigned int cls = bytestoint(data + begin, l);  
-        result += classdecoder[cls];
+        const unsigned int cls = bytestoint(data + begin, l);
+        if (classdecoder.hasclass(cls)) {  
+            result += classdecoder[cls];            
+        } else {
+            result += "{NOTFOUND!} ";
+        }
         //cout << "FINAL CLASS " << cls << " DECODES TO " << classdecoder[cls] << endl;
     }    
     return result;

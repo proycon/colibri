@@ -80,35 +80,35 @@ int main( int argc, char *argv[] ) {
 		ClassEncoder targetclassencoder = ClassEncoder(targetclassfile);
 			
 	    cerr << "Initialising GIZA++ Word Alignments" << endl;
-	    GizaModel gizamodel_s2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);
+	    GizaModel gizamodel_s2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);	   
 
-        cout << "<html><head><title>Word Alignments</title></head><body>" << endl;
+        cout << "<html><head><title>Word Alignments</title><style type=\"text/css\">div { background: #eee; margin-left: auto; margin-right: auto; width: 100%; text-align: center }\ntable { border-collapse: collapse; } \ntable td { border: solid 1px #999; }</style></head><body>" << endl;
 
 	    if (!gizats.empty()) {
 	        GizaModel gizamodel_t2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
 	        while (!gizamodel_s2t.eof() && !gizamodel_t2s.eof()) {
-	            cout << "<div style=\"background: #eee; margin-left: auto; margin-right: auto; width: 100%; text-align: center\">" << endl;
+	            cout << "<div>" << endl;
 	            GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
 	            GizaSentenceAlignment sentence_t2s = gizamodel_t2s.readsentence();
 	            
-                sentence_s2t.out( (ostream*) &cout,  &sourceclassdecoder, &targetclassdecoder);
-                sentence_t2s.out( (ostream*) &cout,  &sourceclassdecoder, &targetclassdecoder);
+                sentence_s2t.out( (ostream*) &cout,  sourceclassdecoder, targetclassdecoder);
+                sentence_t2s.out( (ostream*) &cout,  sourceclassdecoder, targetclassdecoder);
                 if (INTERSECTION) {
                     GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
-                    sentence_i.out( (ostream*) &cout, &sourceclassdecoder, &targetclassdecoder);
+                    sentence_i.out( (ostream*) &cout, sourceclassdecoder, targetclassdecoder);
                 }
                 if (UNION) {
                     GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
-                    sentence_u.out( (ostream*) &cout, &sourceclassdecoder, &targetclassdecoder);
+                    sentence_u.out( (ostream*) &cout, sourceclassdecoder, targetclassdecoder);
                 }
                 cout << "</div><hr />" << endl;
 	        }         
 	    } else {
-	       while (!gizamodel_s2t.eof()) {         
-	            cout << "<div style=\"background: #eee; margin-left: auto; margin-right: auto; width: 100%; text-align: center\">" << endl;
+	       while (!gizamodel_s2t.eof()) {        
+	            cout << "<div>" << endl;
                 GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
-                sentence_s2t.out( (ostream*) &cout,  &sourceclassdecoder, &targetclassdecoder);
-                cout << "</div><hr />" << endl;        
+                sentence_s2t.out( (ostream*) &cout,  sourceclassdecoder, targetclassdecoder);
+                cout << "</div><hr />" << endl;       
             }
 	    }
 	    

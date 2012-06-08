@@ -27,6 +27,8 @@ class ClassDecoder {
     std::string operator[](unsigned int key) {
          return classes[key];
     }
+    
+    bool hasclass(unsigned int key) const { return (classes.count(key) > 0); } 
 };
 
 unsigned int bytestoint(const unsigned char* a, const int l);

@@ -186,7 +186,7 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
           	  }			 
           }
       }
-      return outputcursor;
+      return outputcursor; //doing -1 to break of possible trailing zero bytes breaks stuff
 }
 
 int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer, unsigned char * skipconf, char * skipcount,  bool allowunknown) {
