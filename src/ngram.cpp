@@ -794,6 +794,7 @@ bool EncData::match(const EncSkipGram * skipgram, const int offset) {
     
     int begin = 0;
     int partindex = 0;
+    bool result = true;
     for (vector<pair<int,int> >::iterator iter = gaps.begin(); iter != gaps.end(); iter++) {
         const int gapbegin = iter->first;
         const int gapsize = iter->second;        
@@ -802,7 +803,10 @@ bool EncData::match(const EncSkipGram * skipgram, const int offset) {
                 cerr << "INTERNAL ERROR: EncData::match(), partindex >= parts" << endl;
                 exit(6); 
             }
-            if (!match(parts[partindex], begin)) return false;
+            if (!match(parts[partindex], begin)) {
+                result = false;
+                break;
+            }
             
             //prepare for next round 
             partindex++;
@@ -810,7 +814,13 @@ bool EncData::match(const EncSkipGram * skipgram, const int offset) {
         }
     }     
     if (partindex < parts.size()) {
-        if (!match(parts[partindex], begin)) return false;
+        if (!match(parts[partindex], begin)) {
+            result = false;
+            break;
+        }
     }
-    return true;    
+    for (vector<const EncNGram *>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
+        delete *iter;
+    }
+    return result;  
 }
