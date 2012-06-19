@@ -139,7 +139,7 @@ class EncSkipGram: public EncAnyGram {
       
       
       int parts(std::vector<EncNGram*> & container) const; //returns all consecutive parts
-      void mask(std::vector<bool> & container) const; //returns a boolean mask of the skipgram (0 = gap(encapsulation) , 1 = skipgram coverage)
+      void mask( std::vector<bool> & container) const; //returns a boolean mask of the skipgram (0 = gap(encapsulation) , 1 = skipgram coverage)
       //int instantiate(const EncSkipGram * skipcontent, std::vector<EncSkipGram*> & container) const;
       //int instantiate(const EncSkipGram * skipcontent, std::vector<EncSkipGram*> & container, const std::vector<EncNGram*> & parts, const std::vector<EncNGram*> & contentparts) const; //returns all instances (as skipgrams cause instances may be skipgrams) 
 	  EncNGram instantiate(const EncSkipGram * skipcontent) const;
@@ -162,6 +162,9 @@ class EncData {
      
      const int length() const;
      const int size() const { return _size; }     
+
+    bool match(const EncNGram * ngram, const int offset);
+    bool match(const EncSkipGram * skipgram, const int offset);
     
     EncNGram * slice(const int begin,const int length) const;    
 };

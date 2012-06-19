@@ -13,13 +13,16 @@ import getopt
 import codecs
 import glob
 import datetime
+import time
 import shutil
+import shlex
 import numpy
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot
 from pynlpl.evaluation import filesampler
-
+from twisted.internet import protocol, reactor
+from twisted.protocols import basic
 
 
 
@@ -54,6 +57,39 @@ def blue(s):
 def magenta(s):
     CSI="\x1B["
     return CSI+"35m" + s + CSI + "0m"   
+
+class MTProtocol(basic.LineReceiver):
+    def lineReceived(self, line):
+        #post line as input to process
+        while self.factory.busy: 
+            time.sleep(0.1)
+        #send output to client
+        self.factory.process.stdin.write(line+"\n")
+        output = self.factory.process.stdout.readline().strip()
+        self.sendLine(output)
+        
+class MTFactory(protocol.ServerFactory):
+    protocol = MTProtocol
+
+    def __init__(self, cmd, shell=True, sendstderr=False):
+        if isinstance(cmd, str) or isinstance(cmd,unicode):
+            self.cmd = shlex.split(cmd)
+        else: 
+            self.cmd = cmd
+            
+        self.sendstderr = False
+        self.busy = False
+        self.process = subprocess.Popen(cmd, shell, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+    def __delete__(self):
+        self.process.close()
+    
+class MTServer:
+    """Generic Server around a stdin/stdout based CLI tool"""
+    def __init__(self, cmdline, port, shell=True,sendstderr= False, close_fds=True):
+        reactor.listenTCP(port, MTFactory(cmdline, shell, sendstderr))
+        reactor.run()
+
 
 class MTWrapper(object):
     defaults = [
@@ -490,7 +526,8 @@ class MTWrapper(object):
         print >>sys.stderr,"\ttrain                              Train the MT system"
         print >>sys.stderr,"\trun <inputfile> [options]          Run the MT system on the specified input file"
         print >>sys.stderr,"\t\t-t                               Tokenise the input file"
-        print >>sys.stderr,"\t\t-o <outputfile>                  Output file (default: stdout)"        
+        print >>sys.stderr,"\t\t-o <outputfile>                  Output file (default: stdout)"
+        print >>sys.stderr,"\tstartserver <port>                 Start the MT system as a server on the specified port"        
         print >>sys.stderr,"\ttest <inputfile> <referencefile>   Run and evaluate the MT system on the specified input file and reference file (one sentence per line). If <inputfile> and <referencefile> are not given, the default test files from the system configuration are used."                               
         print >>sys.stderr,"\tscore <inputfile> <referencefile>  Like test, but work on a pre-run system, does not run the translation again."                   
         print >>sys.stderr,"\tclean [all|giza|moses|colibri|score|batch]    Clean generated files"
@@ -554,6 +591,11 @@ class MTWrapper(object):
             else:
                 print >>sys.stderr, "An error occurred whilst trying to run the system" 
                 sys.exit(1)
+            
+        elif cmd == 'startserver':
+            self.initlog('server')
+            port = int(sys.argv[2])
+            self.server(port)            
 
         elif cmd == 'freeze':          
             self.initlog('freeze')
@@ -1330,6 +1372,14 @@ class MTWrapper(object):
         
         
         return True
+    
+    def server(self, port):
+        if not self.check_common(): return False
+        if not self.check_run(): return False
+                
+        #MTServer(cmd, port)
+
+        
     
     def run(self, inputfile, outputfile='output.txt', tokenise=False):        
         if tokenise and (not self.EXEC_UCTO or not os.path.isfile(self.EXEC_UCTO)):

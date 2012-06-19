@@ -10,6 +10,7 @@ enum CoocMode {
 };
 
 void orderedinsert(std::list<double> &, double value);
+void recompute_token_index(std::unordered_map<const EncAnyGram *, std::vector<int> > & tokenfwindex, std::unordered_map<int, std::vector<const EncAnyGram *> > & tokenrevindex, EncData * sentence, const std::vector<const EncAnyGram*> * patterns );
 
 class AlignmentModel: public AlignConstraintInterface {
    protected:
@@ -49,6 +50,7 @@ class AlignmentModel: public AlignConstraintInterface {
 	double cooc( CoocMode mode, const std::multiset<uint32_t> & sourceindex, const std::multiset<uint32_t> & targetindex,  const double threshold = 0); //multiset instead of vector cause we want the ordering to easily compute co-occurence
 	
 	
+	int prune(const double prunethreshold);
 	void normalize();
 	
 	unsigned int trainCooc(CoocMode mode, const int bestn = 0, const double absthreshold = 0,  const double relthreshold = 0);
@@ -57,7 +59,8 @@ class AlignmentModel: public AlignConstraintInterface {
 	void trainEM(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, const bool DONULL = true, const bool INIT=true);
 	void trainEM2(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, const bool DONULL = true, const bool INIT=true);	
 	
-	void extractgizapatterns(GizaModel & gizamodels2t, GizaModel & gizamodelt2s);
+
+	void extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold=0, const double coocthreshold=0, const double alignscorethreshold = 0.5);
 	
 	void save(const std::string & filename);	
 };
@@ -123,6 +126,8 @@ class EMAlignmentModel2: public AlignmentModel {
     void train(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0);     
     void save(const std::string & filename);
 };
+
+
 
 
 /*class ItEMAlignmentModel: public EMAlignmentModel {

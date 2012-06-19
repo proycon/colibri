@@ -766,3 +766,52 @@ EncNGram * EncData::slice(const int begin,const int length) const {
     }
     return getencngram(begin, length, data, _size);
 }
+
+bool EncData::match(const EncNGram * ngram, const int offset) {
+    if (offset + ngram->n() > length()) return false;
+    const EncNGram * testpattern = slice(offset, ngram->n() );
+    const int s = testpattern->size();
+    if (ngram->size() == s) {
+        for (int i = 0; i < s; i++) {
+            if (ngram->data[i] != testpattern->data[i]) {
+                delete testpattern;
+                return false;
+            }
+        }
+        delete testpattern;
+        return true;
+    } else {
+        cerr << "INTERNAL ERROR EncData::match(): Ngram size does not match!" << endl;
+        exit(13);    
+    }   
+}
+
+bool EncData::match(const EncSkipGram * skipgram, const int offset) {
+    if (offset + skipgram->n() > length()) return false;
+    vector<pair<int,int> > gaps;
+    vector<EncNGram *> parts;
+    skipgram->getgaps(gaps);
+    skipgram->parts(parts);    
+    
+    int begin = 0;
+    int partindex = 0;
+    for (vector<pair<int,int> >::iterator iter = gaps.begin(); iter != gaps.end(); iter++) {
+        const int gapbegin = iter->first;
+        const int gapsize = iter->second;        
+        if (gapbegin > begin) {
+            if (partindex >= parts.size()) {
+                cerr << "INTERNAL ERROR: EncData::match(), partindex >= parts" << endl;
+                exit(6); 
+            }
+            if (!match(parts[partindex], begin)) return false;
+            
+            //prepare for next round 
+            partindex++;
+            begin = gapbegin + gapsize; 
+        }
+    }     
+    if (partindex < parts.size()) {
+        if (!match(parts[partindex], begin)) return false;
+    }
+    return true;    
+}

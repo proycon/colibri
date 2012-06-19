@@ -91,7 +91,7 @@ int main( int argc, char *argv[] ) {
 	    cerr << "Initialising GIZA++ Word Alignments" << endl;
 	    GizaModel gizamodel_s2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);	   
 
-        cout << "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><title>Colibri: Word Alignments</title><style type=\"text/css\">div { background: #eee; margin: 10px; margin-left: auto; margin-right: auto; width: 100%; text-align: center }\ntable { border-collapse: collapse; } \ntable td { border: solid 1px #999; }</style></head><body>" << endl;
+        cout << "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><title>Colibri: Word Alignments</title><style type=\"text/css\">div { background: #eee; margin: 10px; margin-left: auto; margin-right: auto; width: 100%; text-align: center }\ntable { margin: 10px; border-collapse: collapse; } \ntable td { border: solid 1px #999; }</style></head><body>" << endl;
 
         unsigned int sentence = 0;
 	    if (!gizats.empty()) {

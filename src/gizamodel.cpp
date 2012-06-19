@@ -16,6 +16,7 @@ GizaModel::~GizaModel() {
     delete IN;
 }
 
+    
 GizaSentenceAlignment::GizaSentenceAlignment(const string & sourceline,const string & targetline,ClassEncoder * sourceencoder, ClassEncoder * targetencoder, const int index) {
     parsesource(sourceline, sourceencoder);
     parsetarget(targetline, targetencoder);
@@ -116,7 +117,8 @@ void GizaSentenceAlignment::parsesource(const string & line, ClassEncoder * clas
 
 GizaSentenceAlignment GizaSentenceAlignment::intersect(const GizaSentenceAlignment & other) {
     GizaSentenceAlignment intersection = *this;
-     
+    intersection.alignment.clear();
+    
     for (multimap<const unsigned char, const unsigned char>::const_iterator iter = alignment.begin(); iter != alignment.end(); iter++) {
         unsigned char sourceindex = iter->first;
         unsigned char targetindex = iter->second;

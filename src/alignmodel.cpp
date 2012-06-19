@@ -2012,18 +2012,239 @@ void AlignmentModel::trainEM2(const int MAXROUNDS, const double CONVERGEDTHRESHO
     }
 }
 
+/*void AlignmentModel::growdiag(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s) {
+    
+}*/
 
-void AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s) {
+
+int AlignmentModel::prune(const double prunethreshold) {
+    int pruned = 0;
+	for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
+		const EncAnyGram * sourcegram = sourceiter->first;
+	    for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
+		    const EncAnyGram * targetgram = targetiter->first;
+		    if (targetiter->second < prunethreshold) {
+		        pruned++;
+		        alignmatrix[sourcegram].erase(targetgram);
+		    }
+		}
+		if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram);
+    }
+    return pruned;
+}
+
+
+void AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold) {
 
     while (!gizamodel_s2t.eof() && !gizamodel_t2s.eof()) {         
         GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
         GizaSentenceAlignment sentence_t2s = gizamodel_t2s.readsentence();    
+        
         GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
+        GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
         
         int sentenceindex = gizamodel_s2t.index();
-
-                
         
-    }
+        //extract patterns in sentence pair
+     
+        /*
+                    
+                            
+           2)  
+            patterns_t = all patterns in sentence_t           
+            for word_s in sentence_s:
+                patterns_s = find patterns BEGINNING WITH word_s
+                for pattern_s in patterns_s:
+                    bestscore = 0
+                    for pattern_t in patterns_t:
+                        score = 0
+                        for patternword_s in pattern_s:
+                            if patternword_s aligned with anything outside pattern_t (according to intersection)
+                                score = -2; break  
+                            elseif patternword_s aligned with something in pattern_t (according to intersection)
+                                score += 2
+                                mark index in pattern_t as aligned                                
+                            elseif patternword_s aligned with anything outside pattern_t (according to union)
+                                score = score - 1
+                            elseif patternword_s not aligned:
+                                pass 
+                        for patternword_t in pattern_t:
+                            if not marked as aligned: (in above loop)
+                                   if patternword_t aligned with anything outside pattern_s (according to intersection)
+                                        score = -2; break                
+                                    elseif patternword_t aligned with anything outside pattern_s (according to union)
+                                        score = score - 1
+                                    elseif patternword_t not aligned:
+                                        pass                                  
+                       if score > 0
+                            bestscore = score
+                            bestpattern_t = pattern_t
+                            
+      3)  
+            patterns_t = all patterns in sentence_t           
+            for word_s in sentence_s:
+                patterns_s = find patterns BEGINNING WITH word_s
+                for pattern_s in patterns_s:
+                    bestscore = 0
+                    for pattern_t in patterns_t:
+                        aligned = 0
+                        halfaligned = 0
+                        unaligned = 0
+                        firstsourcealigned = false
+                        lastsourcealigned = false
+                        firsttargetaligned = false
+                        lasttargetaligned = false
+                        for alignedsourceindex, alignedtargetindex in intersection:
+                            if alignedsourceindex not in pattern_s or alignedtargetindex not in pattern_t:
+                                aligned--; break;
+                            else:
+                                aligned++;
+                                if alignedsourceindex == sourceindex: firstsourcealigned = true
+                                if alignedsourceindex == sourceindex + patternsize_s: lastsourcealigned = true
+                                if alignedtargetindex == targetindex: firstsourcealigned = true
+                                if alignedtargetindex == targetindex + patternsize_t: lastsourcealigned = true
+                            else:
+                                unaligned++;                                
+                        if ((aligned < 0) || (!firstaligned) || (!lastaligned)) break;
+                        for alignedsourceindex, alignedtargetindex in union:                            
+                            if (alignedsourceindex in pattern_s and alignedtargetindex not in pattern_t) or (alignedsourceindex not in pattern_s and alignedtargetindex in pattern_t):
+                                halfaligned++;
+                            else if not (alignedsourceindex in pattern_s and alignedtargetindex not in pattern_t):
+                                halfaligned--;
+                                        
+                       if score > 0
+                            bestscore = score
+                            bestpattern_t = pattern_t                            
+                        
+        
+        */
 
+        //get all patterns in the target sentence
+        vector<const EncAnyGram*> * sourcepatterns = &sourcemodel->reverseindex[sentenceindex];
+        vector<const EncAnyGram*> * targetpatterns = &targetmodel->reverseindex[sentenceindex];
+        
+        //reconstruct token-offset in reverse index (making up for not having full index anymore in SelectivePatternModel)
+        unordered_map<const EncAnyGram *, vector<int> > sourcetokenfwindex;
+        unordered_map<int, vector<const EncAnyGram *> > sourcetokenrevindex;
+        recompute_token_index(sourcetokenfwindex, sourcetokenrevindex, sentence_s2t.source, sourcepatterns);
+        unordered_map<const EncAnyGram *, vector<int> > targettokenfwindex;
+        unordered_map<int, vector<const EncAnyGram *> > targettokenrevindex;
+        recompute_token_index(targettokenfwindex, targettokenrevindex, sentence_s2t.target, targetpatterns);
+        
+        
+        
+        //iterate over source sentence word by word
+        for (int sourceindex = 0; sourceindex < sentence_s2t.source->length(); sourceindex++) {  
+            //find source patterns valid at this position  
+            if (sourcetokenrevindex.count(sourceindex)) {
+                for (vector<const EncAnyGram*>::iterator iter_s = sourcetokenrevindex[sourceindex].begin(); iter_s !=  sourcetokenrevindex[sourceindex].end(); iter_s++) {
+                    //now find what target patterns are aligned, and how well the aligment is (expressed through a score)
+                    const EncAnyGram * sourcepattern = *iter_s;
+                    const unsigned char sourcepatternsize = sourcepattern->n(); 
+                    double bestscore = 0;             
+                    const EncAnyGram * besttargetpattern = NULL;                           
+                    for (vector<const EncAnyGram*>::iterator iter_t = targetpatterns->begin(); iter_t != targetpatterns->end(); iter_t++) {
+                         const EncAnyGram * targetpattern = *iter_t;
+                         const unsigned char targetpatternsize = sourcepattern->n();
+                         const unsigned char maxpatternsize = sourcepatternsize ? (sourcepatternsize > targetpatternsize) : targetpatternsize;
+                         
+                         if (targettokenfwindex.count(targetpattern)) {
+                             for (vector<int>::iterator iter2 = targettokenfwindex[targetpattern].begin(); iter2 != targettokenfwindex[targetpattern].end(); iter2++) { //loops over all occurences of the target pattern in the target sentence                         
+                                 const int targetindex = *iter2; //begin index of target pattern
+                                
+                                 int aligned = 0;                                 
+                                 bool firstsourcealigned = false;
+                                 bool firsttargetaligned = false;
+                                 bool lastsourcealigned = false;
+                                 bool lasttargetaligned = false;
+                                 //check alignment points in intersection                                                                      
+                                 for (multimap<const unsigned char, const unsigned char>::const_iterator alignmentiter = sentence_i.alignment.begin(); alignmentiter != sentence_i.alignment.end(); alignmentiter++) {
+                                    const unsigned char alignedsourceindex = alignmentiter->first;
+                                    const unsigned char alignedtargetindex = alignmentiter->second;
+                                 
+                                    const bool insource = (alignedsourceindex >= sourceindex) && (alignedsourceindex < sourceindex + sourcepattern->n());
+                                    const bool intarget = (alignedtargetindex >= targetindex) && (alignedtargetindex < targetindex + targetpattern->n());
+                                     
+                                     if ((!insource) || (!intarget)) {
+                                        aligned--; break;
+                                     } else {
+                                        aligned++;
+                                        if (alignedsourceindex == sourceindex) firstsourcealigned = true;
+                                        if (alignedsourceindex == sourceindex + (sourcepatternsize - 1) ) lastsourcealigned = true;
+                                        if (alignedtargetindex == targetindex) firsttargetaligned = true;
+                                        if (alignedtargetindex == targetindex + (targetpatternsize - 1) ) lasttargetaligned = true;
+                                     }                                                                        
+                                 }
+                                 if ((aligned < 0) || (!firstsourcealigned)  || (!lastsourcealigned) || (!firsttargetaligned)  || (!lasttargetaligned)) break;
+                                 
+                                 if (coocthreshold > 0) {
+                                    //TODO: Implement cooc check
+                                 }                                 
+                                 
+                                 double score = (double) aligned / maxpatternsize;
+                                 if (score < 1) {
+                                     //check alignment points in union 
+                                     int halfaligned = -aligned; //start negative so intersection points are not counted twice
+                                     for (multimap<const unsigned char, const unsigned char>::const_iterator alignmentiter = sentence_u.alignment.begin(); alignmentiter != sentence_u.alignment.end(); alignmentiter++) {
+                                        const unsigned char alignedsourceindex = alignmentiter->first;
+                                        const unsigned char alignedtargetindex = alignmentiter->second;
+                                     
+                                        const bool insource = (alignedsourceindex >= sourceindex) && (alignedsourceindex < sourceindex + sourcepattern->n());
+                                        const bool intarget = (alignedtargetindex >= targetindex) && (alignedtargetindex < targetindex + targetpattern->n());
+                                         
+                                         if ((insource) && (intarget)) {
+                                            halfaligned++;
+                                         //} else if ((insource) || (intarget)) {
+                                            //halfaligned--;
+                                         }                                   
+                                     }
+                                     if (halfaligned > 0) {
+                                        //adjust score favourably according to union point (each point weighing 4 times less than intersection alignment points)
+                                        score = score + (double) halfaligned / (maxpatternsize * 4);
+                                        if (score > 1) score = 1;
+                                     }
+                                }          
+                                if (score > bestscore) { 
+                                    //retain only the best target pattern given an occurrence of a source pattern
+                                    bestscore = score;
+                                    besttargetpattern = targetpattern;
+                                }                       
+                            }
+                         }
+                    } //iteration over all target patterns    
+                    
+                    if ((besttargetpattern != NULL) && (bestscore >= alignscorethreshold)) {
+                        //add alignment
+                        alignmatrix[sourcepattern][besttargetpattern] += 1;
+                    }
+                                                    
+                }
+             }
+          }  //sourceindex iterator
+      } //alignment read        
+      
+      
+      if (pairoccurrencethreshold > 0) prune(pairoccurrencethreshold);
+            
+      //normalize alignment matrix
+      normalize();      
+}
+
+void recompute_token_index(unordered_map<const EncAnyGram *, vector<int> > & tokenfwindex, unordered_map<int, vector<const EncAnyGram *> > & tokenrevindex, EncData * sentence, const vector<const EncAnyGram*> * patterns ) {
+    for (int i = 0; i < sentence->length(); i++) {
+        for (vector<const EncAnyGram*>::const_iterator iter = patterns->begin(); iter !=  patterns->end(); iter++) {
+            const EncAnyGram * anygram = *iter;
+            bool match;
+            if (anygram->isskipgram()) {
+                match = sentence->match((EncSkipGram*) anygram, i);  
+            } else {
+                match = sentence->match((EncNGram*) anygram, i);
+            }
+            if (match) {
+                //TODO: make sure anygram pointer remains valid (may need getkey?)
+                tokenfwindex[anygram].push_back(i);
+                tokenrevindex[i].push_back(anygram);
+            }
+        }
+    }       
 }
