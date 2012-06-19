@@ -816,10 +816,9 @@ bool EncData::match(const EncSkipGram * skipgram, const int offset) {
     if (partindex < parts.size()) {
         if (!match(parts[partindex], begin)) {
             result = false;
-            break;
         }
     }
-    for (vector<const EncNGram *>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
+    for (vector<EncNGram *>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
         delete *iter;
     }
     return result;  
