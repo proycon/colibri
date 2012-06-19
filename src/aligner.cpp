@@ -216,7 +216,7 @@ int main( int argc, char *argv[] ) {
                 exit(2);
             }
             gizast = raw.substr(0, pos);
-            gizats = raw.substr(pos); 
+            gizats = raw.substr(pos+1); 
             break;
         case 'Z':
         	DONORM = true;
@@ -234,7 +234,7 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
-    if (modelfile.empty() && ((!DO_EM) && (!DO_EM2) && (!DO_ITEREM) && (!COOCMODE))) {
+    if (modelfile.empty() && ((!DO_EM) && (!DO_EM2) && (!DO_ITEREM) && (!COOCMODE) && (!DOGIZA) )) {
     	cerr << "Error: No alignment method selected (select -J or -D)" << endl;
     	usage();
     	exit(3);
@@ -394,16 +394,17 @@ int main( int argc, char *argv[] ) {
 		}		
 		if (DOGIZA) {
 			cerr << "Loading source class encoder " << sourceclassfile << endl;
-		    ClassEncoder sourceclassenccoder = ClassEncoder(sourceclassfile);
+		    ClassEncoder sourceclassencoder = ClassEncoder(sourceclassfile);
     
 		    cerr << "Loading target class encoder " << targetclassfile << endl;
     		ClassEncoder targetclassencoder = ClassEncoder(targetclassfile);    
 				
 		    cerr << "Initialising GIZA++ Word Alignments" << endl;
-		    GizaModel gizamodels2t = GizaModel(gizast, &sourceclassenccoder, &targetclassencoder);
-		    GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassenccoder);
+		    GizaModel gizamodels2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);
+		    GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
 		    
 		    alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s);
+		  
 		}
 				
 		if (DOBIDIRECTIONAL) {

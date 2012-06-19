@@ -50,7 +50,7 @@ GizaSentenceAlignment GizaModel::readsentence() {
       string line = nextlinebuffer;
       
       if (line[0] != '#') {
-        cerr << "Error parsing GIZA++ Alignment, excepted new fragment, found: " << line << endl;
+        cerr << "Error parsing GIZA++ Alignment at sentence " << sentenceindex << ", expected new fragment, found: " << line << endl;
       }       
       
       string targetline;

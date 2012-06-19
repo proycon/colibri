@@ -781,8 +781,7 @@ bool EncData::match(const EncNGram * ngram, const int offset) {
         delete testpattern;
         return true;
     } else {
-        cerr << "INTERNAL ERROR EncData::match(): Ngram size does not match!" << endl;
-        exit(13);    
+        return false; //no match
     }   
 }
 

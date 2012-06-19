@@ -2044,6 +2044,8 @@ void AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & 
         GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
         
         int sentenceindex = gizamodel_s2t.index();
+        int found = 0;
+        cerr << "@" << sentenceindex << endl;
         
         //extract patterns in sentence pair
      
@@ -2216,11 +2218,13 @@ void AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & 
                     if ((besttargetpattern != NULL) && (bestscore >= alignscorethreshold)) {
                         //add alignment
                         alignmatrix[sourcepattern][besttargetpattern] += 1;
+                        found++;
                     }
                                                     
                 }
              }
           }  //sourceindex iterator
+          cerr << "\tfound " << found << endl;
       } //alignment read        
       
       
