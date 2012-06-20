@@ -1097,13 +1097,15 @@ class MTWrapper(object):
         if self.TOKENIZE_SOURCECORPUS and not self.tokenize_sourcecorpus(): return False
         if self.TOKENIZE_TARGETCORPUS and not self.tokenize_targetcorpus(): return False
 
-        if self.BUILD_COLIBRI_ALIGNMENT and not self.build_colibri_alignment(): return False
-
+        
         if self.BUILD_SRILM_TARGETMODEL and not self.build_srilm_targetmodel(): return False    
         if self.BUILD_SRILM_SOURCEMODEL and not self.build_srilm_sourcemodel(): return False       
                 
         if self.BUILD_GIZA_WORDALIGNMENT and not self.build_giza_wordalignment(): return False
         if self.BUILD_GIZA_WORDALIGNMENT_REV and not self.build_giza_wordalignment_rev(): return False    
+        
+        if self.BUILD_COLIBRI_ALIGNMENT and not self.build_colibri_alignment(): return False
+
         
         if self.BUILD_MOSES_SYMAL and not self.build_moses_symal(): return False
         if self.BUILD_MOSES_WORDTRANSTABLE and not self.build_moses_wordtranstable(): return False
