@@ -139,7 +139,8 @@ int main( int argc, char *argv[] ) {
 	                GizaSentenceAlignment sentence_t2s = gizamodel_t2s.readsentence();
 	                
 	                if ((sentence >= begin) && ((sentence <= end) || (end == 0))) {
-	                    cout << "<div>" << endl;	            
+	                    cout << "<div>" << endl;	
+	                    cout << "<h3>" << sentence << "</h3>" << endl;         
                         sentence_s2t.out( (ostream*) &cout,  sourceclassdecoder, targetclassdecoder);
                         sentence_t2s.out( (ostream*) &cout,  targetclassdecoder, sourceclassdecoder);
                         if (INTERSECTION) {
