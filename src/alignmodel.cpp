@@ -2135,14 +2135,13 @@ void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, G
                 for (vector<const EncAnyGram*>::iterator iter_s = sourcetokenrevindex[sourceindex].begin(); iter_s !=  sourcetokenrevindex[sourceindex].end(); iter_s++) {
                     //now find what target patterns are aligned, and how well the aligment is (expressed through a score)
                     const EncAnyGram * sourcepattern = *iter_s;
-                    const unsigned char sourcepatternsize = sourcepattern->n(); 
+                    unsigned char sourcepatternsize = sourcepattern->n(); 
                     double bestscore = 0;             
                     const EncAnyGram * besttargetpattern = NULL;                           
                     for (vector<const EncAnyGram*>::iterator iter_t = targetpatterns->begin(); iter_t != targetpatterns->end(); iter_t++) {
                          const EncAnyGram * targetpattern = *iter_t;
-                         const unsigned char targetpatternsize = sourcepattern->n();
-                         const unsigned char maxpatternsize = sourcepatternsize ? (sourcepatternsize > targetpatternsize) : targetpatternsize;
-                         
+                         const unsigned char targetpatternsize = targetpattern->n();
+                         const unsigned char maxpatternsize = (sourcepatternsize > targetpatternsize) ? sourcepatternsize : targetpatternsize; 
                          if (targettokenfwindex.count(targetpattern)) {
                              for (vector<int>::iterator iter2 = targettokenfwindex[targetpattern].begin(); iter2 != targettokenfwindex[targetpattern].end(); iter2++) { //loops over all occurences of the target pattern in the target sentence                         
                                  const int targetindex = *iter2; //begin index of target pattern
@@ -2177,6 +2176,7 @@ void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, G
                                  }                                 
                                  
                                  double score = (double) aligned / maxpatternsize;
+                                 cerr << "DEBUG score(1): " << aligned << " / " << (int) maxpatternsize << " = " << score << endl;
                                  if (score < 1) {
                                      //check alignment points in union 
                                      int halfaligned = -aligned; //start negative so intersection points are not counted twice
@@ -2196,6 +2196,7 @@ void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, G
                                      if (halfaligned > 0) {
                                         //adjust score favourably according to union point (each point weighing 4 times less than intersection alignment points)
                                         score = score + (double) halfaligned / (maxpatternsize * 4);
+                                        cerr << "DEBUG score(2): " << score << endl;
                                         if (score > 1) score = 1;
                                      }
                                 }          
@@ -2214,7 +2215,7 @@ void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, G
                         alignmatrix[sourcepattern][besttargetpattern] += 1;
                         found++;
                         if ((sourcedecoder != NULL) && (targetdecoder != NULL)) {
-                            cout << sourcepattern->decode(*sourcedecoder) << " ||| " << besttargetpattern->decode(*targetdecoder) << endl;                             
+                            cout << sourcepattern->decode(*sourcedecoder) << " ||| " << besttargetpattern->decode(*targetdecoder) << " ||| " << bestscore << endl;                             
                         }
                     }
                                                     
