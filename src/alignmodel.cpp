@@ -2033,12 +2033,12 @@ int AlignmentModel::prune(const double prunethreshold) {
     return pruned;
 }
 
-void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold,ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
+int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold,ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
         GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
         GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
         
         int found = 0;
-        cerr << "@" << sentenceindex << endl;
+
         
         //extract patterns in sentence pair
      
@@ -2126,20 +2126,33 @@ void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, G
         unordered_map<int, vector<const EncAnyGram *> > targettokenrevindex;
         recompute_token_index(targettokenfwindex, targettokenrevindex, sentence_s2t.target, targetpatterns);
         
-        
+        if (DEBUG) { 
+            cerr << "DEBUG source token rev index size: " << sourcetokenrevindex.size() << endl;
+            cerr << "DEBUG source token fw index size: " << sourcetokenfwindex.size() << endl;
+            cerr << "DEBUG target token rev index size: " << targettokenrevindex.size() << endl;
+            cerr << "DEBUG target token fw index size: " << targettokenfwindex.size() << endl;
+        }
         
         //iterate over source sentence word by word
-        for (int sourceindex = 0; sourceindex < sentence_s2t.source->length(); sourceindex++) {  
+        for (int sourceindex = 0; sourceindex < sentence_s2t.source->length(); sourceindex++) {
+            int count_s = 0;  
             //find source patterns valid at this position  
             if (sourcetokenrevindex.count(sourceindex)) {
                 for (vector<const EncAnyGram*>::iterator iter_s = sourcetokenrevindex[sourceindex].begin(); iter_s !=  sourcetokenrevindex[sourceindex].end(); iter_s++) {
                     //now find what target patterns are aligned, and how well the aligment is (expressed through a score)
+                    count_s++;                    
+                    
                     const EncAnyGram * sourcepattern = *iter_s;
                     unsigned char sourcepatternsize = sourcepattern->n(); 
                     double bestscore = 0;             
-                    const EncAnyGram * besttargetpattern = NULL;                           
+                    const EncAnyGram * besttargetpattern = NULL;
+                    int count_t = 0;                           
                     for (vector<const EncAnyGram*>::iterator iter_t = targetpatterns->begin(); iter_t != targetpatterns->end(); iter_t++) {
+                         count_t++;                         
                          const EncAnyGram * targetpattern = *iter_t;
+                         if (DEBUG) cerr << " @" << sentenceindex << "-" << count_s << "-" << count_t << endl;
+                         if (DEBUG) cerr << "   DEBUG: [" << sourcepattern->decode(*sourcedecoder) << "] vs [" << targetpattern->decode(*targetdecoder) << "]" << endl;
+                         
                          const unsigned char targetpatternsize = targetpattern->n();
                          const unsigned char maxpatternsize = (sourcepatternsize > targetpatternsize) ? sourcepatternsize : targetpatternsize; 
                          if (targettokenfwindex.count(targetpattern)) {
@@ -2157,26 +2170,29 @@ void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, G
                                     const unsigned char alignedtargetindex = alignmentiter->second -1; //-1 because of 1-based-indexing
                                  
                                     const bool insource = (alignedsourceindex >= sourceindex) && (alignedsourceindex < sourceindex + sourcepattern->n());
-                                    const bool intarget = (alignedtargetindex >= targetindex) && (alignedtargetindex < targetindex + targetpattern->n());
+                                    const bool intarget = (alignedtargetindex >= targetindex) && (alignedtargetindex < targetindex + targetpattern->n());                                                                          
                                      
-                                     if ((!insource) || (!intarget)) {
-                                        aligned--; break;
-                                     } else {
+                                     if ((insource) && (intarget)) {
                                         aligned++;
                                         if (alignedsourceindex == sourceindex) firstsourcealigned = true;
                                         if (alignedsourceindex == sourceindex + (sourcepatternsize - 1) ) lastsourcealigned = true;
                                         if (alignedtargetindex == targetindex) firsttargetaligned = true;
                                         if (alignedtargetindex == targetindex + (targetpatternsize - 1) ) lasttargetaligned = true;
-                                     }                                                                        
+                                     } else if ((insource) || (intarget)) {
+                                        //alignment point outside pattern, discard
+                                        aligned = -1; break;                                        
+                                     }
                                  }
+                                 if (DEBUG) cerr << "     DEBUG ALIGNED=" << aligned << "  ENDS: " << (int) firstsourcealigned << " " << (int) lastsourcealigned << " " << (int) firsttargetaligned << " " << (int) lasttargetaligned << endl;
                                  if ((aligned < 0) || (!firstsourcealigned)  || (!lastsourcealigned) || (!firsttargetaligned)  || (!lasttargetaligned)) break;
+                                 if (DEBUG) cerr << "     DEBUG FOUND" << endl;
                                  
                                  if (coocthreshold > 0) {
                                     //TODO: Implement cooc check
                                  }                                 
                                  
                                  double score = (double) aligned / maxpatternsize;
-                                 cerr << "DEBUG score(1): " << aligned << " / " << (int) maxpatternsize << " = " << score << endl;
+                                 if (DEBUG) cerr << "     DEBUG score(1): " << aligned << " / " << (int) maxpatternsize << " = " << score << endl;
                                  if (score < 1) {
                                      //check alignment points in union 
                                      int halfaligned = -aligned; //start negative so intersection points are not counted twice
@@ -2196,7 +2212,7 @@ void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, G
                                      if (halfaligned > 0) {
                                         //adjust score favourably according to union point (each point weighing 4 times less than intersection alignment points)
                                         score = score + (double) halfaligned / (maxpatternsize * 4);
-                                        cerr << "DEBUG score(2): " << score << endl;
+                                        if (DEBUG) cerr << "     DEBUG score(2): " << score << endl;
                                         if (score > 1) score = 1;
                                      }
                                 }          
@@ -2222,25 +2238,29 @@ void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, G
                 }
              }
           }  //sourceindex iterator
-          cerr << " Found " << found << endl;
+         return found;
 }
 
 
 
-void AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold,ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
-
+int AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold,ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
+    unsigned int totalfound;
     while (!gizamodel_s2t.eof() && !gizamodel_t2s.eof()) {         
         GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
         GizaSentenceAlignment sentence_t2s = gizamodel_t2s.readsentence();    
-        
-        extractgizapatterns(sentence_s2t, sentence_t2s, gizamodel_s2t.index(), pairoccurrencethreshold, coocthreshold, alignscorethreshold, sourcedecoder,targetdecoder);
+        const int i = gizamodel_s2t.index();
+        cerr << " @" << i << endl;
+        int found = extractgizapatterns(sentence_s2t, sentence_t2s, i, pairoccurrencethreshold, coocthreshold, alignscorethreshold, sourcedecoder,targetdecoder);
+        totalfound += found;
+        cerr << "   found " << found << endl;
       } //alignment read        
       
       
       if (pairoccurrencethreshold > 0) prune(pairoccurrencethreshold);
             
       //normalize alignment matrix
-      normalize();      
+      normalize();
+      return totalfound;      
 }
 
 void recompute_token_index(unordered_map<const EncAnyGram *, vector<int> > & tokenfwindex, unordered_map<int, vector<const EncAnyGram *> > & tokenrevindex, EncData * sentence, const vector<const EncAnyGram*> * patterns ) {
