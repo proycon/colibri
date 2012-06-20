@@ -2033,17 +2033,10 @@ int AlignmentModel::prune(const double prunethreshold) {
     return pruned;
 }
 
-
-void AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold) {
-
-    while (!gizamodel_s2t.eof() && !gizamodel_t2s.eof()) {         
-        GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
-        GizaSentenceAlignment sentence_t2s = gizamodel_t2s.readsentence();    
-        
+void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold) {
         GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
         GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
         
-        int sentenceindex = gizamodel_s2t.index();
         int found = 0;
         cerr << "@" << sentenceindex << endl;
         
@@ -2224,7 +2217,18 @@ void AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & 
                 }
              }
           }  //sourceindex iterator
-          cerr << "\tfound " << found << endl;
+          cerr << " Found " << found << endl;
+}
+
+
+
+void AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold) {
+
+    while (!gizamodel_s2t.eof() && !gizamodel_t2s.eof()) {         
+        GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
+        GizaSentenceAlignment sentence_t2s = gizamodel_t2s.readsentence();    
+        
+        extractgizapatterns(sentence_s2t, sentence_t2s, gizamodel_s2t.index(), pairoccurrencethreshold, coocthreshold, alignscorethreshold);
       } //alignment read        
       
       
