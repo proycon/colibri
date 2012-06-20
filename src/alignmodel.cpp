@@ -2033,7 +2033,7 @@ int AlignmentModel::prune(const double prunethreshold) {
     return pruned;
 }
 
-void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold) {
+void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold,ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
         GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
         GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
         
@@ -2208,10 +2208,14 @@ void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, G
                          }
                     } //iteration over all target patterns    
                     
+                    
                     if ((besttargetpattern != NULL) && (bestscore >= alignscorethreshold)) {
                         //add alignment
                         alignmatrix[sourcepattern][besttargetpattern] += 1;
                         found++;
+                        if ((sourcedecoder != NULL) && (targetdecoder != NULL)) {
+                            cout << sourcepattern->decode(*sourcedecoder) << " ||| " << besttargetpattern->decode(*targetdecoder) << endl;                             
+                        }
                     }
                                                     
                 }
@@ -2222,13 +2226,13 @@ void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, G
 
 
 
-void AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold) {
+void AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold,ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
 
     while (!gizamodel_s2t.eof() && !gizamodel_t2s.eof()) {         
         GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
         GizaSentenceAlignment sentence_t2s = gizamodel_t2s.readsentence();    
         
-        extractgizapatterns(sentence_s2t, sentence_t2s, gizamodel_s2t.index(), pairoccurrencethreshold, coocthreshold, alignscorethreshold);
+        extractgizapatterns(sentence_s2t, sentence_t2s, gizamodel_s2t.index(), pairoccurrencethreshold, coocthreshold, alignscorethreshold, sourcedecoder,targetdecoder);
       } //alignment read        
       
       
