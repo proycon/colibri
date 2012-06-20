@@ -491,7 +491,9 @@ class MTWrapper(object):
             if not self.BUILD_GIZA_WORDALIGNMENT:
                 self.log("Configuration update: BUILD_GIZA_WORDALIGNMENT automatically enabled because BUILD_COLIBRI_GIZA is too",yellow)
                 self.BUILD_GIZA_WORDALIGNMENT = True            
-
+            if not self.BUILD_GIZA_WORDALIGNMENT_REV:
+                self.log("Configuration update: BUILD_GIZA_WORDALIGNMENT_REV automatically enabled because BUILD_COLIBRI_GIZA is too",yellow)
+                self.BUILD_GIZA_WORDALIGNMENT_REV = True
             
                 
         if self.BUILD_GIZA_WORDALIGNMENT and (not self.EXEC_GIZA or not os.path.isfile(self.EXEC_GIZA)): 
