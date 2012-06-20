@@ -2154,8 +2154,8 @@ void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, G
                                  bool lasttargetaligned = false;
                                  //check alignment points in intersection                                                                      
                                  for (multimap<const unsigned char, const unsigned char>::const_iterator alignmentiter = sentence_i.alignment.begin(); alignmentiter != sentence_i.alignment.end(); alignmentiter++) {
-                                    const unsigned char alignedsourceindex = alignmentiter->first;
-                                    const unsigned char alignedtargetindex = alignmentiter->second;
+                                    const unsigned char alignedsourceindex = alignmentiter->first -1; //-1 because of 1-based-indexing
+                                    const unsigned char alignedtargetindex = alignmentiter->second -1; //-1 because of 1-based-indexing
                                  
                                     const bool insource = (alignedsourceindex >= sourceindex) && (alignedsourceindex < sourceindex + sourcepattern->n());
                                     const bool intarget = (alignedtargetindex >= targetindex) && (alignedtargetindex < targetindex + targetpattern->n());
@@ -2181,8 +2181,8 @@ void AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, G
                                      //check alignment points in union 
                                      int halfaligned = -aligned; //start negative so intersection points are not counted twice
                                      for (multimap<const unsigned char, const unsigned char>::const_iterator alignmentiter = sentence_u.alignment.begin(); alignmentiter != sentence_u.alignment.end(); alignmentiter++) {
-                                        const unsigned char alignedsourceindex = alignmentiter->first;
-                                        const unsigned char alignedtargetindex = alignmentiter->second;
+                                        const unsigned char alignedsourceindex = alignmentiter->first -1; //-1 because of 1-based-indexing
+                                        const unsigned char alignedtargetindex = alignmentiter->second -1; //-1 because of 1-based-indexing
                                      
                                         const bool insource = (alignedsourceindex >= sourceindex) && (alignedsourceindex < sourceindex + sourcepattern->n());
                                         const bool intarget = (alignedtargetindex >= targetindex) && (alignedtargetindex < targetindex + targetpattern->n());
