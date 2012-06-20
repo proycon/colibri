@@ -781,6 +781,7 @@ bool EncData::match(const EncNGram * ngram, const int offset) {
         delete testpattern;
         return true;
     } else {
+        delete testpattern;
         return false; //no match
     }   
 }
