@@ -121,6 +121,7 @@ class MTWrapper(object):
             ('BUILD_PBMBMT', False, 'Build model for Phrase-Based Memory-based Machine Translation'),   
             ('BUILD_PBMBMT_PARAMSEARCH', False, 'Do parameter optimisation for PBMBMT using wrapped progressive sampling'),
             ('BUILD_COLIBRI_ALIGNMENT', False,'Create an alignment using colibri'),
+            ('BUILD_COLIBRI_GIZA', False,'Base aligner on word-alignments using giza (do not manually specify -W -s -t in COLIBRI_ALIGNER_OPTIONS)'),
             ('BUILD_COLIBRI_MOSESPHRASETABLE', False,'Create a Moses Phrasetable using colibri'),
             ('PATH_MOSES', '','Base directory where Moses is installed'),
             ('PATH_SRILM', '','Base directory where SRILM is installed'),
@@ -353,6 +354,13 @@ class MTWrapper(object):
         if (self.TOKENIZE_SOURCECORPUS or self.TOKENIZE_TARGETCORPUS) and (not self.EXEC_UCTO or not os.path.isfile(self.EXEC_UCTO)):
             self.log("Dependency error: ucto not found (EXEC_UCTO=" + self.EXEC_UCTO + ")",red)
             sane = False
+
+
+
+        if self.BUILD_COLIBRI_GIZA:   
+            if not self.BUILD_COLIBRI_ALIGNMENT:    
+                self.log("Configuration update: BUILD_COLIBRI_ALIGNMENT automatically enabled because BUILD_COLIBRI_GIZA is too",yellow)
+                self.BUILD_COLIBRI_ALIGNMENT = True
             
         if self.BUILD_COLIBRI_MOSESPHRASETABLE:            
             if not self.BUILD_COLIBRI_ALIGNMENT:    
@@ -478,6 +486,12 @@ class MTWrapper(object):
                 sane = False
                 self.log("Dependency error: symal (provided by Moses) not found (EXEC_MOSES_SYMAL=" + self.EXEC_MOSES_SYMAL + ")",red)
             
+
+        if self.BUILD_COLIBRI_GIZA:
+            if not self.BUILD_GIZA_WORDALIGNMENT:
+                self.log("Configuration update: BUILD_GIZA_WORDALIGNMENT automatically enabled because BUILD_COLIBRI_GIZA is too",yellow)
+                self.BUILD_GIZA_WORDALIGNMENT = True            
+
             
                 
         if self.BUILD_GIZA_WORDALIGNMENT and (not self.EXEC_GIZA or not os.path.isfile(self.EXEC_GIZA)): 
