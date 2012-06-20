@@ -32,6 +32,10 @@ void usage() {
     cerr << "\t-P probability-threshold  Prune all alignments with an alignment probability lower than specified (0 <= x <= 1)" << endl;
     cerr << "\t-I n				         Maximum number of iterations (for EM method, default: 10000)" << endl;
     cerr << "\t-v n				         Convergence delta value (for EM method, default: 0.001)" << endl;
+    cerr << " GIZA Alignment Options:" << endl;
+    cerr << "\t-a                        Alignment threshold (0 <= x <= 1). Specifies how strong word alignments have to be if phrases are to be extracted from them (default 0.5)" << endl;
+    cerr << "\t-p cooc-pruning-threshold Prune all alignments with a jaccard co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
+    cerr << "\t-c pair-count-threshold   Prune phrase pairs that occur less than specified" << endl;
     cerr << " Input filtering:" << endl;
     cerr << "\t-O occurence-threshold    Consider only patterns occuring more than specified (absolute occurrence). Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
     cerr << "\t-F freq-threshold         Consider only patterns occuring more than specified (relative frequency of all patterns).  Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
@@ -89,6 +93,8 @@ int main( int argc, char *argv[] ) {
     int bestn = 0;
     bool DEBUG = false;
     
+    double alignthreshold = 0.5;
+    int pairthreshold = 1;
     
     string outputprefix = "";
     
@@ -111,7 +117,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEI:v:G:i:23W:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEI:v:G:i:23W:a:c:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -217,6 +223,12 @@ int main( int argc, char *argv[] ) {
             }
             gizast = raw.substr(0, pos);
             gizats = raw.substr(pos+1); 
+            break;
+        case 'a':
+            alignthreshold = atoi(optarg);
+            break;
+        case 'c':
+            pairthreshold = atoi(optarg);
             break;
         case 'Z':
         	DONORM = true;
@@ -403,7 +415,7 @@ int main( int argc, char *argv[] ) {
 		    GizaModel gizamodels2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);
 		    GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
 		    
-		    alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s);
+		    alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold);
 		  
 		}
 				
