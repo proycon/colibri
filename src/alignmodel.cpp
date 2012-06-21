@@ -2147,6 +2147,16 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                     double bestscore = 0;             
                     const EncAnyGram * besttargetpattern = NULL;
                     int count_t = 0;                           
+                    
+                    multiset<uint32_t> * sourcesentenceindex; //used only if coocthreshold > 0                         
+                    if (coocthreshold > 0) {
+                        if (sourcepattern->isskipgram()) {
+                            sourcesentenceindex = &sourcemodel->skipgrams[*( (EncSkipGram*) sourcepattern)].sentences;    
+                        } else {
+                            sourcesentenceindex = &sourcemodel->ngrams[*( (EncNGram*) sourcepattern)].sentences;
+                        }
+                    }                    
+                    
                     for (vector<const EncAnyGram*>::iterator iter_t = targetpatterns->begin(); iter_t != targetpatterns->end(); iter_t++) {
                          count_t++;                         
                          const EncAnyGram * targetpattern = *iter_t;
@@ -2154,8 +2164,24 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                          if (DEBUG) cerr << "   DEBUG: [" << sourcepattern->decode(*sourcedecoder) << "] vs [" << targetpattern->decode(*targetdecoder) << "]" << endl;
                          
                          const unsigned char targetpatternsize = targetpattern->n();
-                         const unsigned char maxpatternsize = (sourcepatternsize > targetpatternsize) ? sourcepatternsize : targetpatternsize; 
+                         const unsigned char maxpatternsize = (sourcepatternsize > targetpatternsize) ? sourcepatternsize : targetpatternsize;
+                         
+
+                          
                          if (targettokenfwindex.count(targetpattern)) {
+                             if (coocthreshold > 0) {
+                                multiset<uint32_t> * targetsentenceindex; //used only if coocthreshold > 0                         
+                                if (targetpattern->isskipgram()) {
+                                    targetsentenceindex = &targetmodel->skipgrams[*( (EncSkipGram*) targetpattern)].sentences;    
+                                } else {
+                                    targetsentenceindex = &targetmodel->ngrams[*( (EncNGram*) targetpattern)].sentences;
+                                }                                                                                        			
+                                double coocvalue = cooc(JACCARD, *sourcesentenceindex, *targetsentenceindex, coocthreshold);
+                                if (DEBUG) cerr << "     DEBUG COOC=" << coocvalue << endl;
+                                if (coocvalue < coocthreshold) {
+                                        continue; //threshold not reached, skipping
+                                }                                    
+                             }                               
                              for (vector<int>::iterator iter2 = targettokenfwindex[targetpattern].begin(); iter2 != targettokenfwindex[targetpattern].end(); iter2++) { //loops over all occurences of the target pattern in the target sentence                         
                                  const int targetindex = *iter2; //begin index of target pattern
                                 
@@ -2186,10 +2212,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                                  if (DEBUG) cerr << "     DEBUG ALIGNED=" << aligned << "  ENDS: " << (int) firstsourcealigned << " " << (int) lastsourcealigned << " " << (int) firsttargetaligned << " " << (int) lasttargetaligned << endl;
                                  if ((aligned < 0) || (!firstsourcealigned)  || (!lastsourcealigned) || (!firsttargetaligned)  || (!lasttargetaligned)) break;
                                  if (DEBUG) cerr << "     DEBUG FOUND" << endl;
-                                 
-                                 if (coocthreshold > 0) {
-                                    //TODO: Implement cooc check
-                                 }                                 
+                                                        
                                  
                                  double score = (double) aligned / maxpatternsize;
                                  if (DEBUG) cerr << "     DEBUG score(1): " << aligned << " / " << (int) maxpatternsize << " = " << score << endl;
@@ -2244,7 +2267,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
 
 
 int AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold,ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
-    unsigned int totalfound;
+    unsigned int totalfound = 0;
     while (!gizamodel_s2t.eof() && !gizamodel_t2s.eof()) {         
         GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
         GizaSentenceAlignment sentence_t2s = gizamodel_t2s.readsentence();    
