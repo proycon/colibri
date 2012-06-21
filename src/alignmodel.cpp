@@ -2263,10 +2263,11 @@ int AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & g
       return totalfound;      
 }
 
-void recompute_token_index(unordered_map<const EncAnyGram *, vector<int> > & tokenfwindex, unordered_map<int, vector<const EncAnyGram *> > & tokenrevindex, EncData * sentence, const vector<const EncAnyGram*> * patterns ) {
+void recompute_token_index(unordered_map<const EncAnyGram *, vector<int> > & tokenfwindex, unordered_map<int, vector<const EncAnyGram *> > & tokenrevindex, EncData * sentence, const vector<const EncAnyGram*> * patterns, bool includeskipgrams ) {
     for (int i = 0; i < sentence->length(); i++) {
         for (vector<const EncAnyGram*>::const_iterator iter = patterns->begin(); iter !=  patterns->end(); iter++) {
             const EncAnyGram * anygram = *iter;
+            if ((!includeskipgrams) && (anygram->isskipgram())) continue;
             bool match;
             if (anygram->isskipgram()) {
                 match = sentence->match((EncSkipGram*) anygram, i);  
