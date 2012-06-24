@@ -271,10 +271,10 @@ int main( int argc, char *argv[] ) {
     			        if (covviewfile.empty()) model.decode(testmodel, classdecoder, (ostream*) &cout);
     			     }		        	    
 		        }
-   	   		    if (DOCOVERAGE) {
-   	   		        model.coveragereport((ostream*) &cout);		        
-		        }
 		    }
+	       	if (DOCOVERAGE) {
+   		        model.coveragereport((ostream*) &cout);		        
+	        }
 
 		    
 		} else {
