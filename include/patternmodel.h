@@ -335,9 +335,8 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
 
 int transitivereduction(std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relations );
 
-
-class GraphPatternModel: public ModelReader, public ModelWriter {               
-   protected:
+class GraphRelations {
+   public:
     bool DOPARENTS;
     bool DOCHILDREN;
     bool DOXCOUNT;
@@ -359,16 +358,9 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     bool HASSUCCESSORS;
     bool HASPREDECESSORS;
     
-    bool DELETEMODEL;
     bool TRANSITIVE;
-    
-    void readrelations(std::istream * in,const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > &, bool ignore = false);
-    void writerelations(std::ostream * out, const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & );
-    
-    bool secondpass;       
-   public:
-   
-    IndexedPatternModel * model;
+    bool secondpass;          
+  
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_parents;
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_children;        
     std::unordered_map<const EncAnyGram*,int> data_xcount;        
@@ -381,9 +373,37 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_skipcontent; //skipgram -> skipcontent       
     
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_successors;  
-    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_predecessors;
-    //std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_skipcontent; //skipgram -> skipcontent       
-    //std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_inskipcontent; //skipcontent -> skipgram
+    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_predecessors;  
+    
+    void readrelations(std::istream * in,const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > *, bool ignore = false);
+    
+    int transitivereduction();
+    
+    bool has_xcount() { return (HASXCOUNT); }
+    bool has_parents() { return (HASPARENTS) ; }
+    bool has_children() { return (HASCHILDREN) ; }
+    bool has_templates() { return (HASTEMPLATES) ; }
+    bool has_instances() { return (HASINSTANCES) ; }
+    bool has_skipusage() { return (HASSKIPUSAGE) ; }
+    bool has_skipcontent() { return (HASSKIPCONTENT) ; }
+    bool has_successors() { return (HASSUCCESSORS) ; }
+    bool has_predecessors() { return (HASPREDECESSORS) ; }
+    
+    virtual const EncAnyGram* getkey(const EncAnyGram* key) =0;
+};
+
+class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRelations {               
+   protected:
+
+    
+    bool DELETEMODEL;
+    
+    void readrelations(std::istream * in,const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > &, bool ignore = false);
+    void writerelations(std::ostream * out, const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & );
+   public:
+   
+    IndexedPatternModel * model;
+
     
     uint64_t types() const { return model->types(); }
     uint64_t tokens() const { return model->tokens(); }
@@ -446,6 +466,8 @@ class GraphPatternModel: public ModelReader, public ModelWriter {
     virtual uint64_t id() { return GRAPHPATTERNMODEL + GRAPHPATTERNMODELVERSION; }
         
     
+    const EncAnyGram* getkey(const EncAnyGram* key) { return model->getkey(key); }
+    
     virtual void readheader(std::istream * in, bool ignore = false);
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
     virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
@@ -491,31 +513,12 @@ class IndexCountData {
 };
 
 
-class SelectivePatternModel: public ModelReader, public ModelQuerier {
+class SelectivePatternModel: public ModelReader, public ModelQuerier, public GraphRelations {
     // Read only model, reads graphpatternmodel/indexedmodel/unindexedmodel in a simplified, selective, less memory intensive representation. For for example alignment tasks, supports double indexes if fed an indexed model, and exclusive counts if fed a graph model. Whilst offering more functionality, it is also limited in the sense that it does not offer the full representation the complete model does.
     private:
-     bool HASPARENTS;
-     bool HASCHILDREN;
-     bool HASXCOUNT;
-     bool HASTEMPLATES;
-     bool HASINSTANCES;
-     bool HASSKIPUSAGE;
-     bool HASSKIPCONTENT;
-     bool HASSUCCESSORS;
-     bool HASPREDECESSORS;
- 
-     
-     bool DOXCOUNT;
      bool DOFORWARDINDEX;
      bool DOREVERSEINDEX;
-     bool DOPARENTS;
-     bool DOCHILDREN;
-     bool DOTEMPLATES;
-     bool DOINSTANCES;
-     bool DOSKIPUSAGE;
-     bool DOSKIPCONTENT;
-     bool DOSUCCESSORS;
-     bool DOPREDECESSORS;
+
      
      
      
@@ -555,10 +558,6 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier {
      std::unordered_map<const EncNGram, IndexCountData> ngrams;
      std::unordered_map<const EncSkipGram,IndexCountData> skipgrams;
      
-     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_parents;
-     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_children;     
-    
-
               
     
      std::unordered_map<uint32_t,std::vector<const EncAnyGram*> > reverseindex;    

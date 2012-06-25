@@ -3462,3 +3462,44 @@ const EncAnyGram* SelectivePatternModel::getkey(const EncAnyGram* key) {
         }        
     }
 }
+
+
+
+
+
+void GraphRelations::readrelations(std::istream * in, const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * relationhash, bool ignore) {
+    uint32_t count;
+    in->read((char*) &count,  sizeof(uint32_t));
+    char gapcount;        
+    for (int i = 0; i < count; i++) {                        
+       in->read(&gapcount, sizeof(char));
+       if (gapcount == 0) {
+        EncNGram ngram = EncNGram(in);
+        if ((!ignore) && (secondpass) && (anygram != NULL) && (relationhash != NULL)) {
+            const EncAnyGram * key = getkey(anygram);
+        	const EncAnyGram * key2 = getkey((EncAnyGram*) &ngram);
+        	if (!key2) {
+        		cerr << "INTERNAL WARNING: Ngram not found ";
+        		ngram.out();
+        		cerr << endl;        	
+        	} else if (key) {
+        		(*relationhash)[key].insert(key2);
+			}        		
+        }
+       } else {
+        EncSkipGram skipgram = EncSkipGram( in, gapcount);
+        if ((!ignore) && (secondpass) && (anygram != NULL) && (relationhash != NULL)) {
+            const EncAnyGram * key = getkey(anygram);
+        	const EncAnyGram * key2 = getkey((EncAnyGram*) &skipgram);
+        	if (!key2) {
+        		cerr << "INTERNAL WARNING: Ngram not found ";
+        		skipgram.out();
+        		cerr << endl;        	
+        	} else if (key) {
+        		(*relationhash)[key].insert(key2);
+			} 
+        }
+       }           
+    }    
+}
+

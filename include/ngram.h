@@ -58,6 +58,7 @@ class EncAnyGram {
          return 0;
      }
      
+     
      virtual void writeasbinary(std::ostream * out) const; //write binary output
              
      //virtual bool is_subgram() const; //TODO?
@@ -132,6 +133,13 @@ class EncSkipGram: public EncAnyGram {
       		}
       		return skipsize[i]; 
             //return skipconf.skipsize(); 
+      }
+      double gapratio() const {
+        int gapsizesum = 0; 
+        for (int i = 0; i < skipcount; i++ ) {
+            gapsizesum += skipsize[i];
+        }
+        return (double) gapsizesum / n();
       }
       
       void getgaps(std::vector<std::pair<int,int> > &) const;
