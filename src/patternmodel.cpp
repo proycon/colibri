@@ -3503,3 +3503,15 @@ void GraphRelations::readrelations(std::istream * in, const EncAnyGram * anygram
     }    
 }
 
+void GraphRelations::getrelations(unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relations, const EncAnyGram * anygram, unordered_set<const EncAnyGram*> & container) {
+    if (relations.count(anygram)) {
+        for (unordered_set<const EncAnyGram*>::iterator iter = relations[anygram].begin(); iter != relations[anygram].end(); iter++) { 
+            const EncAnyGram* parent = *iter;
+            container.insert(parent);
+            this->getrelations( relations, parent, container);
+        }
+    } 
+}
+
+
+

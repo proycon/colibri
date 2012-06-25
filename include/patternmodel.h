@@ -377,6 +377,8 @@ class GraphRelations {
     
     void readrelations(std::istream * in,const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > *, bool ignore = false);
     
+    void getrelations(std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relations, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram*> & container);
+    
     int transitivereduction();
     
     bool has_xcount() { return (HASXCOUNT); }

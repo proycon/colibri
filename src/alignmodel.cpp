@@ -2385,7 +2385,7 @@ int AlignmentModel::extractskipgrams() {
 	 	    
             //find clusters of related skipgrams (complete subgraphs), relation through template/instantiation
 	 	    vector<unordered_set<const EncSkipGram *>> clusters;
-	 	    find_clusters(prealignmatrix[sourcegram], clusters); //TODO: implement find_clusters()
+	 	    find_clusters(prealignmatrix[sourcegram], clusters, sourcemodel); 
 	 	    
 	 	    const std::multiset<uint32_t> * sourcesentences = &sourcemodel->skipgrams[*( (EncSkipGram*) sourcegram)].sentences;
 	 	    
@@ -2453,7 +2453,7 @@ size_t get_templates(const EncAnyGram * anygram, SelectivePatternModel * model, 
     return container.size();
 }  
 
-void find_clusters(unordered_map<const EncSkipGram*,uint16_t> skipgrams, vector<unordered_set<const EncSkipGram*> > & clusters ) {
+void find_clusters(unordered_map<const EncSkipGram*,uint16_t> skipgrams, vector<unordered_set<const EncSkipGram*> > & clusters, SelectivePatternModel * model ) {
     /*
         for skipgram in skipgrams:
             for cluster in clusters:
@@ -2464,16 +2464,21 @@ void find_clusters(unordered_map<const EncSkipGram*,uint16_t> skipgrams, vector<
     */
     for (unordered_map<const EncSkipGram*,uint16_t>::iterator sgiter = skipgrams.begin(); sgiter != skipgrams.end(); sgiter++ ) {
         const EncSkipGram * skipgram = sgiter->first;
+        unordered_set<const EncAnyGram *> relationcandidates;
+        model->getrelations( model->rel_templates, (const EncAnyGram *) skipgram, relationcandidates); //forward search
+        model->getrelations( model->rel_instances, (const EncAnyGram *)  skipgram, relationcandidates); //backward search
+                
         for (vector<unordered_set<const EncSkipGram*> >::iterator clusteriter = clusters.begin(); clusteriter != clusters.end(); clusteriter++) {
             const EncSkipGram * refskipgram = *(clusteriter->begin());
             //check if the two are related
             bool related = false;
+            for (unordered_set<const EncAnyGram *>::iterator iter2 = relationcandidates.begin(); iter2 != relationcandidates.end(); iter2++) {
+                if (refskipgram == *iter2) {
+                    related = true; 
+                    break;
+                } 
+            } 
             
-            //forward search
-            const EncSkipGram * cursor = refskipgram;
-            //TODO: implement
-            //backward search
-            //TODO: implement
             
             if (related) {
                 clusteriter->insert(skipgram);
@@ -2486,5 +2491,8 @@ void find_clusters(unordered_map<const EncSkipGram*,uint16_t> skipgrams, vector<
         }
     }  
 }
+
+
+
 
 
