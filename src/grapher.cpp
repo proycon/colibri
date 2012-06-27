@@ -225,20 +225,14 @@ int main( int argc, char *argv[] ) {
             	} else {            	
             		graphmodel.outputgraph(classdecoder, (ostream*) &cout );
             	}
-            } else if (DOOUTPUTRELATIONS) {
-            	if (!querystring.empty()) {
+            } else if (!querystring.empty()) {
             		cerr << "Loading class encoder " << classfile << endl;
-            		ClassEncoder encoder = ClassEncoder(classfile);
-            		
-            		
+            		ClassEncoder encoder = ClassEncoder(classfile);            		            	
             		const EncAnyGram * anygram = encoder.input2anygram(querystring, true);
             		cerr << "Outputting graph for \"" << anygram->decode(classdecoder) << "\"" << endl;
-            		graphmodel.outputrelations(classdecoder,(ostream*) &cout, anygram); //(EncAnyGram*) &ngram);
-            	} else {            	
-            		cerr << "Specify a query string with -q" << endl;
-            	}             
+            		if (DOOUTPUTRELATIONS) graphmodel.outputrelations(classdecoder,(ostream*) &cout, anygram); //(EncAnyGram*) &ngram);
             } else {
-            	graphmodel.decode(classdecoder, (ostream*) &cout);
+            	graphmodel.decode(classdecoder, (ostream*) &cout, DOOUTPUTRELATIONS);
             }
         } else {
             cerr << "No classer specified" << endl;
