@@ -141,11 +141,11 @@ int main( int argc, char *argv[] ) {
             exit(2);
     }
 
-    if ((!DOPARENTS) && (!DOCHILDREN) && (!DOXCOUNT)) {
+    /*if ((!DOPARENTS) && (!DOCHILDREN) && (!DOXCOUNT)) {
         cerr << "No options selected, no relations to load or construct" << endl;
         usage();
         exit(2);
-    }
+    }*/
 
     
     
