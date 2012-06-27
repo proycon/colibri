@@ -86,9 +86,13 @@ const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key) {
 
 
 AlignmentModel::AlignmentModel(const string & filename, const int bestn) {
+    load(filename, bestn);    
+}
+
+void AlignmentModel::load(const string & filename, const int bestn) {
 	DEBUG = false;
 	unsigned char check;
-	
+		
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
     if ((!f) || (!f.good())) {
@@ -176,6 +180,8 @@ AlignmentModel::AlignmentModel(const string & filename, const int bestn) {
 	}
     f.close();
 }
+
+
 
 double AlignmentModel::cooc( CoocMode mode, const multiset<uint32_t> & sourceindex, const multiset<uint32_t> & targetindex, const double heurthreshold) {    
     //Jaccard co-occurrence    

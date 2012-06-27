@@ -27,11 +27,13 @@ void usage() {
     cerr << "\t-B probability-threshold  Compute bidirectional alignment (intersection), using given probability threshold (0 <= x < 1). Will automatically enable normalisation (-Z)" << endl;
     cerr << " Co-occurrence alignment options:" << endl;       
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
-    cerr << "\t-Z				         Do normalisation" << endl;   
+    cerr << "\t-Z				         Do normalisation" << endl;
+    cerr << "\t-U                        Extract skip-grams from n-grams (requires source and target models to be graph models with template and instance relations)" << endl;   
     cerr << " EM Alignment Options:" << endl;
     cerr << "\t-P probability-threshold  Prune all alignments with an alignment probability lower than specified (0 <= x <= 1)" << endl;
     cerr << "\t-I n				         Maximum number of iterations (for EM method, default: 10000)" << endl;
     cerr << "\t-v n				         Convergence delta value (for EM method, default: 0.001)" << endl;
+    cerr << "\t-N                        Do not extract skip-grams in EM-process" << endl;
     cerr << " GIZA Alignment Options:" << endl;
     cerr << "\t-a                        Alignment threshold (0 <= x <= 1). Specifies how strong word alignments have to be if phrases are to be extracted from them (default 0.5)" << endl;
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a jaccard co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
@@ -42,8 +44,7 @@ void usage() {
     cerr << "\t-x xcount-threshold       Consider only patterns with an *exclusive* count over this threshold" << endl;
     cerr << "\t-X xcount-ratio           Consider only patterns with an *exclusivity ratio* over this threshold (between 0.0 [not exclusive] and 1.0 [entirely exclusive])" << endl;
     cerr << "\t-l n                      Minimum N length" << endl; 
-    cerr << "\t-L n                      Maximum N length" << endl; 
-    cerr << "\t-N                        No skip-grams" << endl;
+    cerr << "\t-L n                      Maximum N length" << endl;     
     cerr << "\t--null                    Take into account zero-fertility words (null alignments) in EM" << endl;
     cerr << " Output options:" << endl;
     cerr << "\t--simplelex               Output simple word-based lexicon" << endl;
@@ -78,6 +79,7 @@ int main( int argc, char *argv[] ) {
     int MINLENGTH = 0;
     int MAXLENGTH = 99;
     bool DOSKIPGRAMS = true;
+    bool EXTRACTSKIPGRAMS = false;
     bool DODEBUG = false;
     bool DONORM = false;
     bool DOGIZA = false;
@@ -117,7 +119,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEI:v:G:i:23W:a:c:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEI:v:G:i:23W:a:c:U",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -208,10 +210,13 @@ int main( int argc, char *argv[] ) {
             break;        
         case 'N':
             DOSKIPGRAMS = false;
+            break;
+        case 'U':
+            EXTRACTSKIPGRAMS = true;
             break;   
         case 'V':
         	DODEBUG = true;
-        	break;
+        	break;        	
         case 'W':
             DOGIZA = true;
             raw = optarg;
@@ -305,7 +310,7 @@ int main( int argc, char *argv[] ) {
 	
 		
 		cerr << "Loading source model " << sourcemodelfile << endl;
-		SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
+		SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
 		cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
 	 	cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;
 		if (sourcemodel.has_xcount()) {
@@ -324,7 +329,7 @@ int main( int argc, char *argv[] ) {
 		}
 		
 		cerr << "Loading target model " << targetmodelfile << endl;
-		SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
+		SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
 		cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
 		cerr << "  Ignored " << targetmodel.ignoredtypes << " types, " << targetmodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;
 		if (targetmodel.has_xcount()) {
@@ -345,8 +350,7 @@ int main( int argc, char *argv[] ) {
 		
 		
 		alignmodel = new AlignmentModel(&sourcemodel,&targetmodel, DODEBUG);
-		AlignmentModel * reversealignmodel = new AlignmentModel(&targetmodel,&sourcemodel, DODEBUG); 
-				
+		AlignmentModel * reversealignmodel = new AlignmentModel(&targetmodel,&sourcemodel, DODEBUG); 				
 		bool EM_INIT = true;
 		
 		if (COOCMODE) {
@@ -416,10 +420,11 @@ int main( int argc, char *argv[] ) {
 		    GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
 		    
 		    alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold);
-		    if (DOSKIPGRAMS) {
-		        alignmodel->extractskipgrams();
-		    }
 		}
+
+	    if (EXTRACTSKIPGRAMS) {
+	        alignmodel->extractskipgrams();
+	    }
 				
 		if (DOBIDIRECTIONAL) {
 			cerr << "Computing intersection of both alignment models..." << endl;
@@ -460,47 +465,57 @@ int main( int argc, char *argv[] ) {
 				alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);
 			}       
 		}	
-				
-		       
+
     } else {
     	if ((sourceclassfile.empty()) || (targetclassfile.empty())) {
-    		cerr << "Error: Specify -S and -T" << endl; 
-    		usage();
-    		exit(2);
-    	}
-    	
-		cerr << "Loading source class decoder " << sourceclassfile << endl;
-		ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
-
-		cerr << "Loading target class decoder " << targetclassfile << endl;
-		ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
-
-    	
-    	if (invmodelfile.empty()) {
-    	   	cerr << "Loading alignment model..." << endl;
-    		alignmodel = new AlignmentModel(modelfile, bestn);
-    		    	    	
-			cerr << "Decoding..." << endl;
-			if (DOSIMPLETABLE) {
-				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, false, MOSESFORMAT);
-			} else if (DOSIMPLELEX) {
-				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, true);
-			} else { 
-				alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);
-			}            		
+    	    if ((EXTRACTSKIPGRAMS) && (!outputprefix.empty())) {
+    	    	cerr << "Loading alignment model..." << endl;
+        		alignmodel = new AlignmentModel(modelfile, bestn);
+	            alignmodel->extractskipgrams();
+		        cerr << "Saving alignment model..." << endl;
+			    alignmodel->save(outputprefix);	    
+    	    } else {
+    		    cerr << "Error: Specify -S and -T to decode, or -U and -o to extract skipgrams from an existing model" << endl; 
+    		    usage();
+    		    exit(2);
+    		  }
     	} else {
-    		cerr << "Loading alignment models..." << endl;
-    		BiAlignmentModel bialignmodel = BiAlignmentModel(modelfile, invmodelfile);
-			cerr << "Decoding..." << endl;
-			if (DOSIMPLETABLE) {
-				bialignmodel.simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, false, MOSESFORMAT);
-			} else if (DOSIMPLELEX) {
-				bialignmodel.simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, true);
-			} else { 
-				bialignmodel.decode(sourceclassdecoder, targetclassdecoder, &cout);
-			}            		    		
-		}
-			    	
+    	
+		    cerr << "Loading source class decoder " << sourceclassfile << endl;
+		    ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
+
+		    cerr << "Loading target class decoder " << targetclassfile << endl;
+		    ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
+
+        	
+        	if (invmodelfile.empty()) {
+        	   	cerr << "Loading alignment model..." << endl;
+        		alignmodel = new AlignmentModel(modelfile, bestn);
+        		
+        		if  (EXTRACTSKIPGRAMS) alignmodel->extractskipgrams();
+        		    	    	
+			    cerr << "Decoding..." << endl;
+			    if (DOSIMPLETABLE) {
+				    alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, false, MOSESFORMAT);
+			    } else if (DOSIMPLELEX) {
+				    alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, true);
+			    } else { 
+				    alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);
+			    }            		
+        	} else {
+        		cerr << "Loading alignment models..." << endl;
+        		BiAlignmentModel bialignmodel = BiAlignmentModel(modelfile, invmodelfile);
+			    cerr << "Decoding..." << endl;
+			    if (DOSIMPLETABLE) {
+				    bialignmodel.simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, false, MOSESFORMAT);
+			    } else if (DOSIMPLELEX) {
+				    bialignmodel.simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, true);
+			    } else { 
+				    bialignmodel.decode(sourceclassdecoder, targetclassdecoder, &cout);
+			    }            		    		
+		    }
+			
+		}    	
     } 
     
 

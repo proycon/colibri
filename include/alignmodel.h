@@ -30,6 +30,8 @@ class AlignmentModel: public AlignConstraintInterface {
     AlignmentModel(const std::string & filename, const int bestn = 0);
     AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const bool DEBUG = false);
     
+    void load(const std::string & filename, const int bestn = 0);
+    
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignmatrix;    
     virtual void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT);
     virtual void simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT, bool targetfirst = false, bool wordbased = false, bool mosesformat = false);
