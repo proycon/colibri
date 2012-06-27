@@ -416,7 +416,9 @@ int main( int argc, char *argv[] ) {
 		    GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
 		    
 		    alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold);
-		  
+		    if (DOSKIPGRAMS) {
+		        alignmodel->extractskipgrams();
+		    }
 		}
 				
 		if (DOBIDIRECTIONAL) {

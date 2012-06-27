@@ -2333,21 +2333,25 @@ int AlignmentModel::extractskipgrams() {
     
     unordered_map<const EncSkipGram *, unordered_map<const EncSkipGram *, uint16_t> > prealignmatrix; //temporary matrix
     
+    cerr << "Extracting skipgrams";
     
     //harvest possible skipgram prealignments from (ngram) align matrix
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
 		const EncAnyGram * sourcegram = sourceiter->first;
-		if (sourceiter->second.size() > 1) { //are there multiple candidates?
+		if (sourceiter->second.size() > 1) { //are there multiple candidates?		    
 		    unordered_set<const EncSkipGram *> sourceskipgrams;
 		    if (get_templates(sourcegram, sourcemodel, sourceskipgrams)) { //get all templates for this pattern, recursively
+		        cerr << ".";
                 for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
 		            const EncAnyGram * targetgram = targetiter->first;
 		            unordered_set<const EncSkipGram *> targetskipgrams;
 		            if (get_templates(targetgram, sourcemodel, targetskipgrams)) {
+		                cerr << ":";
 		                //register all possible combinations of skipgrams as pre-alignments
 		                for (unordered_set<const EncSkipGram *>::const_iterator sourceiter2 = sourceskipgrams.begin(); sourceiter2 != sourceskipgrams.end(); sourceiter2++) {
 		                    const EncSkipGram * sourcegram2 = *sourceiter2;
 		                    for (unordered_set<const EncSkipGram *>::const_iterator targetiter2 = targetskipgrams.begin(); targetiter2 != targetskipgrams.end(); targetiter2++) {
+		                        cerr << "!";
 		                        const EncSkipGram * targetgram2 = *targetiter2;
 		                        prealignmatrix[sourcegram2][targetgram2]++;
 		                    }		                    
@@ -2357,6 +2361,8 @@ int AlignmentModel::extractskipgrams() {
 		    } 
 		}
 	}
+	cerr << endl;
+	cerr << "Prealignments found for " << prealignmatrix.size() << " source-side skipgrams" << endl;
 		
 	//prune skipgram pre-alignments that occur only once
 	for (unordered_map<const EncSkipGram*,unordered_map<const EncSkipGram*, uint16_t> >::const_iterator sourceiter = prealignmatrix.begin(); sourceiter != prealignmatrix.end(); sourceiter++) {
@@ -2369,7 +2375,7 @@ int AlignmentModel::extractskipgrams() {
 		}
 		if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram);
     }
-		
+    cerr << "Prealignments left after pruning: " << prealignmatrix.size() << " source-side skipgrams" << endl;		
 
 	 
 	//assign final alignments to alignmatrix, do conflict resolution if multiple candidates exist
@@ -2418,6 +2424,11 @@ int AlignmentModel::extractskipgrams() {
 	 	
 	 }
     
+     cerr << "Alignments found: " << found << endl;
+     
+     
+     if (found) normalize();
+     
      return found;    
 }
 
