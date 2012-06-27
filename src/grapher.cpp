@@ -28,7 +28,7 @@ void usage() {
     cerr << "\t-r               Keep only transitive reduction (sizes down the model)" << endl;
     cerr << "\t-d filename.graphpatternmodel.colibri		Graph pattern model to load (for decoding an existing model, use with -c)" << endl;
     cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced (use with -d)" << endl;
-	cerr << "\t-g               Output relations for queried word" << endl;    
+	cerr << "\t-g               Output relations" << endl;    
     cerr << "\t-G               Output graphviz graph for visualisation" << endl;
     cerr << "\t-q word          Query word (use with -G to output a selected graph)" << endl;
 }
@@ -55,8 +55,9 @@ int main( int argc, char *argv[] ) {
     
     bool DOGRAPHVIZ = false; 
     bool DEBUG = false;
+    
     char c;    
-    while ((c = getopt(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgITD")) != -1)
+    while ((c = getopt(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgITDO")) != -1)
         switch (c)
         {
         case 'a':
@@ -193,7 +194,7 @@ int main( int argc, char *argv[] ) {
             if (DOGRAPHVIZ) {
             	graphmodel.outputgraph(classdecoder, (ostream*) &cout );
             } else {
-            	graphmodel.decode(classdecoder, (ostream*) &cout);
+            	graphmodel.decode(classdecoder, (ostream*) &cout, DOOUTPUTRELATIONS);
             }
             
         }        

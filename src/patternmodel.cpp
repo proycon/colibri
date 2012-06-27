@@ -2193,7 +2193,7 @@ void GraphPatternModel::stats(std::ostream *OUT) {
     if (DOPREDECESSORS) *OUT << " Predecessors found for " << rel_predecessors.size() << " patterns" << endl;
     if (DOSKIPCONTENT)  *OUT << " Content-relations found for " <<  rel_skipcontent.size() << " skipgrams" << endl;
     if (DOSKIPUSAGE)  *OUT << " Skipgram parents found for " <<  rel_skipusage.size() << " n-grams" << endl;
-    if (DOTEMPLATES)  *OUT << " Templates found for " <<  rel_templates.size() << " skipgrams" << endl;
+    if (DOTEMPLATES)  *OUT << " Templates found for " <<  rel_templates.size() << " patterns" << endl;
     if (DOINSTANCES)  *OUT << " Instances found for " <<  rel_instances.size() << " skipgrams" << endl;
     if (DOXCOUNT) *OUT << " Exclusive count: " << data_xcount.size() << endl;
  
@@ -2487,7 +2487,7 @@ GraphPatternModel::~GraphPatternModel() {
 }
 
 
-void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
+void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT, bool dooutputrelations) {
     const int grandtotal = model->tokens();
 
     *OUT << "#N\tVALUE\tOCC.COUNT\tTOKENS\tCOVERAGE";
@@ -2527,6 +2527,11 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
             *OUT << iter2->sentence << ':' << (int) iter2->token << ' ';
         } */               
         *OUT << endl;
+        if (dooutputrelations) {
+            outputrelations(classdecoder, OUT, (const EncAnyGram*) &ngram);
+            *OUT << "-------------------------------------------------------------------" << endl;
+        }
+        
     }
    
 
@@ -2574,6 +2579,10 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
             if (rel_predecessors.count(skipgram)) *OUT << rel_predecessors[skipgram].size() << '\t'; else  *OUT << "0\t";            
             
            *OUT << endl;
+           if (dooutputrelations) {
+            outputrelations(classdecoder, OUT, (const EncAnyGram*) &skipgram);
+            *OUT << "-------------------------------------------------------------------" << endl;
+           }
        }
     
 

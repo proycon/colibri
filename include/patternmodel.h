@@ -482,7 +482,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
     virtual void writeskipgrams(std::ostream * out);
     virtual void writefooter(std::ostream * out) {};    
     
-    void decode(ClassDecoder & classdecoder, std::ostream *OUT);
+    void decode(ClassDecoder & classdecoder, std::ostream *OUT, bool outputrelations = false);
     void stats(std::ostream *OUT);
     void coveragereport(std::ostream *OUT, int segmentsize = 100000, double xratiothreshold = 0.8);
     
