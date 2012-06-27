@@ -467,18 +467,58 @@ int main( int argc, char *argv[] ) {
 		}	
 
     } else {
-    	if ((sourceclassfile.empty()) || (targetclassfile.empty())) {
-    	    if ((EXTRACTSKIPGRAMS) && (!outputprefix.empty())) {
-    	    	cerr << "Loading alignment model..." << endl;
-        		alignmodel = new AlignmentModel(modelfile, bestn);
-	            alignmodel->extractskipgrams();
-		        cerr << "Saving alignment model..." << endl;
-			    alignmodel->save(outputprefix);	    
-    	    } else {
-    		    cerr << "Error: Specify -S and -T to decode, or -U and -o to extract skipgrams from an existing model" << endl; 
-    		    usage();
-    		    exit(2);
-    		  }
+    
+         if ((EXTRACTSKIPGRAMS) && (!outputprefix.empty()) && (!sourcemodelfile.empty()) && (!targetmodelfile.empty())) {
+            cerr << "Extracting skipgrams from existing model" << endl;
+            //bad code duplication, I know:
+            cerr << "Loading source model " << sourcemodelfile << endl;
+	        SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
+	        cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
+         	cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;
+	        if (sourcemodel.has_xcount()) {
+		        cerr << "  Exclusive count available? YES" << endl;
+	        } else {
+		        cerr << "  Exclusive count available? NO" << endl;
+	        }		
+	        if (sourcemodel.has_index()) {
+		        cerr << "  Reverse index has " << sourcemodel.reverseindex.size() << " sentences" << endl;
+	        } else {
+		        cerr << "ERROR: Model " + sourcemodelfile + " contains no indexing information! Unable to align without!" << endl;
+		        exit(3);
+	        }    
+	        if (sourcemodel.has_parents()) {
+		        cerr << "  Parent relations available for  " << sourcemodel.rel_subsumption_parents.size() << " patterns" << endl;
+	        }
+	
+	        cerr << "Loading target model " << targetmodelfile << endl;
+	        SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
+	        cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
+	        cerr << "  Ignored " << targetmodel.ignoredtypes << " types, " << targetmodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;
+	        if (targetmodel.has_xcount()) {
+		        cerr << "  Exclusive count available? YES" << endl;
+	        } else {
+		        cerr << "  Exclusive count available? NO" << endl;
+	        }
+	        if (targetmodel.has_index()) {
+		        cerr << "  Reverse index has " << targetmodel.reverseindex.size() << " sentences" << endl;
+	        } else {
+		        cerr << "ERROR: Model " + targetmodelfile + " contains no indexing information! Unable to align without!" << endl;
+		        exit(3);
+	        }
+	        if (targetmodel.has_parents()) {
+		        cerr << "  Parent relations available for  " << targetmodel.rel_subsumption_parents.size() << " patterns" << endl;
+	        }		         
+         
+	    	cerr << "Loading alignment model..." << endl;
+	    	alignmodel = new AlignmentModel(&sourcemodel,&targetmodel, DODEBUG);	    	
+    		alignmodel->load(modelfile, bestn);
+            alignmodel->extractskipgrams();
+	        cerr << "Saving alignment model..." << endl;
+		    alignmodel->save(outputprefix);	                
+    	} else if ((sourceclassfile.empty()) || (targetclassfile.empty())) {
+            cerr << "Error: Specify -S and -T to decode, or -U and -o to extract skipgrams from an existing model" << endl; 
+    		usage();
+    		exit(2);
     	} else {
     	
 		    cerr << "Loading source class decoder " << sourceclassfile << endl;
