@@ -2351,7 +2351,7 @@ int AlignmentModel::extractskipgrams() {
 		if (sourceiter->second.size() > 1) { //are there multiple candidates?		    
 		    unordered_set<const EncSkipGram *> sourceskipgrams;
 		    if (get_templates(sourcegram, sourcemodel, sourceskipgrams)) { //get all templates for this pattern, recursively
-		        cerr << ".";
+		        //cerr << ".";
                 for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
 		            const EncAnyGram * targetgram = targetmodel->getkey(targetiter->first);
                     if (targetgram == NULL) {
@@ -2359,13 +2359,13 @@ int AlignmentModel::extractskipgrams() {
                         continue; 
                     }		            
 		            unordered_set<const EncSkipGram *> targetskipgrams;
-		            if (get_templates(targetgram, sourcemodel, targetskipgrams)) {
-		                cerr << ":";
+		            if (get_templates(targetgram, targetmodel, targetskipgrams)) {
+		                //cerr << ":";
 		                //register all possible combinations of skipgrams as pre-alignments
 		                for (unordered_set<const EncSkipGram *>::const_iterator sourceiter2 = sourceskipgrams.begin(); sourceiter2 != sourceskipgrams.end(); sourceiter2++) {
 		                    const EncSkipGram * sourcegram2 = *sourceiter2;
 		                    for (unordered_set<const EncSkipGram *>::const_iterator targetiter2 = targetskipgrams.begin(); targetiter2 != targetskipgrams.end(); targetiter2++) {
-		                        cerr << "!";
+		                        cerr << ".";
 		                        const EncSkipGram * targetgram2 = *targetiter2;
 		                        prealignmatrix[sourcegram2][targetgram2]++;
 		                    }		                    
@@ -2387,7 +2387,7 @@ int AlignmentModel::extractskipgrams() {
 		        prealignmatrix[sourcegram].erase(targetgram);
 		    }
 		}
-		if (alignmatrix[sourcegram].size() == 0) alignmatrix.erase(sourcegram);
+		if (prealignmatrix[sourcegram].size() == 0) prealignmatrix.erase(sourcegram);
     }
     cerr << "Prealignments left after pruning: " << prealignmatrix.size() << " source-side skipgrams" << endl;		
 
@@ -2402,10 +2402,11 @@ int AlignmentModel::extractskipgrams() {
 	 	    found++;
 	 	} else {
 	 	    //possible conflict, multiple candidates
-	 	    
+	 	    cerr << "MULTIPLE CANDIDATES: " << sourceiter->second.size() << endl;
             //find clusters of related skipgrams (complete subgraphs), relation through template/instantiation
 	 	    vector<unordered_set<const EncSkipGram *>> clusters;
-	 	    find_clusters(prealignmatrix[sourcegram], clusters, sourcemodel); 
+	 	    find_clusters(prealignmatrix[sourcegram], clusters, targetmodel); 
+	 	    cerr << " clusters=" << clusters.size() << endl;
 	 	    
 	 	    const std::multiset<uint32_t> * sourcesentences = &sourcemodel->skipgrams[*( (EncSkipGram*) sourcegram)].sentences;
 	 	    
@@ -2488,31 +2489,38 @@ void find_clusters(unordered_map<const EncSkipGram*,uint16_t> skipgrams, vector<
                     clusters.add( [skipgram] )        
     */
     for (unordered_map<const EncSkipGram*,uint16_t>::iterator sgiter = skipgrams.begin(); sgiter != skipgrams.end(); sgiter++ ) {
-        const EncSkipGram * skipgram = sgiter->first;
+        const EncAnyGram * skipgram = model->getkey(sgiter->first);
+        if (skipgram == NULL) {
+            cerr << "WARNING: [in find_clusters()] Skipgram not found in model!" << endl;
+            continue;
+        }
         unordered_set<const EncAnyGram *> relationcandidates;
-        model->getrelations( model->rel_templates, (const EncAnyGram *) skipgram, relationcandidates); //forward search
-        model->getrelations( model->rel_instances, (const EncAnyGram *)  skipgram, relationcandidates); //backward search
+        model->getrelations( model->rel_templates, skipgram, relationcandidates); //forward search
+        model->getrelations( model->rel_instances, skipgram, relationcandidates); //backward search
                 
+        bool found = false;                
         for (vector<unordered_set<const EncSkipGram*> >::iterator clusteriter = clusters.begin(); clusteriter != clusters.end(); clusteriter++) {
             const EncSkipGram * refskipgram = *(clusteriter->begin());
             //check if the two are related
             bool related = false;
             for (unordered_set<const EncAnyGram *>::iterator iter2 = relationcandidates.begin(); iter2 != relationcandidates.end(); iter2++) {
-                if (refskipgram == *iter2) {
+                if (*refskipgram == **iter2) {
                     related = true; 
                     break;
                 } 
             } 
-            
-            
+        
             if (related) {
-                clusteriter->insert(skipgram);
-            } else {
-                unordered_set<const EncSkipGram*> newcluster;
-                newcluster.insert(skipgram);
-                clusters.push_back(newcluster);
-            }
-            
+                cerr << "FOUND RELATED CLUSTER" << endl;
+                found = true;
+                clusteriter->insert((const EncSkipGram *) skipgram);
+                break;
+            }            
+        }
+        if (!found) {
+            unordered_set<const EncSkipGram*> newcluster;
+            newcluster.insert((const EncSkipGram *) skipgram);
+            clusters.push_back(newcluster);
         }
     }  
 }
