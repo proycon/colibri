@@ -3078,7 +3078,7 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  cons
     secondpass = false;      
     if (DEBUG) cerr << "******* SelectivePatternModel FIRST PASS ******" << endl;
 	readfile(filename,DEBUG);	
-	secondpass = DOPARENTS;
+	secondpass = (DOPARENTS || DOCHILDREN || DOXCOUNT || DOTEMPLATES || DOINSTANCES || DOSKIPCONTENT || DOSKIPUSAGE || DOSUCCESSORS || DOPREDECESSORS);
 	if (secondpass) {	
 	    if (DEBUG) cerr << "******** SelectivePatternModel SECOND PASS *********" << endl;
 		readfile(filename, DEBUG);

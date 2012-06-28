@@ -371,6 +371,7 @@ int main( int argc, char *argv[] ) {
 		
 		
 		
+		
 		alignmodel = new AlignmentModel(&sourcemodel,&targetmodel, DODEBUG);
 		AlignmentModel * reversealignmodel = new AlignmentModel(&targetmodel,&sourcemodel, DODEBUG); 				
 		bool EM_INIT = true;
@@ -521,6 +522,7 @@ int main( int argc, char *argv[] ) {
 	        if (targetmodel.has_parents()) {
 		        cerr << "  Parent relations available for  " << targetmodel.rel_subsumption_parents.size() << " patterns" << endl;
 	        }		         
+                  
          
 	    	cerr << "Loading alignment model..." << endl;
 	    	alignmodel = new AlignmentModel(&sourcemodel,&targetmodel, DODEBUG);	    	
