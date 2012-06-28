@@ -125,10 +125,12 @@ int main( int argc, char *argv[] ) {
 
 	    
 	        if (DOEXTRACT) {
+	        
+	        
                 cerr << "Loading source model " << sourcemodelfile << endl;
-	            SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile);
+	            SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, GraphFilter());
 	            cerr << "Loading target model " << targetmodelfile << endl;
-	            SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile);
+	            SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, GraphFilter());
 	        
 	            AlignmentModel alignmentmodel = AlignmentModel(&sourcemodel,&targetmodel);
 	        

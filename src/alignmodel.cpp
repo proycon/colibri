@@ -2459,7 +2459,7 @@ void recompute_token_index(unordered_map<const EncAnyGram *, vector<int> > & tok
 }
 
 
-size_t get_templates(const EncAnyGram * anygram, SelectivePatternModel * model, unordered_set<const EncSkipGram *> & container) { 
+size_t get_templates(const EncAnyGram * anygram, SelectivePatternModel * model, unordered_set<const EncSkipGram *> & container) {
     if (model->rel_templates.count(anygram)) {
         for (unordered_set<const EncAnyGram*>::iterator iter = model->rel_templates[anygram].begin(); iter != model->rel_templates[anygram].end(); iter++) {
                const EncSkipGram * tmplate = (const EncSkipGram*) *iter;   

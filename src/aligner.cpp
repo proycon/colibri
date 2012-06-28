@@ -95,6 +95,16 @@ int main( int argc, char *argv[] ) {
     int bestn = 0;
     bool DEBUG = false;
     
+    bool DOPARENTS = false;
+    bool DOCHILDREN = false;
+    bool DOXCOUNT = false;
+    bool DOSUCCESSORS = false;
+    bool DOPREDECESSORS = false;
+    bool DOSKIPCONTENT = false;
+    bool DOSKIPUSAGE = false;    
+    bool DOTEMPLATES = false; 
+    bool DOINSTANCES = false;    
+    
     double alignthreshold = 0.5;
     int pairthreshold = 1;
     
@@ -310,7 +320,17 @@ int main( int argc, char *argv[] ) {
 	
 		
 		cerr << "Loading source model " << sourcemodelfile << endl;
-		SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
+	    GraphFilter filter;
+        filter.DOPARENTS = (graphweightfactor > 0);
+        filter.DOCHILDREN = DOCHILDREN;
+        filter.DOXCOUNT = DOXCOUNT;
+        filter.DOTEMPLATES = DOTEMPLATES;
+        filter.DOINSTANCES = DOINSTANCES;
+        filter.DOSKIPUSAGE = DOSKIPUSAGE;
+        filter.DOSKIPCONTENT = DOSKIPCONTENT;
+        filter.DOSUCCESSORS = DOSUCCESSORS;
+        filter.DOPREDECESSORS = DOPREDECESSORS;   
+		SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false, DEBUG);
 		cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
 	 	cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;
 		if (sourcemodel.has_xcount()) {
@@ -328,8 +348,8 @@ int main( int argc, char *argv[] ) {
 			cerr << "  Parent relations available for  " << sourcemodel.rel_subsumption_parents.size() << " patterns" << endl;
 		}
 		
-		cerr << "Loading target model " << targetmodelfile << endl;
-		SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
+		cerr << "Loading target model " << targetmodelfile << endl; 		
+		SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false, DEBUG);
 		cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
 		cerr << "  Ignored " << targetmodel.ignoredtypes << " types, " << targetmodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;
 		if (targetmodel.has_xcount()) {
@@ -472,7 +492,17 @@ int main( int argc, char *argv[] ) {
             cerr << "Extracting skipgrams from existing model" << endl;
             //bad code duplication, I know:
             cerr << "Loading source model " << sourcemodelfile << endl;
-	        SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
+	        GraphFilter filter;
+            filter.DOPARENTS = (graphweightfactor > 0);
+            filter.DOCHILDREN = DOCHILDREN;
+            filter.DOXCOUNT = DOXCOUNT;
+            filter.DOTEMPLATES = DOTEMPLATES;
+            filter.DOINSTANCES = DOINSTANCES;
+            filter.DOSKIPUSAGE = DOSKIPUSAGE;
+            filter.DOSKIPCONTENT = DOSKIPCONTENT;
+            filter.DOSUCCESSORS = DOSUCCESSORS;
+            filter.DOPREDECESSORS = DOPREDECESSORS;               
+	        SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false, DEBUG);
 	        cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
          	cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;
 	        if (sourcemodel.has_xcount()) {
@@ -491,7 +521,7 @@ int main( int argc, char *argv[] ) {
 	        }
 	
 	        cerr << "Loading target model " << targetmodelfile << endl;
-	        SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, true, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, (graphweightfactor > 0),false, NULL,false, DEBUG);
+	        SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false, DEBUG);
 	        cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
 	        cerr << "  Ignored " << targetmodel.ignoredtypes << " types, " << targetmodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;
 	        if (targetmodel.has_xcount()) {

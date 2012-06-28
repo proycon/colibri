@@ -742,7 +742,8 @@ void IndexedPatternModel::writeskipgrams(std::ostream * f) {
 }
 
 
-bool IndexedPatternModel::exists(const EncAnyGram* key) const {    
+bool IndexedPatternModel::exists(const EncAnyGram* key) const {
+    if (key == NULL) return NULL;    
     if (key->gapcount() == 0) {
         return (ngrams.count(*( (EncNGram*) key) ) > 0);
     } else {
@@ -754,6 +755,7 @@ bool IndexedPatternModel::exists(const EncAnyGram* key) const {
 
 
 const EncAnyGram* IndexedPatternModel::getkey(const EncAnyGram* key) {
+    if (key == NULL) return NULL;
     if (key->gapcount() == 0) {
         std::unordered_map<EncNGram,NGramData >::iterator iter = ngrams.find(*( (EncNGram*) key) );
         if (iter != ngrams.end()) {
@@ -773,6 +775,7 @@ const EncAnyGram* IndexedPatternModel::getkey(const EncAnyGram* key) {
 
 
 const AnyGramData* IndexedPatternModel::getdata(const EncAnyGram* key) {
+
     if (key->gapcount() == 0) {
         std::unordered_map<EncNGram,NGramData >::iterator iter = ngrams.find(*( (EncNGram*) key) );
         if (iter != ngrams.end()) {
@@ -2024,18 +2027,10 @@ int intersection( set<ExtCorpusReference> & a, set<ExtCorpusReference> & b) {
 }
 
 
-GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS, bool DOCHILDREN, bool DOXCOUNT, bool DOTEMPLATES, bool DOINSTANCES, bool DOSKIPUSAGE, bool DOSKIPCONTENT, bool DOSUCCESSORS, bool DOPREDECESSORS) {
+GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFilter & filter) {
     this->model = model;
     model->model_id = GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION;
-    this->DOPARENTS = DOPARENTS;
-    this->DOCHILDREN = DOCHILDREN;   
-    this->DOXCOUNT = DOXCOUNT;     
-    this->DOTEMPLATES = DOTEMPLATES;
-    this->DOINSTANCES = DOINSTANCES;
-    this->DOSKIPUSAGE = DOSKIPUSAGE;
-    this->DOSKIPCONTENT = DOSKIPCONTENT;
-    this->DOSUCCESSORS = DOSUCCESSORS;
-    this->DOPREDECESSORS = DOPREDECESSORS;
+    applyfilter(filter);
     DELETEMODEL = false;
     
     cerr << "Computing relations on n-grams" << endl;
@@ -2270,7 +2265,7 @@ int GraphPatternModel::computexcount(const EncAnyGram* anygram) {
 }
 
 
-void GraphPatternModel::readrelations(std::istream * in, const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relationhash, bool ignore) {
+/*void GraphPatternModel::readrelations(std::istream * in, const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relationhash, bool ignore) {
     uint32_t count;
     in->read((char*) &count,  sizeof(uint32_t));
     char gapcount;    
@@ -2309,7 +2304,7 @@ void GraphPatternModel::readrelations(std::istream * in, const EncAnyGram * anyg
         }
        }           
     }    
-}
+}*/
 
 void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relationhash) {
 	const char zero = 0;
@@ -2389,14 +2384,14 @@ void GraphPatternModel::readngramdata(std::istream * in, const EncNGram & ngram,
         	}
         } 
     }
-    if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_parents, (ignore || !secondpass || !DOPARENTS));
-    if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &ngram, rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));
-    if (HASTEMPLATES) readrelations(in, (const EncAnyGram*) &ngram, rel_templates, (ignore || !secondpass || !DOTEMPLATES));
-    if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &ngram, rel_instances, (ignore || !secondpass || !DOINSTANCES));
-    if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &ngram, rel_skipusage, (ignore || !secondpass || !DOSKIPUSAGE));
-    if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &ngram, rel_skipcontent, (ignore || !secondpass || !DOSKIPCONTENT));
-    if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &ngram, rel_successors, (ignore || !secondpass || !DOSUCCESSORS));
-    if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &ngram, rel_predecessors, (ignore || !secondpass || !DOPREDECESSORS));        
+    if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_parents, (ignore || !secondpass || !DOPARENTS));
+    if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));
+    if (HASTEMPLATES) readrelations(in, (const EncAnyGram*) &ngram, &rel_templates, (ignore || !secondpass || !DOTEMPLATES));
+    if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &ngram, &rel_instances, (ignore || !secondpass || !DOINSTANCES));
+    if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &ngram, &rel_skipusage, (ignore || !secondpass || !DOSKIPUSAGE));
+    if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &ngram, &rel_skipcontent, (ignore || !secondpass || !DOSKIPCONTENT));
+    if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &ngram, &rel_successors, (ignore || !secondpass || !DOSUCCESSORS));
+    if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &ngram, &rel_predecessors, (ignore || !secondpass || !DOPREDECESSORS));        
 }
 
 void GraphPatternModel::readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
@@ -2415,14 +2410,14 @@ void GraphPatternModel::readskipgramdata(std::istream * in, const EncSkipGram & 
         	}
         } 
     }
-    if (HASPARENTS) readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_parents, (ignore || !secondpass || !DOPARENTS));
-    if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &skipgram, rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));
-    if (HASTEMPLATES) readrelations(in, (const EncAnyGram*) &skipgram, rel_templates, (ignore || !secondpass || !DOTEMPLATES));
-    if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &skipgram, rel_instances, (ignore || !secondpass || !DOINSTANCES));
-    if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &skipgram, rel_skipusage, (ignore || !secondpass || !DOSKIPUSAGE));
-    if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &skipgram, rel_skipcontent, (ignore || !secondpass || !DOSKIPCONTENT));
-    if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &skipgram, rel_successors, (ignore || !secondpass || !DOSUCCESSORS));
-    if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &skipgram, rel_predecessors, (ignore || !secondpass || !DOPREDECESSORS));        
+    if (HASPARENTS) readrelations(in, (const EncAnyGram*) &skipgram, &rel_subsumption_parents, (ignore || !secondpass || !DOPARENTS));
+    if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &skipgram, &rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));
+    if (HASTEMPLATES) readrelations(in, (const EncAnyGram*) &skipgram, &rel_templates, (ignore || !secondpass || !DOTEMPLATES));
+    if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &skipgram, &rel_instances, (ignore || !secondpass || !DOINSTANCES));
+    if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &skipgram, &rel_skipusage, (ignore || !secondpass || !DOSKIPUSAGE));
+    if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &skipgram, &rel_skipcontent, (ignore || !secondpass || !DOSKIPCONTENT));
+    if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &skipgram, &rel_successors, (ignore || !secondpass || !DOSUCCESSORS));
+    if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &skipgram, &rel_predecessors, (ignore || !secondpass || !DOPREDECESSORS));        
 }
 
 
@@ -2528,7 +2523,7 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT, bool d
         } */               
         *OUT << endl;
         if (dooutputrelations) {
-            outputrelations(classdecoder, OUT, (const EncAnyGram*) &ngram);
+            outputrelations(classdecoder, OUT, (const EncAnyGram*) ngram);
             *OUT << "-------------------------------------------------------------------" << endl;
         }
         
@@ -2580,7 +2575,7 @@ void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT, bool d
             
            *OUT << endl;
            if (dooutputrelations) {
-            outputrelations(classdecoder, OUT, (const EncAnyGram*) &skipgram);
+            outputrelations(classdecoder, OUT, (const EncAnyGram*) skipgram);
             *OUT << "-------------------------------------------------------------------" << endl;
            }
        }
@@ -2912,33 +2907,50 @@ void GraphPatternModel::findincomingnodes(const EncAnyGram * focus, const EncAny
 }
 
 
-void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OUT, const EncAnyGram * focusinput) {
-	const EncAnyGram * focus = model->getkey(focusinput);
+void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OUT, const EncAnyGram * focusinput, bool outputqueryword) {
+	const EncAnyGram * focus = model->getkey(focusinput);	
 	if (focus == NULL) {
 		cerr << "Query word not found" << endl;
 		return;
 	} 
-	cerr << "Query:" << endl;
-    *OUT << "\t" << focus->decode(classdecoder) << "\t" << model->occurrencecount(focus) << "\t" << model->coveragecount(focus) << "\t" << model->coverage(focus);
-	if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[focus] << '\t' << (double) data_xcount[focus] / model->occurrencecount(focus);
-	*OUT << endl;		
-	cerr << "Parent relations - " << rel_subsumption_parents[focus].size() << endl;
-	outputrelations(classdecoder,OUT,  rel_subsumption_parents[focus]);
-	cerr << "Child relations - " << rel_subsumption_children[focus].size() << endl;
-	outputrelations(classdecoder,OUT,  rel_subsumption_children[focus]);
-	cerr << "Predecessor relations - " << rel_predecessors[focus].size() << endl;
-	outputrelations(classdecoder,OUT,  rel_predecessors[focus]);
-	cerr << "Successor relations - " << rel_successors[focus].size() << endl;
-	outputrelations(classdecoder,OUT,  rel_successors[focus]);
-	cerr << "Skipcontent - " << rel_skipcontent[focus].size() << endl;
-	outputrelations(classdecoder,OUT,  rel_skipcontent[focus]);
-	cerr << "Skipusage - " << rel_skipusage[focus].size() << endl;
-	outputrelations(classdecoder,OUT,  rel_skipusage[focus]);
-	cerr << "Templates - " << rel_templates[focus].size() << endl;
-	outputrelations(classdecoder,OUT,  rel_templates[focus]);
-	cerr << "Instances - " << rel_instances[focus].size() << endl;
-	outputrelations(classdecoder,OUT,  rel_instances[focus]);
-	
+	if (outputqueryword) {
+	    *OUT << "Query:" << endl;
+        *OUT << "\t" << focus->decode(classdecoder) << "\t" << model->occurrencecount(focus) << "\t" << model->coveragecount(focus) << "\t" << model->coverage(focus);
+	    if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[focus] << '\t' << (double) data_xcount[focus] / model->occurrencecount(focus);
+	    *OUT << endl;
+	}	
+	if (rel_subsumption_parents[focus].size() > 0) {		
+	    *OUT << "Parent relations - " << rel_subsumption_parents[focus].size() << endl;
+	    outputrelations(classdecoder,OUT,  rel_subsumption_parents[focus]);
+    }
+    if (rel_subsumption_children[focus].size() > 0) {
+	    *OUT << "Child relations - " << rel_subsumption_children[focus].size() << endl;
+	    outputrelations(classdecoder,OUT,  rel_subsumption_children[focus]);
+	}
+    if (rel_predecessors[focus].size() > 0) {
+       *OUT << "Predecessor relations - " << rel_predecessors[focus].size() << endl;
+       outputrelations(classdecoder,OUT,  rel_predecessors[focus]);
+    }
+    if (rel_successors[focus].size() > 0) {    
+	    *OUT << "Successor relations - " << rel_successors[focus].size() << endl;
+    	outputrelations(classdecoder,OUT,  rel_successors[focus]);
+    }
+    if (rel_skipcontent[focus].size() > 0) {    
+	    *OUT << "Skipcontent - " << rel_skipcontent[focus].size() << endl;
+	    outputrelations(classdecoder,OUT,  rel_skipcontent[focus]);
+	}
+	if (rel_skipusage[focus].size() > 0) {
+	    *OUT << "Skipusage - " << rel_skipusage[focus].size() << endl;
+    	outputrelations(classdecoder,OUT,  rel_skipusage[focus]);
+    }
+    if (rel_templates[focus].size() > 0) {
+	    *OUT << "Templates - " << rel_templates[focus].size() << endl;
+	    outputrelations(classdecoder,OUT,  rel_templates[focus]);
+	}
+	if (rel_instances[focus].size() > 0) {
+	    *OUT << "Instances - " << rel_instances[focus].size() << endl;
+	    outputrelations(classdecoder,OUT,  rel_instances[focus]);
+	}	
 }
 
 void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OUT, unordered_set<const EncAnyGram*>   & relations ) {
@@ -3043,10 +3055,10 @@ void GraphPatternModel::outputgraphvizrelations( const unordered_set<const EncAn
 
 /****************************************************************************************************************************************/
 
-SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool DOFORWARDINDEX,  bool DOREVERSEINDEX, bool DOXCOUNT, int COUNTTHRESHOLD, double FREQTHRESHOLD, double XCOUNTRATIOTHRESHOLD, int XCOUNTTHRESHOLD, bool DOSKIPGRAMS,  int MINLENGTH, int MAXLENGTH, bool DOPARENTS, bool DOCHILDREN, AlignConstraintInterface * alignconstrain, bool alignconstrainsource, const bool DEBUG) { //read a normal graph pattern model in another way optimised for Cooc alignment
+SelectivePatternModel::SelectivePatternModel(const std::string & filename,  const GraphFilter & filter, bool DOFORWARDINDEX,  bool DOREVERSEINDEX, int COUNTTHRESHOLD, double FREQTHRESHOLD, double XCOUNTRATIOTHRESHOLD, int XCOUNTTHRESHOLD, bool DOSKIPGRAMS,  int MINLENGTH, int MAXLENGTH, AlignConstraintInterface * alignconstrain, bool alignconstrainsource, const bool DEBUG) { //read a normal graph pattern model in another way optimised for Cooc alignment
+    applyfilter(filter);
 	this->DOFORWARDINDEX = DOFORWARDINDEX;
 	this->DOREVERSEINDEX = DOREVERSEINDEX;
-	this->DOXCOUNT = DOXCOUNT;
 	this->COUNTTHRESHOLD = COUNTTHRESHOLD;
 	this->FREQTHRESHOLD = FREQTHRESHOLD;
 	this->XCOUNTRATIOTHRESHOLD = XCOUNTRATIOTHRESHOLD;
@@ -3054,7 +3066,6 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  bool
 	this->DOSKIPGRAMS = DOSKIPGRAMS;
 	this->MINLENGTH = MINLENGTH;
 	this->MAXLENGTH = MAXLENGTH;
-	this->DOPARENTS = DOPARENTS;
 	this->alignconstrain = alignconstrain;
 	this->alignconstrainsource = alignconstrainsource;
 	
@@ -3142,7 +3153,7 @@ int SelectivePatternModel::transitivereduction() {
     return pruned;	
 }
 
-void SelectivePatternModel::readrelations(std::istream * in, const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * relationhash, bool ignore) {
+/*void SelectivePatternModel::readrelations(std::istream * in, const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * relationhash, bool ignore) {
     uint32_t count;
     in->read((char*) &count,  sizeof(uint32_t));
     char gapcount;        
@@ -3176,7 +3187,7 @@ void SelectivePatternModel::readrelations(std::istream * in, const EncAnyGram * 
         }
        }           
     }    
-}
+}*/
 
 
 void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ngram, bool ignore) {
@@ -3205,12 +3216,12 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
         }
     	if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_parents);
     	if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_children);
-    	if (HASTEMPLATES) readrelations(in);
-        if (HASINSTANCES) readrelations(in);
-        if (HASSKIPUSAGE) readrelations(in);
-        if (HASSKIPCONTENT) readrelations(in);
-        if (HASSUCCESSORS) readrelations(in);
-        if (HASPREDECESSORS) readrelations(in);
+    	if (HASTEMPLATES) readrelations(in,  (const EncAnyGram*) &ngram, &rel_templates);
+        if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &ngram, &rel_instances);
+        if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &ngram, &rel_skipusage);
+        if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &ngram, &rel_skipcontent);
+        if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &ngram, &rel_successors);
+        if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &ngram, &rel_predecessors);
     } else {
     	if (HASPARENTS) readrelations(in); //read and ignore
     	if (HASCHILDREN) readrelations(in);  //read and ignore
@@ -3292,12 +3303,12 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
     if (secondpass) {    		
     	if (HASPARENTS) readrelations(in, (const EncAnyGram*) &skipgram, &rel_subsumption_parents);
     	if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &skipgram, &rel_subsumption_children);
-    	if (HASTEMPLATES) readrelations(in);
-        if (HASINSTANCES) readrelations(in);
-        if (HASSKIPUSAGE) readrelations(in);
-        if (HASSKIPCONTENT) readrelations(in);
-        if (HASSUCCESSORS) readrelations(in);
-        if (HASPREDECESSORS) readrelations(in);
+    	if (HASTEMPLATES) readrelations(in,  (const EncAnyGram*) &skipgram, &rel_templates);
+        if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &skipgram, &rel_instances);
+        if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &skipgram, &rel_skipusage);
+        if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &skipgram, &rel_skipcontent);
+        if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &skipgram, &rel_successors);
+        if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &skipgram, &rel_predecessors);
     } else {
     	if (HASPARENTS) readrelations(in); //read and ignore
     	if (HASCHILDREN) readrelations(in);  //read and ignore

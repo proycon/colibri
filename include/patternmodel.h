@@ -335,6 +335,33 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
 
 int transitivereduction(std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relations );
 
+
+class GraphFilter {
+   public:
+    bool DOPARENTS;
+    bool DOCHILDREN;
+    bool DOXCOUNT;
+    bool DOTEMPLATES;
+    bool DOINSTANCES;
+    bool DOSKIPUSAGE;
+    bool DOSKIPCONTENT;
+    bool DOSUCCESSORS;
+    bool DOPREDECESSORS;
+  
+  GraphFilter() {
+    DOPARENTS = false;
+    DOCHILDREN = false;
+    DOXCOUNT = false;
+    DOTEMPLATES = false;
+    DOINSTANCES = false; 
+    DOSKIPUSAGE = false;
+    DOSKIPCONTENT = false;
+    DOSUCCESSORS = false;
+    DOPREDECESSORS = false;
+  }
+};    
+
+
 class GraphRelations {
    public:
     bool DOPARENTS;
@@ -375,7 +402,7 @@ class GraphRelations {
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_successors;  
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_predecessors;  
     
-    void readrelations(std::istream * in,const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > *, bool ignore = false);
+    void readrelations(std::istream * in,const EncAnyGram* = NULL, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * = NULL, bool ignore = false);
     
     void getrelations(std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relations, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram*> & container);
     
@@ -390,8 +417,20 @@ class GraphRelations {
     bool has_skipcontent() { return (HASSKIPCONTENT) ; }
     bool has_successors() { return (HASSUCCESSORS) ; }
     bool has_predecessors() { return (HASPREDECESSORS) ; }
+
+  void applyfilter(const GraphFilter & model) {
+    DOPARENTS = model.DOPARENTS;
+    DOCHILDREN = model.DOCHILDREN;
+    DOXCOUNT = model.DOXCOUNT;
+    DOTEMPLATES = model.DOTEMPLATES;
+    DOINSTANCES = model.DOINSTANCES;
+    DOSKIPUSAGE = model.DOSKIPUSAGE;
+    DOSKIPCONTENT = model.DOSKIPCONTENT;
+    DOPREDECESSORS = model.DOPREDECESSORS;
+    DOSUCCESSORS = model.DOSUCCESSORS;  
+  }
     
-    virtual const EncAnyGram* getkey(const EncAnyGram* key) =0;
+   virtual const EncAnyGram* getkey(const EncAnyGram* key) =0;
 };
 
 class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRelations {               
@@ -400,7 +439,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
     
     bool DELETEMODEL;
     
-    void readrelations(std::istream * in,const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > &, bool ignore = false);
+    //void readrelations(std::istream * in,const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > &, bool ignore = false);
     void writerelations(std::ostream * out, const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & );
    public:
    
@@ -413,36 +452,19 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
     
 
    
-    GraphPatternModel(IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=false,bool DOXCOUNT=false, bool DOTEMPLATES =false, bool DOINSTANCES = false,bool DOSKIPUSAGE=false,bool DOSKIPCONTENT=false,bool DOSUCCESSORS=false,bool DOPREDECESSORS=false); //compute entire model
-    GraphPatternModel(const std::string & graphmodelfilename, IndexedPatternModel * model, bool DOPARENTS=true,bool DOCHILDREN=true,bool DOXCOUNT=true, bool DOTEMPLATES =false, bool DOINSTANCES = false,bool DOSKIPUSAGE=false,bool DOSKIPCONTENT=false,bool DOSUCCESSORS=false,bool DOPREDECESSORS=false, const bool DEBUG=false) {
+    GraphPatternModel(IndexedPatternModel * model, const GraphFilter & filter); //compute entire model
+    GraphPatternModel(const std::string & graphmodelfilename, IndexedPatternModel * model, const GraphFilter & filter, const bool DEBUG=false) {
         //do everything (provided that it exists in file)
-        this->DOPARENTS = DOPARENTS;
-        this->DOCHILDREN = DOCHILDREN;
-        this->DOXCOUNT = DOXCOUNT;
-        this->DOTEMPLATES = DOTEMPLATES;
-		this->DOINSTANCES = DOINSTANCES;
-		this->DOSKIPUSAGE = DOSKIPUSAGE;
-		this->DOSKIPCONTENT = DOSKIPCONTENT;
-		this->DOSUCCESSORS = DOSUCCESSORS;
-		this->DOPREDECESSORS = DOPREDECESSORS;
+        applyfilter(filter);
         model->model_id = GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION;
     	DELETEMODEL = false;        
         this->model = model;
         secondpass = true;
     	readfile(graphmodelfilename, DEBUG);        
     }
-    GraphPatternModel(const std::string & graphmodelfilename, bool DOPARENTS=true,bool DOCHILDREN=true,bool DOXCOUNT=true, bool DOTEMPLATES =false, bool DOINSTANCES = false,bool DOSKIPUSAGE=false,bool DOSKIPCONTENT=false,bool DOSUCCESSORS=false,bool DOPREDECESSORS=false, const bool DEBUG=false) {
+    GraphPatternModel(const std::string & graphmodelfilename, const GraphFilter & filter, const bool DEBUG=false) {
         //do everything (provided that it exists in file)
-        this->DOPARENTS = DOPARENTS;
-        this->DOCHILDREN = DOCHILDREN;
-        this->DOXCOUNT = DOXCOUNT;    
-        this->DOTEMPLATES = DOTEMPLATES;
-		this->DOINSTANCES = DOINSTANCES;
-		this->DOSKIPUSAGE = DOSKIPUSAGE;
-		this->DOSKIPCONTENT = DOSKIPCONTENT;
-		this->DOSUCCESSORS = DOSUCCESSORS;
-		this->DOPREDECESSORS = DOPREDECESSORS;
-    	
+        applyfilter(filter);    	
     	DELETEMODEL = true;
     	model = new IndexedPatternModel();
     	model->model_id = GRAPHPATTERNMODEL+GRAPHPATTERNMODELVERSION;
@@ -456,6 +478,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
         readfile(graphmodelfilename, DEBUG);
     }    
         
+    
     
     ~GraphPatternModel();
     
@@ -491,7 +514,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
     void outputgraphvizrelations( const EncAnyGram * anygram, std::ostream *OUT, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour);
     void outputgraphvizrelations( const std::unordered_set<const EncAnyGram *> &, std::ostream *OUT, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour);    
   
-    void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, const EncAnyGram * focusinput);
+    void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, const EncAnyGram * focusinput, bool outputquery=false);
     void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, std::unordered_set<const EncAnyGram*>   & relations );
 
     void outputcoverage(ClassDecoder & classdecoder, std::ostream *OUT);
@@ -541,7 +564,7 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier, public Gra
      AlignConstraintInterface * alignconstrain;
      bool alignconstrainsource;
      
-     void readrelations(std::istream * in, const EncAnyGram * anygram = NULL, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * relationhash = NULL, bool ignore = false);
+     //void readrelations(std::istream * in, const EncAnyGram * anygram = NULL, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * relationhash = NULL, bool ignore = false);
     
      void computestats(); //compute occurrence count sums
    public:
@@ -563,7 +586,7 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier, public Gra
               
     
      std::unordered_map<uint32_t,std::vector<const EncAnyGram*> > reverseindex;    
-     SelectivePatternModel(const std::string & filename, bool DOFORWARDINDEX = true, bool DOREVERSEINDEX = true, bool DOXCOUNT = true, int COUNTTHRESHOLD = 0, double FREQTHRESHOLD = 0, double XCOUNTRATIOTHRESHOLD = 0, int XCOUNTTHRESHOLD = 0, bool DOSKIPGRAMS = true,  int MINLENGTH = 0, int MAXLENGTH=99, bool DOPARENTS = false, bool DOCHILDREN = false, AlignConstraintInterface * alignconstrain = NULL, bool alignconstrainsource = true , const bool DEBUG=false); //read a graph pattern model
+     SelectivePatternModel(const std::string & filename, const GraphFilter & filter, bool DOFORWARDINDEX = true, bool DOREVERSEINDEX = true, int COUNTTHRESHOLD = 0, double FREQTHRESHOLD = 0, double XCOUNTRATIOTHRESHOLD = 0, int XCOUNTTHRESHOLD = 0, bool DOSKIPGRAMS = true,  int MINLENGTH = 0, int MAXLENGTH=99, AlignConstraintInterface * alignconstrain = NULL, bool alignconstrainsource = true , const bool DEBUG=false); //read a graph pattern model
   
      uint64_t types() const { return ngrams.size() + skipgrams.size(); }
      uint64_t tokens() const { return totaltokens; }

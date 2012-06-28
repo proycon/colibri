@@ -170,7 +170,17 @@ int main( int argc, char *argv[] ) {
         cerr << "Loaded " << patternmodel.types() << " types, " << patternmodel.tokens() << " tokens" << endl;
             
         cerr << "Constructing graph " << endl;
-        GraphPatternModel graphmodel = GraphPatternModel(&patternmodel, DOPARENTS, DOCHILDREN, DOXCOUNT, DOTEMPLATES, DOINSTANCES,DOSKIPUSAGE,DOSKIPCONTENT,DOSUCCESSORS,DOPREDECESSORS);
+        GraphFilter filter;
+        filter.DOPARENTS = DOPARENTS;
+        filter.DOCHILDREN = DOCHILDREN;
+        filter.DOXCOUNT = DOXCOUNT;
+        filter.DOTEMPLATES = DOTEMPLATES;
+        filter.DOINSTANCES = DOINSTANCES;
+        filter.DOSKIPUSAGE = DOSKIPUSAGE;
+        filter.DOSKIPCONTENT = DOSKIPCONTENT;
+        filter.DOSUCCESSORS = DOSUCCESSORS;
+        filter.DOPREDECESSORS = DOPREDECESSORS;        
+        GraphPatternModel graphmodel = GraphPatternModel(&patternmodel, filter);
         
         
         
@@ -201,7 +211,17 @@ int main( int argc, char *argv[] ) {
     } else {
         if (!classfile.empty()) {           
             cerr << "Loading graph model " << modelfile << endl;
-            GraphPatternModel graphmodel = GraphPatternModel(modelfile, DOPARENTS, DOCHILDREN, DOXCOUNT, DOTEMPLATES, DOINSTANCES,DOSKIPUSAGE,DOSKIPCONTENT,DOSUCCESSORS,DOPREDECESSORS, DEBUG);  
+            GraphFilter filter;
+            filter.DOPARENTS = DOPARENTS;
+            filter.DOCHILDREN = DOCHILDREN;
+            filter.DOXCOUNT = DOXCOUNT;
+            filter.DOTEMPLATES = DOTEMPLATES;
+            filter.DOINSTANCES = DOINSTANCES;
+            filter.DOSKIPUSAGE = DOSKIPUSAGE;
+            filter.DOSKIPCONTENT = DOSKIPCONTENT;
+            filter.DOSUCCESSORS = DOSUCCESSORS;
+            filter.DOPREDECESSORS = DOPREDECESSORS;   
+            GraphPatternModel graphmodel = GraphPatternModel(modelfile, filter, DEBUG);  
             
             graphmodel.stats( (ostream*) &cerr );
                                          
@@ -230,7 +250,7 @@ int main( int argc, char *argv[] ) {
             		ClassEncoder encoder = ClassEncoder(classfile);            		            	
             		const EncAnyGram * anygram = encoder.input2anygram(querystring, true);
             		cerr << "Outputting graph for \"" << anygram->decode(classdecoder) << "\"" << endl;
-            		if (DOOUTPUTRELATIONS) graphmodel.outputrelations(classdecoder,(ostream*) &cout, anygram); //(EncAnyGram*) &ngram);
+            		if (DOOUTPUTRELATIONS) graphmodel.outputrelations(classdecoder,(ostream*) &cout, anygram, true); //(EncAnyGram*) &ngram);
             } else {
             	graphmodel.decode(classdecoder, (ostream*) &cout, DOOUTPUTRELATIONS);
             }
