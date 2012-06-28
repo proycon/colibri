@@ -559,8 +559,7 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier, public Gra
      int ngramtypecount;
      int skipgramtypecount;   
      
-     bool secondpass; 
-     
+    
      AlignConstraintInterface * alignconstrain;
      bool alignconstrainsource;
      

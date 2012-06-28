@@ -504,8 +504,8 @@ int main( int argc, char *argv[] ) {
             filter.DOSKIPUSAGE = DOSKIPUSAGE;
             filter.DOSKIPCONTENT = DOSKIPCONTENT;
             filter.DOSUCCESSORS = DOSUCCESSORS;
-            filter.DOPREDECESSORS = DOPREDECESSORS;               
-	        SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false, DEBUG);
+            filter.DOPREDECESSORS = DOPREDECESSORS;    
+	        SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false);
 	        cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
          	cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;	           
 	        cerr << "  Template relations available for  " << sourcemodel.rel_templates.size() << " patterns" << endl;
@@ -513,7 +513,7 @@ int main( int argc, char *argv[] ) {
 	        
 	
 	        cerr << "Loading target model " << targetmodelfile << endl;
-	        SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false, DEBUG);
+	        SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false);
 	        cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
 	        cerr << "  Ignored " << targetmodel.ignoredtypes << " types, " << targetmodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;
 	        cerr << "  Template relations available for  " << targetmodel.rel_templates.size() << " patterns" << endl;
