@@ -223,6 +223,8 @@ int main( int argc, char *argv[] ) {
             break;
         case 'U':
             EXTRACTSKIPGRAMS = true;
+            DOTEMPLATES = true;
+            DOINSTANCES = true;
             break;   
         case 'V':
         	DODEBUG = true;
@@ -504,37 +506,18 @@ int main( int argc, char *argv[] ) {
             filter.DOPREDECESSORS = DOPREDECESSORS;               
 	        SelectivePatternModel sourcemodel = SelectivePatternModel(sourcemodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false, DEBUG);
 	        cerr << "  Loaded " << sourcemodel.types() << " types, " << sourcemodel.tokens() << " tokens" << endl;
-         	cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;
-	        if (sourcemodel.has_xcount()) {
-		        cerr << "  Exclusive count available? YES" << endl;
-	        } else {
-		        cerr << "  Exclusive count available? NO" << endl;
-	        }		
-	        if (sourcemodel.has_index()) {
-		        cerr << "  Reverse index has " << sourcemodel.reverseindex.size() << " sentences" << endl;
-	        } else {
-		        cerr << "ERROR: Model " + sourcemodelfile + " contains no indexing information! Unable to align without!" << endl;
-		        exit(3);
-	        }    
-	        if (sourcemodel.has_parents()) {
-		        cerr << "  Parent relations available for  " << sourcemodel.rel_subsumption_parents.size() << " patterns" << endl;
-	        }
+         	cerr << "  Ignored " << sourcemodel.ignoredtypes << " types, " << sourcemodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;	           
+	        cerr << "  Template relations available for  " << sourcemodel.rel_templates.size() << " patterns" << endl;
+	        cerr << "  Instance relations available for  " << sourcemodel.rel_instances.size() << " patterns" << endl;
+	        
 	
 	        cerr << "Loading target model " << targetmodelfile << endl;
 	        SelectivePatternModel targetmodel = SelectivePatternModel(targetmodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false, DEBUG);
 	        cerr << "  Loaded " << targetmodel.types() << " types, " << targetmodel.tokens() << " tokens" << endl;
 	        cerr << "  Ignored " << targetmodel.ignoredtypes << " types, " << targetmodel.ignoredoccurrences << " occurrences due to set thresholds" << endl;
-	        if (targetmodel.has_xcount()) {
-		        cerr << "  Exclusive count available? YES" << endl;
-	        } else {
-		        cerr << "  Exclusive count available? NO" << endl;
-	        }
-	        if (targetmodel.has_index()) {
-		        cerr << "  Reverse index has " << targetmodel.reverseindex.size() << " sentences" << endl;
-	        } else {
-		        cerr << "ERROR: Model " + targetmodelfile + " contains no indexing information! Unable to align without!" << endl;
-		        exit(3);
-	        }
+	        cerr << "  Template relations available for  " << targetmodel.rel_templates.size() << " patterns" << endl;
+	        cerr << "  Instance relations available for  " << targetmodel.rel_instances.size() << " patterns" << endl;
+
 	        if (targetmodel.has_parents()) {
 		        cerr << "  Parent relations available for  " << targetmodel.rel_subsumption_parents.size() << " patterns" << endl;
 	        }		         
