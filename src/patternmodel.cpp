@@ -2049,7 +2049,6 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
                 //reverse:
                 if ((DOPARENTS) || (DOXCOUNT)) rel_subsumption_parents[subngram].insert(ngram);
             }
-            //TODO: memory leak? clean subngram
             delete *iter2;
         }   
         //cerr << "DEBUG: n3" << endl;
@@ -2065,7 +2064,6 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
 		    		if (DOSUCCESSORS) rel_successors[left].insert(right);
 		    		if (DOPREDECESSORS) rel_predecessors[right].insert(left);
 		    	}
-		    	//TODO: memory leak? clean subngram
 		    	delete iter2->first;
 		    	delete iter2->second;
 		    }

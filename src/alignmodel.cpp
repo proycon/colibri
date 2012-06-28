@@ -2343,13 +2343,21 @@ int AlignmentModel::extractskipgrams() {
     
     //harvest possible skipgram prealignments from (ngram) align matrix
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
-		const EncAnyGram * sourcegram = sourceiter->first;
+		const EncAnyGram * sourcegram = sourcemodel->getkey(sourceiter->first);
+		if (sourcegram == NULL) {
+		    cerr << "WARNING: Source-side pattern in align matrix not found in model! Skipping.." << endl;
+		    continue; 
+		}
 		if (sourceiter->second.size() > 1) { //are there multiple candidates?		    
 		    unordered_set<const EncSkipGram *> sourceskipgrams;
 		    if (get_templates(sourcegram, sourcemodel, sourceskipgrams)) { //get all templates for this pattern, recursively
 		        cerr << ".";
                 for (unordered_map<const EncAnyGram*, double>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
-		            const EncAnyGram * targetgram = targetiter->first;
+		            const EncAnyGram * targetgram = targetmodel->getkey(targetiter->first);
+                    if (targetgram == NULL) {
+                        cerr << "WARNING: Target-side pattern in align matrix not found in model! Skipping.." << endl;
+                        continue; 
+                    }		            
 		            unordered_set<const EncSkipGram *> targetskipgrams;
 		            if (get_templates(targetgram, sourcemodel, targetskipgrams)) {
 		                cerr << ":";
@@ -2459,7 +2467,7 @@ void recompute_token_index(unordered_map<const EncAnyGram *, vector<int> > & tok
 }
 
 
-size_t get_templates(const EncAnyGram * anygram, SelectivePatternModel * model, unordered_set<const EncSkipGram *> & container) {
+size_t get_templates(const EncAnyGram * anygram, SelectivePatternModel * model, unordered_set<const EncSkipGram *> & container) {    
     if (model->rel_templates.count(anygram)) {
         for (unordered_set<const EncAnyGram*>::iterator iter = model->rel_templates[anygram].begin(); iter != model->rel_templates[anygram].end(); iter++) {
                const EncSkipGram * tmplate = (const EncSkipGram*) *iter;   
