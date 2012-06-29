@@ -2292,7 +2292,7 @@ int AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & g
       return totalfound;      
 }
 
-int AlignmentModel::extractskipgrams() {
+int AlignmentModel::extractskipgrams(const int absolutecoocthreshold) {
     unsigned int found = 0;
     //extract skipgram alignments on the basis of n-gram alignments found, and a graphmodel containing template information (irregardless of whether stored as transitive reduction or not)
     
@@ -2383,7 +2383,7 @@ int AlignmentModel::extractskipgrams() {
 		const EncSkipGram * sourcegram = sourceiter->first;
 	    for (unordered_map<const EncSkipGram*, uint16_t>::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
 		    const EncSkipGram * targetgram = targetiter->first;
-		    if (targetiter->second == 1) {
+		    if (targetiter->second < absolutecoocthreshold) {
 		        prealignmatrix[sourcegram].erase(targetgram);
 		    }
 		}
