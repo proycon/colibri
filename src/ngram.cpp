@@ -153,6 +153,25 @@ int EncNGram::splits(vector<pair<EncNGram*, EncNGram*> > & container) const {
     }        	
 }
 
+int EncNGram::getclass(const int index) const {
+    int begin = 0;
+    int l = 0;
+    int curindex = 0;
+    for (int i = 0; i < _size; i++) {
+        l++;
+        if ((data[i] == 0) && (l > 0)) {                        
+            if (curindex == index) return bytestoint(data + begin, l);
+            curindex++;                          
+            begin = i + 1;            
+            l = 0;
+        }
+    }
+    if (l > 0) {
+        if (curindex == index) return bytestoint(data + begin, l);
+    }    
+    return 0;    
+} 
+
 std::string EncAnyGram::decode(ClassDecoder& classdecoder) const {
     //cout << "DECODING NGRAM size=" << (int) _size << " n=" << n() << " data=" << data << endl;
     std::string result = ""; 
@@ -646,7 +665,7 @@ EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::ve
 }
 
 
-bool EncSkipGram::fixedwidthclassvector(vector<int> & container) const {
+bool EncSkipGram::classvector(vector<int> & container) const {
     int begin = 0;
     int l = 0;
     int skipnum = 0;
@@ -675,13 +694,36 @@ bool EncSkipGram::fixedwidthclassvector(vector<int> & container) const {
     return true;
 }
 
+bool EncNGram::classvector(vector<int> & container) const {
+    int begin = 0;
+    int l = 0;
+    for (int i = 0; i < _size; i++) {
+        l++;
+        if ((data[i] == 0) && (l > 0)) {              
+            const unsigned int cls = bytestoint(data + begin, l);              
+            if (cls == 1) {
+                return true;
+            } else if (cls > 0) {
+                container.push_back(cls);  
+            }        
+            begin = i + 1;            
+            l = 0;
+        }
+    }
+    if (l > 0) {
+        const unsigned int cls = bytestoint(data + begin, l);  
+        container.push_back(cls);  
+    }    
+    return true;
+}
+
 
 int EncSkipGram::instancetemplaterelation(const EncSkipGram *other) const {
     if (n() != other->n()) return 0;
     vector<int> thisvector; 
-    this->fixedwidthclassvector(thisvector);
+    this->classvector(thisvector);
     vector<int> othervector;
-    other->fixedwidthclassvector(othervector);
+    other->classvector(othervector);
     int result = 0;    
     for (int i = 0; i < n(); i++) {
         if (thisvector[i] == othervector[i]) {

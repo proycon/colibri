@@ -84,11 +84,14 @@ class EncNGram: public EncAnyGram {
     EncNGram(const unsigned char* dataref, const char size): EncAnyGram(dataref, size) {};
     EncNGram(const EncNGram& ref): EncAnyGram(ref) {};     
     EncNGram(std::istream * in);
+    
+    int getclass(const int index) const;
     EncNGram * slice(const int begin,const int length) const;    
     
-    
+        
     int subngrams(std::vector<EncNGram*> & container) const;
-    int splits(std::vector<std::pair<EncNGram*, EncNGram*> > & container) const;     
+    int splits(std::vector<std::pair<EncNGram*, EncNGram*> > & container) const;
+    bool classvector(std::vector<int> & ) const;     
 };
 
 EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size, const unsigned int linenum = 0);
@@ -157,7 +160,7 @@ class EncSkipGram: public EncAnyGram {
      virtual bool operator==(const EncSkipGram &other) const;
      virtual bool operator!=(const EncSkipGram &other) const;
 
-     bool fixedwidthclassvector(std::vector<int> & ) const;
+     bool classvector(std::vector<int> & ) const; //fixed width, gaps are 0
      int instancetemplaterelation(const EncSkipGram *other) const;
       
 };

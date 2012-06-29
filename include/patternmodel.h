@@ -249,7 +249,7 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     void decode(ClassDecoder & classdecoder, std::ostream *OUT);
     void decode(IndexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT);
     
-    
+    bool skipgramvarietycheck(SkipGramData & skipgramdata, int mintypecount=2);
     void coveragereport(std::ostream *OUT, const std::string & corpusfile = "", std::ostream *HTMLOUT = NULL, ClassDecoder * decoder = NULL, int segmentsize = 100000);    
 };
 

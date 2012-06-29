@@ -482,8 +482,10 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                     bool pruneskipgram = false;
                     if ((iter->second.count() < MINTOKENS) || ((iter->second.skipcontent.size() < MINSKIPTYPES)))  {
                         pruneskipgram = true;
-                    } else {            
+                    } else {                                    
                         int prunedskiptokens = 0;
+                        
+                        //prune content with insufficient occurrences:                        
                         for(std::unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {
                             if (iter2->second.count() < MINSKIPTOKENS) {
                                 //prune skip
@@ -492,6 +494,11 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                                 iter->second.skipcontent.erase(iter2->first); 
                             }
                         }
+                        
+                        //prune skipgrams with gaps with not enough different types
+                        if (!skipgramvarietycheck(iter->second, MINSKIPTYPES)) pruneskipgram = true;
+
+                        
                         if ( (prunedskiptokens > 0) && ( (iter->second.skipcontent.size() < MINSKIPTYPES) || (iter->second.count() - prunedskiptokens < MINTOKENS) ) ) { //reevaluate
                             pruneskipgram = true;
                             //skiptokencount[n] -= prunedskiptokens;
@@ -1378,6 +1385,41 @@ void IndexedPatternModel::writeanygram(const EncAnyGram * anygram,std::ostream *
     }        
 }         
         
+        
+
+
+bool IndexedPatternModel::skipgramvarietycheck(SkipGramData & skipgramdata, int mintypecount) {
+    //returns whether all gaps satisfy type diversity (true) or not (false). Set earlyabort=true to have the algorithm abort as soon as its clear the diversity is not maintained (in which case container will not be complete)      
+        
+    map<int,unordered_set<int>> variety; //per (pseudo-)index, store all possible classes
+                   
+    //count step
+    for (unordered_map<EncSkipGram,NGramData>::iterator iter = skipgramdata.skipcontent.begin(); iter != skipgramdata.skipcontent.end(); iter++) {        
+        vector<EncNGram*> skipparts;
+        iter->first.parts(skipparts);
+        int skipnum = 0;
+        for (vector<EncNGram*>::iterator iter2 = skipparts.begin(); iter2 != skipparts.end(); iter2++) {
+            const EncNGram * part = *iter2;
+            const int indexbase = skipnum * 100;
+            vector<int> partclassvector;
+            part->classvector(partclassvector);
+            int index = 0;
+            for (vector<int>::iterator iter3 = partclassvector.begin(); iter3 != partclassvector.end(); iter3++) {
+                variety[indexbase+index].insert(*iter3);
+                index++;
+            }
+            delete part;
+            skipnum++;
+        }        
+    }
+        
+    //check
+    for (map<int,unordered_set<int>>::iterator iter = variety.begin(); iter != variety.end(); iter++) {
+        if (iter->second.size() < mintypecount) return false;
+    } 
+    return true;
+}
+
 
 
 UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
