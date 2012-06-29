@@ -377,6 +377,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                         //cerr << "INSTANCE SIZE: " << gaps[j].size() << endl;
                         
                     	//Iterate over all gaps in this configuration    
+                    	skipref.reserve(gaps[j].size());
                         for (size_t k = 0; k < gaps[j].size(); k++) {                                                        
                             const int begin = gaps[j][k].first;  
                             const int length = gaps[j][k].second;                        
@@ -1529,6 +1530,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
                         
                            
                         //cerr << "INSTANCE SIZE: " << gaps[j].size() << endl;
+                        skipref.reserve(gaps[j].size());
                         for (size_t k = 0; k < gaps[j].size(); k++) {                                                        
                             const int begin = gaps[j][k].first;  
                             const int length = gaps[j][k].second;                        
@@ -3295,6 +3297,7 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
     
     in->read((char*) &count, sizeof(uint32_t)); //read occurrence count		
 	if (model_id != UNINDEXEDPATTERNMODEL) {	
+	    index.reserve(count);
 		for (int j = 0; j < count; j++) {
 		    CorpusReference ref = CorpusReference(in); //read from file
 		    if (!ignore) index.push_back(ref.sentence);         
@@ -3379,16 +3382,17 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
     
     in->read((char*) &count, sizeof(uint32_t)); //read occurrence count
     
+    
     if (model_id != UNINDEXEDPATTERNMODEL) {
 		in->read((char*) &skipcontentcount, sizeof(uint32_t));   
 		for (int j = 0; j < skipcontentcount; j++) {                                
 		    EncSkipGram skipcontent = EncSkipGram(in);  
-		    in->read((char*) &count, sizeof(uint32_t)); //read occurrence count                
+		    in->read((char*) &count, sizeof(uint32_t)); //read occurrence count
 		    for (int k = 0; k < count; k++) {
 		        CorpusReference ref = CorpusReference(in); //read from file       
 		        if (!ignore) index.push_back(ref.sentence);            
 		    }        
-		}    
+		}    		
 	}
     if (HASXCOUNT) in->read((char*) &xcount, sizeof(uint32_t));     
 

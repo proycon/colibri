@@ -133,6 +133,7 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
 int EncNGram::subngrams(vector<EncNGram*> & container) const {
     int count = 0;
     const int N = n();
+    //maybe TODO: container.reserve() ? 
     for (int begin = 0; begin < N; begin++) {
         for (int length = 1; length < N-begin+1; length++)
             if (length < N) {
@@ -146,6 +147,7 @@ int EncNGram::subngrams(vector<EncNGram*> & container) const {
 int EncNGram::splits(vector<pair<EncNGram*, EncNGram*> > & container) const {
 	int count = 0;
 	const int N = n();
+	container.reserve(N-2);
     for (int begin = 1; begin < N - 1; begin++) {
     	int length = N-begin;
     	count++;
@@ -525,6 +527,7 @@ bool EncSkipGram::out() const {
 int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
     int begin = 0;
     bool prevnull = false;
+    container.reserve(skipcount);
     for (int i = 0; i < _size; i++) {
         //cerr << (int) data[i] << ':' << prevnull << ':' << skipcount << endl;
         if (data[i] == 0) {
@@ -546,6 +549,7 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
 void EncSkipGram::mask(std::vector<bool> & container) const { //returns a boolean mask of the skipgram (0 = gap(encapsulation) , 1 = skipgram coverage)
     bool prevnull = false;
     int skipnum = 0;
+    container.reserve(n());
     for (int i = 0; i < _size; i++) {
         //cerr << (int) data[i] << ':' << prevnull << ':' << skipcount << endl;
         if (data[i] == 0) {
@@ -568,6 +572,7 @@ void EncSkipGram::getgaps(std::vector<std::pair<int,int> > & gaps) const {
     int pos = 0;
     bool prevnull = false;
     int skipnum = 0;
+    gaps.reserve(skipcount);
     for (int i = 0; i < _size; i++) {
         //cerr << (int) data[i] << ':' << prevnull << ':' << skipcount << endl;
         if (data[i] == 0) {
@@ -669,6 +674,7 @@ bool EncSkipGram::classvector(vector<int> & container) const {
     int begin = 0;
     int l = 0;
     int skipnum = 0;
+    container.reserve(n());
     for (int i = 0; i < _size; i++) {
         l++;
         if ((data[i] == 0) && (l > 0)) {            
@@ -697,6 +703,7 @@ bool EncSkipGram::classvector(vector<int> & container) const {
 bool EncNGram::classvector(vector<int> & container) const {
     int begin = 0;
     int l = 0;
+    container.reserve(n());
     for (int i = 0; i < _size; i++) {
         l++;
         if ((data[i] == 0) && (l > 0)) {              
