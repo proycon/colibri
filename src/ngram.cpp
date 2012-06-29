@@ -375,6 +375,25 @@ EncSkipGram::EncSkipGram(const unsigned char *dataref, const char size, const un
 }
 
 
+bool EncSkipGram::operator==(const EncSkipGram &other) const {
+        const char othersize = other.size();
+        if (_size == othersize) {
+            if (skipcount != other.skipcount) return false;
+            for (int i = 0; i < _size; i++) {
+                if (data[i] != other.data[i]) return false;
+            }
+            for (int i = 0; i < skipcount; i++) {
+               if (skipsize[i] != other.skipsize[i]) return false;
+            }
+            return true;            
+        } else {
+            return false;
+        }        
+}
+bool EncSkipGram::operator!=(const EncSkipGram &other) const {
+    return !(*this == other);
+}
+
 const char EncSkipGram::n() const {    
     char count = 0;
     bool item = (data[0] != 0);
@@ -626,7 +645,60 @@ EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::ve
 	return x;
 }
 
-	
+
+bool EncSkipGram::fixedwidthclassvector(vector<int> & container) const {
+    int begin = 0;
+    int l = 0;
+    int skipnum = 0;
+    for (int i = 0; i < _size; i++) {
+        l++;
+        if ((data[i] == 0) && (l > 0)) {            
+            if ((i > 0) && (data[i-1] == 0)) {
+                for (int j = 0; j < skipsize[skipnum]; j++) container.push_back(0);
+                skipnum++;       
+            } else {            
+                const unsigned int cls = bytestoint(data + begin, l);              
+                if (cls == 1) {
+                    return true;
+                } else if (cls > 0) {
+                    container.push_back(cls);  
+                }
+            }
+            begin = i + 1;            
+            l = 0;
+        }
+    }
+    if (l > 0) {
+        const unsigned int cls = bytestoint(data + begin, l);  
+        container.push_back(cls);  
+    }    
+    return true;
+}
+
+
+int EncSkipGram::instancetemplaterelation(const EncSkipGram *other) const {
+    if (n() != other->n()) return 0;
+    vector<int> thisvector; 
+    this->fixedwidthclassvector(thisvector);
+    vector<int> othervector;
+    other->fixedwidthclassvector(othervector);
+    int result = 0;    
+    for (int i = 0; i < n(); i++) {
+        if (thisvector[i] == othervector[i]) {
+            //good.. pass
+        } else if (thisvector[i] == 0) {
+            if (result == 1) return 0; //mismatch
+            result = -1; //this one is the template, other instance
+        } else if (othervector[i] == 0) {
+            if (result == -1) return 0; //mismatch
+            result = 1; //this one is the instance, other template
+        } else {
+            //mismatch
+            return 0;
+        }
+    }    
+    return result;
+}	
 
 /*
 SkipConf::SkipConf( const  uint16_t value ) {
@@ -718,6 +790,9 @@ EncSkipGram::EncSkipGram(istream * in, const char _skipcount) {
     data = new unsigned char[_size];
     in->read((char*) data, (int) _size); //read data                                                
 }
+
+
+
 
 
 EncData::EncData(const unsigned char* dataref, const int size) {

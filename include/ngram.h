@@ -154,6 +154,11 @@ class EncSkipGram: public EncAnyGram {
 	  EncNGram instantiate(const EncSkipGram * skipcontent, const std::vector<EncNGram*> & contentparts) const;      
       void writeasbinary(std::ostream * out) const; //write binary output
       
+     virtual bool operator==(const EncSkipGram &other) const;
+     virtual bool operator!=(const EncSkipGram &other) const;
+
+     bool fixedwidthclassvector(std::vector<int> & ) const;
+     int instancetemplaterelation(const EncSkipGram *other) const;
       
 };
 

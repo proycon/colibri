@@ -2496,22 +2496,32 @@ void find_clusters(unordered_map<const EncSkipGram*,uint16_t> skipgrams, vector<
         }
         unordered_set<const EncAnyGram *> relationcandidates;
         model->getrelations( model->rel_templates, skipgram, relationcandidates); //forward search
-        model->getrelations( model->rel_instances, skipgram, relationcandidates); //backward search
+        //model->getrelations( model->rel_instances, skipgram, relationcandidates); //backward search
+        cerr << "DEBUG: " << relationcandidates.size() << endl;
                 
         bool found = false;                
         for (vector<unordered_set<const EncSkipGram*> >::iterator clusteriter = clusters.begin(); clusteriter != clusters.end(); clusteriter++) {
             const EncSkipGram * refskipgram = *(clusteriter->begin());
             //check if the two are related
             bool related = false;
+            
+            //cerr << endl << "REF: ";
+            //refskipgram->out();
+            //cerr << endl;
             for (unordered_set<const EncAnyGram *>::iterator iter2 = relationcandidates.begin(); iter2 != relationcandidates.end(); iter2++) {
-                if (*refskipgram == **iter2) {
+                const EncSkipGram * candidate = (const EncSkipGram*) *iter2;
+                //cerr << endl << "CDD: " << endl;
+                //candidate->out();
+                //cerr << endl;
+                if (*refskipgram == *candidate) {
+                    //cerr << "MATCH!!!" << endl;
                     related = true; 
                     break;
                 } 
             } 
         
             if (related) {
-                cerr << "FOUND RELATED CLUSTER" << endl;
+                //cerr << "FOUND RELATED CLUSTER" << endl;
                 found = true;
                 clusteriter->insert((const EncSkipGram *) skipgram);
                 break;

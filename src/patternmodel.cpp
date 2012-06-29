@@ -2142,10 +2142,58 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
 				}          
 		    }
 		    
+		    
+		    
 		}
 		//cerr << "DEBUG: s3" <<endl;
         
     }
+
+
+    //find template<->instance relations between skipgrams, based on templates
+    if (DOTEMPLATES) {
+        //cerr << rel_templates.size() << endl;
+        //int c = 0;
+        int found = 0;
+        for (unordered_map<const EncAnyGram*,unordered_set<const EncAnyGram*> >::iterator iter2 = rel_templates.begin(); iter2 != rel_templates.end(); iter2++) {
+           // c++;
+          //  cerr << " @" << c << " " << iter2->second.size() << endl;		            
+            const EncAnyGram * instance = iter2->first;
+            if (!instance->isskipgram()) {
+                int i = 0;		            
+                for (unordered_set<const EncAnyGram*>::iterator iter3 = iter2->second.begin(); iter3 !=  iter2->second.end(); iter3++) {
+                    const EncAnyGram * tmplate = *iter3;
+                    i++;
+                    int j = 0;
+                    for (unordered_set<const EncAnyGram*>::iterator iter4 = iter2->second.begin(); iter4 !=  iter2->second.end(); iter4++) {
+                        j++;		                    
+                        if (j > i) { //keep complexity down to O(log n)
+                            const EncAnyGram * tmplate2 = *iter4;
+                            //how do the two templates relate?
+                            int rel = ((const EncSkipGram *) tmplate)->instancetemplaterelation( (const EncSkipGram *) tmplate2 );
+                            if (rel == 1) {
+                                //tmplate is instance of tmplate2, tmplate2 template of tmplate
+                                rel_templates[tmplate].insert(tmplate2);
+                                rel_instances[tmplate2].insert(tmplate);
+                                found++;                                
+                            } else if (rel == -1) {
+                                //tmplate2 is instance of tmplate, tmplate template of tmplate2
+                                rel_templates[tmplate2].insert(tmplate);
+                                rel_instances[tmplate].insert(tmplate2);
+                                found++;                            
+                            }                    
+                        }
+                    }	                
+                }
+            }
+        }
+        cerr << "FOUND: " << found << endl;
+    } else if (DOINSTANCES) {
+        //based on instances: TODO
+        cerr << "WARNING: If you also want instance relations between skipgrams, enable computation of template relations in the graph.. Will be skipped now!!!" << endl;
+    }
+
+
 
     if (DOXCOUNT) {
         cerr << "Computing exclusive count" << endl;
@@ -2176,6 +2224,8 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
         if (!DOPARENTS) rel_subsumption_parents.clear();
     }
 }
+
+
 
 
 void GraphPatternModel::stats(std::ostream *OUT) {
@@ -2976,6 +3026,8 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	relatednodes.insert( rel_successors[focus].begin(), rel_successors[focus].end() );
 	relatednodes.insert( rel_skipcontent[focus].begin(), rel_skipcontent[focus].end() );
 	relatednodes.insert( rel_skipusage[focus].begin(), rel_skipusage[focus].end() );
+	relatednodes.insert( rel_templates[focus].begin(), rel_templates[focus].end() );
+	relatednodes.insert( rel_instances[focus].begin(), rel_instances[focus].end() );
 	
 	cerr << "  Found " << relatednodes.size() << " nodes (direct relations)" << endl;
 	
