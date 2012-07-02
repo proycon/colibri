@@ -97,10 +97,12 @@ void ClassEncoder::build(const string & filename) {
           for (int i = 0; i < line.size(); i++) {
               if ((line[i] == ' ') || (i == line.size() - 1)) {
               	  int offset = 0;
-              	  if (i == line.size() - 1) offset = 1;
+              	  if (i == line.size() - 1) offset = 1;              	  
               	  string word = string(line.begin() + begin, line.begin() + i + offset);              	  
-              	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " "))
+              	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
+              	    word = trim(word, " \t\n\r"); //trim whitespace, control characters
               	  	freqlist[word]++;
+              	  }
               	  begin = i+ 1; 
               }
               
