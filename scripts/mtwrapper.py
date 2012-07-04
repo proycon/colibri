@@ -61,7 +61,7 @@ def magenta(s):
 class MTProtocol(basic.LineReceiver):
     def lineReceived(self, line):
         #post line as input to process
-        while self.factory.busy: 
+        while self.factory.busy: 	1
             time.sleep(0.1)
         #send output to client
         self.factory.process.stdin.write(line+"\n")
@@ -1398,9 +1398,9 @@ class MTWrapper(object):
     def server(self, port):
         if not self.check_common(): return False
         if not self.check_run(): return False
-                
-        #MTServer(cmd, port)
 
+        if self.BUILD_MOSES: self.server_moses(port)        
+        
         
     
     def run(self, inputfile, outputfile='output.txt', tokenise=False):        
@@ -1438,6 +1438,10 @@ class MTWrapper(object):
     def run_moses(self):
         if not self.runcmd(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini < input.txt > output.txt','Moses Decoder'): return False
         return True 
+    
+    def server_moses(self, port):
+        MTServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini', port)
+             
     
     def run_pbmbmt(self):
         for trainfile in glob.glob(self.WORKDIR + '/*.train.*.inst'):
