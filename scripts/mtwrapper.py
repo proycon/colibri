@@ -21,6 +21,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot
 from pynlpl.evaluation import filesampler
+from pynlpl.net import GenericWrapperServer
 from twisted.internet import protocol, reactor
 from twisted.protocols import basic
 
@@ -58,40 +59,39 @@ def magenta(s):
     CSI="\x1B["
     return CSI+"35m" + s + CSI + "0m"   
 
-class MTProtocol(basic.LineReceiver):
-    def lineReceived(self, line):
+# class MTProtocol(basic.LineReceiver):
+    # def lineReceived(self, line):
         #post line as input to process
-        while self.factory.busy:
-            time.sleep(0.1)
+        # while self.factory.busy:
+            # time.sleep(0.1)
         #send output to client
-        self.factory.process.stdin.write(line+"\n")
-        output = self.factory.process.stdout.readline().strip()
-        self.sendLine(output)
+        # self.factory.process.stdin.write(line+"\n")
+        # output = self.factory.process.stdout.readline().strip()
+        # self.sendLine(output)
         
-class MTFactory(protocol.ServerFactory):
-    protocol = MTProtocol
+# class MTFactory(protocol.ServerFactory):
+    # protocol = MTProtocol
 
-    def __init__(self, cmd, shell=True, sendstderr=False):
-        if isinstance(cmd, str) or isinstance(cmd,unicode):
-            self.cmd = shlex.split(cmd)
-        else: 
-            self.cmd = cmd
+    # def __init__(self, cmd, shell=True, sendstderr=False):
+        # if isinstance(cmd, str) or isinstance(cmd,unicode):
+            # self.cmd = shlex.split(cmd)
+        # else: 
+            # self.cmd = cmd
             
-        self.sendstderr = False
-        self.busy = False
-        print >>sys.stderr, bold(white("STARTING SERVER..."))
-        print >>sys.stderr, self.cmd
-        self.process = subprocess.Popen(self.cmd, shell, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # self.sendstderr = False
+        # self.busy = False
+        # print >>sys.stderr, bold(white("STARTING SERVER..."))
+        # print >>sys.stderr, self.cmd
+        # self.process = subprocess.Popen(self.cmd, shell, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
-    def __delete__(self):
-        self.process.close()
+    # def __delete__(self):
+        # self.process.close()
     
-class MTServer:
-    """Generic Server around a stdin/stdout based CLI tool"""
-    def __init__(self, cmdline, port, shell=True,sendstderr= False, close_fds=True):
-        reactor.listenTCP(port, MTFactory(cmdline, shell, sendstderr))
-        reactor.run()
-
+# class MTServer:
+    # """Generic Server around a stdin/stdout based CLI tool"""
+    # def __init__(self, cmdline, port, shell=True,sendstderr= False, close_fds=True):
+        # reactor.listenTCP(port, MTFactory(cmdline, shell, sendstderr))
+        # reactor.run()
 
 class MTWrapper(object):
     defaults = [
@@ -1442,7 +1442,7 @@ class MTWrapper(object):
         return True 
     
     def server_moses(self, port):
-        MTServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini', port)
+        GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini', port)
              
     
     def run_pbmbmt(self):
