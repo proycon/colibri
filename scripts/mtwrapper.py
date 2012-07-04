@@ -61,7 +61,7 @@ def magenta(s):
 class MTProtocol(basic.LineReceiver):
     def lineReceived(self, line):
         #post line as input to process
-        while self.factory.busy: 	1
+        while self.factory.busy:
             time.sleep(0.1)
         #send output to client
         self.factory.process.stdin.write(line+"\n")
