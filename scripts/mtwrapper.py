@@ -79,6 +79,8 @@ class MTFactory(protocol.ServerFactory):
             
         self.sendstderr = False
         self.busy = False
+        print >>sys.stderr, bold(white("STARTING SERVER..."))
+        print >>sys.stderr, cmd
         self.process = subprocess.Popen(cmd, shell, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
     def __delete__(self):
