@@ -1442,10 +1442,8 @@ class MTWrapper(object):
     
     def server_moses(self, port):
         while True:
-            try:
-                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini 2> ' + self.WORKDIR + '/server.err', port, True, False) #print stderr, not send stderr
-            except:
-                print >>sys.stderr, "Server process failed? Restarting..."
+            GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini 2> ' + self.WORKDIR + '/server.err', port, True, False) #print stderr, not send stderr
+            print >>sys.stderr, "Server process failed? Restarting..."
             #server down? restart
             time.sleep(10)
              
