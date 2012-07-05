@@ -15,7 +15,6 @@ import glob
 import datetime
 import time
 import shutil
-import shlex
 import numpy
 import matplotlib
 matplotlib.use('Agg')
@@ -1442,7 +1441,13 @@ class MTWrapper(object):
         return True 
     
     def server_moses(self, port):
-        GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini', port)
+        while True:
+            try:
+                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini 2> ' + self.WORKDIR + '/server.err', port, True, False) #print stderr, not send stderr
+            except:
+                print >>sys.stderr, "Server process failed? Restarting..."
+            #server down? restart
+            time.sleep(10)
              
     
     def run_pbmbmt(self):
