@@ -1471,9 +1471,9 @@ class MTWrapper(object):
     def server_moses(self, port, html):
         while True:
             if not html:
-                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini 2> ' + self.WORKDIR + '/server.err', port, True, False) #print stderr, not send stderr
+                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini 2> ' + self.WORKDIR + '/server.err', port, True, False) #print stdout, not send stderr
             else:
-                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini 2> ' + self.WORKDIR + '/server.err', port, True, False, lambda x: None, serveroutputproc) #print stderr, not send stderr
+                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini 2> ' + self.WORKDIR + '/server.err', port, False, True, lambda x: None, serveroutputproc) #print stderr, not send stdout, but filter first
             print >>sys.stderr, "Server process failed? Restarting..."
             #server down? restart
             time.sleep(10)
