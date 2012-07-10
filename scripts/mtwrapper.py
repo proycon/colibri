@@ -92,7 +92,7 @@ def magenta(s):
         # reactor.listenTCP(port, MTFactory(cmdline, shell, sendstderr))
         # reactor.run()
 
-def serveroutputproc(self, line):    
+def serveroutputproc(line):    
     if line[:18] == 'BEST TRANSLATION: ': 
         outputwords = []
         words = line[19:].split(' ')
