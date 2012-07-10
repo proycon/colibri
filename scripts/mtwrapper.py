@@ -110,7 +110,7 @@ def serveroutputproc(line):
                         outputwords.append("<em>" + factors[0] + "</em> ")
                     else: 
                         outputwords.append(factors[0])
-        return "ERROR! UNABLE TO FIND END OF TRANSLATION OUTPUT! "
+        return "<pre>ERROR! UNABLE TO FIND END OF TRANSLATION OUTPUT! DEBUG OUTPUT: ["+line+"]</pre>"
     else:
         return ""
         
