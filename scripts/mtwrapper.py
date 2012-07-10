@@ -93,7 +93,9 @@ def magenta(s):
         # reactor.run()
 
 def serveroutputproc(line):    
-    if line[:18] == 'BEST TRANSLATION: ': 
+    print >>sys.stderr, "SERVEROUTPUTPROC: ", line
+    prefix = 'BEST TRANSLATION: '
+    if line[:len(prefix)] == prefix: 
         outputwords = []
         words = line[19:].split(' ')
         for word in words:
