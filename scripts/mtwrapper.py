@@ -21,8 +21,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot
 from pynlpl.evaluation import filesampler
 from pynlpl.net import GenericWrapperServer
-from twisted.internet import protocol, reactor
-from twisted.protocols import basic
+#from twisted.internet import protocol, reactor
+#from twisted.protocols import basic
 
 
 
@@ -91,6 +91,28 @@ def magenta(s):
     # def __init__(self, cmdline, port, shell=True,sendstderr= False, close_fds=True):
         # reactor.listenTCP(port, MTFactory(cmdline, shell, sendstderr))
         # reactor.run()
+
+def serveroutputproc(self, line):    
+    if line[:18] == 'BEST TRANSLATION: ': 
+        outputwords = []
+        words = line[19:].split(' ')
+        for word in words:
+            if word:
+                if word[0] == '[' and word[-1] == ']' and word[1:-1] == "1" * len(outputwords):
+                    return " ".join(outputwords) + "<br />"
+                else:            
+                    factors = word.split('|')
+                    if len(factors) == 1:
+                        outputwords.append(word)                    
+                    elif factors[1] == 'UNK':
+                        outputwords.append("<em>" + factors[0] + "</em> ")
+                    else: 
+                        outputwords.append(factors[0])
+        return "ERROR! UNABLE TO FIND END OF TRANSLATION OUTPUT!"
+    else:
+        return ""
+        
+
 
 class MTWrapper(object):
     defaults = [
@@ -544,7 +566,7 @@ class MTWrapper(object):
         print >>sys.stderr,"\trun <inputfile> [options]          Run the MT system on the specified input file"
         print >>sys.stderr,"\t\t-t                               Tokenise the input file"
         print >>sys.stderr,"\t\t-o <outputfile>                  Output file (default: stdout)"
-        print >>sys.stderr,"\tstartserver <port>                 Start the MT system as a server on the specified port"        
+        print >>sys.stderr,"\tstartserver <port> <html>          Start the MT system as a server on the specified port. Second argument may be set to 1 (default 0) if you want HTML output, which highlights unknown words."        
         print >>sys.stderr,"\ttest <inputfile> <referencefile>   Run and evaluate the MT system on the specified input file and reference file (one sentence per line). If <inputfile> and <referencefile> are not given, the default test files from the system configuration are used."                               
         print >>sys.stderr,"\tscore <inputfile> <referencefile>  Like test, but work on a pre-run system, does not run the translation again."                   
         print >>sys.stderr,"\tclean [all|giza|moses|colibri|score|batch]    Clean generated files"
@@ -612,7 +634,11 @@ class MTWrapper(object):
         elif cmd == 'startserver':
             self.initlog('server')
             port = int(sys.argv[2])
-            self.server(port)            
+            if len(sys.argv) > 3 and sys.argv[3]:
+                html = True
+            else:
+                html = False
+            self.server(port, html)            
 
         elif cmd == 'freeze':          
             self.initlog('freeze')
@@ -1396,11 +1422,11 @@ class MTWrapper(object):
         
         return True
     
-    def server(self, port):
+    def server(self, port, html=False):
         if not self.check_common(): return False
         if not self.check_run(): return False
 
-        if self.BUILD_MOSES: self.server_moses(port)        
+        if self.BUILD_MOSES: self.server_moses(port, html)        
         
         
     
@@ -1440,9 +1466,12 @@ class MTWrapper(object):
         if not self.runcmd(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini < input.txt > output.txt','Moses Decoder'): return False
         return True 
     
-    def server_moses(self, port):
+    def server_moses(self, port, html):
         while True:
-            GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini 2> ' + self.WORKDIR + '/server.err', port, True, False) #print stderr, not send stderr
+            if not html:
+                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini 2> ' + self.WORKDIR + '/server.err', port, True, False) #print stderr, not send stderr
+            else:
+                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini 2> ' + self.WORKDIR + '/server.err', port, True, False, lambda x: None, serveroutputproc) #print stderr, not send stderr
             print >>sys.stderr, "Server process failed? Restarting..."
             #server down? restart
             time.sleep(10)
