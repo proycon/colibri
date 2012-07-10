@@ -100,8 +100,14 @@ def serveroutputproc(line):
         words = line[18:].split(' ')
         for word in words:
             if word:
-                if word[0] == '[' and word[-1] == ']' and len(word[1:-1]) == len(outputwords):
-                    return " ".join(outputwords) + "<br />"
+                if word[0] == '[' and word[-1] == ']':
+                    ones = True
+                    for c in word[1:-1]:
+                        if c != '1':
+                            ones = False
+                            break
+                    if ones:                    
+                        return " ".join(outputwords) + "<br />"
                 else:            
                     factors = word.split('|')
                     if len(factors) == 1:
