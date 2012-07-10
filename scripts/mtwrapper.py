@@ -100,7 +100,7 @@ def serveroutputproc(line):
         words = line[18:].split(' ')
         for word in words:
             if word:
-                if word[0] == '[' and word[-1] == ']' and word[1:-1] == "1" * len(outputwords):
+                if word[0] == '[' and word[-1] == ']' and len(word[1:-1]) == len(outputwords):
                     return " ".join(outputwords) + "<br />"
                 else:            
                     factors = word.split('|')
@@ -110,7 +110,7 @@ def serveroutputproc(line):
                         outputwords.append("<em>" + factors[0] + "</em> ")
                     else: 
                         outputwords.append(factors[0])
-        return "ERROR! UNABLE TO FIND END OF TRANSLATION OUTPUT!"
+        return "ERROR! UNABLE TO FIND END OF TRANSLATION OUTPUT! "
     else:
         return ""
         
