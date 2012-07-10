@@ -92,12 +92,12 @@ def magenta(s):
         # reactor.listenTCP(port, MTFactory(cmdline, shell, sendstderr))
         # reactor.run()
 
-def serveroutputproc(line):    
-    print >>sys.stderr, "SERVEROUTPUTPROC: ", line
+def serveroutputproc(line):        
+    #print >>sys.stderr, "SERVEROUTPUTPROC: ", line
     prefix = 'BEST TRANSLATION: '
     if line[:len(prefix)] == prefix: 
         outputwords = []
-        words = line[19:].split(' ')
+        words = line[18:].split(' ')
         for word in words:
             if word:
                 if word[0] == '[' and word[-1] == ']' and word[1:-1] == "1" * len(outputwords):
