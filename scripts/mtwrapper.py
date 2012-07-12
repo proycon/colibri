@@ -146,7 +146,7 @@ class MTWrapper(object):
             ('BUILD_MOSES_WORDTRANSTABLE', False,'Build lexical translation table'),
             ('BUILD_MOSES_PHRASEEXTRACT', False,'Extract phrases'),            
             ('BUILD_MOSES_PHRASETRANSTABLE', False,'Build phrase translation table'),
-            ('BUILD_MOSES_MEMSCORE', False,'Use memscore to score phrases rather than the default phrase-extract scorer'),
+            ('BUILD_MOSES_MEMSCORE', False,'Use memscore to score phrases rather than the default phrase-extract scorer'),            
             ('BUILD_MOSES', False,'Build moses configuration, necessary for decoding using moses'),
             ('BUILD_MOSES_MERT', False,'Do Minimum Error Rate Training for Moses (on development set)'),                       
             ('BUILD_PBMBMT', False, 'Build model for Phrase-Based Memory-based Machine Translation'),   
@@ -154,12 +154,18 @@ class MTWrapper(object):
             ('BUILD_COLIBRI_ALIGNMENT', False,'Create an alignment using colibri'),
             ('BUILD_COLIBRI_GIZA', False,'Base aligner on word-alignments using giza (do not manually specify -W -s -t in COLIBRI_ALIGNER_OPTIONS)'),
             ('BUILD_COLIBRI_MOSESPHRASETABLE', False,'Create a Moses Phrasetable using colibri'),
+            ('BUILD_PHRASAL', False,'Build phrasal configuration, necessary for decoding using phrasal'),
+            ('BUILD_PHRASAL_MERT', False,'Do Minumum Error Rate Training for Phrasal (on development set)'),
+            ('BUILD_PHRASAL_WORDALIGN', False,'Align words using berkeley aligner (supplied with phrasal)'),
+            ('BUILD_PHRASAL_PHRASEEXTRACT', False,'Extract phrases'),
             ('PATH_MOSES', '','Base directory where Moses is installed'),
             ('PATH_SRILM', '','Base directory where SRILM is installed'),
             ('PATH_GIZA', '','Base directory where GIZA++ is installed'),
             ('PATH_COLIBRI', '','Base directory where COLIBRI is installed'),
             ('PATH_MATREX','','Base directory for Matrex evaluation scripts'),
             ('PATH_PBMBMT','','Base directory to PBMBMT'),
+            ('PATH_CORENLP','','Base directory to Stanford Core NLP'),
+            ('PATH_PHRASAL','','Base directory to Stanford Phrasal'),
             ('EXEC_UCTO', 'ucto','Path to ucto binary'),
             ('EXEC_SRILM', 'ngram-count','Path to ngram-count (SRILM)'),
             ('EXEC_TIMBL', 'timbl','Path to timbl binary'),
@@ -169,7 +175,7 @@ class MTWrapper(object):
             ('EXEC_GIZA_SNT2COOC', 'snt2cooc.out','Path to snt2cooc.out (part of GIZA++)'),
             ('EXEC_PERL', 'perl','Path to perl binary'),
             ('EXEC_JAVA', 'java','Path to java binary'),
-            ('EXEC_MOSES', 'moses','Path to Moses binary'),
+            ('EXEC_MOSES', 'moses','Path to Moses binary'),            
             ('EXEC_MOSES_GIZA2BAL', 'scripts/training/symal/giza2bal.pl', ''),
             ('EXEC_MOSES_SYMAL', 'scripts/training/symal/symal', ''),
             ('EXEC_MOSES_WORDTRANSTABLE','scripts/moses-lexicaltranslationtable.py',''),
@@ -178,6 +184,10 @@ class MTWrapper(object):
             ('EXEC_MOSES_PHRASEEXTRACT_SCORE','scripts/training/phrase-extract/score',''),
             ('EXEC_MOSES_MEMSCORE','scripts/training/memscore/memscore',''),
             ('EXEC_MOSES_MERT','scripts/training/mert-moses.pl',''),
+            ('EXEC_PHRASAL','scripts/decode',''),
+            ('EXEC_PHRASAL_WORDALIGN','scripts/align-words',''),
+            ('EXEC_PHRASAL_PHRASEEXTRACT','scripts/extract-phrases',''),
+            ('EXEC_PHRASAL_MERT','scripts/phrasal-mert.pl',''),            
             ('EXEC_MATREX_WER','eval/WER_v01.pl',''),
             ('EXEC_MATREX_PER','eval/PER_v01.pl',''),
             ('EXEC_MATREX_BLEU','eval/bleu-1.04.pl',''),
@@ -210,7 +220,8 @@ class MTWrapper(object):
             ('PBMBMT_TIMBL_OPTIONS','-k 1 -a4','Timbl options (+v+db+di is added automatically). See Timbl -h'),
             ('COLIBRI_GRAPHER_OPTIONS','-P -X -r','Options for the Graphmodel, if empty, no graph model will be constructed for the aligner, see graphmodel -h'),
             ('COLIBRI_PATTERNFINDER_OPTIONS','-t 10 -s -B -E', 'Options for the pattern finder, see patternfinder -h'),
-            ('COLIBRI_ALIGNER_OPTIONS','-J -p 0.1','Options for the colibri aligner, see aligner -h'),  
+            ('COLIBRI_ALIGNER_OPTIONS','-J -p 0.1','Options for the colibri aligner, see aligner -h'),
+            ('PHRASAL_MAXMEM', '4g', 'Memory allocated for word alignment, phrase extraction and decoding using phrasal (java)')  
     ]
 
     def initlog(self, logfile):
@@ -276,6 +287,11 @@ class MTWrapper(object):
         self.EXEC_MOSES_PHRASEEXTRACT_SCORE = self.findpath(self.EXEC_MOSES_PHRASEEXTRACT_SCORE,self.PATH_MOSES)
         self.EXEC_MOSES_MERT  = self.findpath(self.EXEC_MOSES_MERT , self.PATH_MOSES)
         self.EXEC_MOSES_MEMSCORE  = self.findpath(self.EXEC_MOSES_MEMSCORE , self.PATH_MOSES)
+
+        self.EXEC_PHRASAL = self.findpath(self.EXEC_PHRASAL,self.PATH_PHRASAL)
+        self.EXEC_PHRASAL_WORDALIGN = self.findpath(self.EXEC_PHRASAL_WORDALIGN,self.PATH_PHRASAL)
+        self.EXEC_PHRASAL_PHRASEEXTRACT = self.findpath(self.EXEC_PHRASAL_PHRASEEXTRACT,self.PATH_PHRASAL)
+        self.EXEC_PHRASAL_MERT = self.findpath(self.EXEC_PHRASAL_MERT,self.PATH_PHRASAL)
         
         self.EXEC_MATREX_WER = self.findpath(self.EXEC_MATREX_WER, self.PATH_MATREX)
         self.EXEC_MATREX_PER = self.findpath(self.EXEC_MATREX_PER, self.PATH_MATREX)
@@ -413,6 +429,39 @@ class MTWrapper(object):
                 self.log("Configuration error: EXEC_COLIBRI_CLASSENCODE not found ! Required for BUILD_COLIBRI_ALIGNMENT !",red)
                 
             
+        if self.BUILD_PHRASAL_MERT:
+            if not self.BUILD_PHRASAL: 
+                self.log("Configuration update: BUILD_PHRASAL automatically enabled because BUILD_PHRASAL_MERT is too",yellow)
+                self.BUILD_PHRASAL = True
+            if not self.DEVSOURCECORPUS or not os.path.exists(self.DEVSOURCECORPUS):
+                sane = False
+                self.log("Configuration error: DEVSOURCECORPUS not found! Required for BUILD_PHRASAL_MERT !",red)
+            if not self.DEVTARGETCORPUS or not os.path.exists(self.DEVTARGETCORPUS):
+                sane = False
+                self.log("Configuration error: DEVTARGETCORPUS not found! Required for BUILD_PHRASAL_MERT !",red)
+            if not self.PATH_PHRASAL_MERT or not os.path.isdir(self.PATH_PHRASAL_MERT):
+                sane = False
+                self.log("PATH_PHRASAL_MERT not found, please set PATH_MOSES !",red)
+
+        if self.BUILD_PHRASAL:
+            if self.BUILD_MOSES or self.BUILD_PBMBMT:
+                self.log("Configuration error: Ambiguous selection of MT system: Select only one of BUILD_MOSES, BUILD_PBMBMT or BUILD_PHRASAL",red)
+                sane = False
+            if not self.BUILD_PHRASAL_EXTRACTPHRASES and not self.BUILD_COLIBRI_MOSESPHRASETABLE:
+                self.log("Configuration update: BUILD_PHRASAL_EXTRACTPHRASES automatically enabled because BUILD_PHRASAL is too",yellow)
+                self.BUILD_PHRASAL_EXTRACTPHRASES = True
+            if not self.BUILD_SRILM_TARGETMODEL:                 
+                self.log("Configuration update: BUILD_SRILM_TARGETMODEL automatically enabled because BUILD_PHRASAL is too",yellow)
+                self.BUILD_SRILM_TARGETMODEL = True
+            if not self.EXEC_PHRASAL or not os.path.isfile(self.EXEC_PHRASAL):
+                sane = False
+                self.log("Phrasal not found! Set EXEC_PHRASAL or PATH_PHRASAL !",red)                    
+
+        if self.BUILD_PHRASAL_EXTRACTPHRASES:
+            if not self.BUILD_PHRASAL_WORDALIGN:
+                self.log("Configuration update: BUILD_PHRASAL_WORDALIGN automatically enabled because BUILD_PHRASAL_EXTRACTPHRASES is too",yellow)
+                self.BUILD_PHRASAL_WORDALIGN = True    
+                
 
         if self.BUILD_MOSES_MERT:
             if not self.BUILD_MOSES: 
@@ -429,8 +478,8 @@ class MTWrapper(object):
                 self.log("PATH_MOSES_MERT not found, please set PATH_MOSES !",red)
 
         if self.BUILD_MOSES:
-            if self.BUILD_PBMBMT:
-                self.log("Configuration error: Ambiguous selection of MT system: Select only one of BUILD_MOSES or BUILD_PBMBMT",red)
+            if self.BUILD_PBMBMT or self.BUILD_PHRASAL:
+                self.log("Configuration error: Ambiguous selection of MT system: Select only one of BUILD_MOSES, BUILD_PBMBMT or BUILD_PHRASAL",red)
                 sane = False
             if not self.BUILD_MOSES_PHRASETRANSTABLE and not self.BUILD_COLIBRI_MOSESPHRASETABLE:
                 self.log("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_MOSES is too",yellow)
@@ -1141,8 +1190,13 @@ class MTWrapper(object):
         if self.BUILD_GIZA_WORDALIGNMENT and not self.build_giza_wordalignment(): return False
         if self.BUILD_GIZA_WORDALIGNMENT_REV and not self.build_giza_wordalignment_rev(): return False    
         
+        
+        if self.BUILD_PHRASAL_WORDALIGN and not self.build_phrasal_wordalign(): return False       
+               
         if self.BUILD_COLIBRI_ALIGNMENT and not self.build_colibri_alignment(): return False
 
+        
+        if self.BUILD_PHRASAL_PHRASEEXTRACT and not self.build_phrasal_phraseextact(): return False
         
         if self.BUILD_MOSES_SYMAL and not self.build_moses_symal(): return False
         if self.BUILD_MOSES_WORDTRANSTABLE and not self.build_moses_wordtranstable(): return False
@@ -1150,6 +1204,9 @@ class MTWrapper(object):
         if self.BUILD_MOSES_PHRASETRANSTABLE and not self.build_moses_phrasescore(): return False
         
         #TODO: Moses reordering model and generation model
+        
+        if self.BUILD_PHRASAL and not self.build_phrasal(): return False
+        if self.BUILD_PHRASAL_MERT and not self.build_phrasal_mert(): return False
         
         if self.BUILD_MOSES and not self.build_moses(): return False
         if self.BUILD_MOSES_MERT and not self.build_moses_mert(): return False
@@ -1429,6 +1486,87 @@ class MTWrapper(object):
         
         
         return True
+    
+    
+    def build_phrasal_wordalign(self):            
+        try:
+            os.mkdir(self.WORKDIR + '/alignerinput')
+            os.symlink(self.getsourcefilename('txt'), 'alignerinput/' + self.getsourcefilename())
+            os.symlink(self.gettargetfilename('txt'), 'alignerinput/' + self.gettargetfilename())
+        except:
+            pass
+   
+
+        f = open(self.WORKDIR + '/aligner.conf','w')
+        f.write("""
+# aligner.conf
+##########################################
+# Training: Defines the training regimen #
+##########################################
+
+forwardModels HMM
+reverseModels HMM
+mode JOINT
+iters 2
+
+###############################################
+# Execution: Controls output and program flow #
+###############################################
+
+execDir aligneroutput
+create
+saveParams true
+numThreads 4
+msPerLine 10000
+alignTraining
+leaveTrainingOnDisk
+safeConcurrency true
+overwrite
+
+#################
+# Language/Data #
+#################
+
+foreignSuffix %s
+englishSuffix %s
+#lowercase
+
+# Choose the training sources, which can either be directories or files that list files/directories
+trainSources alignerinput
+sentences MAX
+
+# The test sources must have hand alignments for all sentence pairs
+testSources
+maxTestSentences MAX
+offsetTestSentences 0
+
+##############
+# Evaluation #
+##############
+
+competitiveThresholding
+writeGIZA""" % (self.TARGETLANG, self.SOURCELANG) )
+        f.close()
+        if self.runcmd('PHRASAL=' + self.PATH_PHRASAL + ' CORENLP=' + self.PATH_CORENLP + ' ' + self.EXEC_PHRASAL_WORDALIGN  + ' ' + self.PHRASAL_MAXMEM, 'Word alignment'): 
+            os.copy(self.WORKDIR + '/aligneroutput/training.' + self.SOURCELANG + '-' + self.TARGETLANG + '.A3', self.WORKDIR + '/' + self.gets2tfilename('A3.final'))
+            os.copy(self.WORKDIR + '/aligneroutput/training.' + self.TARGETLANG + '-' + self.SOURCELANG + '.A3', self.WORKDIR + '/' + self.gett2sfilename('A3.final'))
+        else:
+            return False
+        return True
+    
+    def build_phrasal_phraseextract(self):    
+        if not self.runcmd('PHRASAL=' + self.PATH_PHRASAL + ' CORENLP=' + self.PATH_CORENLP + ' ' + self.EXEC_PHRASAL_PHRASEEXTRACT  + ' ' + self.PHRASAL_MAXMEM + ' models -fFilterCorpus ' + self.DEVSOURCECORPUS , 'Phrase extraction'): return False
+        return True
+
+    def build_phrasal(self):    
+        #TODO
+        return True
+
+    def build_phrasal_mert(self):    
+        #TODO
+        return True
+
+
     
     def server(self, port, html=False):
         if not self.check_common(): return False
