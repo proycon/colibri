@@ -456,12 +456,17 @@ class MTWrapper(object):
                 self.BUILD_SRILM_TARGETMODEL = True
             if not self.EXEC_PHRASAL or not os.path.isfile(self.EXEC_PHRASAL):
                 sane = False
-                self.log("Phrasal not found! Set EXEC_PHRASAL or PATH_PHRASAL !",red)                    
+                self.log("Phrasal not found! Set EXEC_PHRASAL or PATH_PHRASAL !",red)
+                                
+                
 
         if self.BUILD_PHRASAL_PHRASEEXTRACT:
             if not self.BUILD_PHRASAL_WORDALIGN and not (self.BUILD_GIZA_WORDALIGNMENT and self.BUILD_GIZA_WORDALIGNMENT_REV):
                 self.log("Configuration update: BUILD_PHRASAL_WORDALIGN automatically enabled because BUILD_PHRASAL_PHRASEEXTRACT is too",yellow)
                 self.BUILD_PHRASAL_WORDALIGN = True    
+            if not self.DEVSOURCECORPUS:    
+                sane = False
+                self.log("A development corpus for the source-language is needed as a filter for phrase extraction for phrasal. Set DEVSOURCECORPUS",red)                
                 
         if self.BUILD_PHRASAL_WORDALIGN and not self.JAR_BERKELEYALIGNER: 
             sane = False
@@ -1571,17 +1576,71 @@ writeGIZA""" % (self.TARGETLANG, self.SOURCELANG) )
         classpath = self.get_phrasal_classpath()
         JAVA_OPTS="-XX:+UseCompressedOops -Xmx" + str(self.PHRASAL_MAXMEM) + ' -Xms' +  str(self.PHRASAL_MAXMEM)
         #EXTRACT_OPTS="-inputDir aligneroutput -outputFile phrases"
-        EXTRACT_OPTS="-fCorpus " + self.getsourcefilename('txt') + ' -eCorpus ' + self.gettargetfilename('txt') + ' -feAlign ' + self.gets2tfilename('A3.final') + ' -efAlign ' + self.gett2sfilename('A3.final') + " -outputFile phrases"        
+        EXTRACT_OPTS="-fCorpus " + self.getsourcefilename('txt') + ' -eCorpus ' + self.gettargetfilename('txt') + ' -feAlign ' + self.gets2tfilename('A3.final') + ' -efAlign ' + self.gett2sfilename('A3.final') + " -outputFile " + self.gets2tfilename('phrasetable')        
         cmd = 'CLASSPATH=' + classpath + ' ' + self.EXEC_JAVA + ' ' + JAVA_OPTS + ' edu.stanford.nlp.mt.train.PhraseExtract ' + EXTRACT_OPTS
-        if self.DEVSOURCECORPUS: 
+        if self.DEVSOURCECORPUS: #should always exist, has been checked in checking stage             
             cmd += ' -fFilterCorpus ' + self.DEVSOURCECORPUS
         if self.PHRASAL_WITHGAPS:
             cmd += ' -withGaps true'
         if not self.runcmd(cmd , 'Phrase extraction'): return False
+        if not self.runcmd(self.EXEC_PERL + ' ' + self.PHRASAL + '/scripts/split-table phrases-tm.gz phrases-om.gz < ' + self.gets2tfilename('phrasetable') , 'Phrase splitting'): return False
         return True
 
     def build_phrasal(self):    
-        #TODO
+        f = open(self.WORKDIR + '/phrasal.conf','w')
+        #TODO!
+        f.write("""# filename: phrasal.conf
+
+# translation table
+[ttable-file]
+models/phrases-tm.gz
+
+# language model
+[lmodel-file]
+lm/news.lm.gz
+
+# number of translation options for each phrase in f
+[ttable-limit]
+20
+
+[additional-featurizers]
+edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(models/phrases-om.gz,msd2-bidirectional-fe,LexR,hierarchical,hierarchical,bin)
+
+# reordering weights
+[weight-d]
+1
+1
+1
+1
+1
+1
+1
+
+# language model weight
+[weight-l]
+1
+
+# translation model weights
+[weight-t]
+0.3
+0.2
+0.3
+0.2
+0
+
+# word penalty weight
+[weight-w]
+0
+
+# maximum gap between covered spans
+[distortion-limit]
+6
+
+# detect processors present, and use them all
+[localprocs]
+0""")
+        f.close()
+        
         return True
 
     def build_phrasal_mert(self):    
@@ -1633,6 +1692,14 @@ writeGIZA""" % (self.TARGETLANG, self.SOURCELANG) )
     def run_moses(self):
         if not self.runcmd(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini < input.txt > output.txt','Moses Decoder'): return False
         return True 
+    
+    def run_phrasal(self):
+        classpath = self.get_phrasal_classpath()
+        JAVA_OPTS="-XX:+UseCompressedOops -Xmx" + str(self.PHRASAL_MAXMEM) + ' -Xms' +  str(self.PHRASAL_MAXMEM)
+        cmd = 'CLASSPATH=' + classpath + ' ' + self.EXEC_JAVA + ' ' + JAVA_OPTS + ' edu.stanford.nlp.mt.Phrasal -config-file phrasal.conf'
+        if not self.runcmd(cmd):
+            return False
+        return True
     
     def server_moses(self, port, html):
         while True:
