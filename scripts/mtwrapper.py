@@ -1588,23 +1588,22 @@ writeGIZA""" % (self.TARGETLANG, self.SOURCELANG) )
 
     def build_phrasal(self):    
         f = open(self.WORKDIR + '/phrasal.conf','w')
-        #TODO!
         f.write("""# filename: phrasal.conf
 
 # translation table
 [ttable-file]
-models/phrases-tm.gz
+phrases-tm.gz
 
 # language model
 [lmodel-file]
-lm/news.lm.gz
+%s
 
 # number of translation options for each phrase in f
 [ttable-limit]
 20
 
 [additional-featurizers]
-edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(models/phrases-om.gz,msd2-bidirectional-fe,LexR,hierarchical,hierarchical,bin)
+edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(phrases-om.gz,msd2-bidirectional-fe,LexR,hierarchical,hierarchical,bin)
 
 # reordering weights
 [weight-d]
@@ -1622,10 +1621,10 @@ edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(models/phrases
 
 # translation model weights
 [weight-t]
-0.3
-0.2
-0.3
-0.2
+1
+1
+1
+1
 0
 
 # word penalty weight
@@ -1638,9 +1637,8 @@ edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(models/phrases
 
 # detect processors present, and use them all
 [localprocs]
-0""")
-        f.close()
-        
+0""" % (self.gettargetfilename('srilm'),) )
+        f.close()        
         return True
 
     def build_phrasal_mert(self):    
