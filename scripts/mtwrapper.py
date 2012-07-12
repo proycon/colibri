@@ -459,7 +459,7 @@ class MTWrapper(object):
                 self.log("Phrasal not found! Set EXEC_PHRASAL or PATH_PHRASAL !",red)                    
 
         if self.BUILD_PHRASAL_PHRASEEXTRACT:
-            if not self.BUILD_PHRASAL_WORDALIGN: #and not (self.BUILD_GIZA_WORDALIGNMENT and self.BUILD_GIZA_WORDALIGNMENT_REV): #TODO
+            if not self.BUILD_PHRASAL_WORDALIGN and not (self.BUILD_GIZA_WORDALIGNMENT and self.BUILD_GIZA_WORDALIGNMENT_REV):
                 self.log("Configuration update: BUILD_PHRASAL_WORDALIGN automatically enabled because BUILD_PHRASAL_PHRASEEXTRACT is too",yellow)
                 self.BUILD_PHRASAL_WORDALIGN = True    
                 
