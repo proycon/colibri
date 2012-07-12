@@ -550,10 +550,10 @@ class MTWrapper(object):
         
                 
         if self.BUILD_MOSES_SYMAL:            
-            if not self.BUILD_GIZA_WORDALIGNMENT:
+            if not self.BUILD_GIZA_WORDALIGNMENT and not self.BUILD_PHRASAL_WORDALIGN:
                 self.log("Configuration update: BUILD_GIZA_WORDALIGNMENT automatically enabled because BUILD_MOSES_SYMAL is too",yellow)
                 self.BUILD_GIZA_WORDALIGNMENT = True
-            if not self.BUILD_GIZA_WORDALIGNMENT_REV:
+            if not self.BUILD_GIZA_WORDALIGNMENT_REV and not self.BUILD_PHRASAL_WORDALIGN:
                 self.log("Configuration update: BUILD_GIZA_WORDALIGNMENT_REV automatically enabled because BUILD_MOSES_SYMAL is too",yellow)
                 self.BUILD_GIZA_WORDALIGNMENT_REV = True                            
 
