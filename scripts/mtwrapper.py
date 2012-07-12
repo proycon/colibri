@@ -166,6 +166,7 @@ class MTWrapper(object):
             ('PATH_PBMBMT','','Base directory to PBMBMT'),
             ('PATH_CORENLP','','Base directory to Stanford Core NLP'),
             ('PATH_PHRASAL','','Base directory to Stanford Phrasal'),
+            ('JAR_FASTUTIL','','Location to fastutil.jar (needed by Phrasal)'),
             ('EXEC_UCTO', 'ucto','Path to ucto binary'),
             ('EXEC_SRILM', 'ngram-count','Path to ngram-count (SRILM)'),
             ('EXEC_TIMBL', 'timbl','Path to timbl binary'),
@@ -447,9 +448,9 @@ class MTWrapper(object):
             if self.BUILD_MOSES or self.BUILD_PBMBMT:
                 self.log("Configuration error: Ambiguous selection of MT system: Select only one of BUILD_MOSES, BUILD_PBMBMT or BUILD_PHRASAL",red)
                 sane = False
-            if not self.BUILD_PHRASAL_EXTRACTPHRASES and not self.BUILD_COLIBRI_MOSESPHRASETABLE:
+            if not self.BUILD_PHRASAL_PHRASEEXTRACT and not self.BUILD_COLIBRI_MOSESPHRASETABLE:
                 self.log("Configuration update: BUILD_PHRASAL_EXTRACTPHRASES automatically enabled because BUILD_PHRASAL is too",yellow)
-                self.BUILD_PHRASAL_EXTRACTPHRASES = True
+                self.BUILD_PHRASAL_PHRASEEXTRACT = True
             if not self.BUILD_SRILM_TARGETMODEL:                 
                 self.log("Configuration update: BUILD_SRILM_TARGETMODEL automatically enabled because BUILD_PHRASAL is too",yellow)
                 self.BUILD_SRILM_TARGETMODEL = True
@@ -457,9 +458,9 @@ class MTWrapper(object):
                 sane = False
                 self.log("Phrasal not found! Set EXEC_PHRASAL or PATH_PHRASAL !",red)                    
 
-        if self.BUILD_PHRASAL_EXTRACTPHRASES:
-            if not self.BUILD_PHRASAL_WORDALIGN:
-                self.log("Configuration update: BUILD_PHRASAL_WORDALIGN automatically enabled because BUILD_PHRASAL_EXTRACTPHRASES is too",yellow)
+        if self.BUILD_PHRASAL_PHRASEEXTRACT:
+            if not self.BUILD_PHRASAL_WORDALIGN: #and not (self.BUILD_GIZA_WORDALIGNMENT and self.BUILD_GIZA_WORDALIGNMENT_REV): #TODO
+                self.log("Configuration update: BUILD_PHRASAL_WORDALIGN automatically enabled because BUILD_PHRASAL_PHRASEEXTRACT is too",yellow)
                 self.BUILD_PHRASAL_WORDALIGN = True    
                 
 
@@ -1555,7 +1556,18 @@ writeGIZA""" % (self.TARGETLANG, self.SOURCELANG) )
         return True
     
     def build_phrasal_phraseextract(self):    
-        if not self.runcmd('PHRASAL=' + self.PATH_PHRASAL + ' CORENLP=' + self.PATH_CORENLP + ' ' + self.EXEC_PHRASAL_PHRASEEXTRACT  + ' ' + self.PHRASAL_MAXMEM + ' models -fFilterCorpus ' + self.DEVSOURCECORPUS , 'Phrase extraction'): return False
+        classpath = []
+        for filename in glob.glob(self.PATH_PHRASAL+'/*.jar'): classpath.append(filename)
+        for filename in glob.glob(self.PATH_CORENLP+'/*.jar'): classpath.append(filename)
+        if self.JAR_FASTUTIL: classpath.append(self.JAR_FASTUTIL)
+        classpath = ':'.join(classpath)
+        JAVA_OPTS="-XX:+UseCompressedOops -Xmx" + str(self.PHRASAL_MAXMEM) + ' -Xms' +  str(self.PHRASAL_MAXMEM)
+        #EXTRACT_OPTS="-inputDir aligneroutput -outputFile phrases"
+        EXTRACT_OPTS="-fCorpus " + self.getsourcefilename('txt') + ' -eCorpus ' + self.gettargetfilename('txt') + ' -feAlign ' + self.gets2tfilename('A3.final') + ' -efAlign ' + self.gett2sfilename('A3.final') + " -outputFile phrases"
+        cmd = 'CLASSPATH=' + classpath + ' ' + self.EXEC_JAVA + ' ' + JAVA_OPTS + ' edu.stanford.nlp.mt.train.PhraseExtract ' + EXTRACT_OPTS
+        if self.DEVSOURCECORPUS: 
+            cmd += ' -fFilterCorpus ' + self.DEVSOURCECORPUS
+        if not self.runcmd(cmd , 'Phrase extraction'): return False
         return True
 
     def build_phrasal(self):    
