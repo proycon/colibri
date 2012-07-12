@@ -166,7 +166,8 @@ class MTWrapper(object):
             ('PATH_PBMBMT','','Base directory to PBMBMT'),
             ('PATH_CORENLP','','Base directory to Stanford Core NLP'),
             ('PATH_PHRASAL','','Base directory to Stanford Phrasal'),
-            ('JAR_FASTUTIL','','Location to fastutil.jar (needed by Phrasal)'),
+            ('JAR_BERKELEYALIGNER','','Path to berkeleyaligner.jar (v2.1+) (can be automatically determined if PATH_PHRASAL is set)'),
+            ('JAR_FASTUTIL','','Path to fastutil.jar (can be automatically determined if PATH_PHRASAL is set)'),
             ('EXEC_UCTO', 'ucto','Path to ucto binary'),
             ('EXEC_SRILM', 'ngram-count','Path to ngram-count (SRILM)'),
             ('EXEC_TIMBL', 'timbl','Path to timbl binary'),
@@ -186,8 +187,6 @@ class MTWrapper(object):
             ('EXEC_MOSES_MEMSCORE','scripts/training/memscore/memscore',''),
             ('EXEC_MOSES_MERT','scripts/training/mert-moses.pl',''),
             ('EXEC_PHRASAL','scripts/decode',''),
-            ('EXEC_PHRASAL_WORDALIGN','scripts/align-words',''),
-            ('EXEC_PHRASAL_PHRASEEXTRACT','scripts/extract-phrases',''),
             ('EXEC_PHRASAL_MERT','scripts/phrasal-mert.pl',''),            
             ('EXEC_MATREX_WER','eval/WER_v01.pl',''),
             ('EXEC_MATREX_PER','eval/PER_v01.pl',''),
@@ -222,7 +221,8 @@ class MTWrapper(object):
             ('COLIBRI_GRAPHER_OPTIONS','-P -X -r','Options for the Graphmodel, if empty, no graph model will be constructed for the aligner, see graphmodel -h'),
             ('COLIBRI_PATTERNFINDER_OPTIONS','-t 10 -s -B -E', 'Options for the pattern finder, see patternfinder -h'),
             ('COLIBRI_ALIGNER_OPTIONS','-J -p 0.1','Options for the colibri aligner, see aligner -h'),
-            ('PHRASAL_MAXMEM', '4g', 'Memory allocated for word alignment, phrase extraction and decoding using phrasal (java)')  
+            ('PHRASAL_MAXMEM', '4g', 'Memory allocated for word alignment, phrase extraction and decoding using phrasal (java)'),
+            ('PHRASAL_WITHGAPS', True, 'Consider gaps if using Phrasal?')  
     ]
 
     def initlog(self, logfile):
@@ -290,8 +290,8 @@ class MTWrapper(object):
         self.EXEC_MOSES_MEMSCORE  = self.findpath(self.EXEC_MOSES_MEMSCORE , self.PATH_MOSES)
 
         self.EXEC_PHRASAL = self.findpath(self.EXEC_PHRASAL,self.PATH_PHRASAL)
-        self.EXEC_PHRASAL_WORDALIGN = self.findpath(self.EXEC_PHRASAL_WORDALIGN,self.PATH_PHRASAL)
-        self.EXEC_PHRASAL_PHRASEEXTRACT = self.findpath(self.EXEC_PHRASAL_PHRASEEXTRACT,self.PATH_PHRASAL)
+        self.JAR_BERKELEYALIGNER = self.findpath(self.JAR_BERKELEYALIGNER, self.PATH_PHRASAL + '/lib/')
+        self.JAR_FASTUTIL = self.findpath(self.JAR_FASTUTIL, self.PATH_PHRASAL + '/lib/')
         self.EXEC_PHRASAL_MERT = self.findpath(self.EXEC_PHRASAL_MERT,self.PATH_PHRASAL)
         
         self.EXEC_MATREX_WER = self.findpath(self.EXEC_MATREX_WER, self.PATH_MATREX)
@@ -463,6 +463,9 @@ class MTWrapper(object):
                 self.log("Configuration update: BUILD_PHRASAL_WORDALIGN automatically enabled because BUILD_PHRASAL_PHRASEEXTRACT is too",yellow)
                 self.BUILD_PHRASAL_WORDALIGN = True    
                 
+        if self.BUILD_PHRASAL_WORDALIGN and not self.JAR_BERKELEYALIGNER: 
+            sane = False
+            self.log("Berkeley Aligner (v2.1+) not found! Set JAR_BERKELEYALIGNER or PATH_PHRASAL !",red)
 
         if self.BUILD_MOSES_MERT:
             if not self.BUILD_MOSES: 
@@ -1489,6 +1492,13 @@ class MTWrapper(object):
         return True
     
     
+    def get_phrasal_classpath(self):
+        classpath = []
+        for filename in glob.glob(self.PATH_PHRASAL+'/*.jar'): classpath.append(filename)
+        for filename in glob.glob(self.PATH_CORENLP+'/*.jar'): classpath.append(filename)
+        if self.JAR_FASTUTIL: classpath.append(self.JAR_FASTUTIL)
+        return classpath           
+    
     def build_phrasal_wordalign(self):            
         try:
             os.mkdir(self.WORKDIR + '/alignerinput')
@@ -1548,7 +1558,9 @@ offsetTestSentences 0
 competitiveThresholding
 writeGIZA""" % (self.TARGETLANG, self.SOURCELANG) )
         f.close()
-        if self.runcmd('PHRASAL=' + self.PATH_PHRASAL + ' CORENLP=' + self.PATH_CORENLP + ' ' + self.EXEC_PHRASAL_WORDALIGN  + ' ' + self.PHRASAL_MAXMEM, 'Word alignment'): 
+        classpath = self.get_phrasal_classpath()
+        JAVA_OPTS="-XX:+UseCompressedOops -Xmx" + str(self.PHRASAL_MAXMEM) + ' -Xms' +  str(self.PHRASAL_MAXMEM)        
+        if self.runcmd('CLASSPATH=' + classpath + '  ' +  self.EXEC_JAVA + ' ' + JAVA_OPTS + ' -jar ' + self.JAR_BERKELEYALIGNER + ' ++aligner.conf', 'Word alignment'): 
             os.copy(self.WORKDIR + '/aligneroutput/training.' + self.SOURCELANG + '-' + self.TARGETLANG + '.A3', self.WORKDIR + '/' + self.gets2tfilename('A3.final'))
             os.copy(self.WORKDIR + '/aligneroutput/training.' + self.TARGETLANG + '-' + self.SOURCELANG + '.A3', self.WORKDIR + '/' + self.gett2sfilename('A3.final'))
         else:
@@ -1556,17 +1568,15 @@ writeGIZA""" % (self.TARGETLANG, self.SOURCELANG) )
         return True
     
     def build_phrasal_phraseextract(self):    
-        classpath = []
-        for filename in glob.glob(self.PATH_PHRASAL+'/*.jar'): classpath.append(filename)
-        for filename in glob.glob(self.PATH_CORENLP+'/*.jar'): classpath.append(filename)
-        if self.JAR_FASTUTIL: classpath.append(self.JAR_FASTUTIL)
-        classpath = ':'.join(classpath)
+        classpath = self.get_phrasal_classpath()
         JAVA_OPTS="-XX:+UseCompressedOops -Xmx" + str(self.PHRASAL_MAXMEM) + ' -Xms' +  str(self.PHRASAL_MAXMEM)
         #EXTRACT_OPTS="-inputDir aligneroutput -outputFile phrases"
-        EXTRACT_OPTS="-fCorpus " + self.getsourcefilename('txt') + ' -eCorpus ' + self.gettargetfilename('txt') + ' -feAlign ' + self.gets2tfilename('A3.final') + ' -efAlign ' + self.gett2sfilename('A3.final') + " -outputFile phrases"
+        EXTRACT_OPTS="-fCorpus " + self.getsourcefilename('txt') + ' -eCorpus ' + self.gettargetfilename('txt') + ' -feAlign ' + self.gets2tfilename('A3.final') + ' -efAlign ' + self.gett2sfilename('A3.final') + " -outputFile phrases"        
         cmd = 'CLASSPATH=' + classpath + ' ' + self.EXEC_JAVA + ' ' + JAVA_OPTS + ' edu.stanford.nlp.mt.train.PhraseExtract ' + EXTRACT_OPTS
         if self.DEVSOURCECORPUS: 
             cmd += ' -fFilterCorpus ' + self.DEVSOURCECORPUS
+        if self.PHRASAL_WITHGAPS:
+            cmd += ' -withGaps true'
         if not self.runcmd(cmd , 'Phrase extraction'): return False
         return True
 
