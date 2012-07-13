@@ -1642,7 +1642,11 @@ edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(phrases-om.gz,
         return True
 
     def build_phrasal_mert(self):    
-        #TODO
+        if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_PHRASAL_MERT + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS):            
+            return False
+        else:
+            #TODO: copy MERT output
+            pass
         return True
 
 
@@ -1694,7 +1698,7 @@ edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(phrases-om.gz,
     def run_phrasal(self):
         classpath = self.get_phrasal_classpath()
         JAVA_OPTS="-XX:+UseCompressedOops -Xmx" + str(self.PHRASAL_MAXMEM) + ' -Xms' +  str(self.PHRASAL_MAXMEM)
-        cmd = 'CLASSPATH=' + classpath + ' ' + self.EXEC_JAVA + ' ' + JAVA_OPTS + ' edu.stanford.nlp.mt.Phrasal -config-file phrasal.conf'
+        cmd = 'CLASSPATH=' + classpath + ' ' + self.EXEC_JAVA + ' ' + JAVA_OPTS + ' edu.stanford.nlp.mt.Phrasal -config-file phrasal.conf < input.txt > output.txt'
         if not self.runcmd(cmd):
             return False
         return True
