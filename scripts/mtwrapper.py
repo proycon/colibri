@@ -222,7 +222,9 @@ class MTWrapper(object):
             ('COLIBRI_PATTERNFINDER_OPTIONS','-t 10 -s -B -E', 'Options for the pattern finder, see patternfinder -h'),
             ('COLIBRI_ALIGNER_OPTIONS','-J -p 0.1','Options for the colibri aligner, see aligner -h'),
             ('PHRASAL_MAXMEM', '4g', 'Memory allocated for word alignment, phrase extraction and decoding using phrasal (java)'),
-            ('PHRASAL_WITHGAPS', True, 'Consider gaps if using Phrasal?')  
+            ('PHRASAL_WITHGAPS', True, 'Consider gaps if using Phrasal?'),
+            ('PHRASAL_MAXSOURCEPHRASESPAN', 15, 'Maximum span for a source-side phrase with gaps (phrasal)'),
+            ('PHRASAL_MAXTARGETPHRASESPAN', 7, 'Maximum span for a target-side phrase with gap (phrasal)')  
     ]
 
     def initlog(self, logfile):
@@ -1638,11 +1640,18 @@ edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(phrases-om.gz,
 # detect processors present, and use them all
 [localprocs]
 0""" % (self.gettargetfilename('srilm'),) )
+        if self.PHRASAL_WITHGAPS:
+            f.write("[gaps]\n")
+            f.write(str(self.PHRASAL_MAXSOURCEPHRASESPAN) + "\n")
+            f.write(str(self.PHRASAL_MAXTARGETPHRASESPAN) + "\n")
         f.close()        
         return True
 
     def build_phrasal_mert(self):    
-        if not self.runcmd(self.EXEC_PERL + ' ' + self.EXEC_PHRASAL_MERT + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS):            
+        cmd = self.EXEC_PERL + ' ' + self.EXEC_PHRASAL_MERT + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS
+        if self.PHRASAL_WITHGAPS:
+            cmd += " --phrasal_flags=\"--gaps " + str(self.PHRASAL_MAXSOURCEPHRASESPAN) + ' ' + str(self.PHRASAL_MAXTARGETPHRASESPAN) + "\"" 
+        if not self.runcmd(cmd):            
             return False
         else:
             #TODO: copy MERT output
