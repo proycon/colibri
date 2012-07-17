@@ -330,6 +330,9 @@ class MTWrapper(object):
         self.batches.append( (batchname, kwargs) )                
 
     def findpath(self, name, basepath = ''):                        
+        if not name.strip():
+            print >>sys.stderr, yellow("Warning: Did not find " + name)
+            return ""
         if os.path.exists(name):
             return name
         for path in os.environ['PATH'].split(':'):
