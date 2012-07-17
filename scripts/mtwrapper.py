@@ -1571,8 +1571,8 @@ writeGIZA""" % (self.TARGETLANG, self.SOURCELANG) )
         classpath = self.get_phrasal_classpath()
         JAVA_OPTS="-XX:+UseCompressedOops -Xmx" + str(self.PHRASAL_MAXMEM) + ' -Xms' +  str(self.PHRASAL_MAXMEM)        
         if self.runcmd('CLASSPATH=' + classpath + '  ' +  self.EXEC_JAVA + ' ' + JAVA_OPTS + ' -jar ' + self.JAR_BERKELEYALIGNER + ' ++aligner.conf', 'Word alignment'): 
-            shutil.copyfile(self.WORKDIR + '/aligneroutput/training.' + self.SOURCELANG + '-' + self.TARGETLANG + '.A3', self.WORKDIR + '/' + self.gets2tfilename('A3.final'))
-            shutil.copyfile(self.WORKDIR + '/aligneroutput/training.' + self.TARGETLANG + '-' + self.SOURCELANG + '.A3', self.WORKDIR + '/' + self.gett2sfilename('A3.final'))
+            shutil.copyfile(self.WORKDIR + '/aligneroutput/training.' + self.SOURCELANG + '-' + self.TARGETLANG + '.A3', self.gets2tfilename('A3.final'))
+            shutil.copyfile(self.WORKDIR + '/aligneroutput/training.' + self.TARGETLANG + '-' + self.SOURCELANG + '.A3',  self.gett2sfilename('A3.final'))
         else:
             return False
         return True
