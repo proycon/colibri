@@ -1509,7 +1509,12 @@ class MTWrapper(object):
         if self.JAR_FASTUTIL: classpath.append(self.JAR_FASTUTIL)
         return ":".join(classpath)           
     
-    def build_phrasal_wordalign(self):            
+    def build_phrasal_wordalign(self):                    
+        if os.path.exists(self.gets2tfilename('A3.final')) and os.path.exists(self.gett2sfilename('A3.final')):
+            self.log("Skipping Berkeley word aligner (output already exists)",yellow)
+            return True
+        
+        
         try:
             os.mkdir(self.WORKDIR + '/alignerinput')
         except:
