@@ -1510,12 +1510,10 @@ class MTWrapper(object):
         return ":".join(classpath)           
     
     def build_phrasal_wordalign(self):            
-        try:
-            os.mkdir(self.WORKDIR + '/alignerinput')
-            os.symlink(self.getsourcefilename('txt'), self.WORKDIR + '/alignerinput/' + self.CORPUSNAME + '-' + self.SOURCELANG)
-            os.symlink(self.gettargetfilename('txt'), self.WORKDIR + '/alignerinput/' + self.CORPUSNAME + '-' + self.TARGETLANG)
-        except:
-            pass
+        os.mkdir(self.WORKDIR + '/alignerinput')
+        os.symlink(self.getsourcefilename('txt'), self.WORKDIR + '/alignerinput/' + self.CORPUSNAME + '-' + self.SOURCELANG)
+        os.symlink(self.gettargetfilename('txt'), self.WORKDIR + '/alignerinput/' + self.CORPUSNAME + '-' + self.TARGETLANG)
+        
    
 
         f = open(self.WORKDIR + '/aligner.conf','w')
