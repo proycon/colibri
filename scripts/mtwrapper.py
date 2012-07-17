@@ -1504,7 +1504,7 @@ class MTWrapper(object):
         for filename in glob.glob(self.PATH_PHRASAL+'/*.jar'): classpath.append(filename)
         for filename in glob.glob(self.PATH_CORENLP+'/*.jar'): classpath.append(filename)
         if self.JAR_FASTUTIL: classpath.append(self.JAR_FASTUTIL)
-        return classpath           
+        return ":".join(classpath)           
     
     def build_phrasal_wordalign(self):            
         try:
