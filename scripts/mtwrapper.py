@@ -1210,7 +1210,7 @@ class MTWrapper(object):
         if self.BUILD_COLIBRI_ALIGNMENT and not self.build_colibri_alignment(): return False
 
         
-        if self.BUILD_PHRASAL_PHRASEEXTRACT and not self.build_phrasal_phraseextact(): return False
+        if self.BUILD_PHRASAL_PHRASEEXTRACT and not self.build_phrasal_phraseextract(): return False
         
         if self.BUILD_MOSES_SYMAL and not self.build_moses_symal(): return False
         if self.BUILD_MOSES_WORDTRANSTABLE and not self.build_moses_wordtranstable(): return False
@@ -1512,8 +1512,8 @@ class MTWrapper(object):
     def build_phrasal_wordalign(self):            
         try:
             os.mkdir(self.WORKDIR + '/alignerinput')
-            os.symlink(self.getsourcefilename('txt'), 'alignerinput/' + self.getsourcefilename())
-            os.symlink(self.gettargetfilename('txt'), 'alignerinput/' + self.gettargetfilename())
+            os.symlink(self.getsourcefilename('txt'), self.WORKDIR + '/alignerinput/' + self.CORPUSNAME + '-' + self.SOURCELANG)
+            os.symlink(self.gettargetfilename('txt'), self.WORKDIR + '/alignerinput/' + self.CORPUSNAME + '-' + self.TARGETLANG)
         except:
             pass
    
