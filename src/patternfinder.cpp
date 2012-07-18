@@ -261,7 +261,7 @@ int main( int argc, char *argv[] ) {
 		    }
 		            	
         }
-    } else if ( (!modelfile.empty()) && (!alignmodelfile.empty()) && (alignthreshold > 0)  ) {
+    } else if ( (!modelfile.empty()) && (!alignmodelfile.empty()) ) {
         if (DOINDEX) {
     	    cerr << "Loading model" << endl;
 		    IndexedPatternModel model = IndexedPatternModel(modelfile, DEBUG);
