@@ -384,7 +384,18 @@ class MTWrapper(object):
                 return False
         elif self.BUILD_PBMBMT:
             #TODO: implement
+            self.log("Error: PBMBMT not implemented yet",red,True)
             return False
+        elif self.BUILD_PHRASAL:                            
+            if not self.EXEC_JAVA or not os.path.isfile(self.EXEC_JAVA):
+                self.log("Error: Java not found! Required for Phrasal",red,True)
+                return False
+            if not self.PATH_PHRASAL or not os.path.isdir(self.PATH_PHRASAL):
+                self.log("Error: Phrasal not found! (" + self.PATH_PHRASAL+")",red,True)
+                return False
+            elif not os.path.exists(self.WORKDIR + '/phrasal.conf'):
+                self.log("Error: No Phrasal configuration found. Did you forget to train the system first?",red,True)
+                return False    
         else:
             self.log("Error: System is not runnable, no MT decoder enabled",red,True)
             return False
@@ -1730,7 +1741,7 @@ edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(phrases-om.gz,
         classpath = self.get_phrasal_classpath()
         JAVA_OPTS="-XX:+UseCompressedOops -Xmx" + str(self.PHRASAL_MAXMEM) + ' -Xms' +  str(self.PHRASAL_MAXMEM)
         cmd = 'CLASSPATH=' + classpath + ' ' + self.EXEC_JAVA + ' ' + JAVA_OPTS + ' edu.stanford.nlp.mt.Phrasal -config-file phrasal.conf < input.txt > output.txt'
-        if not self.runcmd(cmd):
+        if not self.runcmd(cmd,"Phrasal Decoder"):
             return False
         return True
     
