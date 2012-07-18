@@ -1512,7 +1512,7 @@ class MTWrapper(object):
     
     def build_phrasal_wordalign(self):                    
         if os.path.exists(self.gets2tfilename('A3.final')) and os.path.exists(self.gett2sfilename('A3.final')):
-            self.log("Skipping Berkeley word aligner (output already exists)",yellow)
+            self.log("Skipping Berkeley word aligner (output already exists)",yellow, True)
             return True
         
         
@@ -1594,7 +1594,7 @@ writeGIZA""" % (self.TARGETLANG, self.SOURCELANG) )
     
     def build_phrasal_phraseextract(self):    
         if os.path.exists(self.gets2tfilename('phrasetable')):
-            self.log("Skipping Phrasal Phrase Extraction (output already exists)",yellow)
+            self.log("Skipping Phrasal Phrase Extraction (output already exists)",yellow, True)
         else:
             classpath = self.get_phrasal_classpath()
             JAVA_OPTS="-XX:+UseCompressedOops -Xmx" + str(self.PHRASAL_MAXMEM) + ' -Xms' +  str(self.PHRASAL_MAXMEM)
