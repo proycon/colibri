@@ -3630,23 +3630,40 @@ void GraphRelations::getrelations(unordered_map<const EncAnyGram*,std::unordered
 }
 
 
-void IndexedPatternModel::prunebyalignment(std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > & alignmatrix, double threshold) {
-    for (std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
-        double maxscore = 0;
-        for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-            if (iter2->second > maxscore) maxscore = iter2->second;
-        }
-        if (maxscore < threshold) {
-            const EncAnyGram * anygram = getkey(iter->first);
-            if (anygram != NULL) {
-                if (anygram->isskipgram()) {
-                    const EncSkipGram * skipgram = (const EncSkipGram *) anygram;
-                    skipgrams.erase(*skipgram);
-                } else {
-                    const EncNGram * ngram = (const EncNGram *) anygram;
-                    ngrams.erase(*ngram);
-                }
+unsigned int IndexedPatternModel::prunebyalignment(std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > & alignmatrix, double threshold) {
+    unsigned int pruned = 0; 
+    for (unordered_map<const EncNGram,NGramData >::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
+        const EncNGram ngram = iter->first;
+        const EncAnyGram * anygram = &ngram;
+        if (alignmatrix.count(anygram)) {
+            double maxscore = 0;
+            for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = alignmatrix[anygram].begin(); iter2 != alignmatrix[anygram].end(); iter2++) {
+                if (iter2->second > maxscore) maxscore = iter2->second;
             }
-        }
+            if (maxscore < threshold) {
+                ngrams.erase(ngram);
+                pruned++;
+            }
+        } else {
+            ngrams.erase(ngram);
+        }           
     }
+    for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
+        const EncSkipGram skipgram = iter->first;
+        const EncAnyGram * anygram = &skipgram;
+        if (alignmatrix.count(anygram)) {
+            double maxscore = 0;
+            for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = alignmatrix[anygram].begin(); iter2 != alignmatrix[anygram].end(); iter2++) {
+                if (iter2->second > maxscore) maxscore = iter2->second;
+            }
+            if (maxscore < threshold) {
+                skipgrams.erase(skipgram);
+                pruned++;
+            }
+        } else {
+            skipgrams.erase(skipgram);
+            pruned++;
+        }    
+    }
+    return pruned;
 }
