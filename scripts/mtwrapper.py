@@ -1576,7 +1576,7 @@ overwrite
 
 foreignSuffix %s
 englishSuffix %s
-#lowercase
+lowercase
 
 # Choose the training sources, which can either be directories or files that list files/directories
 trainSources alignerinput

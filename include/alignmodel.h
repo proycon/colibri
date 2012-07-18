@@ -1,3 +1,6 @@
+#ifndef ALIGNMODEL_H
+#define ALIGNMODEL_H
+
 #include <patternmodel.h>
 #include <list>
 #include <gizamodel.h>
@@ -152,3 +155,5 @@ class EMAlignmentModel3: public EMAlignmentModel {
     unsigned int expectation(const EncAnyGram * sourcegram, const std::multiset<uint32_t> & sourceindex, SelectivePatternModel * targetmodel, std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > & count, std::unordered_map<const EncAnyGram*, double> & total);
 };
 */
+
+#endif

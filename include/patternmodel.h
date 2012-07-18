@@ -250,7 +250,9 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     void decode(IndexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT);
     
     bool skipgramvarietycheck(SkipGramData & skipgramdata, int mintypecount=2);
-    void coveragereport(std::ostream *OUT, const std::string & corpusfile = "", std::ostream *HTMLOUT = NULL, ClassDecoder * decoder = NULL, int segmentsize = 100000);    
+    void coveragereport(std::ostream *OUT, const std::string & corpusfile = "", std::ostream *HTMLOUT = NULL, ClassDecoder * decoder = NULL, int segmentsize = 100000);
+    
+    void prunebyalignment(std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > & alignmatrix, double threshold);
 };
 
 
