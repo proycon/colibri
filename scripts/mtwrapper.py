@@ -1153,13 +1153,23 @@ class MTWrapper(object):
             
     def clean(self, targets):            
         if not targets:
-            self.log("Nothing to clean, please specify one or more targets: all, giza, moses, colibri, srilm",red)
+            self.log("Nothing to clean, please specify one or more targets: all, giza, berkeleyaligner, moses, colibri, phrasal, srilm, test, score, batches",red)
             sys.exit(2)        
         
         if 'giza' in targets or 'all' in targets:
             self.cleanfiles('*.final', '*.vcb','*.snt','*.classes','*.classes.cats','*.gizacfg','*.Decoder.config','*.perp','*.cooc')
+        if 'berkeleyaligner' in targets or 'all' in targets:
+            self.cleanfiles('*.final','aligner.conf')
+            if os.path.isdir(self.WORKDIR + '/alignerinput'):
+                shutil.rmtree(self.WORKDIR + '/alignerinput')
+                self.log("Removed alignerinput",green)
+            if os.path.isdir(self.WORKDIR + '/aligneroutput'):
+                shutil.rmtree(self.WORKDIR + '/aligneroutput')
+                self.log("Removed aligneroutput",green)                        
         if 'moses' in targets or 'all' in targets:
             self.cleanfiles('*.bal', '*.symal','*.s2t','*.s2t.sorted','*.t2s','*.t2s','*.sorted','*.phrasetable', '*.phraseextract', '*.phraseextract.inv','*.half','moses.ini')
+        if 'phrasal' in targets or 'all' in targets:
+            self.cleanfiles('phrases*gz','*.phrasetable','phrasal.conf')
         if 'srilm' in targets or 'all' in targets:
             self.cleanfiles('*.srilm')
         if 'colibri' in targets or 'all' in targets:
@@ -1743,7 +1753,7 @@ edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(phrases-om.gz,
         cmd = 'CLASSPATH=' + classpath + ' ' + self.EXEC_JAVA + ' ' + JAVA_OPTS + ' edu.stanford.nlp.mt.Phrasal -config-file phrasal.conf < input.txt > output.txt'
         if not self.runcmd(cmd,"Phrasal Decoder"):
             return False
-        return True1
+        return True
     
     def server_moses(self, port, html):
         while True:
