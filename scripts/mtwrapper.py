@@ -1610,6 +1610,7 @@ writeGIZA""" % (self.TARGETLANG, self.SOURCELANG) )
         return True
 
     def build_phrasal(self):    
+        self.log("Writing phrasal configuration",green, True)
         f = open(self.WORKDIR + '/phrasal.conf','w')
         f.write("""# filename: phrasal.conf
 
@@ -1660,7 +1661,7 @@ edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(phrases-om.gz,
 
 # detect processors present, and use them all
 [localprocs]
-0""" % (self.gettargetfilename('srilm'),) )
+0\n\n""" % (self.gettargetfilename('srilm'),) )
         if self.PHRASAL_WITHGAPS:
             f.write("[gaps]\n")
             f.write(str(self.PHRASAL_MAXSOURCEPHRASESPAN) + "\n")
