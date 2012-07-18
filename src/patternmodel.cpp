@@ -3635,7 +3635,7 @@ unsigned int IndexedPatternModel::prunebyalignment(std::unordered_map<const EncA
     for (unordered_map<const EncNGram,NGramData >::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
         const EncNGram ngram = iter->first;
         const EncAnyGram * anygram = &ngram;
-        if (alignmatrix.count(anygram)) {
+        if (alignmatrix.find(anygram) != alignmatrix.end()) {
             double maxscore = 0;
             for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = alignmatrix[anygram].begin(); iter2 != alignmatrix[anygram].end(); iter2++) {
                 if (iter2->second > maxscore) maxscore = iter2->second;
@@ -3652,7 +3652,7 @@ unsigned int IndexedPatternModel::prunebyalignment(std::unordered_map<const EncA
     for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
         const EncSkipGram skipgram = iter->first;
         const EncAnyGram * anygram = &skipgram;
-        if (alignmatrix.count(anygram)) {
+        if (alignmatrix.find(anygram) != alignmatrix.end()) {
             double maxscore = 0;
             for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = alignmatrix[anygram].begin(); iter2 != alignmatrix[anygram].end(); iter2++) {
                 if (iter2->second > maxscore) maxscore = iter2->second;
