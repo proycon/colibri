@@ -3646,6 +3646,7 @@ unsigned int IndexedPatternModel::prunebyalignment(std::unordered_map<const EncA
             }
         } else {
             ngrams.erase(ngram);
+            pruned++;
         }           
     }
     for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
