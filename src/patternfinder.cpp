@@ -1,4 +1,5 @@
 #include <patternmodel.h>
+#include <alignmodel.h>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -28,6 +29,8 @@ void usage() {
     cerr << "\t-B               Do NOT consider skipgrams that begin with a skip and have no further skips" << endl;
     cerr << "\t-E               Do NOT consider skipgrams that end in a skip and have no further skips" << endl;
     cerr << "\t-Q               Start query mode, allows for pattern lookup against the loaded model. Use with -c and -d to specify the class file and model to load" << endl; 
+    cerr << "\t-A <alignmodel>  Prune existing model using source-side of an alignment model (use with -d and -P)" << endl;
+    cerr << "\t-P <number>      Prune threshold (use with -A, -d)" << endl;
     cerr << "\t-o <string>      Output prefix" << endl;        
 }
 
@@ -54,6 +57,9 @@ int main( int argc, char *argv[] ) {
     string modelfile = "";
     string modelfile2 = "";
     string covviewfile = "";
+    string alignmodelfile = "";
+    
+    
     
     int MINTOKENS = 2;
     int MINSKIPTOKENS = 2;
@@ -68,8 +74,9 @@ int main( int argc, char *argv[] ) {
     bool DOCOVVIEW = false;
     //bool DOCOMPOSITIONALITY = false;
     bool DEBUG = false;
+    double alignthreshold = 0.0;
     char c;    
-    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQDJ:CV")) != -1)
+    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQDJ:CVA:P:")) != -1)
         switch (c)
         {
         case 'c':
@@ -123,6 +130,12 @@ int main( int argc, char *argv[] ) {
 		case 'Q':
 			DOQUERIER = true;
 			break;
+	    case 'A':
+	        alignmodelfile = optarg;
+	        break;
+        case 'P':
+            alignthreshold = atof(optarg);
+            break;	        
         case 'h':
             usage();
             exit(0);
@@ -248,6 +261,27 @@ int main( int argc, char *argv[] ) {
 		    }
 		            	
         }
+    } else if ( (!modelfile.empty()) && (!alignmodelfile.empty()) && (alignthreshold > 0)  ) {
+        if (DOINDEX) {
+    	    cerr << "Loading model" << endl;
+		    IndexedPatternModel model = IndexedPatternModel(modelfile, DEBUG);
+		    cerr << "Loading Alignment Model" << endl;
+		    AlignmentModel alignmodel = AlignmentModel(alignmodelfile);
+		    unsigned int pruned = model.prunebyalignment(alignmodel.alignmatrix, alignthreshold);		    
+            cerr << "pruned " << pruned << endl;
+		    
+		    if (!outputprefix.empty()) {
+		        const string outputfile = outputprefix + ".indexedpatternmodel.colibri";
+		        cerr << "Saving " << outputprefix << ".indexedpatternmodel.colibri"  << endl;
+		        model.save(outputfile);
+		    } else {
+		        cerr << "Saving " << modelfile << endl;
+		        model.save(modelfile);		    
+		    }                 
+        } else {
+            cerr << "Not implemented yet for unindexed models" << endl;
+            exit(2);
+        }       
     } else if ( (!modelfile.empty()) && ((!classfile.empty()) || DOCOVERAGE  ) ) {
     	if (DOINDEX) {
     	    cerr << "Loading model" << endl;
