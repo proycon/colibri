@@ -224,7 +224,8 @@ class MTWrapper(object):
             ('PHRASAL_MAXMEM', '4g', 'Memory allocated for word alignment, phrase extraction and decoding using phrasal (java)'),
             ('PHRASAL_WITHGAPS', True, 'Consider gaps if using Phrasal?'),
             ('PHRASAL_MAXSOURCEPHRASESPAN', 15, 'Maximum span for a source-side phrase with gaps (phrasal)'),
-            ('PHRASAL_MAXTARGETPHRASESPAN', 7, 'Maximum span for a target-side phrase with gap (phrasal)')  
+            ('PHRASAL_MAXTARGETPHRASESPAN', 7, 'Maximum span for a target-side phrase with gap (phrasal)'),
+            ('PHRASAL_PHRASEEXTRACT_OPTIONS','-symmetrization grow-diag-final-and','Options for Phrase Extraction using Phrasal')  
     ]
 
     def initlog(self, logfile):
@@ -1592,10 +1593,13 @@ writeGIZA""" % (self.TARGETLANG, self.SOURCELANG) )
         return True
     
     def build_phrasal_phraseextract(self):    
+        if os.path.exists(self.gets2tfilename('phrasetable')):
+            self.log("Skipping Phrasal Phrase Extraction (output already exists)",yellow)
+            return True
         classpath = self.get_phrasal_classpath()
         JAVA_OPTS="-XX:+UseCompressedOops -Xmx" + str(self.PHRASAL_MAXMEM) + ' -Xms' +  str(self.PHRASAL_MAXMEM)
         #EXTRACT_OPTS="-inputDir aligneroutput -outputFile phrases"
-        EXTRACT_OPTS="-fCorpus " + self.getsourcefilename('txt') + ' -eCorpus ' + self.gettargetfilename('txt') + ' -feAlign ' + self.gets2tfilename('A3.final') + ' -efAlign ' + self.gett2sfilename('A3.final') + " -outputFile " + self.gets2tfilename('phrasetable')        
+        EXTRACT_OPTS="-fCorpus " + self.getsourcefilename('txt') + ' -eCorpus ' + self.gettargetfilename('txt') + ' -feAlign ' + self.gets2tfilename('A3.final') + ' -efAlign ' + self.gett2sfilename('A3.final') + " -outputFile " + self.gets2tfilename('phrasetable') + ' ' + self.PHRASAL_PHRASEEXTRACT_OPTIONS        
         cmd = 'CLASSPATH=' + classpath + ' ' + self.EXEC_JAVA + ' ' + JAVA_OPTS + ' edu.stanford.nlp.mt.train.PhraseExtract ' + EXTRACT_OPTS
         if self.DEVSOURCECORPUS: #should always exist, has been checked in checking stage             
             cmd += ' -fFilterCorpus ' + self.DEVSOURCECORPUS
