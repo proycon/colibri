@@ -1595,18 +1595,18 @@ writeGIZA""" % (self.TARGETLANG, self.SOURCELANG) )
     def build_phrasal_phraseextract(self):    
         if os.path.exists(self.gets2tfilename('phrasetable')):
             self.log("Skipping Phrasal Phrase Extraction (output already exists)",yellow)
-            return True
-        classpath = self.get_phrasal_classpath()
-        JAVA_OPTS="-XX:+UseCompressedOops -Xmx" + str(self.PHRASAL_MAXMEM) + ' -Xms' +  str(self.PHRASAL_MAXMEM)
-        #EXTRACT_OPTS="-inputDir aligneroutput -outputFile phrases"
-        EXTRACT_OPTS="-fCorpus " + self.getsourcefilename('txt') + ' -eCorpus ' + self.gettargetfilename('txt') + ' -feAlign ' + self.gets2tfilename('A3.final') + ' -efAlign ' + self.gett2sfilename('A3.final') + " -outputFile " + self.gets2tfilename('phrasetable') + ' ' + self.PHRASAL_PHRASEEXTRACT_OPTIONS        
-        cmd = 'CLASSPATH=' + classpath + ' ' + self.EXEC_JAVA + ' ' + JAVA_OPTS + ' edu.stanford.nlp.mt.train.PhraseExtract ' + EXTRACT_OPTS
-        if self.DEVSOURCECORPUS: #should always exist, has been checked in checking stage             
-            cmd += ' -fFilterCorpus ' + self.DEVSOURCECORPUS
-        if self.PHRASAL_WITHGAPS:
-            cmd += ' -withGaps true'
-        if not self.runcmd(cmd , 'Phrase extraction'): return False
-        if not self.runcmd(self.EXEC_PERL + ' ' + self.PHRASAL + '/scripts/split-table phrases-tm.gz phrases-om.gz < ' + self.gets2tfilename('phrasetable') , 'Phrase splitting'): return False
+        else:
+            classpath = self.get_phrasal_classpath()
+            JAVA_OPTS="-XX:+UseCompressedOops -Xmx" + str(self.PHRASAL_MAXMEM) + ' -Xms' +  str(self.PHRASAL_MAXMEM)
+            #EXTRACT_OPTS="-inputDir aligneroutput -outputFile phrases"
+            EXTRACT_OPTS="-fCorpus " + self.getsourcefilename('txt') + ' -eCorpus ' + self.gettargetfilename('txt') + ' -feAlign ' + self.gets2tfilename('A3.final') + ' -efAlign ' + self.gett2sfilename('A3.final') + " -outputFile " + self.gets2tfilename('phrasetable') + ' ' + self.PHRASAL_PHRASEEXTRACT_OPTIONS        
+            cmd = 'CLASSPATH=' + classpath + ' ' + self.EXEC_JAVA + ' ' + JAVA_OPTS + ' edu.stanford.nlp.mt.train.PhraseExtract ' + EXTRACT_OPTS
+            if self.DEVSOURCECORPUS: #should always exist, has been checked in checking stage             
+                cmd += ' -fFilterCorpus ' + self.DEVSOURCECORPUS
+            if self.PHRASAL_WITHGAPS:
+                cmd += ' -withGaps true'
+            if not self.runcmd(cmd , 'Phrase extraction',  self.gets2tfilename('phrasetable') ): return False
+        if not self.runcmd(self.EXEC_PERL + ' ' + self.PATH_PHRASAL + '/scripts/split-table ' + self.WORKDIR + '/phrases-tm.gz ' + self.WORKDIR + '/phrases-om.gz < ' + self.gets2tfilename('phrasetable') , 'Phrase splitting',  self.WORKDIR + '/phrases-tm.gz',  self.WORKDIR + '/phrases-om.gz'): return False
         return True
 
     def build_phrasal(self):    
