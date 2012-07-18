@@ -1725,8 +1725,8 @@ edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(phrases-om.gz,
         
         if self.BUILD_MOSES and not self.run_moses(): return False
         if self.BUILD_PBMBMT and not self.run_pbmbmt(): return False
-        
-        
+        if self.BUILD_PHRASAL and not self.run_phrasal(): return False
+                
         
         os.rename('output.txt',outputfile)        
         return True
@@ -1743,7 +1743,7 @@ edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(phrases-om.gz,
         cmd = 'CLASSPATH=' + classpath + ' ' + self.EXEC_JAVA + ' ' + JAVA_OPTS + ' edu.stanford.nlp.mt.Phrasal -config-file phrasal.conf < input.txt > output.txt'
         if not self.runcmd(cmd,"Phrasal Decoder"):
             return False
-        return True
+        return True1
     
     def server_moses(self, port, html):
         while True:
