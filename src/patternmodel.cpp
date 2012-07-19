@@ -3632,6 +3632,7 @@ void GraphRelations::getrelations(unordered_map<const EncAnyGram*,std::unordered
 
 unsigned int IndexedPatternModel::prunebyalignment(std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > & alignmatrix, double threshold) {
     unsigned int pruned = 0; 
+    cerr << "SIZE=" << alignmatrix.size() << endl;
     for (unordered_map<const EncNGram,NGramData >::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
         const EncNGram ngram = iter->first;
         if (alignmatrix.find(&ngram) != alignmatrix.end()) {
