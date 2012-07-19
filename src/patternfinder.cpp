@@ -267,7 +267,7 @@ int main( int argc, char *argv[] ) {
 		    IndexedPatternModel model = IndexedPatternModel(modelfile, DEBUG);
 		    cerr << "Loading Alignment Model" << endl;
 		    AlignmentModel alignmodel = AlignmentModel(alignmodelfile);
-		    unsigned int pruned = model.prunebyalignment(alignmodel.alignmatrix, alignthreshold);		    
+		    unsigned int pruned = alignmodel.prunepatternmodel(model, alignthreshold);		    
             cerr << "pruned " << pruned << endl;
 		    
 		    if (!outputprefix.empty()) {

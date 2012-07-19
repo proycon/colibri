@@ -2536,6 +2536,48 @@ void find_clusters(unordered_map<const EncSkipGram*,uint16_t> skipgrams, vector<
 }
 
 
+unsigned int AlignmentModel::prunepatternmodel(IndexedPatternModel & patternmodel, double threshold) {
+    unsigned int pruned = 0; 
+    cerr << "SIZE=" << alignmatrix.size() << endl;
+    for (unordered_map<const EncNGram,NGramData >::iterator iter = patternmodel.ngrams.begin(); iter != patternmodel.ngrams.end(); iter++) {
+        const EncNGram ngram = iter->first;
+        const EncAnyGram * anygram = getsourcekey(&ngram);
+        if (anygram != NULL) {
+            cerr << "FOUND NGRAM" << endl;
+            double maxscore = 0;
+            for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = alignmatrix[anygram].begin(); iter2 != alignmatrix[anygram].end(); iter2++) {
+                if (iter2->second > maxscore) maxscore = iter2->second;
+            }
+            if (maxscore < threshold) {
+                patternmodel.ngrams.erase(ngram);
+                pruned++;
+            }        
+        } else {
+            patternmodel.ngrams.erase(ngram);
+            pruned++;        
+        }
+    }
+   for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = patternmodel.skipgrams.begin(); iter != patternmodel.skipgrams.end(); iter++) {
+        const EncSkipGram skipgram = iter->first;
+        const EncAnyGram * anygram = getsourcekey(&skipgram);
+        if (anygram != NULL) {
+            cerr << "FOUND SKIPGRAM" << endl;
+            double maxscore = 0;
+            for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = alignmatrix[anygram].begin(); iter2 != alignmatrix[anygram].end(); iter2++) {
+                if (iter2->second > maxscore) maxscore = iter2->second;
+            }
+            if (maxscore < threshold) {
+                patternmodel.skipgrams.erase(skipgram);
+                pruned++;
+            }        
+        } else {
+            patternmodel.skipgrams.erase(skipgram);
+            pruned++;        
+        }
+    }
+ 
+    return pruned;
+}
 
 
 
