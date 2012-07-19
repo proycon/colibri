@@ -3634,11 +3634,10 @@ unsigned int IndexedPatternModel::prunebyalignment(std::unordered_map<const EncA
     unsigned int pruned = 0; 
     for (unordered_map<const EncNGram,NGramData >::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
         const EncNGram ngram = iter->first;
-        const EncAnyGram * anygram = &ngram;
-        if (alignmatrix.find(anygram) != alignmatrix.end()) {
+        if (alignmatrix.find(&ngram) != alignmatrix.end()) {
             cerr << "FOUND NGRAM" << endl;
             double maxscore = 0;
-            for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = alignmatrix[anygram].begin(); iter2 != alignmatrix[anygram].end(); iter2++) {
+            for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = alignmatrix[&ngram].begin(); iter2 != alignmatrix[&ngram].end(); iter2++) {
                 if (iter2->second > maxscore) maxscore = iter2->second;
             }
             if (maxscore < threshold) {
@@ -3652,11 +3651,10 @@ unsigned int IndexedPatternModel::prunebyalignment(std::unordered_map<const EncA
     }
     for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
         const EncSkipGram skipgram = iter->first;
-        const EncAnyGram * anygram = &skipgram;
-        if (alignmatrix.find(anygram) != alignmatrix.end()) {
+        if (alignmatrix.find(&skipgram) != alignmatrix.end()) {
             cerr << "FOUND SKIPGRAM" << endl;
             double maxscore = 0;
-            for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = alignmatrix[anygram].begin(); iter2 != alignmatrix[anygram].end(); iter2++) {
+            for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = alignmatrix[&skipgram].begin(); iter2 != alignmatrix[&skipgram].end(); iter2++) {
                 if (iter2->second > maxscore) maxscore = iter2->second;
             }
             if (maxscore < threshold) {
