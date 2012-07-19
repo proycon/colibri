@@ -2543,7 +2543,6 @@ unsigned int AlignmentModel::prunepatternmodel(IndexedPatternModel & patternmode
         const EncNGram ngram = iter->first;
         const EncAnyGram * anygram = getsourcekey(&ngram);
         if (anygram != NULL) {
-            cerr << "FOUND NGRAM" << endl;
             double maxscore = 0;
             for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = alignmatrix[anygram].begin(); iter2 != alignmatrix[anygram].end(); iter2++) {
                 if (iter2->second > maxscore) maxscore = iter2->second;
@@ -2561,7 +2560,6 @@ unsigned int AlignmentModel::prunepatternmodel(IndexedPatternModel & patternmode
         const EncSkipGram skipgram = iter->first;
         const EncAnyGram * anygram = getsourcekey(&skipgram);
         if (anygram != NULL) {
-            cerr << "FOUND SKIPGRAM" << endl;
             double maxscore = 0;
             for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = alignmatrix[anygram].begin(); iter2 != alignmatrix[anygram].end(); iter2++) {
                 if (iter2->second > maxscore) maxscore = iter2->second;
