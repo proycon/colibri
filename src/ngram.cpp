@@ -547,7 +547,7 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
 }
 
 
-EncNGram * EncSkipGram::gettoken(int index) const {
+const EncNGram * EncSkipGram::gettoken(int index) const {
     const unsigned char unknownclass = 2;
 
     bool prevnull = false;
@@ -585,6 +585,10 @@ EncNGram * EncSkipGram::gettoken(int index) const {
         exit(6);
         return NULL;        
     }  
+}
+
+const EncNGram * EncNGram::gettoken(int index) const {
+    return slice(index,1);
 }
 
 
