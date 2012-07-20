@@ -150,17 +150,22 @@ class ModelWriter {
     virtual void writefile(const std::string & filename);
 };
 
-class ModelQuerier {
-     std::map<int, std::vector< std::vector< std::pair<int,int> > > > gapconf;
+class ModelQuerierBase {
+    std::map<int, std::vector< std::vector< std::pair<int,int> > > > gapconf;
+   public:
+    ModelQuerierBase();
+    virtual const EncAnyGram * getkey(const EncAnyGram * anygram) =0;
+    std::vector<std::pair<const EncAnyGram*, CorpusReference> > getpatterns(const unsigned char * data, const unsigned char datasize, bool doskipgrams=true, uint32_t linenum=0, const int minn = 1, const int maxn = MAXN);
+};
+
+class ModelQuerier: public ModelQuerierBase {
 	public:
-	 ModelQuerier();
-	 virtual const EncAnyGram * getkey(const EncAnyGram * anygram) =0;
+	 //ModelQuerier() {} ;
 	 virtual int maxlength() const =0;
      virtual int occurrencecount(const EncAnyGram* key) =0;
      virtual int coveragecount(const EncAnyGram* key) =0;    
      virtual double coverage(const EncAnyGram* key) =0;	 
-	 virtual void outputinstance(const EncAnyGram *, CorpusReference, ClassDecoder &) =0;	 	 
-	 std::vector<std::pair<const EncAnyGram*, CorpusReference> > getpatterns(const unsigned char * data, const unsigned char datasize, bool doskipgrams=true, uint32_t linenum=0, const int minn = 1, const int maxn = MAXN); 
+	 virtual void outputinstance(const EncAnyGram *, CorpusReference, ClassDecoder &) =0;	 	 	  
 	 void querier(ClassEncoder & encoder, ClassDecoder & decoder, bool exact = false,bool repeat = true, const int minn = 1, const int maxn = MAXN);	 	  
 };
 

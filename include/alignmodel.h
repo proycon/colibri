@@ -79,7 +79,7 @@ class AlignmentModel: public AlignConstraintInterface {
 };
 
 
-class TranslationTable {
+class TranslationTable: public ModelQuerierBase {
    protected:
     bool DEBUG;
    public:  
@@ -94,9 +94,11 @@ class TranslationTable {
     TranslationTable(const std::string & filename, bool multiscore=true); //load from binary file
     TranslationTable(const std::string & s2tfilename, const std::string & t2sfilename, const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0); //create on the basis of two alignment models, will generate two scores: p(t|s) and p(s|t)
     //TODO TranslationTable(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder); //load from Moses text file
+
     
     const EncAnyGram * getsourcekey(const EncAnyGram* key);
     const EncAnyGram * gettargetkey(const EncAnyGram* key);    
+    const EncAnyGram * getkey(const EncAnyGram* key) { return getsourcekey(key); } //alias for getsourcekey, needed by ModelQuerier
        
     void save(const std::string & filename); //save as binary 
     //TODO void save(const std::string & filename, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder); //save as moses    
