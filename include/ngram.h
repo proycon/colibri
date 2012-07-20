@@ -163,6 +163,7 @@ class EncSkipGram: public EncAnyGram {
      bool classvector(std::vector<int> & ) const; //fixed width, gaps are 0
      int instancetemplaterelation(const EncSkipGram *other) const;
       
+     EncNGram * gettoken(int index) const;
 };
 
 class EncData {

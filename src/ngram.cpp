@@ -546,6 +546,50 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
     return container.size();
 }
 
+
+EncNGram * EncSkipGram::gettoken(int index) const {
+    const unsigned char unknownclass = 2;
+
+    bool prevnull = false;
+    int skipnum = 0;
+    int cursor = 0;
+    bool capture = false;
+    int begin = 0;    
+    for (int i = 0; i < _size; i++) {
+        //cerr << (int) data[i] << ':' << prevnull << ':' << skipcount << endl;
+        if (data[i] == 0) {
+            if (capture) {
+                 return new EncNGram(data + begin,i-begin);                
+            }        
+            if (prevnull) {
+                for (int j = 0; j < skipsize[skipnum]; j++) {                    
+                    if (cursor == index) return new EncNGram(&unknownclass,1); 
+                    cursor++;
+                }           
+                skipnum++;              
+            }
+            prevnull = true;
+        } else {
+            prevnull = false;
+            if (cursor == index) {
+                begin = i;
+                capture = true;
+            }
+            cursor++;
+        }
+    }
+    if (capture) {
+        return new EncNGram(data + begin,_size-begin);
+    } else {
+        cerr << "ERROR: EncSkipGram::gettoken(): index not found " << index << endl;
+        exit(6);
+        return NULL;        
+    }  
+}
+
+
+
+
 void EncSkipGram::mask(std::vector<bool> & container) const { //returns a boolean mask of the skipgram (0 = gap(encapsulation) , 1 = skipgram coverage)
     bool prevnull = false;
     int skipnum = 0;
@@ -566,6 +610,7 @@ void EncSkipGram::mask(std::vector<bool> & container) const { //returns a boolea
         }
     }  
 }
+
 
 void EncSkipGram::getgaps(std::vector<std::pair<int,int> > & gaps) const {
     //TODO
