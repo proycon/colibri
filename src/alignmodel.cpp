@@ -511,8 +511,6 @@ void AlignmentModel::normalize() {
 }
 
 void AlignmentModel::save(const string & filename) {
-	//TODO: Merge with CoocAlignMentModel::save()
-
 	const unsigned char check = 0xff;
 	const char czero = 0;
 		
@@ -2615,6 +2613,78 @@ TranslationTable::TranslationTable(const string & s2tfilename, const string & t2
         }    
     }
         
+}
+
+
+void TranslationTable::save(const string & filename) {
+	const unsigned char check = 0xff;
+	const char czero = 0;
+		
+    ofstream f;
+    f.open(filename.c_str(), ios::out | ios::binary);
+    if ((!f) || (!f.good())) {
+       cerr << "File does not exist: " << filename << endl;
+       exit(3);
+    }
+    
+    uint64_t _id = 101;
+    f.write( (char*) &_id, sizeof(uint64_t));
+            
+    uint64_t sourcecount = alignmatrix.size();
+    if (alignmatrix.count(NULLGRAM) > 0) sourcecount--;
+    f.write( (char*) &sourcecount, sizeof(uint64_t));         
+
+    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, vector<double> > >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+    	if (iter->first == NULLGRAM) continue;
+
+    	
+		f.write((char*) &check, sizeof(char));
+			  
+    	const EncAnyGram * sourcegram = getsourcekey(iter->first);
+    	if (sourcegram == NULL) {
+    	    cerr << "TranslationTable::save(): Source key not found! This should not happen!";
+    	    exit(6); 
+    	}
+    	if (sourcegram->isskipgram()) {
+    		const EncSkipGram * skipgram = (const EncSkipGram*) sourcegram;
+    		skipgram->writeasbinary(&f);
+    	} else {
+    	    const EncNGram * ngram = (const EncNGram*) sourcegram;
+    	    f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
+    		ngram->writeasbinary(&f);    		
+    	}                
+    	uint64_t targetcount = iter->second.size();
+    	f.write( (char*) &targetcount, sizeof(uint64_t));
+    	            
+        for (unordered_map<const EncAnyGram*, vector<double> >::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+        	const EncAnyGram* targetgram = gettargetkey(iter2->first);
+        	if (targetgram == NULL) {
+        	    cerr << "TranslationTable::save(): Target key not found! This should not happen!";
+        	    exit(6); 
+        	}        	        	
+        	        	
+        	f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
+        	
+        	if (targetgram->isskipgram()) {
+    			const EncSkipGram * skipgram = (const EncSkipGram*) targetgram;
+	    		skipgram->writeasbinary(&f);
+	    	
+    		} else {
+    	    	const EncNGram * ngram = (const EncNGram*) targetgram;     	
+    			f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
+	    		ngram->writeasbinary(&f);	    		
+    		}
+    		
+    		const char scores = (char) iter2->second.size();
+    		f.write( (char*) &scores, sizeof(char));       
+    		for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {         
+    		    const double p = *iter3;
+        	    f.write( (char*) &p, sizeof(double));
+        	}
+        }
+
+    }    
+    f.close();	
 }
 
 

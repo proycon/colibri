@@ -98,7 +98,7 @@ class TranslationTable {
     const EncAnyGram * getsourcekey(const EncAnyGram* key);
     const EncAnyGram * gettargetkey(const EncAnyGram* key);    
        
-    //TODO void save(const std::string & filename); //save as binary 
+    void save(const std::string & filename); //save as binary 
     //TODO void save(const std::string & filename, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder); //save as moses    
     //TODO void decode(ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder); //decode
 };
