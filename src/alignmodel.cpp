@@ -2616,6 +2616,91 @@ TranslationTable::TranslationTable(const string & s2tfilename, const string & t2
 }
 
 
+TranslationTable::TranslationTable(const string & filename) {
+	DEBUG = false;
+	unsigned char check;
+		
+    ifstream f;
+    f.open(filename.c_str(), ios::in | ios::binary);
+    if ((!f) || (!f.good())) {
+       cerr << "File does not exist: " << filename << endl;
+       exit(3);
+    }
+    
+    uint64_t model_id;    
+    uint64_t sourcecount = 0;    
+    f.read( (char*) &model_id, sizeof(uint64_t));        
+    f.read( (char*) &sourcecount, sizeof(uint64_t));        
+     
+    char gapcount;    
+    for (int i = 0; i < sourcecount; i++) {	    
+	    if (DEBUG) cerr << "\t@" << i << endl;
+        f.read((char*) &check, sizeof(char));
+        if (check != 0xff) {
+        	cerr << "ERROR processing " + filename + " at construction " << i << " of " << sourcecount << ". Expected check-byte, got " << (int) check << endl;
+        	f.read(&gapcount, sizeof(char));
+        	cerr << "DEBUG: next byte should be gapcount, value=" << (int) gapcount << endl; 
+        	exit(13);        	
+        }
+        f.read(&gapcount, sizeof(char));	 
+        const EncAnyGram * sourcegram;   
+        if (gapcount == 0) {
+            if (DEBUG)  cerr << "\tNGRAM";
+            EncNGram ngram = EncNGram(&f); //read from file            
+            if (!getsourcekey((EncAnyGram*) &ngram)) {
+            	sourcengrams.insert(ngram);            	
+            }   
+            sourcegram = getsourcekey((EncAnyGram*) &ngram);                                           
+        } else {
+            if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
+            EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              
+            if (!getsourcekey((EncAnyGram*) &skipgram)) {
+            	sourceskipgrams.insert(skipgram);            	
+            }   
+            sourcegram = getsourcekey((EncAnyGram*) &skipgram);                     
+        }        
+        uint64_t targetcount;
+        f.read( (char*) &targetcount, sizeof(uint64_t));
+        const EncAnyGram * besttargetgram = NULL;
+        double lowerbound = 0.0;
+        list<double> bestq;
+        for (int j = 0; j < targetcount; j++) {
+        	const EncAnyGram * targetgram = NULL;   
+            f.read(&gapcount, sizeof(char));	    
+		    if (gapcount == 0) {
+		        if (DEBUG)  cerr << "\tNGRAM";
+		        EncNGram ngram = EncNGram(&f); //read from file
+		        if (!gettargetkey((EncAnyGram*) &ngram)) {
+		        	targetngrams.insert(ngram);		        	
+		        }   
+		        targetgram = gettargetkey((EncAnyGram*) &ngram);                                           
+		    } else {
+		        if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
+		        EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              		        
+		        if (!gettargetkey((EncAnyGram*) &skipgram)) {
+		        	targetskipgrams.insert(skipgram);		        	
+		        }   
+		        targetgram = gettargetkey((EncAnyGram*) &skipgram);                      
+		    }		    
+		    double scores;
+		    f.read((char*) &scores, sizeof(double));
+		    
+		
+		    if (sourcegram == NULL || targetgram == NULL) {
+		     	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
+		    	exit(6);
+		    }		
+		    for (int i = 0; i < scores; i++) {
+                double p;
+		        f.read((char*) &p, sizeof(double));
+		        alignmatrix[sourcegram][targetgram].push_back(p);		    
+		    }		  		    
+        }
+	}
+    f.close();
+}
+
+
 void TranslationTable::save(const string & filename) {
 	const unsigned char check = 0xff;
 	const char czero = 0;
@@ -2686,6 +2771,8 @@ void TranslationTable::save(const string & filename) {
     }    
     f.close();	
 }
+
+
 
 
 const EncAnyGram * TranslationTable::getsourcekey(const EncAnyGram* key) {
