@@ -49,16 +49,16 @@ void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthresho
 
 const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram* key) {
     if (key->gapcount() == 0) {
-        std::unordered_map<EncNGram,bool>::iterator iter = sourcengrams.find(*( (EncNGram*) key) );
+        std::unordered_set<EncNGram>::iterator iter = sourcengrams.find(*( (EncNGram*) key) );
         if (iter != sourcengrams.end()) {
-            return &iter->first;
+            return &(*iter);
         } else {
             return NULL;
         }
     } else {
-        std::unordered_map<EncSkipGram,bool>::iterator iter = sourceskipgrams.find(*( (EncSkipGram*) key) );
+        std::unordered_set<EncSkipGram>::iterator iter = sourceskipgrams.find(*( (EncSkipGram*) key) );
         if (iter != sourceskipgrams.end()) {
-            return &iter->first;
+            return &(*iter);
         } else {
             return NULL;
         }        
@@ -68,16 +68,16 @@ const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram* key) {
 
 const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key) {
     if (key->gapcount() == 0) {
-        std::unordered_map<EncNGram,bool>::iterator iter = targetngrams.find(*( (EncNGram*) key) );
+        std::unordered_set<EncNGram>::iterator iter = targetngrams.find(*( (EncNGram*) key) );
         if (iter != targetngrams.end()) {
-            return &iter->first;
+            return &(*iter);
         } else {
             return NULL;
         }
     } else {
-        std::unordered_map<EncSkipGram,bool>::iterator iter = targetskipgrams.find(*( (EncSkipGram*) key) );
+        std::unordered_set<EncSkipGram>::iterator iter = targetskipgrams.find(*( (EncSkipGram*) key) );
         if (iter != targetskipgrams.end()) {
-            return &iter->first;
+            return &(*iter);
         } else {
             return NULL;
         }        
@@ -121,14 +121,14 @@ void AlignmentModel::load(const string & filename, const int bestn) {
             if (DEBUG)  cerr << "\tNGRAM";
             EncNGram ngram = EncNGram(&f); //read from file            
             if (!getsourcekey((EncAnyGram*) &ngram)) {
-            	sourcengrams[ngram] = true;            	
+            	sourcengrams.insert(ngram);            	
             }   
             sourcegram = getsourcekey((EncAnyGram*) &ngram);                                           
         } else {
             if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
             EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              
             if (!getsourcekey((EncAnyGram*) &skipgram)) {
-            	sourceskipgrams[skipgram] = true;            	
+            	sourceskipgrams.insert(skipgram);            	
             }   
             sourcegram = getsourcekey((EncAnyGram*) &skipgram);                     
         }        
@@ -144,14 +144,14 @@ void AlignmentModel::load(const string & filename, const int bestn) {
 		        if (DEBUG)  cerr << "\tNGRAM";
 		        EncNGram ngram = EncNGram(&f); //read from file
 		        if (!gettargetkey((EncAnyGram*) &ngram)) {
-		        	targetngrams[ngram] = true;		        	
+		        	targetngrams.insert(ngram);		        	
 		        }   
 		        targetgram = gettargetkey((EncAnyGram*) &ngram);                                           
 		    } else {
 		        if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
 		        EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              		        
 		        if (!gettargetkey((EncAnyGram*) &skipgram)) {
-		        	targetskipgrams[skipgram] = true;		        	
+		        	targetskipgrams.insert(skipgram);		        	
 		        }   
 		        targetgram = gettargetkey((EncAnyGram*) &skipgram);                      
 		    }		    
@@ -1428,14 +1428,14 @@ BiAlignmentModel::BiAlignmentModel(const string & s2tfilename, const string & t2
             if (DEBUG)  cerr << "\tNGRAM";
             EncNGram ngram = EncNGram(&f); //read from file            
             if (!gettargetkey((EncAnyGram*) &ngram)) {
-            	targetngrams[ngram] = true;            	
+            	targetngrams.insert(ngram);            	
             }   
             targetgram = gettargetkey((EncAnyGram*) &ngram);                                           
         } else {
             if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
             EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              
             if (!gettargetkey((EncAnyGram*) &skipgram)) {
-            	targetskipgrams[skipgram] = true;            	
+            	targetskipgrams.insert(skipgram);            	
             }   
             targetgram = gettargetkey((EncAnyGram*) &skipgram);                     
         }        
@@ -1448,14 +1448,14 @@ BiAlignmentModel::BiAlignmentModel(const string & s2tfilename, const string & t2
 		        if (DEBUG)  cerr << "\tNGRAM";
 		        EncNGram ngram = EncNGram(&f); //read from file
 		        if (!getsourcekey((EncAnyGram*) &ngram)) {
-		        	sourcengrams[ngram] = true;		        	
+		        	sourcengrams.insert(ngram);		        	
 		        }   
 		        sourcegram = getsourcekey((EncAnyGram*) &ngram);                                           
 		    } else {
 		        if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
 		        EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              		        
 		        if (!getsourcekey((EncAnyGram*) &skipgram)) {
-		        	sourceskipgrams[skipgram] = true;		        	
+		        	sourceskipgrams.insert(skipgram);		        	
 		        }   
 		        sourcegram = getsourcekey((EncAnyGram*) &skipgram);                      
 		    }
@@ -2578,4 +2578,88 @@ unsigned int AlignmentModel::prunepatternmodel(IndexedPatternModel & patternmode
 }
 
 
+/*
 
+TranslationTable::TranslationTable(const string & s2tfilename, const string & t2sfilename) {
+    AlignmentModel s2tmodel = AlignmentModel(s2tfilename);
+    AlignmentModel t2smodel = AlignmentModel(t2sfilename);
+
+
+    	//TODO: Code duplication, merge with AlignmentModel() constructor
+	DEBUG = false;
+	unsigned char check;
+	
+    ifstream f;
+    f.open(t2sfilename.c_str(), ios::in | ios::binary);
+    if ((!f) || (!f.good())) {
+       cerr << "File does not exist: " << t2sfilename << endl;
+       exit(3);
+    }
+    
+    uint64_t model_id;    
+    uint64_t targetcount = 0;    
+    f.read( (char*) &model_id, sizeof(uint64_t));        
+    f.read( (char*) &targetcount, sizeof(uint64_t));        
+     
+    char gapcount;    
+    for (int i = 0; i < targetcount; i++) {	    
+	    if (DEBUG) cerr << "\t@" << i << endl;
+        f.read((char*) &check, sizeof(char));
+        if (check != 0xff) {
+        	cerr << "ERROR processing " << t2sfilename << " at construction " << i << " of " << targetcount << ". Expected check-byte, got " << (int) check << endl;
+        	f.read(&gapcount, sizeof(char));
+        	cerr << "DEBUG: next byte should be gapcount, value=" << (int) gapcount << endl; 
+        	exit(13);        	
+        }
+        f.read(&gapcount, sizeof(char));	 
+        const EncAnyGram * targetgram;   
+        if (gapcount == 0) {
+            if (DEBUG)  cerr << "\tNGRAM";
+            EncNGram ngram = EncNGram(&f); //read from file            
+            if (!gettargetkey((EncAnyGram*) &ngram)) {
+            	targetngrams[ngram] = true;            	
+            }   
+            targetgram = gettargetkey((EncAnyGram*) &ngram);                                           
+        } else {
+            if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
+            EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              
+            if (!gettargetkey((EncAnyGram*) &skipgram)) {
+            	targetskipgrams[skipgram] = true;            	
+            }   
+            targetgram = gettargetkey((EncAnyGram*) &skipgram);                     
+        }        
+        uint64_t sourcecount;
+        f.read( (char*) &sourcecount, sizeof(uint64_t));
+        for (int j = 0; j < sourcecount; j++) {
+        	const EncAnyGram * sourcegram = NULL;   
+            f.read(&gapcount, sizeof(char));	    
+		    if (gapcount == 0) {
+		        if (DEBUG)  cerr << "\tNGRAM";
+		        EncNGram ngram = EncNGram(&f); //read from file
+		        if (!getsourcekey((EncAnyGram*) &ngram)) {
+		        	sourcengrams[ngram] = true;		        	
+		        }   
+		        sourcegram = getsourcekey((EncAnyGram*) &ngram);                                           
+		    } else {
+		        if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
+		        EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              		        
+		        if (!getsourcekey((EncAnyGram*) &skipgram)) {
+		        	sourceskipgrams[skipgram] = true;		        	
+		        }   
+		        sourcegram = getsourcekey((EncAnyGram*) &skipgram);                      
+		    }
+		    double p;
+		    f.read((char*) &p, sizeof(double));
+		    if (sourcegram != NULL and targetgram != NULL) {
+		    	alignmatrixrev[targetgram][sourcegram] = p;
+		    } else {
+		    	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
+		    	exit(6);
+		    }
+        }        
+	}
+    f.close();
+}
+
+
+*/

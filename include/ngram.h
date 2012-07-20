@@ -203,6 +203,14 @@ namespace std {
     };
     
 
+    template <>
+    struct hash<EncNGram> {
+     public: 
+            size_t operator()(EncNGram ngram) const throw() {            
+                return ngram.hash();
+            }
+    };
+    
     
     
     template <>
@@ -215,6 +223,15 @@ namespace std {
     
 
     template <>
+    struct hash<EncSkipGram> {
+     public: 
+          size_t operator()(EncSkipGram skipgram) const throw() {                            
+              return skipgram.hash();              
+          }
+    };
+    
+
+    template <>
     struct hash<const EncSkipGram> {
      public: 
           size_t operator()(const EncSkipGram skipgram) const throw() {                            
@@ -222,13 +239,6 @@ namespace std {
           }
     };
 
-    template <>
-    struct hash<EncSkipGram> {
-     public: 
-          size_t operator()(EncSkipGram skipgram) const throw() {                            
-              return skipgram.hash();              
-          }
-    };    
 
 }
 #endif

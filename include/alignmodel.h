@@ -21,11 +21,12 @@ void find_clusters(std::unordered_map<const EncSkipGram*,uint16_t> skipgrams, st
 class AlignmentModel: public AlignConstraintInterface {
    protected:
     bool DEBUG;
-    std::unordered_map<const EncNGram,bool> sourcengrams;
-    std::unordered_map<const EncNGram,bool> targetngrams;
-    std::unordered_map<const EncSkipGram,bool> sourceskipgrams;
-    std::unordered_map<const EncSkipGram,bool> targetskipgrams;
    public:
+    std::unordered_set<EncNGram> sourcengrams;
+    std::unordered_set<EncNGram> targetngrams;
+    std::unordered_set<EncSkipGram> sourceskipgrams;
+    std::unordered_set<EncSkipGram> targetskipgrams;   
+   
     SelectivePatternModel * sourcemodel;
     SelectivePatternModel * targetmodel; 
    
@@ -76,6 +77,32 @@ class AlignmentModel: public AlignConstraintInterface {
 	
 	void save(const std::string & filename);	
 };
+
+/*
+class TranslationTable {
+   protected:
+    bool DEBUG;
+   public:  
+    // A translation table is an alignment model with multiple scores associated 
+    std::unordered_map<const EncNGram,bool> sourcengrams;
+    std::unordered_map<const EncNGram,bool> targetngrams;
+    std::unordered_map<const EncSkipGram,bool> sourceskipgrams;
+    std::unordered_map<const EncSkipGram,bool> targetskipgrams;
+    
+    TranslationTable(const std::string & filename); //load from binary file
+    TranslationTable(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder); //load from Moses text file
+    TranslationTable(const std::string & s2tfilename, const std::string & t2sfilename); //create on the basis of two alignment models, will generate two scores: p(t|s) and p(s|t)
+    
+    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, std::vector<double> > > alignmatrix;
+    
+    const EncAnyGram * getsourcekey(const EncAnyGram* key);
+    const EncAnyGram * gettargetkey(const EncAnyGram* key);    
+       
+    void save(const std::string & filename); //save as binary
+    void save(const std::string & filename, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder); //save as moses    
+    void decode(ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder); //decode
+}
+*/
 
 class BiAlignmentModel: public AlignmentModel {
    public:
