@@ -100,7 +100,7 @@ class TranslationTable {
        
     void save(const std::string & filename); //save as binary 
     //TODO void save(const std::string & filename, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder); //save as moses    
-    //TODO void decode(ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder); //decode
+    void decode(ClassDecoder & sourcedecoder, ClassDecoder & targetdecoder, std::ostream * OUT); //decode
 };
 
 

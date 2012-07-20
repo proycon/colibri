@@ -2773,7 +2773,22 @@ void TranslationTable::save(const string & filename) {
 }
 
 
-
+void TranslationTable::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
+    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, vector<double> > >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+    	if (iter->first == NULLGRAM) continue;
+        const EncAnyGram* sourcegram = iter->first;
+        for (unordered_map<const EncAnyGram*, vector<double>>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+            const EncAnyGram* targetgram = iter2->first;
+            *OUT << sourcegram->decode(sourceclassdecoder) << "\t";
+            *OUT << targetgram->decode(targetclassdecoder) << "\t"; 
+            for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
+                *OUT << *iter3 << ' ';
+            }
+            *OUT << "\n";
+        }
+        *OUT << endl;
+    }
+}
 
 const EncAnyGram * TranslationTable::getsourcekey(const EncAnyGram* key) {
     if (key->gapcount() == 0) {
