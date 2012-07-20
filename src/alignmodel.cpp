@@ -2578,88 +2578,79 @@ unsigned int AlignmentModel::prunepatternmodel(IndexedPatternModel & patternmode
 }
 
 
-/*
 
-TranslationTable::TranslationTable(const string & s2tfilename, const string & t2sfilename) {
+
+TranslationTable::TranslationTable(const string & s2tfilename, const string & t2sfilename, const double s2tthreshold, const double t2sthreshold, const double productthreshold) {
     AlignmentModel s2tmodel = AlignmentModel(s2tfilename);
     AlignmentModel t2smodel = AlignmentModel(t2sfilename);
-
-
-    	//TODO: Code duplication, merge with AlignmentModel() constructor
-	DEBUG = false;
-	unsigned char check;
-	
-    ifstream f;
-    f.open(t2sfilename.c_str(), ios::in | ios::binary);
-    if ((!f) || (!f.good())) {
-       cerr << "File does not exist: " << t2sfilename << endl;
-       exit(3);
-    }
     
-    uint64_t model_id;    
-    uint64_t targetcount = 0;    
-    f.read( (char*) &model_id, sizeof(uint64_t));        
-    f.read( (char*) &targetcount, sizeof(uint64_t));        
-     
-    char gapcount;    
-    for (int i = 0; i < targetcount; i++) {	    
-	    if (DEBUG) cerr << "\t@" << i << endl;
-        f.read((char*) &check, sizeof(char));
-        if (check != 0xff) {
-        	cerr << "ERROR processing " << t2sfilename << " at construction " << i << " of " << targetcount << ". Expected check-byte, got " << (int) check << endl;
-        	f.read(&gapcount, sizeof(char));
-        	cerr << "DEBUG: next byte should be gapcount, value=" << (int) gapcount << endl; 
-        	exit(13);        	
-        }
-        f.read(&gapcount, sizeof(char));	 
-        const EncAnyGram * targetgram;   
-        if (gapcount == 0) {
-            if (DEBUG)  cerr << "\tNGRAM";
-            EncNGram ngram = EncNGram(&f); //read from file            
-            if (!gettargetkey((EncAnyGram*) &ngram)) {
-            	targetngrams[ngram] = true;            	
-            }   
-            targetgram = gettargetkey((EncAnyGram*) &ngram);                                           
-        } else {
-            if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
-            EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              
-            if (!gettargetkey((EncAnyGram*) &skipgram)) {
-            	targetskipgrams[skipgram] = true;            	
-            }   
-            targetgram = gettargetkey((EncAnyGram*) &skipgram);                     
-        }        
-        uint64_t sourcecount;
-        f.read( (char*) &sourcecount, sizeof(uint64_t));
-        for (int j = 0; j < sourcecount; j++) {
-        	const EncAnyGram * sourcegram = NULL;   
-            f.read(&gapcount, sizeof(char));	    
-		    if (gapcount == 0) {
-		        if (DEBUG)  cerr << "\tNGRAM";
-		        EncNGram ngram = EncNGram(&f); //read from file
-		        if (!getsourcekey((EncAnyGram*) &ngram)) {
-		        	sourcengrams[ngram] = true;		        	
-		        }   
-		        sourcegram = getsourcekey((EncAnyGram*) &ngram);                                           
-		    } else {
-		        if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
-		        EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              		        
-		        if (!getsourcekey((EncAnyGram*) &skipgram)) {
-		        	sourceskipgrams[skipgram] = true;		        	
-		        }   
-		        sourcegram = getsourcekey((EncAnyGram*) &skipgram);                      
-		    }
-		    double p;
-		    f.read((char*) &p, sizeof(double));
-		    if (sourcegram != NULL and targetgram != NULL) {
-		    	alignmatrixrev[targetgram][sourcegram] = p;
-		    } else {
-		    	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
-		    	exit(6);
-		    }
-        }        
-	}
-    f.close();
+    for (std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> >::iterator iter = s2tmodel.alignmatrix.begin(); iter != s2tmodel.alignmatrix.end(); iter++) {
+        const EncAnyGram * copysource = s2tmodel.getsourcekey(iter->first);
+        for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+            const EncAnyGram * copytarget = s2tmodel.gettargetkey(iter2->first);
+            if (iter2->second >= s2tthreshold) {
+                if (t2smodel.alignmatrix.count(copytarget) && t2smodel.alignmatrix[copytarget].count(copysource)) {                                
+                    if (t2smodel.alignmatrix[copytarget][copysource] >= t2sthreshold) {
+                        if (iter2->second * t2smodel.alignmatrix[copytarget][copysource] >= productthreshold) {
+                            if (copysource->isskipgram()) {
+                                EncSkipGram skipgram = *((const EncSkipGram *) copysource);
+                                sourceskipgrams.insert(skipgram); 
+                            } else {
+                                EncNGram ngram = *((const EncNGram *) copysource);
+                                sourcengrams.insert(ngram);
+                            }
+                            if (copytarget->isskipgram()) {
+                                EncSkipGram skipgram = *((const EncSkipGram *) copytarget);
+                                targetskipgrams.insert(skipgram); 
+                            } else {
+                                EncNGram ngram = *((const EncNGram *) copytarget);
+                                targetngrams.insert(ngram);
+                            }   
+                            alignmatrix[getsourcekey(copysource)][gettargetkey(copytarget)].push_back(iter2->second);
+                            alignmatrix[getsourcekey(copysource)][gettargetkey(copytarget)].push_back(t2smodel.alignmatrix[copytarget][copysource]);   
+                        }                  
+                    }
+                }        
+            }                            
+        }    
+    }
+        
 }
 
 
-*/
+const EncAnyGram * TranslationTable::getsourcekey(const EncAnyGram* key) {
+    if (key->gapcount() == 0) {
+        std::unordered_set<EncNGram>::iterator iter = sourcengrams.find(*( (EncNGram*) key) );
+        if (iter != sourcengrams.end()) {
+            return &(*iter);
+        } else {
+            return NULL;
+        }
+    } else {
+        std::unordered_set<EncSkipGram>::iterator iter = sourceskipgrams.find(*( (EncSkipGram*) key) );
+        if (iter != sourceskipgrams.end()) {
+            return &(*iter);
+        } else {
+            return NULL;
+        }        
+    }
+}
+
+
+const EncAnyGram * TranslationTable::gettargetkey(const EncAnyGram* key) {
+    if (key->gapcount() == 0) {
+        std::unordered_set<EncNGram>::iterator iter = targetngrams.find(*( (EncNGram*) key) );
+        if (iter != targetngrams.end()) {
+            return &(*iter);
+        } else {
+            return NULL;
+        }
+    } else {
+        std::unordered_set<EncSkipGram>::iterator iter = targetskipgrams.find(*( (EncSkipGram*) key) );
+        if (iter != targetskipgrams.end()) {
+            return &(*iter);
+        } else {
+            return NULL;
+        }        
+    }
+}

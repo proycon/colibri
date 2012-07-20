@@ -78,31 +78,31 @@ class AlignmentModel: public AlignConstraintInterface {
 	void save(const std::string & filename);	
 };
 
-/*
+
 class TranslationTable {
    protected:
     bool DEBUG;
    public:  
     // A translation table is an alignment model with multiple scores associated 
-    std::unordered_map<const EncNGram,bool> sourcengrams;
-    std::unordered_map<const EncNGram,bool> targetngrams;
-    std::unordered_map<const EncSkipGram,bool> sourceskipgrams;
-    std::unordered_map<const EncSkipGram,bool> targetskipgrams;
-    
-    TranslationTable(const std::string & filename); //load from binary file
-    TranslationTable(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder); //load from Moses text file
-    TranslationTable(const std::string & s2tfilename, const std::string & t2sfilename); //create on the basis of two alignment models, will generate two scores: p(t|s) and p(s|t)
+    std::unordered_set<EncNGram> sourcengrams;
+    std::unordered_set<EncNGram> targetngrams;
+    std::unordered_set<EncSkipGram> sourceskipgrams;
+    std::unordered_set<EncSkipGram> targetskipgrams;   
     
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, std::vector<double> > > alignmatrix;
+    
+    //TODO TranslationTable(const std::string & filename); //load from binary file
+    TranslationTable(const std::string & s2tfilename, const std::string & t2sfilename, const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0); //create on the basis of two alignment models, will generate two scores: p(t|s) and p(s|t)
+    //TODO TranslationTable(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder); //load from Moses text file
     
     const EncAnyGram * getsourcekey(const EncAnyGram* key);
     const EncAnyGram * gettargetkey(const EncAnyGram* key);    
        
-    void save(const std::string & filename); //save as binary
-    void save(const std::string & filename, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder); //save as moses    
-    void decode(ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder); //decode
-}
-*/
+    //TODO void save(const std::string & filename); //save as binary 
+    //TODO void save(const std::string & filename, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder); //save as moses    
+    //TODO void decode(ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder); //decode
+};
+
 
 class BiAlignmentModel: public AlignmentModel {
    public:
