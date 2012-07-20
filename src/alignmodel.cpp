@@ -2616,7 +2616,7 @@ TranslationTable::TranslationTable(const string & s2tfilename, const string & t2
 }
 
 
-TranslationTable::TranslationTable(const string & filename) {
+TranslationTable::TranslationTable(const string & filename, bool multiscore) {
 	DEBUG = false;
 	unsigned char check;
 		
@@ -2683,8 +2683,11 @@ TranslationTable::TranslationTable(const string & filename) {
 		        targetgram = gettargetkey((EncAnyGram*) &skipgram);                      
 		    }		    
 		    double scores;
-		    f.read((char*) &scores, sizeof(double));
-		    
+		    if (multiscore) {
+		        f.read((char*) &scores, sizeof(double));
+		    } else {
+		        scores = 1;
+		    }		    
 		
 		    if (sourcegram == NULL || targetgram == NULL) {
 		     	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
