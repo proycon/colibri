@@ -48,7 +48,7 @@ class TranslationHypothesis {
 
 class StackDecoder {
     private:
-        int beamsize;
+        int stacksize;
         int DEBUG;
     public:
         EncData input;
@@ -59,7 +59,7 @@ class StackDecoder {
         
         map<unsigned char, multiset<const TranslationHypothesis *> > stacks;
                 
-        StackDecoder(const EncData & input, TranslationTable * translationtable, int beamsize, int maxn);
+        StackDecoder(const EncData & input, TranslationTable * translationtable, int stacksize, double prunethreshold, int maxn);
         ~StackDecoder();
         
         void decode();

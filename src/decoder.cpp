@@ -1,10 +1,11 @@
 unsigned char UNKNOWNCLASS = 2;
 
-StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, int beamsize, int maxn) {
+StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, int stacksize, double prunethreshold, int maxn) {
         this->input = input;
         this->inputlength = input.length();
         this->translationtable = translationtable;
-        this->beamsize = beamsize;
+        this->stacksize = stacksize;
+        this->prunethreshold = prunethreshold;
         sourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
         
         //TODO: Deal with unknown tokens?
@@ -14,7 +15,7 @@ StackDecoder::setdebug(int debug) {
 }
 
     
-void StackDecoder::decode() {
+void StackDecoder::decode() {p
    /*
     initialize hypothesisStack[0 .. nf];
     create initial hypothesis hyp_init;
@@ -69,12 +70,14 @@ unsigned int StackDecoder::prune(int stackindex) {
     //TODO: Add consolidation stage prior to pruning stage? (merge hypotheses with same output)    
     unsigned int pruned = 0;
     unsigned int count = 0;
+    unsigned double best = 0;
     for (multiset<const TranslationHypothesis*>::const_iterator iter = stacks[stackindex].begin(); iter != stacks[stackindex].end(); iter++) {
+        const TranslationHypothesis*  h = iter;
         count++;
-        if (count > beamsize) {
+        if (best == 0) best = h->score(); //will only be set once, first is always best
+        if ((count > stacksize) || (h->score() < best * prunethreshold)) {
             pruned++;
             stacks[stackindex].erase(iter); //delete form here onwards
-            const TranslationHypothesis*  h = iter;
             delete h;            
         }
     }
