@@ -50,16 +50,22 @@ class StackDecoder {
     private:
         int stacksize;
         int DEBUG;
-    public:
+        
+    public:    
         EncData input;
         unsigned int inputlength;
         TranslationTable * translationtable;
+        
+        vector<double> tweights; //translation model weights
+        double dweight; //distortion model weight
+        double lweight; //language model weight
+        
                 
         vector<pair<const EncAnyGram*, CorpusReference> >  sourcefragments;        
         
         map<unsigned char, multiset<const TranslationHypothesis *> > stacks;
                 
-        StackDecoder(const EncData & input, TranslationTable * translationtable, int stacksize, double prunethreshold, int maxn);
+        StackDecoder(const EncData & input, TranslationTable * translationtable, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int maxn);
         ~StackDecoder();
         
         void decode();

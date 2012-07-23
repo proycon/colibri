@@ -1,12 +1,15 @@
 unsigned char UNKNOWNCLASS = 2;
 
-StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, int stacksize, double prunethreshold, int maxn) {
+StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int maxn) {
         this->input = input;
         this->inputlength = input.length();
         this->translationtable = translationtable;
         this->stacksize = stacksize;
         this->prunethreshold = prunethreshold;
         sourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
+        this->tweights = vector<double>(tweights.begin(), tweights.end());
+        this->dweight = dweight;
+        this->lweight = lweight;
         
         //TODO: Deal with unknown tokens?
 }
