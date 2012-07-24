@@ -284,7 +284,23 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     double dscore = 0;
     //TODO: compute distortion
         
-    _score = tscore + lmscore + dscore
+        
+    //Compute estimate for future score
+    double futurescore = 0;    
+    int begin = -1;    
+    for (int i = 0; i < inputcoveragemask.size(); i++) {
+        if (!inputcovermask[i]) {
+            begin = i;
+        } else if (begin != -1) (
+            futurescore += decoder->futurecost[make_pair<int,int>(begin,i-begin)]
+            begin = -1;
+        }
+    }
+    if (begin != -1) futurescore += decoder->futurecost[make_pair<int,int>(begin,inputcoveragemask.size()-begin)]            
+    
+    
+    //total score            
+    _score = tscore + lmscore + dscore + futurescore
   
 }
 
