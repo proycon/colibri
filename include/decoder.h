@@ -1,6 +1,9 @@
+#ifndef DECODER_H
+#define DECODER_H
+
+
 #include <alignmodel.h>
 #include <lm.h>
-#include <bitset>
 #include <math.h>
 
 class TranslationHypothesis {
@@ -86,3 +89,4 @@ class StackDecoder {
         void computefuturecost();
 }
 
+#endif

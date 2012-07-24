@@ -1,3 +1,7 @@
+#include <decoder.h>
+
+using namespace std;
+
 unsigned char UNKNOWNCLASS = 2;
 
 StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int maxn) {
