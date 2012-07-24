@@ -98,7 +98,7 @@ class EncNGram: public EncAnyGram {
     
     const EncNGram * gettoken(int index) const;
     
-        
+    EncNGram operator +(const EncNGram&) const;
 };
 
 EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size, const unsigned int linenum = 0);

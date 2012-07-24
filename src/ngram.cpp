@@ -1021,3 +1021,26 @@ bool EncData::match(const EncSkipGram * skipgram, const int offset) {
     }
     return result;  
 }
+
+EncNGram EncNGram::operator +(const EncNGram& other) const {
+    if (_size + other.size() > 255) {
+        cerr << "ERROR: EncNGram::operator+ .. n-grams too big" << endl; 
+        exit(6);
+    } 
+    unsigned char buffer[512];
+    unsigned char offset;
+    unsigned char newsize = _size + other.size(); 
+    for (int i = 0; i < _size; i++) {
+        buffer[i] = data[i];
+    }
+    offset = _size;
+    if (buffer[_size -1] != 0) {
+        newsize++;
+        offset++;
+        buffer[_size] = 0;
+    }    
+    for (int i = 0; i < other.size(); i++) {
+        buffer[offset+i] = other.data[i];
+    }
+    return EncNGram(buffer, newsize);
+}
