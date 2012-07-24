@@ -281,9 +281,12 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
         }
     }
     
-    double dscore = 0;
-    //TODO: compute distortion
-        
+    //TODO: deal differently with filling in gaps in skips?
+    int prevpos = 0;
+    if (((parent != NULL) && (!parent->initial())) {
+        prevpos = parent->sourceoffset + parent->sourcegram->n();        
+    } 
+    double dscore = pow(decoder->dweight, abs(sourceoffset - prevpos - 1))  
         
     //Compute estimate for future score
     double futurescore = 0;    
