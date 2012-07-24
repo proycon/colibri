@@ -1,6 +1,7 @@
 #include <alignmodel.h>
 #include <lm.h>
 #include <bitset>
+#include <math.h>
 
 class TranslationHypothesis {
     private:
@@ -87,6 +88,5 @@ class StackDecoder {
         string StackDecoder::solution(ClassDecoder & targetclassdecoder); //return solution as string
         
         void computefuturecost();
-        
 }
 

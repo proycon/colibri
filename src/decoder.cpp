@@ -15,6 +15,7 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
         computefuturecost();
         //TODO: Deal with unknown tokens?
 }
+
 StackDecoder::setdebug(int debug) {
     this->DEBUG = debug;
 }
@@ -39,35 +40,34 @@ void StackDecoder::computefuturecost() {
                 }
                 double score = 0; 
                 for (int i = 0; i < tweights.size(); i++) {
-                    score += tweights[i] * iter2->second[i];
+                    double p = iter2->second[i];
+                    if (p > 0) p = log10(p); //turn into logprob, base10 
+                    score += tweights[i] * p;
                 }
-                //TODO: add LM score
                 score += lm->score();
-                if (score > best) {
-                    best = score;
+                if (score > bestscore) {
+                    bestscore = score;
                 }                            
             } 
             sourcefragments_costbyspan[span] = bestscore; 
-
         }   
         
         //compute future cost
         for (int length = 1; l <= inputlength; i++) {
             for (int start = 0; start < inputlength - length; start++) {
-                int end = start + length;
-                const pair<int,int> span = make_pair<int,int>(start,end);
+                const pair<int,int> span = make_pair<int,int>(start,length);
                 bool found = false;
-                for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.find(span); iter != sourcefragments.end(); iter++) { //uses .find() !
-                    const EncAnyGram * candidate = iter->first;
-                    const CorpusReference ref = iter->second; 
-                    found = false;
-                    if ((candidate->n() == length()) && (ref.token == start)) {
-                        //compute 
+                for (map<pair<int,int>, double>::iterator iter = sourcefragments_costbyspan.find(span); iter != sourcefragments_costbyspan.end(); iter++) {
+                    found = true;
+                    futurecost[span] = sourcefragments_costbyspan[span];
+                }
+                if (!found) futurecost[span] = -INFINITY;
+                for (int i = 1; i < length; i++) {
+                    double spanscore = futurecost[make_pair<int,int>(start,i)] + futurecost[make_pair<int,int>(start+i,length - i)]
+                    if (spanscore > futurecost[span]) { //(higher score -> lower cost)
+                        futurecost[span] = spancost;
                     }
                 }
-                if (!found) futurecost[span] = INFINITY;
-                
-                futurecost<
             }
         }
 }
