@@ -5,6 +5,9 @@
 #include <alignmodel.h>
 #include <lm.h>
 #include <math.h>
+#include <deque>
+
+class StackDecoder;
 
 class TranslationHypothesis {
     private:
@@ -13,9 +16,9 @@ class TranslationHypothesis {
         StackDecoder * decoder;
         
         TranslationHypothesis * parent;
-        vector<TranslationHypothesis *> children; //reference counting
+        std::vector<TranslationHypothesis *> children; //reference counting
          
-        vector<bool> inputcoveragemask; 
+        std::vector<bool> inputcoveragemask; 
     
         const EncAnyGram * sourcegram;
         const EncAnyGram * targetgram;
@@ -24,21 +27,20 @@ class TranslationHypothesis {
         
         const EncNGram * history; //order-1 n-gram in targetlanguage, used for computation of LM score 
                 
-        vector<pair<unsigned char, unsigned char> > sourcegaps;
-        vector<pair<unsigned char, unsigned char> > targetgaps; //filling gaps will take priority upon expansion
-        vector<double> tscores; //scores from the translation table (alignmatrix[sourcegram][targetgram]) 
+        std::vector<std::pair<unsigned char, unsigned char> > sourcegaps;
+        std::vector<std::pair<unsigned char, unsigned char> > targetgaps; //filling gaps will take priority upon expansion 
         
         TranslationHypothesis(TranslationHypothesis * parent, StackDecoder * decoder,  const EncAnyGram * sourcegram , unsigned char sourceoffset,  const EncAnyGram * targetgram, unsigned char targetoffset, const std::vector<double> & tscores);
         ~TranslationHypothesis();
         
         unsigned int expand(bool finalonly=false); //expands directly in the appropriate stack of the decoder. If finalonly is set, new hypotheses are expected to be final/complete, without gaps
         
-        double score();        
+        double score() const;        
                   
-        bool initial() const { return (parent == NULL) }
-        bool final();        
+        bool initial() const { return (parent == NULL); }
         
         bool conflicts(const EncAnyGram * sourcecandidate, const CorpusReference & ref); //checks if a source pattern's coverage conflicts with this hypothesis, if not, it is a candidate to be added upon hypothesis expansion
+        bool final();        
         
                 
         //void computeinputcoverage(vector<bool> & container); //compute source coverage        
@@ -50,32 +52,33 @@ class TranslationHypothesis {
         
         
         EncNGram getoutputtoken(int index); //get output token (unigram, will return unknown class if in gap)                    
-        EncData getoutput(deque<const TranslationHypothesis*> * path = NULL); //get output                
-}
+        EncData getoutput(std::deque<const TranslationHypothesis*> * path = NULL); //get output                
+};
 
 
 
 class StackDecoder {
     private:
         int stacksize;
+        int prunethreshold;
         int DEBUG;
-        map<pair<int, int>, double> futurecost; //(start, end) => cost
-    public:    
+    public:
+        std::map<std::pair<int, int>, double> futurecost; //(start, end) => cost    
         EncData input;
         unsigned int inputlength;
         TranslationTable * translationtable;
-        LanguageModel * lm, 
+        LanguageModel * lm; 
         
-        vector<double> tweights; //translation model weights
+        std::vector<double> tweights; //translation model weights
         double dweight; //distortion model weight
         double lweight; //language model weight
         
                 
-        vector<pair<const EncAnyGram*, CorpusReference> >  sourcefragments;        
+        std::vector<std::pair<const EncAnyGram*, CorpusReference> >  sourcefragments;        
         
-        map<unsigned char, multiset<const TranslationHypothesis *> > stacks;
+        std::map<unsigned char, std::multiset<TranslationHypothesis *> > stacks;
                 
-        StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int maxn);
+        StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int maxn);
         ~StackDecoder();
         
         void decode();
@@ -84,9 +87,12 @@ class StackDecoder {
         
         unsigned int prune(int stackindex);
         
-        string StackDecoder::solution(ClassDecoder & targetclassdecoder); //return solution as string
+        std::string solution(ClassDecoder & targetclassdecoder); //return solution as string
         
         void computefuturecost();
-}
+        void setdebug(int debug);      
+
+};
+
 
 #endif

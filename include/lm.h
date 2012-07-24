@@ -19,6 +19,8 @@ class LanguageModel {
         double score(EncNGram ngram); //returns logprob (base 10)
         double score(EncData & data, bool fullsentence = false); //returns logprob (base 10)
         
+        int getorder() { return order; }
+        
 };
 
 #endif

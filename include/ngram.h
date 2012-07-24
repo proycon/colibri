@@ -190,8 +190,12 @@ class EncData {
     bool match(const EncNGram * ngram, const int offset);
     bool match(const EncSkipGram * skipgram, const int offset);
     
-    EncNGram * slice(const int begin,const int length) const;    
+    EncNGram * slice(const int begin,const int length) const;
+    
+    std::string decode(ClassDecoder& classdecoder) const;    
 };
+
+
 namespace std {
 
     template <>

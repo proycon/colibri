@@ -20,7 +20,7 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
         //TODO: Deal with unknown tokens?
 }
 
-StackDecoder::setdebug(int debug) {
+void StackDecoder::setdebug(int debug) {
     this->DEBUG = debug;
 }
 
@@ -31,8 +31,8 @@ void StackDecoder::computefuturecost() {
             const EncAnyGram * anygram = iter->first;
             const CorpusReference ref = iter->second;     
             const int n = anygram->n();    
-            const pair<int,int> span = make_pair<int,int>(ref.token,n);
-            
+            const pair<int,int> span = make_pair<int,int>((int) ref.token, (int) n);
+             
             const EncAnyGram * candidate = translationtable->getsourcekey(anygram);
             
             //find cheapest translation option
@@ -48,7 +48,19 @@ void StackDecoder::computefuturecost() {
                     if (p > 0) p = log10(p); //turn into logprob, base10 
                     score += tweights[i] * p;
                 }
-                score += lm->score();
+                const EncAnyGram * translationoption = iter2->first;
+                if (translationoption->isskipgram()) {
+                    vector<EncNGram*> parts;
+                    (*((const EncSkipGram *) translationoption)).parts(parts);
+                    for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
+                        EncNGram * part = *iter; 
+                        score += lweight * lm->score(*part);
+                        delete part;
+                    }  
+                } else {
+                    const EncNGram * ngram = (const EncNGram *) translationoption;
+                    score += lweight * lm->score(*ngram);
+                }
                 if (score > bestscore) {
                     bestscore = score;
                 }                            
@@ -57,9 +69,9 @@ void StackDecoder::computefuturecost() {
         }   
         
         //compute future cost
-        for (int length = 1; l <= inputlength; i++) {
+        for (int length = 1; length <= inputlength; length++) {
             for (int start = 0; start < inputlength - length; start++) {
-                const pair<int,int> span = make_pair<int,int>(start,length);
+                const pair<int,int> span = make_pair((int) start,(int) length);
                 bool found = false;
                 for (map<pair<int,int>, double>::iterator iter = sourcefragments_costbyspan.find(span); iter != sourcefragments_costbyspan.end(); iter++) {
                     found = true;
@@ -67,9 +79,9 @@ void StackDecoder::computefuturecost() {
                 }
                 if (!found) futurecost[span] = -INFINITY;
                 for (int i = 1; i < length; i++) {
-                    double spanscore = futurecost[make_pair<int,int>(start,i)] + futurecost[make_pair<int,int>(start+i,length - i)]
+                    double spanscore = futurecost[make_pair((int) start,(int) i)] + futurecost[make_pair((int) start+i,(int) length - i)];
                     if (spanscore > futurecost[span]) { //(higher score -> lower cost)
-                        futurecost[span] = spancost;
+                        futurecost[span] = spanscore;
                     }
                 }
             }
@@ -94,7 +106,7 @@ void StackDecoder::decode() {
     
     
     //create initial hypothesis and add to 0th stack
-    const TranslationHypothesis * initialhypothesis = new TranslationHypothesis(NULL, this, NULL, NULL);
+    TranslationHypothesis * initialhypothesis = new TranslationHypothesis(NULL, this, NULL, 0,NULL,0, vector<double>() );
         
     stacks[0].insert(initialhypothesis);
     
@@ -106,11 +118,11 @@ void StackDecoder::decode() {
                 cerr << "\tDecoding Stack " << i << endl;
             }
             //pop from stacks[i]
-            const TranslationHypothesis * hyp = stacks[i][0]
-            stacks[i][0].erase(hyp);
+            TranslationHypothesis * hyp = *(stacks[i].begin());
+            stacks[i].erase(hyp);
             
             
-            bool finalonly = (i == inputlength - 1) 
+            bool finalonly = (i == inputlength - 1); 
             unsigned int expanded = hyp->expand(finalonly); //will automatically add to appropriate stacks
             if (DEBUG >= 1) cerr << "\t\tExpanded " << expanded << " new hypotheses" << endl;
             unsigned int pruned = 0;
@@ -131,9 +143,9 @@ unsigned int StackDecoder::prune(int stackindex) {
     //TODO: Add consolidation stage prior to pruning stage? (merge hypotheses with same output)    
     unsigned int pruned = 0;
     unsigned int count = 0;
-    unsigned double best = 0;
-    for (multiset<const TranslationHypothesis*>::const_iterator iter = stacks[stackindex].begin(); iter != stacks[stackindex].end(); iter++) {
-        const TranslationHypothesis*  h = iter;
+    double best = 0;
+    for (multiset<TranslationHypothesis*>::const_iterator iter = stacks[stackindex].begin(); iter != stacks[stackindex].end(); iter++) {
+        const TranslationHypothesis*  h = *iter;
         count++;
         if (best == 0) best = h->score(); //will only be set once, first is always best
         if ((count > stacksize) || (h->score() < best * prunethreshold)) {
@@ -147,8 +159,8 @@ unsigned int StackDecoder::prune(int stackindex) {
 
 
 StackDecoder::~StackDecoder() {
-    for (multiset<const TranslationHypothesis*>::const_iterator iter = stacks[inputlength].begin(); iter != stacks[inputlength].end(); iter++) {
-        const TranslationHypothesis*  h = iter;
+    for (multiset<TranslationHypothesis*>::const_iterator iter = stacks[inputlength].begin(); iter != stacks[inputlength].end(); iter++) {
+        const TranslationHypothesis*  h = *iter;
         delete h;
     }
 }
@@ -158,7 +170,7 @@ string StackDecoder::solution(ClassDecoder & targetclassdecoder) {
         cerr << "ERROR: No solution found!" << endl;
         exit(6);
     }
-    TranslationHypothesis * sol = stacks[inputlength].begin();
+    TranslationHypothesis * sol = *(stacks[inputlength].begin());
     EncData s = sol->getoutput();
     return s.decode(targetclassdecoder);
 }
@@ -167,43 +179,43 @@ string StackDecoder::solution(ClassDecoder & targetclassdecoder) {
 TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, StackDecoder * decoder,  const EncAnyGram * sourcegram , unsigned char sourceoffset,  const EncAnyGram * targetgram, unsigned char targetoffset, const vector<double> & tscores) {
     this->parent = parent;
     this->decoder = decoder;            
-    if (parent != NULL) parent.children.push_back(this);        
+    if (parent != NULL) parent->children.push_back(this);        
     this->sourcegram = sourcegram;
     this->targetgram = targetgram;
     this->sourceoffset = sourceoffset;
     this->targetoffset = targetoffset; 
     
     
-    if ((sourcegram != NULL) && (sourcegram.isskipgram())) {
+    if ((sourcegram != NULL) && (sourcegram->isskipgram())) {
         vector<pair<int, int> > gaps;
-        *((const EncSkipGram *) sourcegram).gaps(gaps);
+        (*((const EncSkipGram *) sourcegram)).getgaps(gaps);
         for (vector<pair<int, int> >::iterator iter = gaps.begin(); iter != gaps.end(); iter++) sourcegaps.push_back( make_pair<unsigned char, unsigned char>(iter->first, iter->second) );        
     }
     
-    if ((targetgram != NULL) && (targetgram.isskipgram())) {
+    if ((targetgram != NULL) && (targetgram->isskipgram())) {
         vector<pair<int, int> > gaps;
-        *((const EncSkipGram *) targetgram).gaps(gaps);
+        (*((const EncSkipGram *) targetgram)).getgaps(gaps);
         for (vector<pair<int, int> >::iterator iter = gaps.begin(); iter != gaps.end(); iter++) targetgaps.push_back( make_pair<unsigned char, unsigned char>(iter->first, iter->second) );
     }    
     
-    this->tscores = vector(tscores.begin(), tscores.end());   
+       
     
     //compute input coverage
-    if (PARENT == NULL) {
+    if (parent == NULL) {
         //initial hypothesis: no coverage at all
         for (int i = 0; i < decoder->inputlength; i++) inputcoveragemask.push_back(false);
     } else {
         //inherit from parent
         for (int i = 0; i < decoder->inputlength; i++) {
-             inputcoveragemask.push_back(PARENT->inputcoveragemask[i])
+             inputcoveragemask.push_back(parent->inputcoveragemask[i]);
         }
         //add sourcegram coverage
         bool isskipgram = sourcegram->isskipgram();
         for (int i = sourceoffset; i < sourceoffset + sourcegram->n(); i++) {
             if (isskipgram) {
-                ingap = false;
+                bool ingap = false;
                 for (vector<pair<unsigned char, unsigned char> >::iterator iter = sourcegaps.begin(); iter < sourcegaps.end(); iter++) {
-                    if (sourcecandidate->ref.token + sourcecandidate->n() > sourceoffset + iter->first) &&  ( sourcecandidate->ref.token < sourceoffset +iter->first + iter->second ) ) {
+                    if ( (i + sourcegram->n() > sourceoffset + iter->first) &&  ( i < sourceoffset +iter->first + iter->second ) ) {
                         ingap = true;
                         break;       
                     }             
@@ -219,13 +231,15 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     
     //find history (last order-1 words) for computation for LM score    
     history = NULL;
-    begin = targetoffset - (decoder->lm->order - 1);
+    const int order = decoder->lm->getorder();
+    int begin = targetoffset - (order - 1);
     for (int i = begin; i < begin + (order-1); i++) {
         EncNGram unigram = getoutputtoken(i);
         if (!unigram.unknown()) {
             if (history != NULL) {
-                EncNGram * old = history;
-                history = new (history + unigram);
+                const EncNGram * old = history;
+                
+                history = new EncNGram(*history + unigram);
                 delete old;
             } else {
                 history = new EncNGram(unigram);
@@ -239,7 +253,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     
     //Precompute score
     if (decoder->tweights.size() > tscores.size()) {
-        cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << tweights.size() << ", got " << iter2->second.size() << endl;
+        cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << decoder->tweights.size() << ", got " << tscores.size() << endl;
         exit(6);  
     }
     double tscore = 0; 
@@ -254,60 +268,61 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     if (history != NULL) {
         if (targetgram->isskipgram()) {
             vector<EncNGram*> parts;
-            targetgram->parts(parts);
+            ((const EncSkipGram *) targetgram)->parts(parts);
             int partcount = 0;
             for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
                 EncNGram * part = *iter;
-                if (partcount == 0) && (sourcegaps[0].first != 0) {
+                if ((partcount == 0) && (sourcegaps[0].first != 0)) {
                     //first part, no initial gap, join with history
                     EncNGram ngram = *history + *part;
-                    lmscore += decoder->lmweight * lm.score(*ngram);
+                    lmscore += decoder->lweight * decoder->lm->score(ngram);
                 } else {     
-                    lmscore += decoder->lmweight * lm.score(*part);
+                    lmscore += decoder->lweight * decoder->lm->score(*part);
                 }
                 partcount++;
                 delete part;
             } 
         } else {
-            EncNGram ngram = *history + *targetgram;
-            lmscore += decoder->lmweight * lm->score(ngram);
+            EncNGram ngram = EncNGram(*history + *((const EncNGram* ) targetgram) );
+            lmscore += decoder->lweight * decoder->lm->score(ngram);
         }
     } else {
         if (targetgram->isskipgram()) {
             vector<EncNGram*> parts;
-            targetgram->parts(parts);
+            ( (const EncSkipGram *) targetgram)->parts(parts);
             for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
                 EncNGram * part = *iter; 
-                lmscore += decoder->lmweight * lm.score(*part);
+                lmscore += decoder->lweight * decoder->lm->score(*part);
+                delete part;
             } 
         } else {
-           lmscore += decoder->lmweight * lm.score(targetgram);
+           lmscore += decoder->lweight * decoder->lm->score( *((const EncNGram *) targetgram));
         }
     }
     
     //TODO: deal differently with filling in gaps in skips?
     int prevpos = 0;
-    if (((parent != NULL) && (!parent->initial())) {
+    if ((parent != NULL) && (!parent->initial())) {
         prevpos = parent->sourceoffset + parent->sourcegram->n();        
     } 
-    double dscore = pow(decoder->dweight, abs(sourceoffset - prevpos - 1))  
+    double dscore = pow(decoder->dweight, abs(sourceoffset - prevpos - 1));  
         
     //Compute estimate for future score
     double futurescore = 0;    
-    int begin = -1;    
+    begin = -1;    
     for (int i = 0; i < inputcoveragemask.size(); i++) {
-        if (!inputcovermask[i]) {
+        if (!inputcoveragemask[i]) {
             begin = i;
-        } else if (begin != -1) (
-            futurescore += decoder->futurecost[make_pair<int,int>(begin,i-begin)]
+        } else if (begin != -1) {
+            futurescore += decoder->futurecost[make_pair((int) begin,(int) i-begin)];
             begin = -1;
         }
     }
-    if (begin != -1) futurescore += decoder->futurecost[make_pair<int,int>(begin,inputcoveragemask.size()-begin)]            
+    if (begin != -1) futurescore += decoder->futurecost[make_pair((int) begin,(int) inputcoveragemask.size()-begin)];            
     
     
     //total score            
-    _score = tscore + lmscore + dscore + futurescore
+    _score = tscore + lmscore + dscore + futurescore;
   
 }
 
@@ -463,7 +478,7 @@ EncData TranslationHypothesis::getoutput(deque<const TranslationHypothesis*> * p
 }
 
 
-double TranslationHypothesis::score() {
+double TranslationHypothesis::score() const {
     return _score;
 } 
 
