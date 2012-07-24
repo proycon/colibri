@@ -18,6 +18,8 @@ class TranslationHypothesis {
         const EncAnyGram * targetgram;
         unsigned char sourceoffset;
         unsigned char targetoffset;
+        
+        const EncNGram * history; //order-1 n-gram in targetlanguage, used for computation of LM score 
                 
         vector<pair<unsigned char, unsigned char> > sourcegaps;
         vector<pair<unsigned char, unsigned char> > targetgaps; //filling gaps will take priority upon expansion
@@ -28,13 +30,7 @@ class TranslationHypothesis {
         
         unsigned int expand(bool finalonly=false); //expands directly in the appropriate stack of the decoder. If finalonly is set, new hypotheses are expected to be final/complete, without gaps
         
-        double score();
-        
-        //double dscore();
-        //double tscore();
-        //double lscore();
-        //double futurecost();
-        
+        double score();        
                   
         bool initial() const { return (parent == NULL) }
         bool final();        

@@ -212,9 +212,86 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
             }        
         }    
     }
+    
+    //find history (last order-1 words) for computation for LM score    
+    history = NULL;
+    begin = targetoffset - (decoder->lm->order - 1);
+    for (int i = begin; i < begin + (order-1); i++) {
+        EncNGram unigram = getoutputtoken(i);
+        if (!unigram.unknown()) {
+            if (history != NULL) {
+                EncNGram * old = history;
+                history = new (history + unigram);
+                delete old;
+            } else {
+                history = new EncNGram(unigram);
+            }
+        } else if (history != NULL) {
+            //we have an unknown unigram, erase history and start over from this point on
+            delete history;
+            history = NULL;
+        }
+    }
+    
+    //Precompute score
+    if (decoder->tweights.size() > tscores.size()) {
+        cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << tweights.size() << ", got " << iter2->second.size() << endl;
+        exit(6);  
+    }
+    double tscore = 0; 
+    for (int i = 0; i < decoder->tweights.size(); i++) {
+        double p = tscores[i];
+        if (p > 0) p = log10(p); //turn into logprob, base10 
+        tscore += decoder->tweights[i] * p;
+    }
+    
+    
+    double lmscore = 0;
+    if (history != NULL) {
+        if (targetgram->isskipgram()) {
+            vector<EncNGram*> parts;
+            targetgram->parts(parts);
+            int partcount = 0;
+            for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
+                EncNGram * part = *iter;
+                if (partcount == 0) && (sourcegaps[0].first != 0) {
+                    //first part, no initial gap, join with history
+                    EncNGram ngram = *history + *part;
+                    lmscore += decoder->lmweight * lm.score(*ngram);
+                } else {     
+                    lmscore += decoder->lmweight * lm.score(*part);
+                }
+                partcount++;
+                delete part;
+            } 
+        } else {
+            EncNGram ngram = *history + *targetgram;
+            lmscore += decoder->lmweight * lm->score(ngram);
+        }
+    } else {
+        if (targetgram->isskipgram()) {
+            vector<EncNGram*> parts;
+            targetgram->parts(parts);
+            for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
+                EncNGram * part = *iter; 
+                lmscore += decoder->lmweight * lm.score(*part);
+            } 
+        } else {
+           lmscore += decoder->lmweight * lm.score(targetgram);
+        }
+    }
+    
+    double dscore = 0;
+    //TODO: compute distortion
+        
+    _score = tscore + lmscore + dscore
+  
 }
 
 TranslationHypothesis::~TranslationHypothesis() {
+    if (history != NULL) {
+        delete history;
+    }
     if (parent != NULL) {
         parent.children.erase(this);
         if (parent.children.empty()) delete parent;
@@ -364,27 +441,9 @@ EncData TranslationHypothesis::getoutput(deque<const TranslationHypothesis*> * p
 
 
 double TranslationHypothesis::score() {
-    if (_score != 0) {
-        //cached
-        return _score;  
-    }
-    
-
-    if (decoder->tweights.size() > tscores.size()) {
-        cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << tweights.size() << ", got " << iter2->second.size() << endl;
-        exit(6);  
-    }
-    double score = 0; 
-    for (int i = 0; i < decoder->tweights.size(); i++) {
-        double p = tscores[i];
-        if (p > 0) p = log10(p); //turn into logprob, base10 
-        score += tweights[i] * p;
-    }
-    score += lm->score(TODO);
-    
-    return score;                            
+    return _score;
 } 
 
 
     
-} 
+ 
