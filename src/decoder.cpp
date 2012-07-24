@@ -1,9 +1,10 @@
 unsigned char UNKNOWNCLASS = 2;
 
-StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int maxn) {
+StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int maxn) {
         this->input = input;
         this->inputlength = input.length();
         this->translationtable = translationtable;
+        this->lm = lm;
         this->stacksize = stacksize;
         this->prunethreshold = prunethreshold;
         sourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
@@ -11,14 +12,67 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
         this->dweight = dweight;
         this->lweight = lweight;
         
+        computefuturecost();
         //TODO: Deal with unknown tokens?
 }
 StackDecoder::setdebug(int debug) {
     this->DEBUG = debug;
 }
 
+void StackDecoder::computefuturecost() {
+        map<pair<int,int>, double> sourcefragments_costbyspan;
+        //reorder source fragments by span for more efficiency
+        for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
+            const EncAnyGram * anygram = iter->first;
+            const CorpusReference ref = iter->second;     
+            const int n = anygram->n();    
+            const pair<int,int> span = make_pair<int,int>(ref.token,n);
+            
+            const EncAnyGram * candidate = translationtable->getsourcekey(anygram);
+            
+            //find cheapest translation option
+            double bestscore = -INFINITY;
+            for (std::unordered_map<const EncAnyGram*, std::vector<double> >::iterator iter2 = translationtable->alignmatrix[candidate].begin(); iter2 != translationtable->alignmatrix[candidate].end(); iter2++) {
+                if (tweights.size() > iter2->second.size()) {
+                    cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << tweights.size() << ", got " << iter2->second.size() << endl;
+                    exit(6);  
+                }
+                double score = 0; 
+                for (int i = 0; i < tweights.size(); i++) {
+                    score += tweights[i] * iter2->second[i];
+                }
+                //TODO: add LM score
+                score += lm->score();
+                if (score > best) {
+                    best = score;
+                }                            
+            } 
+            sourcefragments_costbyspan[span] = bestscore; 
+
+        }   
+        
+        //compute future cost
+        for (int length = 1; l <= inputlength; i++) {
+            for (int start = 0; start < inputlength - length; start++) {
+                int end = start + length;
+                const pair<int,int> span = make_pair<int,int>(start,end);
+                bool found = false;
+                for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.find(span); iter != sourcefragments.end(); iter++) { //uses .find() !
+                    const EncAnyGram * candidate = iter->first;
+                    const CorpusReference ref = iter->second; 
+                    found = false;
+                    if ((candidate->n() == length()) && (ref.token == start)) {
+                        //compute 
+                    }
+                }
+                if (!found) futurecost[span] = INFINITY;
+                
+                futurecost<
+            }
+        }
+}
     
-void StackDecoder::decode() {p
+void StackDecoder::decode() {
    /*
     initialize hypothesisStack[0 .. nf];
     create initial hypothesis hyp_init;
