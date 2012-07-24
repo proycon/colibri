@@ -12,8 +12,8 @@ class TranslationHypothesis {
         TranslationHypothesis * parent;
         vector<TranslationHypothesis *> children; //reference counting
          
-        //std::bitset * sourcecoverage; 
-        
+        vector<bool> inputcoveragemask; 
+    
         const EncAnyGram * sourcegram;
         const EncAnyGram * targetgram;
         unsigned char sourceoffset;
@@ -21,7 +21,7 @@ class TranslationHypothesis {
                 
         vector<pair<unsigned char, unsigned char> > sourcegaps;
         vector<pair<unsigned char, unsigned char> > targetgaps; //filling gaps will take priority upon expansion
-        vector<double> tscores; //scores from the translation table 
+        vector<double> tscores; //scores from the translation table (alignmatrix[sourcegram][targetgram]) 
         
         TranslationHypothesis(TranslationHypothesis * parent, StackDecoder * decoder,  const EncAnyGram * sourcegram , unsigned char sourceoffset,  const EncAnyGram * targetgram, unsigned char targetoffset, const std::vector<double> & tscores);
         ~TranslationHypothesis();
@@ -30,10 +30,10 @@ class TranslationHypothesis {
         
         double score();
         
-        double dscore();
-        double tscore();
-        double lscore();
-        double futurecost();
+        //double dscore();
+        //double tscore();
+        //double lscore();
+        //double futurecost();
         
                   
         bool initial() const { return (parent == NULL) }
@@ -42,7 +42,7 @@ class TranslationHypothesis {
         bool conflicts(const EncAnyGram * sourcecandidate, const CorpusReference & ref); //checks if a source pattern's coverage conflicts with this hypothesis, if not, it is a candidate to be added upon hypothesis expansion
         
                 
-        void computeinputcoverage(vector<bool> & container); //compute source coverage        
+        //void computeinputcoverage(vector<bool> & container); //compute source coverage        
         int inputcoverage(); //return input coverage (absolute number of tokens covered)
         
         bool operator< (const TranslationHypothesis& other) const {

@@ -182,7 +182,36 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
         for (vector<pair<int, int> >::iterator iter = gaps.begin(); iter != gaps.end(); iter++) targetgaps.push_back( make_pair<unsigned char, unsigned char>(iter->first, iter->second) );
     }    
     
-    this->tscores = vector(tscores.begin(), tscores.end());    
+    this->tscores = vector(tscores.begin(), tscores.end());   
+    
+    //compute input coverage
+    if (PARENT == NULL) {
+        //initial hypothesis: no coverage at all
+        for (int i = 0; i < decoder->inputlength; i++) inputcoveragemask.push_back(false);
+    } else {
+        //inherit from parent
+        for (int i = 0; i < decoder->inputlength; i++) {
+             inputcoveragemask.push_back(PARENT->inputcoveragemask[i])
+        }
+        //add sourcegram coverage
+        bool isskipgram = sourcegram->isskipgram();
+        for (int i = sourceoffset; i < sourceoffset + sourcegram->n(); i++) {
+            if (isskipgram) {
+                ingap = false;
+                for (vector<pair<unsigned char, unsigned char> >::iterator iter = sourcegaps.begin(); iter < sourcegaps.end(); iter++) {
+                    if (sourcecandidate->ref.token + sourcecandidate->n() > sourceoffset + iter->first) &&  ( sourcecandidate->ref.token < sourceoffset +iter->first + iter->second ) ) {
+                        ingap = true;
+                        break;       
+                    }             
+                }
+                if (!ingap) {
+                    inputcoveragemask[i] = true;
+                }
+            } else {
+                inputcoveragemask[i] = true;
+            }        
+        }    
+    }
 }
 
 TranslationHypothesis::~TranslationHypothesis() {
@@ -265,27 +294,14 @@ bool TranslationHypothesis::conflicts(const EncAnyGram * sourcecandidate, const 
 }
 
 
-void TranslationHypothesis::computeinputcoverage(vector<bool> & container) {
-    bool isskipgram = sourcegram->isskipgram();
-    for (int i = sourceoffset; i < sourceoffset + sourcegram->n(); i++) {
-        if (isskipgram) {
-            ingap = false;
-            for (vector<pair<unsigned char, unsigned char> >::iterator iter = sourcegaps.begin(); iter < sourcegaps.end(); iter++) {
-                if (sourcecandidate->ref.token + sourcecandidate->n() > sourceoffset + iter->first) &&  ( sourcecandidate->ref.token < sourceoffset +iter->first + iter->second ) ) {
-                    ingap = true;
-                    break;       
-                }             
-            }
-            if (!ingap) {
-                container[i] = true;
-            }
-        } else {
-            container[i] = true;
-        }        
-    }    
-}
 
 int TranslationHypothesis::inputcoverage() {
+    int c = 0;
+    for (int i = 0; i < inputcoveragemask.size(); i++) {
+        if (inputcoveragemask[i]) c++; 
+    }
+    return c;
+    /*
     const int L = decoder.input.length()
     vector<bool> container;
     for (int i = 0; i < L; i++) {
@@ -297,6 +313,7 @@ int TranslationHypothesis::inputcoverage() {
         if (container[i]) result++; 
     }
     return result;
+    */
 }
 
 EncNGram * TranslationHypothesis::getoutputtoken(int index) {
@@ -344,3 +361,30 @@ EncData TranslationHypothesis::getoutput(deque<const TranslationHypothesis*> * p
         return EncData(buffer, cursor); 
     }    
 }
+
+
+double TranslationHypothesis::score() {
+    if (_score != 0) {
+        //cached
+        return _score;  
+    }
+    
+
+    if (decoder->tweights.size() > tscores.size()) {
+        cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << tweights.size() << ", got " << iter2->second.size() << endl;
+        exit(6);  
+    }
+    double score = 0; 
+    for (int i = 0; i < decoder->tweights.size(); i++) {
+        double p = tscores[i];
+        if (p > 0) p = log10(p); //turn into logprob, base10 
+        score += tweights[i] * p;
+    }
+    score += lm->score(TODO);
+    
+    return score;                            
+} 
+
+
+    
+} 
