@@ -16,6 +16,7 @@
 const char MAXSKIPS = 4; //Maximum number of skips - THESE NUMBERS CAN NOT BE CHANGED WITHOUT ALSO CHANGING THE SkipConf IMPLEMENTATION!
 const char MAXSKIPSIZE = 16; //Maximum length of each skip   - THESE NUMBERS CAN NOT BE CHANGED WITHOUT ALSO CHANGING THE SkipConf IMPLEMENTATION!
 
+class EncData;
 
 class EncAnyGram {
     protected:
@@ -25,7 +26,8 @@ class EncAnyGram {
     
      EncAnyGram();
      EncAnyGram(const unsigned char* dataref, const char size);
-     EncAnyGram(const EncAnyGram& ref);          
+     EncAnyGram(const EncAnyGram& ref);
+     EncAnyGram(const EncData& ref);            
      virtual ~EncAnyGram();
      
      virtual const char n() const;
@@ -65,7 +67,7 @@ class EncAnyGram {
      
      //virtual bool is_supergram() const; //TODO?
      
-    
+    virtual bool unknown(); //does this anygram have an unknown class in it? 
 };
 
 class EncNullGram: public EncAnyGram {
@@ -82,7 +84,8 @@ class EncNGram: public EncAnyGram {
    public:
     //EncNGram(): EncAnyGram() {}; 
     EncNGram(const unsigned char* dataref, const char size): EncAnyGram(dataref, size) {};
-    EncNGram(const EncNGram& ref): EncAnyGram(ref) {};     
+    EncNGram(const EncNGram& ref): EncAnyGram(ref) {};
+    EncNGram(const EncData& ref): EncAnyGram(ref) {};       
     EncNGram(std::istream * in);
     
     int getclass(const int index) const;
@@ -93,7 +96,9 @@ class EncNGram: public EncAnyGram {
     int splits(std::vector<std::pair<EncNGram*, EncNGram*> > & container) const;
     bool classvector(std::vector<int> & ) const;
     
-    const EncNGram * gettoken(int index) const;     
+    const EncNGram * gettoken(int index) const;
+    
+        
 };
 
 EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size, const unsigned int linenum = 0);
@@ -170,9 +175,9 @@ class EncSkipGram: public EncAnyGram {
 
 class EncData {
    private:
-    unsigned char * data;
     int _size;
    public:
+    unsigned char * data;
     //EncNGram(): EncAnyGram() {};
     EncData() { data = NULL; _size = 0;}; 
     EncData(const unsigned char* dataref, const int size);

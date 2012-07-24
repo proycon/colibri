@@ -41,6 +41,19 @@ EncAnyGram::EncAnyGram(const EncAnyGram& ref) {
     }    
 }
 
+EncAnyGram::EncAnyGram(const EncData& ref) {
+    _size = ref.size();
+    if (_size <= 0) {
+        cerr << "INTERNAL ERROR EncAnyGram(): Data size must be > 0, reference encdata has " << (int) _size << " (n=" << (int) ref.length() << ") !" << endl;
+        exit(13);    
+    }
+    data = new unsigned char[_size];   
+    for (int i = 0; i < _size; i++) {
+        data[i] = ref.data[i];
+    }    
+}
+
+
 EncAnyGram::~EncAnyGram() {     
     if (data != NULL) delete [] data;        
     data = NULL;
@@ -591,7 +604,18 @@ const EncNGram * EncNGram::gettoken(int index) const {
     return slice(index,1);
 }
 
-
+bool EncAnyGram::unknown() { //does this anygram have an unknown class in it?
+    unsigned char unknownclass= 2;
+    bool prevnull = false;
+    for (int i = 0; i < _size; i++) {
+        if ((i == 0) && (data[i] == unknownclass) && ((_size == 1) || (data[i+1] == 0))) {
+            return true;
+        } else if ((data[i - 1] == 0) && (data[i] == unknownclass) && ((_size == i) || (data[i+1] == 0))) {
+            return true;
+        }
+    }  
+    return false;
+}
 
 
 void EncSkipGram::mask(std::vector<bool> & container) const { //returns a boolean mask of the skipgram (0 = gap(encapsulation) , 1 = skipgram coverage)
