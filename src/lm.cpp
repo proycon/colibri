@@ -1,10 +1,12 @@
 #include <lm.h>
 
+using namespace std;
+
 LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encoder) { 
     order = 0;
     ifstream f;
     f.open(filename.c_str(), ios::in);
-    while (!filename.feof()) {               
+    while (!f.eof()) {               
         string line;
         f >> line;                
         if (line == "\\data\\") {
@@ -28,13 +30,13 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
         } else if (line == "\\9-grams:") {
             order = 9;                        
         } else if (!line.empty()) {
-            if (mode == 0) {
+            if (order == 0) {
               if (line.substr(0,5) == "ngram") {
-                int n = atoi(line.substr(7,1).c_str())
-                int v = atoi(line.substr(8).c_str())
+                int n = atoi(line.substr(7,1).c_str());
+                int v = atoi(line.substr(8).c_str());
                 total[n] = v;
               }   
-            } else if (mode > 0) {
+            } else if (order > 0) {
                 string logprob_s = "";
                 string backofflogprob_s = "";
                 string ngramcontent = "";
@@ -54,11 +56,11 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
                     }
                 }
                 if ((!logprob_s.empty()) && (!ngramcontent.empty())) {
-                    EncNGram ngram = input2ngram(ngramcontent,  true);
+                    EncNGram ngram = encoder.input2ngram(ngramcontent,  true);
                     if (!ngram.unknown()) {
                         ngrams[ngram] = atof(logprob_s.c_str());
-                        if (!backogglogprob_s.empty()) {
-                            backoff[ngram] = atof(logprob_s.c_str());
+                        if (!backofflogprob_s.empty()) {
+                            backoff[ngram] = atof(backofflogprob_s.c_str());
                         }
                     }
                 }
@@ -72,25 +74,28 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
 
 double LanguageModel::score(EncData & data, bool fullsentence) {
     //TODO: handle fullsentence: add <s></s> wrappers
-    if (data.n() <= order) {
-        score(EncNGram(data));
+    if (data.length() <= order) {
+        return score(EncNGram(data));
     } else {
+        double result = 0;
         for (int begin = 0; begin < data.length() - order; begin++) {
-            EncNGram & ngram = data.slice(begin, order);
-            result += score(ngram)        
+            EncNGram * ngram = data.slice(begin, order);
+            result += score(*ngram);
+            delete ngram;        
         }
+        return result;
     } 
 }
 
 
-double LanguageModel::score(EncNGram & ngram) {
+double LanguageModel::score(EncNGram ngram) {
     double result;
     const int n = ngram.n();
     if (n > order) {
         result = 0;
         for (int begin = 0; begin < n - order; begin++) {
             EncNGram * subngram = ngram.slice(begin, order);
-            result += score(subngram);
+            result += score(*subngram);
             delete subngram;        
         }    
         return result;
