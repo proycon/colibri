@@ -1,4 +1,5 @@
 #include <decoder.h>
+#include <algorithm> 
 
 using namespace std;
 
@@ -234,21 +235,22 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     const int order = decoder->lm->getorder();
     int begin = targetoffset - (order - 1);
     for (int i = begin; i < begin + (order-1); i++) {
-        EncNGram unigram = getoutputtoken(i);
-        if (!unigram.unknown()) {
+        EncNGram * unigram = getoutputtoken(i);
+        if (!unigram->unknown()) {
             if (history != NULL) {
                 const EncNGram * old = history;
                 
-                history = new EncNGram(*history + unigram);
+                history = new EncNGram(*history + *unigram);
                 delete old;
             } else {
-                history = new EncNGram(unigram);
+                history = new EncNGram(*unigram);
             }
         } else if (history != NULL) {
             //we have an unknown unigram, erase history and start over from this point on
             delete history;
             history = NULL;
         }
+        delete unigram;
     }
     
     //Precompute score
@@ -330,15 +332,16 @@ TranslationHypothesis::~TranslationHypothesis() {
     if (history != NULL) {
         delete history;
     }
-    if (parent != NULL) {
-        parent.children.erase(this);
-        if (parent.children.empty()) delete parent;
+    if (parent != NULL) {         
+        vector<TranslationHypothesis *>::iterator iter = find(parent->children.begin(), parent->children.end(), this); 
+        parent->children.erase(iter);
+        if (parent->children.empty()) delete parent;
     } 
 }
 
 bool TranslationHypothesis::final(){
         if (!targetgaps.empty()) return false;
-        return (inputcoverage() = decoder.inputlength); 
+        return (inputcoverage() == decoder->inputlength); 
 }
 
 
@@ -352,18 +355,19 @@ unsigned int TranslationHypothesis::expand(bool finalonly) {
             const CorpusReference ref = iter->second; 
             if (!conflicts(sourcecandidate, ref)) {
                 //find target fragments for this source fragment
-                for (std::unordered_map<const EncAnyGram*, vector<double> >::iterator iter2 =  phrasetable->alignmatrix[sourcecandidate].begin(); iter2 != phrasetable->alignmatrix[sourcecandidate].end(); iter2++) {
+                for (std::unordered_map<const EncAnyGram*, vector<double> >::iterator iter2 =  decoder->translationtable->alignmatrix[sourcecandidate].begin(); iter2 != decoder->translationtable->alignmatrix[sourcecandidate].end(); iter2++) {
                     //create hypothesis for each target fragment
                     const EncAnyGram * targetcandidate = iter2->first;
-                    newhypo = new Hypothesis(self, decoder, sourcecandidate, ref.token, targetcandidate, targetoffset + targetgram->n() , iter2->second);
-                    if ((finalonly) && (!newhypo->final()) {
+                    TranslationHypothesis * newhypo = new TranslationHypothesis(this, decoder, sourcecandidate, ref.token, targetcandidate, targetoffset + targetgram->n() , iter2->second);
+                    if ((finalonly) && (!newhypo->final())) {
                         delete newhypo;
                         break;
                     } 
                     //add to proper stack
-                    int cov = newhypo->inputcoverage();                    
+                    int cov = newhypo->inputcoverage();
                     decoder->stacks[cov].insert(newhypo);
                     expanded++;
+                    //no delete newhypo
                 }                 
             }        
         }
@@ -380,29 +384,29 @@ bool TranslationHypothesis::conflicts(const EncAnyGram * sourcecandidate, const 
     
     if (sourcecandidate->hash() == sourcegram->hash()) return true; //source was already added, can not add twice
      
-    if ( (sourcecandidate->ref.token + sourcecandidate->n() > sourceoffset) && ( sourcecandidate->ref.token < sourceoffset + sourcegram->n()  ) ) { 
+    if ( (ref.token + sourcecandidate->n() > sourceoffset) && (ref.token < sourceoffset + sourcegram->n()  ) ) { 
         //conflict    
         if (sourcegram->isskipgram()) {
             //if this falls nicely into a gap than it may not be a conflict after all
-            ingap = false;
+            bool ingap = false;
             for (vector<pair<unsigned char, unsigned char> >::iterator iter = sourcegaps.begin(); iter < sourcegaps.end(); iter++) {
-                if (sourcecandidate->ref.token + sourcecandidate->n() > sourceoffset + iter->first) &&  ( sourcecandidate->ref.token < sourceoffset +iter->first + iter->second ) ) {
+                if ( (ref.token + sourcecandidate->n() > sourceoffset + iter->first) &&  ( ref.token < sourceoffset +iter->first + iter->second ) ) {
                     ingap = true;
                     break;       
                 }
             }            
             if (!ingap) {
-                return true
+                return true;
             }
         } else {
             //MAYBE TODO: deal with partial overlap?
-            return true
+            return true;
         }
     }
     
     //no confict, check parents    
     if (parent != NULL) {
-        return parent->uncovered(sourcecandidate);
+        return parent->conflicts(sourcecandidate, ref);
     } else {
         return false;
     }
@@ -433,38 +437,38 @@ int TranslationHypothesis::inputcoverage() {
 
 EncNGram * TranslationHypothesis::getoutputtoken(int index) {
     index = index - targetoffset;
-    if ((index < 0) || (index >= targetgram->n()) {
+    if ((index < 0) || (index >= targetgram->n())) {
         cerr << "ERROR: TranslationHypothesis::getoutputtoken() with index " << index << " is out of bounds" << endl;
         exit(6);
     }
     if (targetgram->isskipgram()) {
         const EncSkipGram * targetskipgram = (const EncSkipGram *) targetgram;
-        return new targetskipgram->gettoken(index);
+        return targetskipgram->gettoken(index);
     } else {
-        const EncNGram * targetngram = (const EncNGram *) targetgram;
-        const EncNGram * unigram = targetngram->slice(index,1);
-        return unigram;
+        const EncNGram * targetngram = (const EncNGram *) targetgram;        
+        return targetngram->slice(index,1);
     }
 }
 
-EncData TranslationHypothesis::getoutput(deque<const TranslationHypothesis*> * path) { //get output        
+EncData TranslationHypothesis::getoutput(deque<TranslationHypothesis*> * path) { //get output        
     //backtrack
-    if (path == NULL) path = new deque<const TranslationHypothesis*>;
+    if (path == NULL) path = new deque<TranslationHypothesis*>;
     if (parent != NULL) {
-            path->push_front(self);
+            path->push_front(this);
             return parent->getoutput(path);
     } else {
         //we're back at the initial hypothesis, now we construct the output forward again
-        map<int, const EncNGram *> outputtokens; //unigrams, one per index                                  
+        map<int, EncNGram *> outputtokens; //unigrams, one per index                                  
         while (!path->empty()) {
-            const TranslationHypothesis * hyp = path->pop_front();
+            TranslationHypothesis * hyp = path->front();
+            path->pop_front(); //WARNING: Calls TranslationHypothesis * destructor??? may have unwanted side-effect
             for (int i = hyp->targetoffset; i < hyp->targetoffset + hyp->targetgram->n(); i++) {
                 outputtokens[i] = hyp->getoutputtoken(i);
             }                          
         }
         unsigned char buffer[8192];
         int cursor = 0;
-        for (map<int, const EncNGram *>::iterator iter = outputtokens.begin(); iter != outputtokens.end(); iter++) {
+        for (map<int, EncNGram *>::iterator iter = outputtokens.begin(); iter != outputtokens.end(); iter++) {
             int index = iter->first;
             EncNGram * unigram = iter->second;
             for (int i = 0; i < unigram->size(); i++) {

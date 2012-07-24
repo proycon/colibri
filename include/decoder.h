@@ -51,8 +51,8 @@ class TranslationHypothesis {
         }
         
         
-        EncNGram getoutputtoken(int index); //get output token (unigram, will return unknown class if in gap)                    
-        EncData getoutput(std::deque<const TranslationHypothesis*> * path = NULL); //get output                
+        EncNGram * getoutputtoken(int index); //get output token (unigram, will return unknown class if in gap)                    
+        EncData getoutput(std::deque<TranslationHypothesis*> * path = NULL); //get output                
 };
 
 

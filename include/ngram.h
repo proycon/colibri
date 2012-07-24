@@ -96,7 +96,7 @@ class EncNGram: public EncAnyGram {
     int splits(std::vector<std::pair<EncNGram*, EncNGram*> > & container) const;
     bool classvector(std::vector<int> & ) const;
     
-    const EncNGram * gettoken(int index) const;
+    EncNGram * gettoken(int index) const;
     
     EncNGram operator +(const EncNGram&) const;
 };
@@ -170,7 +170,7 @@ class EncSkipGram: public EncAnyGram {
      bool classvector(std::vector<int> & ) const; //fixed width, gaps are 0
      int instancetemplaterelation(const EncSkipGram *other) const;
       
-     const EncNGram * gettoken(int index) const;
+     EncNGram * gettoken(int index) const;
 };
 
 class EncData {

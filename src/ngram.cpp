@@ -560,7 +560,7 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
 }
 
 
-const EncNGram * EncSkipGram::gettoken(int index) const {
+EncNGram * EncSkipGram::gettoken(int index) const {
     const unsigned char unknownclass = 2;
 
     bool prevnull = false;
@@ -600,7 +600,7 @@ const EncNGram * EncSkipGram::gettoken(int index) const {
     }  
 }
 
-const EncNGram * EncNGram::gettoken(int index) const {
+EncNGram * EncNGram::gettoken(int index) const {
     return slice(index,1);
 }
 
