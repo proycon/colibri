@@ -1650,35 +1650,12 @@ phrases-tm.gz
 [additional-featurizers]
 edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(phrases-om.gz,msd2-bidirectional-fe,LexR,hierarchical,hierarchical,bin)
 
-# reordering weights
-[weight-d]
-1
-1
-1
-1
-1
-1
-1
-
-# language model weight
-[weight-l]
-1
-
-# translation model weights
-[weight-t]
-1
-1
-1
-1
-0
-
-# word penalty weight
-[weight-w]
-0
-
 # maximum gap between covered spans
 [distortion-limit]
 6
+
+[weights-file]
+phrasal.wts
 
 # detect processors present, and use them all
 [localprocs]
@@ -1687,7 +1664,20 @@ edu.stanford.nlp.mt.decoder.feat.HierarchicalReorderingFeaturizer(phrases-om.gz,
             f.write("[gaps]\n")
             f.write(str(self.PHRASAL_MAXSOURCEPHRASESPAN) + "\n")
             f.write(str(self.PHRASAL_MAXTARGETPHRASESPAN) + "\n")
-        f.close()        
+        f.close()
+        
+        f = open(self.WORKDIR + '/phrasal.wts','w')
+        f.write("""
+LM 2
+LinearDistortion 1
+TM:FPT.0 0.5
+TM:FPT.1 0.5
+TM:FPT.2 0.5 
+TM:FPT.3 0.5
+TM:FPT.4 -1
+WordPenalty: -0.5""")
+        f.close()
+                
         return True
 
     def build_phrasal_mert(self):    
