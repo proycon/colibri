@@ -1667,15 +1667,14 @@ phrasal.wts
         f.close()
         
         f = open(self.WORKDIR + '/phrasal.wts','w')
-        f.write("""
-LM 2
+        f.write("""LM 2
 LinearDistortion 1
 TM:FPT.0 0.5
 TM:FPT.1 0.5
 TM:FPT.2 0.5 
 TM:FPT.3 0.5
 TM:FPT.4 -1
-WordPenalty: -0.5""")
+WordPenalty: -0.5\n""")
         f.close()
                 
         return True
