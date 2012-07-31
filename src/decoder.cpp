@@ -1,5 +1,9 @@
 #include <decoder.h>
 #include <algorithm> 
+#include <getopt.h>
+#include <iostream>
+#include <sstream>
+
 
 using namespace std;
 
@@ -489,3 +493,155 @@ double TranslationHypothesis::score() const {
 
     
  
+
+void usage() {
+    cerr << "Colibri MT Decoder" << endl;
+    cerr << "   Maarten van Gompel, Radboud University Nijmegen" << endl;
+    cerr << "----------------------------------------------------" << endl;
+    cerr << "Usage: decoder -t translationtable -l lm-file [-S source-class-file -T target-class-file]" << endl;
+    cerr << " Input:" << endl;
+    cerr << "   (input will be read from standard input)" << endl;
+    cerr << "\t-t translationtable       Translation table (*.translationtable.colibri)" << endl;
+    cerr << "\t-l lm-file                Language model file (in ARPA format)" << endl;    
+    cerr << "\t-S sourceclassfile        Source class file" << endl;
+    cerr << "\t-T targetclassfile        Target class file" << endl;
+    cerr << "\t-s stacksize              Stacksize" << endl;
+    cerr << "\t-p prune threshold        Prune threshold" << endl;
+    cerr << "\t-W w1,w2,w3               Translation model weights (comma seperated)" << endl;    
+    cerr << "\t-L weight                 Language model weight" << endl;
+    cerr << "\t-D weight                 Distortion model weight" << endl;      
+    cerr << "\t--moses                   Translation table is in Moses format" << endl;
+    
+}
+
+
+
+
+int main( int argc, char *argv[] ) {
+    int MOSESFORMAT = 0;
+    vector<double> tweights;
+    double lweight = 1.0;
+    double dweight = 1.0;
+    string transtablefile = "";
+    string lmfile = "";
+    string sourceclassfile = "";
+    string targetclassfile = "";
+    int stacksize = 10;
+    double prunethreshold = 0.5;
+    int maxn = 9;
+    static struct option long_options[] = {      
+       {"moses", no_argument,             &MOSESFORMAT, 1},                       
+       {0, 0, 0, 0}
+     };
+    /* getopt_long stores the option index here. */
+    int option_index = 0;
+    
+    
+    //temp:
+    string raw;
+    string::size_type pos;
+    
+    string ws;
+    stringstream linestream;
+    double w;
+    
+    char c;    
+    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:",long_options,&option_index)) != -1) {
+        switch (c) {
+        case 0:
+            if (long_options[option_index].flag != 0)
+               break;
+        case 'h':
+        	usage();
+        	exit(0);
+        case 'l':
+            lmfile = optarg;
+            break;       
+        case 't':
+            transtablefile = optarg;
+            break;
+        case 'S':
+            sourceclassfile = optarg;
+            break;
+        case 'T':
+            targetclassfile = optarg;
+            break;
+        case 'L':
+            lweight = atof(optarg);
+            break;
+        case 'D':
+            dweight = atof(optarg);
+            break;
+        case 's':
+            stacksize = atoi(optarg);
+            break;
+        case 'p':
+            prunethreshold = atof(optarg);
+            break;            
+        case 'W':
+            ws = optarg;
+            while (linestream >> w) tweights.push_back(w);
+            break;            
+        default:
+            cerr << "Unknown option: -" <<  optopt << endl;
+            abort ();
+        }        
+    }
+    
+    if (tweights.empty()) {
+        tweights.push_back(1.0);
+        tweights.push_back(1.0);        
+    }
+    
+    if (transtablefile.empty()) {
+        cerr << "ERROR: No translation table specified (-t)" << endl;
+        exit(2);
+    }
+    if (lmfile.empty()) {
+        cerr << "ERROR: No language model specified (-l)" << endl;
+        exit(2);
+    }    
+    if (sourceclassfile.empty()) {
+        cerr << "ERROR: No source class file specified (-S)" << endl;
+        exit(2);
+    }
+    if (targetclassfile.empty()) {
+        cerr << "ERROR: No target class file specified (-T)" << endl;
+        exit(2);
+    }        
+    
+    cerr << "Colibri MT Decoder" << endl;
+    cerr << "   Maarten van Gompel, Radboud University Nijmegen" << endl;
+    cerr << "----------------------------------------------------" << endl;
+    cerr << "Translation weights:  ";
+    for (int i = 0; i < tweights.size(); i++) cerr << tweights[i] << " "; 
+    cerr << endl;
+    cerr << "Distortion weight:    " << dweight << endl;
+    cerr << "LM weight:            " << lweight << endl;    
+    cerr << "Stacksize:            " << stacksize << endl;
+    cerr << "Prune threshold:      " << prunethreshold << endl;
+    cerr << "----------------------------------------------------" << endl;
+    cerr << "Source classes:       " << sourceclassfile << endl;
+    ClassEncoder sourceclassencoder = ClassEncoder(sourceclassfile);       
+    cerr << "Target classes:       " << targetclassfile << endl;
+    ClassEncoder targetclassencoder = ClassEncoder(targetclassfile);    
+    ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);
+    cerr << "Language model:       " << lmfile << endl;
+    LanguageModel lm = LanguageModel(lmfile, targetclassencoder);
+    cerr << "   loaded " << lm.size() << " n-grams, order=" << lm.getorder() << endl;
+    cerr << "Translation table:    " << transtablefile << endl;
+    //TODO: Moses format
+    TranslationTable transtable = TranslationTable(transtablefile);
+    cerr << "   loaded translations for " << transtable.size() << " patterns" << endl;
+        
+    string input;
+    unsigned char buffer[8192]; 
+    int size;
+    while (getline(cin, input)) {        
+        cerr << "INPUT: " << input << endl;        
+        size = sourceclassencoder.encodestring(input, buffer, true);        
+        StackDecoder decoder = StackDecoder(EncData(buffer, size), &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn);
+        decoder.decode();
+        cout << decoder.solution(targetclassdecoder) << endl;        
+    }
+}

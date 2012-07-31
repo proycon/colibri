@@ -20,7 +20,7 @@ class LanguageModel {
         double score(EncData & data, bool fullsentence = false); //returns logprob (base 10)
         
         int getorder() { return order; }
-        
+        size_t size() { return ngrams.size(); }
 };
 
 #endif

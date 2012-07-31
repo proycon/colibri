@@ -103,6 +103,8 @@ class TranslationTable: public ModelQuerierBase {
     void save(const std::string & filename); //save as binary 
     //TODO void save(const std::string & filename, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder); //save as moses    
     void decode(ClassDecoder & sourcedecoder, ClassDecoder & targetdecoder, std::ostream * OUT); //decode
+    
+    size_t size() { return alignmatrix.size(); }
 };
 
 
