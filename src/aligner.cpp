@@ -269,7 +269,7 @@ int main( int argc, char *argv[] ) {
         
 	
 	if (!ttablefile.empty()) {
-	    if ((sourcemodelfile.empty())  || (targetmodelfile.empty())) {
+	    if ((!sourcemodelfile.empty())  || (!targetmodelfile.empty())) {
 	        cerr << "Error: Can't specify source or target models when loading a translation table." << endl;
 	        usage();
 	        exit(2);
