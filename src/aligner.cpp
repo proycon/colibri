@@ -135,7 +135,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:H:NVZEI:v:G:i:23W:a:c:UY:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:H:NVZEI:v:G:i:23W:a:c:UY:H:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -253,6 +253,9 @@ int main( int argc, char *argv[] ) {
         case 'c':
             pairthreshold = atoi(optarg);
             break;
+        case 'H':
+            ttablefile = optarg;
+            break;            
         case 'Y':
             ttableoutfile = optarg;
             break;
@@ -289,7 +292,7 @@ int main( int argc, char *argv[] ) {
 
     
 
-	if (modelfile.empty() && !sourcemodelfile.empty() && !targetmodelfile.empty()) {
+	if (modelfile.empty() && !sourcemodelfile.empty() && !targetmodelfile.empty() && (ttablefile.empty())) {
 	    //no alignment model loaded, build one
 	
 		cerr << "Configuration: " << endl;
@@ -520,7 +523,25 @@ int main( int argc, char *argv[] ) {
 			cerr << "Decoding..." << endl;
 			alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout, (MOSESFORMAT == 1));
 		}	
+		
+    } else if (!ttablefile.empty()) {
+        if (sourceclassfile.empty() || targetclassfile.empty()) {
+            cerr << "ERROR: Specify -S and -T" << endl;
+            exit(2);
+        }
+    
+		cerr << "Loading translation table..." << endl;
+		TranslationTable ttable = TranslationTable(ttablefile);
+		
+	    cerr << "Loading source class decoder " << sourceclassfile << endl;
+	    ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
 
+	    cerr << "Loading target class decoder " << targetclassfile << endl;
+	    ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
+	
+	    cerr << "Decoding..." << endl;
+        ttable.decode(sourceclassdecoder, targetclassdecoder, &cout, (MOSESFORMAT == 1) );
+    
     } else { //modelfile not empty
     
          if ((EXTRACTSKIPGRAMS) && (!outputprefix.empty()) && (!sourcemodelfile.empty()) && (!targetmodelfile.empty())) {
