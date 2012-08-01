@@ -498,7 +498,8 @@ int main( int argc, char *argv[] ) {
             cerr << "Saving translation table..." << endl;
             TranslationTable ttable = TranslationTable(*alignmodel, *reversealignmodel);            
             
-            ttable.save(outputprefix);
+            ttable.save(ttableoutfile);
+            
 		    if ((!sourceclassfile.empty()) && (!targetclassfile.empty())) {
 			    cerr << "Loading source class decoder " << sourceclassfile << endl;
 			    ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
