@@ -11,8 +11,9 @@ void usage() {
     cerr << "\t-t targetmodelfile        Target model file (*.graphmodel.colibri)"  << endl;
     cerr << "\t-S sourceclassfile        Source class file (for decoding)" << endl;
     cerr << "\t-T targetclassfile        Target class file (for decoding)" << endl;
-    cerr << "\t-d alignmodelfile         Decode an existing alignment model (*.alignmodel.colibri), specify -S and -T as well" << endl;
-    cerr << "\t-i inv-alignmodelfile     Use inverse alignment model as well (*.alignmodel.colibri), specify -S and -T as well" << endl;
+    cerr << "\t-d alignmodelfile         Load an existing alignment model (*.alignmodel.colibri), for decoding specify with -S and -T" << endl;
+    cerr << "\t-i inv-alignmodelfile     Load inverse alignment model as well (*.alignmodel.colibri), for decoding specify with -S and -T" << endl;
+    cerr << "\t-H translationtable       Load a translation table model (*.transtable.colibri) for decoding, specify with -S and -T" << endl;    
     cerr << " Alignment method (choose one, though some may be combined):" << endl;
     cerr << "\t-J                        Use Jaccard co-occurrence method (simplest)" << endl;
     //cerr << "\t-D                        Use Dice co-occurrence method" << endl;
@@ -24,16 +25,17 @@ void usage() {
     cerr << "\t-V				         Verbose debugging output" << endl;
     cerr << "\t-b n                      Best n alignments only" << endl;
     cerr << "\t-G weight-factor          Weigh alignment results based on graph information (subsumption relations)" << endl;
-    cerr << "\t-B probability-threshold  Compute bidirectional alignment (intersection), using given probability threshold (0 <= x < 1). Will automatically enable normalisation (-Z)" << endl;
-    cerr << " Co-occurrence alignment options:" << endl;       
-    cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
+    cerr << "\t-B probability-threshold  Compute bidirectional alignment (intersection) of alignment model and reverse alignment model, using given probability threshold (0 <= x < 1). Will automatically enable normalisation (-Z)." << endl;
     cerr << "\t-Z				         Do normalisation" << endl;
-    cerr << "\t-U                        Extract skip-grams from n-grams (requires source and target models to be graph models with template and instance relations)" << endl;   
+    cerr << "\t-U                        Extract skip-grams from n-grams (requires source and target models to be graph models with template and instance relations)" << endl;    
+    cerr << " Co-occurrence alignment options:" << endl;       
+    cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;   
     cerr << " EM Alignment Options:" << endl;
     cerr << "\t-P probability-threshold  Prune all alignments with an alignment probability lower than specified (0 <= x <= 1)" << endl;
     cerr << "\t-I n				         Maximum number of iterations (for EM method, default: 10000)" << endl;
     cerr << "\t-v n				         Convergence delta value (for EM method, default: 0.001)" << endl;
     cerr << "\t-N                        Do not extract skip-grams in EM-process" << endl;
+    cerr << "\t--null                    Take into account zero-fertility words (null alignments) in EM" << endl;    
     cerr << " GIZA Alignment Options:" << endl;
     cerr << "\t-a                        Alignment threshold (0 <= x <= 1). Specifies how strong word alignments have to be if phrases are to be extracted from them (default 0.5)" << endl;
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a jaccard co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
@@ -44,13 +46,13 @@ void usage() {
     cerr << "\t-x xcount-threshold       Consider only patterns with an *exclusive* count over this threshold" << endl;
     cerr << "\t-X xcount-ratio           Consider only patterns with an *exclusivity ratio* over this threshold (between 0.0 [not exclusive] and 1.0 [entirely exclusive])" << endl;
     cerr << "\t-l n                      Minimum N length" << endl; 
-    cerr << "\t-L n                      Maximum N length" << endl;     
-    cerr << "\t--null                    Take into account zero-fertility words (null alignments) in EM" << endl;
-    cerr << " Output options:" << endl;
-    cerr << "\t--simplelex               Output simple word-based lexicon" << endl;
-    cerr << "\t--simpletable             Output simple phrase-based translation table" << endl;
-    cerr << "\t--targetfirst             Output target before source in simple lexicon and simple translation table output (use with --simplelex, --simpletable)" << endl;
-    cerr << "\t--moses                   Output phrase-translation table in Moses format (use with --simpletable, --simplelex)" << endl;
+    cerr << "\t-L n                      Maximum N length" << endl;         
+    cerr << " Output options:" << endl;    
+    cerr << "\t--ttable                  Output a translation table in binary format (use with -d and -i)",
+    //cerr << "\t--simplelex               Output simple word-based lexicon (use with -H or with -d and -i)"" << endl;
+    //cerr << "\t--simpletable             Output simple phrase-based translation table (use with -H or with -d and -i)" << endl;
+    //cerr << "\t--targetfirst             Output target before source in simple lexicon and simple translation table output (use with --simplelex, --simpletable)" << endl;
+    cerr << "\t--moses                   Output phrase-translation table in Moses format" << endl;    
 }
 
 
@@ -62,6 +64,7 @@ int main( int argc, char *argv[] ) {
     string sourceclassfile = "";
     string targetclassfile = "";
     string modelfile="";
+    string ttablefile="";
     string invmodelfile="";
     double coocprunevalue = 0.0;
     double probprunevalue = 0.0;
@@ -88,10 +91,11 @@ int main( int argc, char *argv[] ) {
     int EM_NULL = 0;
     int MAXROUNDS = 10000;
     double CONVERGENCE = 0.001;
-    int DOSIMPLELEX = 0;
-    int DOSIMPLETABLE = 0;
-    int TARGETFIRST = 0;
+    //int DOSIMPLELEX = 0;
+    //int DOSIMPLETABLE = 0;
+    //int TARGETFIRST = 0;
     int MOSESFORMAT = 0;
+    int TRANSTABLEOUT = 0;
     int bestn = 0;
     bool DEBUG = false;
     
@@ -105,16 +109,18 @@ int main( int argc, char *argv[] ) {
     bool DOTEMPLATES = false; 
     bool DOINSTANCES = false;    
     
+    
     double alignthreshold = 0.5;
     int pairthreshold = 1;
     
     string outputprefix = "";
     
     static struct option long_options[] = {      
-       {"simplelex", no_argument,       &DOSIMPLELEX, 1},
-       {"simpletable", no_argument,       &DOSIMPLETABLE, 1},
-       {"targetfirst", no_argument,       &TARGETFIRST, 1},
+       //{"simplelex", no_argument,       &DOSIMPLELEX, 1},
+       //{"simpletable", no_argument,       &DOSIMPLETABLE, 1},
+       //{"targetfirst", no_argument,       &TARGETFIRST, 1},
        {"moses", no_argument,             &MOSESFORMAT, 1},
+       {"ttable", no_argument,             &TRANSTABLEOUT, 1},
        {"null", no_argument,             &EM_NULL, 1}, 
                       
        {0, 0, 0, 0}
@@ -129,7 +135,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEI:v:G:i:23W:a:c:U",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:H:NVZEI:v:G:i:23W:a:c:U",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -255,15 +261,22 @@ int main( int argc, char *argv[] ) {
             abort ();
         }
         
-    //if (MOSESFORMAT) TARGETFIRST = 1;    
 	
-    if (modelfile.empty() && (sourcemodelfile.empty()  || targetmodelfile.empty())) {
-  	    cerr << "Error: Specify at least a source model, target model, and alignment method to build an alignment model! Or load a pre-existing model" << endl;
+	if (!ttablefile.empty()) {
+	    if ((sourcemodelfile.empty())  || (targetmodelfile.empty())) {
+	        cerr << "Error: Can't specify source or target models when loading a translation table." << endl;
+	        usage();
+	        exit(2);
+	    }
+	}
+	
+    if (ttablefile.empty() && modelfile.empty() && (sourcemodelfile.empty()  || targetmodelfile.empty())) {
+  	    cerr << "Error: Specify at least a source model (-s), target model (-t), and alignment method to build an alignment model. Or load and decode a pre-existing alignment model using -d, -S, -T; or a translation table using -H, -S, -T" << endl;
         usage();
         exit(2);
     }
     
-    if (modelfile.empty() && ((!DO_EM) && (!DO_EM2) && (!DO_ITEREM) && (!COOCMODE) && (!DOGIZA) )) {
+    if (modelfile.empty( )&& ttablefile.empty() && ((!DO_EM) && (!DO_EM2) && (!DO_ITEREM) && (!COOCMODE) && (!DOGIZA) )) {
     	cerr << "Error: No alignment method selected (select -J or -D)" << endl;
     	usage();
     	exit(3);
@@ -271,7 +284,11 @@ int main( int argc, char *argv[] ) {
 
 	AlignmentModel * alignmodel = NULL;
 
-	if (modelfile.empty()) {
+    
+
+	if (modelfile.empty() && !sourcemodelfile.empty() && !targetmodelfile.empty()) {
+	    //no alignment model loaded, build one
+	
 		cerr << "Configuration: " << endl;
 		if (DO_EM) {
 			cerr << "\tEM-alignment (-E)" << endl;
@@ -393,7 +410,7 @@ int main( int argc, char *argv[] ) {
 				alignmodel->normalize();
 			}
 
-			if (DOBIDIRECTIONAL) {
+			if ((DOBIDIRECTIONAL) || (TRANSTABLEOUT)) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
 				reversealignmodel->trainCooc(COOCMODE, tmpbestn, coocprunevalue, 0);
 				cerr << "   Found alignment targets for  " << reversealignmodel->alignmatrix.size() << " source constructions" << endl;
@@ -405,9 +422,9 @@ int main( int argc, char *argv[] ) {
 		
 			}
 				    					
-			EM_INIT = false;
-			
+			EM_INIT = false;			
 		}		
+		
 		if ((DO_EM) || (DO_EM2)) {
 			cerr << "Computing EM alignment model..." << endl;
 			if (DO_EM2) {
@@ -419,7 +436,7 @@ int main( int argc, char *argv[] ) {
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
 						
-			if (DOBIDIRECTIONAL) {
+			if ((DOBIDIRECTIONAL) || (TRANSTABLEOUT)) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
 				if (DO_EM2) {				
 				    reversealignmodel->trainEM2(MAXROUNDS, CONVERGENCE, probprunevalue, bestn, EM_NULL, EM_INIT);
@@ -430,7 +447,8 @@ int main( int argc, char *argv[] ) {
 				cerr << "   Found alignment targets for  " << reversealignmodel->alignmatrix.size() << " source constructions" << endl;
 				cerr << "   Total of alignment possibilies in matrix: " << reversealignmodel->totalsize() << endl;						
 			}	    			    		
-		}		
+		}	
+			
 		if (DOGIZA) {
 			cerr << "Loading source class encoder " << sourceclassfile << endl;
 		    ClassEncoder sourceclassencoder = ClassEncoder(sourceclassfile);
@@ -442,10 +460,16 @@ int main( int argc, char *argv[] ) {
 		    GizaModel gizamodels2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);
 		    GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
 		    
+		    cerr << "Extracting phrases based on GIZA++ Word Alignments" << endl;
 		    alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold);
+		    
+		    if ((DOBIDIRECTIONAL) || (TRANSTABLEOUT)) {
+		        reversealignmodel->extractgizapatterns(gizamodelt2s, gizamodels2t, pairthreshold, coocprunevalue, alignthreshold);
+		    }
 		}
 
 	    if (EXTRACTSKIPGRAMS) {
+	        cerr << "Extracting skipgrams" << endl;
 	        alignmodel->extractskipgrams();
 	    }
 				
@@ -462,17 +486,27 @@ int main( int argc, char *argv[] ) {
 			cerr << "   Made " << adjustments << " adjustments" << endl;			
 		}
 
-
-
-
 		if (!outputprefix.empty()) {
 		    cerr << "Saving alignment model..." << endl;
 			alignmodel->save(outputprefix);
 		}
-		
-		
 
-		if ((!sourceclassfile.empty()) && (!targetclassfile.empty())) {
+        if (TRANSTABLEOUT) {
+            cerr << "Saving translation table..." << endl;
+            TranslationTable ttable = TranslationTable(*alignmodel, *reversealignmodel);            
+            
+            ttable.save(outputprefix);
+		    if ((!sourceclassfile.empty()) && (!targetclassfile.empty())) {
+			    cerr << "Loading source class decoder " << sourceclassfile << endl;
+			    ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
+	
+			    cerr << "Loading target class decoder " << targetclassfile << endl;
+			    ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
+	
+			    cerr << "Decoding..." << endl;
+			    ttable.decode(sourceclassdecoder, targetclassdecoder, &cout, (MOSESFORMAT == 1));
+		    }	            
+        } else if ((!sourceclassfile.empty()) && (!targetclassfile.empty())) {
 			cerr << "Loading source class decoder " << sourceclassfile << endl;
 			ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
 	
@@ -480,16 +514,10 @@ int main( int argc, char *argv[] ) {
 			ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);    	
 	
 			cerr << "Decoding..." << endl;
-			if (DOSIMPLETABLE) {
-				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout);
-			} else if (DOSIMPLELEX) {
-				alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, true);
-			} else { 
-				alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);
-			}       
+			alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout, (MOSESFORMAT == 1));
 		}	
 
-    } else {
+    } else { //modelfile not empty
     
          if ((EXTRACTSKIPGRAMS) && (!outputprefix.empty()) && (!sourcemodelfile.empty()) && (!targetmodelfile.empty())) {
             cerr << "Extracting skipgrams from existing model" << endl;
@@ -531,10 +559,17 @@ int main( int argc, char *argv[] ) {
 	        cerr << "Saving alignment model..." << endl;
 		    alignmodel->save(outputprefix);	                
     	} else if ((sourceclassfile.empty()) || (targetclassfile.empty())) {
-            cerr << "Error: Specify -S and -T to decode, or -U and -o to extract skipgrams from an existing model" << endl; 
-    		usage();
-    		exit(2);
-    	} else {
+    	    if ((!invmodelfile.empty()) && (TRANSTABLEOUT)) {
+       		    cerr << "Build translation table..." << endl;
+        		TranslationTable ttable = TranslationTable(modelfile, invmodelfile);
+                cerr << "Saving translation table..." << endl;
+                ttable.save(outputprefix);	    	        
+    	    } else {
+                cerr << "Error: Specify -S and -T to decode, or -U and -o to extract skipgrams from an existing model" << endl; 
+        		usage();
+        		exit(2);
+        	}
+    	} else {    	
     	
 		    cerr << "Loading source class decoder " << sourceclassfile << endl;
 		    ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
@@ -550,29 +585,22 @@ int main( int argc, char *argv[] ) {
         		if  (EXTRACTSKIPGRAMS) alignmodel->extractskipgrams();
         		    	    	
 			    cerr << "Decoding..." << endl;
-			    if (DOSIMPLETABLE) {
-				    alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, false, MOSESFORMAT);
-			    } else if (DOSIMPLELEX) {
-				    alignmodel->simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, true);
-			    } else { 
-				    alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout);
-			    }            		
+			    alignmodel->decode(sourceclassdecoder, targetclassdecoder, &cout, (MOSESFORMAT == 1) );
         	} else {
         		cerr << "Loading alignment models..." << endl;
-        		BiAlignmentModel bialignmodel = BiAlignmentModel(modelfile, invmodelfile);
+        		TranslationTable ttable = TranslationTable(modelfile, invmodelfile);
 			    cerr << "Decoding..." << endl;
-			    if (DOSIMPLETABLE) {
-				    bialignmodel.simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, false, MOSESFORMAT);
-			    } else if (DOSIMPLELEX) {
-				    bialignmodel.simpletableoutput(sourceclassdecoder, targetclassdecoder, &cout, TARGETFIRST, true);
-			    } else { 
-				    bialignmodel.decode(sourceclassdecoder, targetclassdecoder, &cout);
-			    }            		    		
-		    }
-			
+                ttable.decode(sourceclassdecoder, targetclassdecoder, &cout, (MOSESFORMAT == 1) );
+                if (TRANSTABLEOUT) {
+                    cerr << "Saving translation table..." << endl;
+                    ttable.save(outputprefix);
+               }		    
+            }
+            			
 		}    	
     } 
     
+
 
 	if (alignmodel != NULL) {
 		delete alignmodel;

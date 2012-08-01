@@ -671,24 +671,32 @@ CoocAlignmentModel::CoocAlignmentModel(CoocMode mode,SelectivePatternModel * sou
     }            
 }
     */
-void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
+void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT, bool mosesformat) {
+    string delimiter = "\t";
+    if (mosesformat) delimiter = " ||| ";
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
     	if (iter->first == NULLGRAM) continue;
         const EncAnyGram* sourcegram = iter->first;
-        *OUT << sourcegram->decode(sourceclassdecoder) << "\t";
+        if (!mosesformat) *OUT << sourcegram->decode(sourceclassdecoder) << delimiter;
         map<double, const EncAnyGram*> sorted;        
         for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
         	sorted[-1 * iter2->second] = iter2->first;            
         }
         for (map<double, const EncAnyGram*>::iterator iter2 = sorted.begin(); iter2 != sorted.end(); iter2++) {
-			const EncAnyGram* targetgram = iter2->second;            
-            *OUT << targetgram->decode(targetclassdecoder) << "\t" << (-1 * iter2->first) << "\t";
+			const EncAnyGram* targetgram = iter2->second;
+			if (mosesformat) *OUT << sourcegram->decode(sourceclassdecoder) << delimiter;            
+            *OUT << targetgram->decode(targetclassdecoder) << delimiter << (-1 * iter2->first);
+            if (mosesformat) {
+                *OUT << endl;                
+            } else {
+                *OUT << delimiter;
+            }
         }            
-        *OUT << endl;
+        if (!mosesformat) *OUT << endl;
     }
 }
 
-void BiAlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
+/*void BiAlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
     	if (iter->first == NULLGRAM) continue;
         const EncAnyGram* sourcegram = iter->first;
@@ -707,7 +715,7 @@ void BiAlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & 
 
 
 void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT, bool targetfirst,  bool wordbased, bool mosesformat) {
-	/* output a simple word-based lexicon, similar to the one used in moses (s2t, t2s) */
+	//output a simple word-based lexicon, similar to the one used in moses (s2t, t2s)
 	string delimiter;
 	if (mosesformat) {
 		delimiter = " ||| ";
@@ -739,7 +747,7 @@ void AlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassD
 
 
 void BiAlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT, bool targetfirst,  bool wordbased, bool mosesformat) {
-	/* output a simple word-based lexicon, similar to the one used in moses (s2t, t2s) */
+	//output a simple word-based lexicon, similar to the one used in moses (s2t, t2s) 
 	string delimiter;
 	if (mosesformat) {
 		delimiter = " ||| ";
@@ -775,6 +783,8 @@ void BiAlignmentModel::simpletableoutput(ClassDecoder & sourceclassdecoder, Clas
         }            
     }	
 }
+
+*/
 
 /***************************** BEGIN EM ************************************/
 /*
@@ -1392,7 +1402,7 @@ void CoocAlignmentModel::save(const string & filename) {
 
 
 
-
+/*
 BiAlignmentModel::BiAlignmentModel(const string & s2tfilename, const string & t2sfilename): AlignmentModel(s2tfilename) {
 	//TODO: Code duplication, merge with AlignmentModel() constructor
 	DEBUG = false;
@@ -1470,6 +1480,7 @@ BiAlignmentModel::BiAlignmentModel(const string & s2tfilename, const string & t2
     f.close();
 }
 
+*/
 
 int AlignmentModel::graphalign(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double impactfactor) {
 	int adjustments = 0;
@@ -2581,7 +2592,15 @@ unsigned int AlignmentModel::prunepatternmodel(IndexedPatternModel & patternmode
 TranslationTable::TranslationTable(const string & s2tfilename, const string & t2sfilename, const double s2tthreshold, const double t2sthreshold, const double productthreshold) {
     AlignmentModel s2tmodel = AlignmentModel(s2tfilename);
     AlignmentModel t2smodel = AlignmentModel(t2sfilename);
-    
+    load(s2tmodel, t2smodel, s2tthreshold, t2sthreshold, productthreshold);    
+}
+
+
+TranslationTable::TranslationTable(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold, const double t2sthreshold, const double productthreshold) {
+    load(s2tmodel, t2smodel, s2tthreshold, t2sthreshold, productthreshold);
+}
+
+void TranslationTable::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold, const double t2sthreshold, const double productthreshold) {
     for (std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> >::iterator iter = s2tmodel.alignmatrix.begin(); iter != s2tmodel.alignmatrix.end(); iter++) {
         const EncAnyGram * copysource = s2tmodel.getsourcekey(iter->first);
         for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
@@ -2611,8 +2630,8 @@ TranslationTable::TranslationTable(const string & s2tfilename, const string & t2
                 }        
             }                            
         }    
-    }
-        
+    }    
+
 }
 
 
@@ -2776,14 +2795,16 @@ void TranslationTable::save(const string & filename) {
 }
 
 
-void TranslationTable::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT) {
+void TranslationTable::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT, bool mosesformat) {
+    string delimiter = "\t";
+    if (mosesformat) delimiter = " ||| ";
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, vector<double> > >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
     	if (iter->first == NULLGRAM) continue;
         const EncAnyGram* sourcegram = iter->first;
         for (unordered_map<const EncAnyGram*, vector<double>>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
             const EncAnyGram* targetgram = iter2->first;
-            *OUT << sourcegram->decode(sourceclassdecoder) << "\t";
-            *OUT << targetgram->decode(targetclassdecoder) << "\t"; 
+            *OUT << sourcegram->decode(sourceclassdecoder) << delimiter;
+            *OUT << targetgram->decode(targetclassdecoder) << delimiter; 
             for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
                 *OUT << *iter3 << ' ';
             }

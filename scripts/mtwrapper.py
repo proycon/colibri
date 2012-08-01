@@ -154,6 +154,7 @@ class MTWrapper(object):
             ('BUILD_COLIBRI_ALIGNMENT', False,'Create an alignment using colibri'),
             ('BUILD_COLIBRI_GIZA', False,'Base aligner on word-alignments using giza (do not manually specify -W -s -t in COLIBRI_ALIGNER_OPTIONS)'),
             ('BUILD_COLIBRI_MOSESPHRASETABLE', False,'Create a Moses Phrasetable using colibri'),
+            ('BUILD_COLIBRI', False,'Build for colibri decoder'),
             ('BUILD_PHRASAL', False,'Build phrasal configuration, necessary for decoding using phrasal'),
             ('BUILD_PHRASAL_MERT', False,'Do Minumum Error Rate Training for Phrasal (on development set)'),
             ('BUILD_PHRASAL_WORDALIGN', False,'Align words using berkeley aligner (supplied with phrasal)'),
@@ -199,7 +200,8 @@ class MTWrapper(object):
             ('EXEC_COLIBRI_CLASSENCODE','classencode',''),
             ('EXEC_COLIBRI_PATTERNFINDER','patternfinder',''),
             ('EXEC_COLIBRI_GRAPHER','grapher',''),
-            ('EXEC_COLIBRI_ALIGNER','aligner',''),            
+            ('EXEC_COLIBRI_ALIGNER','aligner',''),
+            ('EXEC_COLIBRI_DECODER','decoder',''),            
             ('MKCLS_OPTIONS','-m2 -c50',''),
             ('GIZA_OPTIONS','-p0 0.98 -m1 5 -m2 0 -m3 3 -m4 3 -nsmooth 4 -model4smoothfactor 0.4',''),
             ('SRILM_ORDER',3,'N-gram size for language model'),
@@ -221,6 +223,7 @@ class MTWrapper(object):
             ('COLIBRI_GRAPHER_OPTIONS','-P -X -r','Options for the Graphmodel, if empty, no graph model will be constructed for the aligner, see graphmodel -h'),
             ('COLIBRI_PATTERNFINDER_OPTIONS','-t 10 -s -B -E', 'Options for the pattern finder, see patternfinder -h'),
             ('COLIBRI_ALIGNER_OPTIONS','-J -p 0.1','Options for the colibri aligner, see aligner -h'),
+            ('COLIBRI_DECODER_OPTIONS','','Options for the colibri decoder, see decoder -h'),
             ('PHRASAL_MAXMEM', '4g', 'Memory allocated for word alignment, phrase extraction and decoding using phrasal (java)'),
             ('PHRASAL_WITHGAPS', True, 'Consider gaps if using Phrasal?'),
             ('PHRASAL_MAXSOURCEPHRASESPAN', 15, 'Maximum span for a source-side phrase with gaps (phrasal)'),
@@ -308,6 +311,7 @@ class MTWrapper(object):
         self.EXEC_COLIBRI_PATTERNFINDER = self.findpath(self.EXEC_COLIBRI_PATTERNFINDER , self.PATH_COLIBRI)
         self.EXEC_COLIBRI_GRAPHER = self.findpath(self.EXEC_COLIBRI_GRAPHER , self.PATH_COLIBRI)
         self.EXEC_COLIBRI_ALIGNER = self.findpath(self.EXEC_COLIBRI_ALIGNER , self.PATH_COLIBRI)
+        self.EXEC_COLIBRI_DECODER = self.findpath(self.EXEC_COLIBRI_DECODER , self.PATH_COLIBRI)
         
         self.EXEC_PBMBMT_DECODER = self.findpath(self.EXEC_PBMBMT_DECODER, self.PATH_PBMBMT)
         self.EXEC_PBMBMT_INSTANCEGENERATOR = self.findpath(self.EXEC_PBMBMT_INSTANCEGENERATOR, self.PATH_PBMBMT)
