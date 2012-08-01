@@ -400,6 +400,10 @@ class MTWrapper(object):
             elif not os.path.exists(self.WORKDIR + '/phrasal.conf'):
                 self.log("Error: No Phrasal configuration found. Did you forget to train the system first?",red,True)
                 return False    
+        elif self.BUILD_COLIBRI:
+            if not self.EXEC_COLIBRI_DECODER or not os.path.isfile(self.EXEC_COLIBRI_DECODER):
+                self.log("Error: Colibri decoder not found! (" + self.EXEC_COLIBRI_DECODER+")",red,True)
+                return False                
         else:
             self.log("Error: System is not runnable, no MT decoder enabled",red,True)
             return False
@@ -466,8 +470,8 @@ class MTWrapper(object):
                 self.log("PATH_PHRASAL_MERT not found, please set PATH_MOSES !",red)
 
         if self.BUILD_PHRASAL:
-            if self.BUILD_MOSES or self.BUILD_PBMBMT:
-                self.log("Configuration error: Ambiguous selection of MT system: Select only one of BUILD_MOSES, BUILD_PBMBMT or BUILD_PHRASAL",red)
+            if self.BUILD_MOSES or self.BUILD_PBMBMT or self.BUILD_COLIBRI:
+                self.log("Configuration error: Ambiguous selection of MT system: Select only one of BUILD_MOSES, BUILD_PBMBMT, BUILD_PHRASAL, BUILD_COLIBRI",red)
                 sane = False
             if not self.BUILD_PHRASAL_PHRASEEXTRACT and not self.BUILD_COLIBRI_MOSESPHRASETABLE:
                 self.log("Configuration update: BUILD_PHRASAL_EXTRACTPHRASES automatically enabled because BUILD_PHRASAL is too",yellow)
@@ -508,8 +512,8 @@ class MTWrapper(object):
                 self.log("PATH_MOSES_MERT not found, please set PATH_MOSES !",red)
 
         if self.BUILD_MOSES:
-            if self.BUILD_PBMBMT or self.BUILD_PHRASAL:
-                self.log("Configuration error: Ambiguous selection of MT system: Select only one of BUILD_MOSES, BUILD_PBMBMT or BUILD_PHRASAL",red)
+            if self.BUILD_PBMBMT or self.BUILD_PHRASAL or self.BUILD_COLIBRI:
+                self.log("Configuration error: Ambiguous selection of MT system: Select only one of BUILD_MOSES, BUILD_PBMBMT, BUILD_PHRASAL, BUILD_COLIBRI",red)
                 sane = False
             if not self.BUILD_MOSES_PHRASETRANSTABLE and not self.BUILD_COLIBRI_MOSESPHRASETABLE:
                 self.log("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_MOSES is too",yellow)
@@ -1729,6 +1733,7 @@ WordPenalty: -0.5\n""")
         if self.BUILD_MOSES and not self.run_moses(): return False
         if self.BUILD_PBMBMT and not self.run_pbmbmt(): return False
         if self.BUILD_PHRASAL and not self.run_phrasal(): return False
+        if self.BUILD_COLIBRI and not self.run_colibri(): return False
                 
         
         os.rename('output.txt',outputfile)        
@@ -1747,6 +1752,11 @@ WordPenalty: -0.5\n""")
         if not self.runcmd(cmd,"Phrasal Decoder"):
             return False
         return True
+    
+    def run_colibri(self):
+        if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('lm') + ' -t ' + self.gets2tfilename('translationtable.colibri') +   < input.txt > output.txt','Moses Decoder'): return False
+        return True        
+        
     
     def server_moses(self, port, html):
         while True:

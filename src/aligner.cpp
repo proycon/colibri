@@ -48,7 +48,7 @@ void usage() {
     cerr << "\t-l n                      Minimum N length" << endl; 
     cerr << "\t-L n                      Maximum N length" << endl;         
     cerr << " Output options:" << endl;    
-    cerr << "\t--ttable                  Output a translation table in binary format (use with -d and -i)",
+    cerr << "\t-Y filename               Output a translation table in binary format (use with -d and -i)",
     //cerr << "\t--simplelex               Output simple word-based lexicon (use with -H or with -d and -i)"" << endl;
     //cerr << "\t--simpletable             Output simple phrase-based translation table (use with -H or with -d and -i)" << endl;
     //cerr << "\t--targetfirst             Output target before source in simple lexicon and simple translation table output (use with --simplelex, --simpletable)" << endl;
@@ -65,6 +65,7 @@ int main( int argc, char *argv[] ) {
     string targetclassfile = "";
     string modelfile="";
     string ttablefile="";
+    string ttableoutfile="";
     string invmodelfile="";
     double coocprunevalue = 0.0;
     double probprunevalue = 0.0;
@@ -95,7 +96,7 @@ int main( int argc, char *argv[] ) {
     //int DOSIMPLETABLE = 0;
     //int TARGETFIRST = 0;
     int MOSESFORMAT = 0;
-    int TRANSTABLEOUT = 0;
+    
     int bestn = 0;
     bool DEBUG = false;
     
@@ -120,7 +121,6 @@ int main( int argc, char *argv[] ) {
        //{"simpletable", no_argument,       &DOSIMPLETABLE, 1},
        //{"targetfirst", no_argument,       &TARGETFIRST, 1},
        {"moses", no_argument,             &MOSESFORMAT, 1},
-       {"ttable", no_argument,             &TRANSTABLEOUT, 1},
        {"null", no_argument,             &EM_NULL, 1}, 
                       
        {0, 0, 0, 0}
@@ -135,7 +135,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:H:NVZEI:v:G:i:23W:a:c:U",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:H:NVZEI:v:G:i:23W:a:c:UY:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -252,6 +252,9 @@ int main( int argc, char *argv[] ) {
             break;
         case 'c':
             pairthreshold = atoi(optarg);
+            break;
+        case 'Y':
+            ttableoutfile = optarg;
             break;
         case 'Z':
         	DONORM = true;
@@ -410,7 +413,7 @@ int main( int argc, char *argv[] ) {
 				alignmodel->normalize();
 			}
 
-			if ((DOBIDIRECTIONAL) || (TRANSTABLEOUT)) {
+			if ((DOBIDIRECTIONAL) || (!ttableoutfile.empty())) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
 				reversealignmodel->trainCooc(COOCMODE, tmpbestn, coocprunevalue, 0);
 				cerr << "   Found alignment targets for  " << reversealignmodel->alignmatrix.size() << " source constructions" << endl;
@@ -436,7 +439,7 @@ int main( int argc, char *argv[] ) {
 			cerr << "   Found alignment targets for  " << alignmodel->alignmatrix.size() << " source constructions" << endl;
 			cerr << "   Total of alignment possibilies in matrix: " << alignmodel->totalsize() << endl;
 						
-			if ((DOBIDIRECTIONAL) || (TRANSTABLEOUT)) {
+			if ((DOBIDIRECTIONAL) || (!ttableoutfile.empty())) {
 				cerr << "Computing reverse alignment model (for bidirectional alignment)..." << endl;
 				if (DO_EM2) {				
 				    reversealignmodel->trainEM2(MAXROUNDS, CONVERGENCE, probprunevalue, bestn, EM_NULL, EM_INIT);
@@ -463,7 +466,7 @@ int main( int argc, char *argv[] ) {
 		    cerr << "Extracting phrases based on GIZA++ Word Alignments" << endl;
 		    alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold);
 		    
-		    if ((DOBIDIRECTIONAL) || (TRANSTABLEOUT)) {
+		    if ((DOBIDIRECTIONAL) || ((!ttableoutfile.empty()))) {
 		        reversealignmodel->extractgizapatterns(gizamodelt2s, gizamodels2t, pairthreshold, coocprunevalue, alignthreshold);
 		    }
 		}
@@ -491,7 +494,7 @@ int main( int argc, char *argv[] ) {
 			alignmodel->save(outputprefix);
 		}
 
-        if (TRANSTABLEOUT) {
+        if ((!ttableoutfile.empty())) {
             cerr << "Saving translation table..." << endl;
             TranslationTable ttable = TranslationTable(*alignmodel, *reversealignmodel);            
             
@@ -559,11 +562,11 @@ int main( int argc, char *argv[] ) {
 	        cerr << "Saving alignment model..." << endl;
 		    alignmodel->save(outputprefix);	                
     	} else if ((sourceclassfile.empty()) || (targetclassfile.empty())) {
-    	    if ((!invmodelfile.empty()) && (TRANSTABLEOUT)) {
+    	    if ((!invmodelfile.empty()) && ((!ttableoutfile.empty()))) {
        		    cerr << "Build translation table..." << endl;
         		TranslationTable ttable = TranslationTable(modelfile, invmodelfile);
                 cerr << "Saving translation table..." << endl;
-                ttable.save(outputprefix);	    	        
+                ttable.save(ttableoutfile);	    	        
     	    } else {
                 cerr << "Error: Specify -S and -T to decode, or -U and -o to extract skipgrams from an existing model" << endl; 
         		usage();
@@ -591,9 +594,9 @@ int main( int argc, char *argv[] ) {
         		TranslationTable ttable = TranslationTable(modelfile, invmodelfile);
 			    cerr << "Decoding..." << endl;
                 ttable.decode(sourceclassdecoder, targetclassdecoder, &cout, (MOSESFORMAT == 1) );
-                if (TRANSTABLEOUT) {
+                if ((!ttableoutfile.empty())) {
                     cerr << "Saving translation table..." << endl;
-                    ttable.save(outputprefix);
+                    ttable.save(ttableoutfile);
                }		    
             }
             			
