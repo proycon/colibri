@@ -92,7 +92,7 @@ class TranslationTable: public ModelQuerierBase {
     
     std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, std::vector<double> > > alignmatrix;
     
-    TranslationTable(const std::string & filename, bool multiscore=true); //load from binary file
+    TranslationTable(const std::string & filename); //load from binary file
     
     TranslationTable(const std::string & s2tfilename, const std::string & t2sfilename, const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0); //create on the basis of two alignment models, will generate two scores: p(t|s) and p(s|t)
     

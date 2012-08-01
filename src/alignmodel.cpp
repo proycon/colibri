@@ -2639,7 +2639,7 @@ void TranslationTable::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel
 }
 
 
-TranslationTable::TranslationTable(const string & filename, bool multiscore) {
+TranslationTable::TranslationTable(const string & filename) {
 	DEBUG = false;
 	unsigned char check;
 		
@@ -2650,9 +2650,16 @@ TranslationTable::TranslationTable(const string & filename, bool multiscore) {
        exit(3);
     }
     
-    uint64_t model_id;    
+    uint64_t model_id;   
+    
     uint64_t sourcecount = 0;    
-    f.read( (char*) &model_id, sizeof(uint64_t));        
+    f.read( (char*) &model_id, sizeof(uint64_t));
+    bool multiscore;
+    if (model_id == 101) {
+        multiscore = false;
+    } else {
+        multiscore = true;
+    }        
     f.read( (char*) &sourcecount, sizeof(uint64_t));        
      
     char gapcount;    
@@ -2705,9 +2712,9 @@ TranslationTable::TranslationTable(const string & filename, bool multiscore) {
 		        }   
 		        targetgram = gettargetkey((EncAnyGram*) &skipgram);                      
 		    }		    
-		    double scores;
+		    char scores;
 		    if (multiscore) {
-		        f.read((char*) &scores, sizeof(double));
+		        f.read((char*) &scores, sizeof(char));
 		    } else {
 		        scores = 1;
 		    }		    
@@ -2738,7 +2745,7 @@ void TranslationTable::save(const string & filename) {
        exit(3);
     }
     
-    uint64_t _id = 101;
+    uint64_t _id = 102;
     f.write( (char*) &_id, sizeof(uint64_t));
             
     uint64_t sourcecount = alignmatrix.size();
