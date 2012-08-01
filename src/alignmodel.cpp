@@ -2602,13 +2602,19 @@ TranslationTable::TranslationTable(AlignmentModel & s2tmodel, AlignmentModel & t
 
 void TranslationTable::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold, const double t2sthreshold, const double productthreshold) {
     for (std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> >::iterator iter = s2tmodel.alignmatrix.begin(); iter != s2tmodel.alignmatrix.end(); iter++) {
+        cerr << "DEBUG1";
         const EncAnyGram * copysource = s2tmodel.getsourcekey(iter->first);
         for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
             const EncAnyGram * copytarget = s2tmodel.gettargetkey(iter2->first);
+            cerr << "DEBUG2";
             if (iter2->second >= s2tthreshold) {
-                if (t2smodel.alignmatrix.count(copytarget) && t2smodel.alignmatrix[copytarget].count(copysource)) {                                
+                cerr << "DEBUG3";
+                if (t2smodel.alignmatrix.count(copytarget) && t2smodel.alignmatrix[copytarget].count(copysource)) {
+                    cerr << "DEBUG4";                                
                     if (t2smodel.alignmatrix[copytarget][copysource] >= t2sthreshold) {
+                        cerr << "DEBUG5";
                         if (iter2->second * t2smodel.alignmatrix[copytarget][copysource] >= productthreshold) {
+                            cerr << "DEBUG6";
                             if (copysource->isskipgram()) {
                                 EncSkipGram skipgram = *((const EncSkipGram *) copysource);
                                 sourceskipgrams.insert(skipgram); 
