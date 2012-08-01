@@ -2602,22 +2602,16 @@ TranslationTable::TranslationTable(AlignmentModel & s2tmodel, AlignmentModel & t
 
 void TranslationTable::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold, const double t2sthreshold, const double productthreshold) {
     for (std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> >::iterator iter = s2tmodel.alignmatrix.begin(); iter != s2tmodel.alignmatrix.end(); iter++) {
-        cerr << "DEBUG1";
         const EncAnyGram * copysource_s2t = s2tmodel.getsourcekey(iter->first);
         const EncAnyGram * copysource_t2s = t2smodel.gettargetkey(iter->first);
         if ((copysource_s2t != NULL) && (copysource_t2s != NULL)) {
             for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                 const EncAnyGram * copytarget_s2t = s2tmodel.gettargetkey(iter2->first);
-                const EncAnyGram * copytarget_t2s = t2smodel.getsourcekey(iter2->first);
-                cerr << "DEBUG2";
-                if ((copytarget_s2t != NULL) && (copytarget_t2s != NULL)  && (iter2->second >= s2tthreshold)) {
-                    cerr << "DEBUG3";
-                    if (t2smodel.alignmatrix.count(copytarget_t2s) && t2smodel.alignmatrix[copytarget_t2s].count(copysource_t2s)) {
-                        cerr << "DEBUG4";                                
-                        if (t2smodel.alignmatrix[copytarget_t2s][copysource_t2s] >= t2sthreshold) {
-                            cerr << "DEBUG5";
-                            if (iter2->second * t2smodel.alignmatrix[copytarget_t2s][copysource_t2s] >= productthreshold) {
-                                cerr << "DEBUG6";
+                const EncAnyGram * copytarget_t2s = t2smodel.getsourcekey(iter2->first);                
+                if ((copytarget_s2t != NULL) && (copytarget_t2s != NULL)  && (iter2->second >= s2tthreshold)) {                    
+                    if (t2smodel.alignmatrix.count(copytarget_t2s) && t2smodel.alignmatrix[copytarget_t2s].count(copysource_t2s)) {                                                        
+                        if (t2smodel.alignmatrix[copytarget_t2s][copysource_t2s] >= t2sthreshold) {                            
+                            if (iter2->second * t2smodel.alignmatrix[copytarget_t2s][copysource_t2s] >= productthreshold) {                                
                                 if (copysource_t2s->isskipgram()) {
                                     EncSkipGram skipgram = *((const EncSkipGram *) copysource_t2s);
                                     sourceskipgrams.insert(skipgram); 
