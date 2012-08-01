@@ -153,7 +153,8 @@ class MTWrapper(object):
             ('BUILD_PBMBMT_PARAMSEARCH', False, 'Do parameter optimisation for PBMBMT using wrapped progressive sampling'),
             ('BUILD_COLIBRI_ALIGNMENT', False,'Create an alignment using colibri'),
             ('BUILD_COLIBRI_GIZA', False,'Base aligner on word-alignments using giza (do not manually specify -W -s -t in COLIBRI_ALIGNER_OPTIONS)'),
-            ('BUILD_COLIBRI_MOSESPHRASETABLE', False,'Create a Moses Phrasetable using colibri'),
+            ('BUILD_COLIBRI_TRANSTABLE', False,'Build a translation table using colibri')
+            ('BUILD_COLIBRI_MOSESPHRASETABLE', False,'Build a Moses-style phrasetable using colibri'),
             ('BUILD_COLIBRI', False,'Build for colibri decoder'),
             ('BUILD_PHRASAL', False,'Build phrasal configuration, necessary for decoding using phrasal'),
             ('BUILD_PHRASAL_MERT', False,'Do Minumum Error Rate Training for Phrasal (on development set)'),
@@ -400,10 +401,16 @@ class MTWrapper(object):
             elif not os.path.exists(self.WORKDIR + '/phrasal.conf'):
                 self.log("Error: No Phrasal configuration found. Did you forget to train the system first?",red,True)
                 return False    
+            elif not os.path.exists(self.gets2tfilename('phrasetable')):
+                self.log("Error: No phrasetable found ("+ self.gets2tfilename('phrasetable')+") . Did you forget to train the system first?",red,True)
+                return False                
         elif self.BUILD_COLIBRI:
             if not self.EXEC_COLIBRI_DECODER or not os.path.isfile(self.EXEC_COLIBRI_DECODER):
                 self.log("Error: Colibri decoder not found! (" + self.EXEC_COLIBRI_DECODER+")",red,True)
                 return False                
+            elif (not os.path.exists(self.gets2tfilename('translationtable.colibri'))) and (not os.path.exists(self.gets2tfilename('phrasetable'))):
+                self.log("Error: No translation table found. Did you forget to train the system first?",red,True)
+                return False        
         else:
             self.log("Error: System is not runnable, no MT decoder enabled",red,True)
             return False
@@ -434,10 +441,15 @@ class MTWrapper(object):
             if not self.BUILD_COLIBRI_ALIGNMENT:    
                 self.log("Configuration update: BUILD_COLIBRI_ALIGNMENT automatically enabled because BUILD_COLIBRI_GIZA is too",yellow)
                 self.BUILD_COLIBRI_ALIGNMENT = True
-            
+        
         if self.BUILD_COLIBRI_MOSESPHRASETABLE:            
+            if not self.BUILD_COLIBRI_TRANSTABLE:
+                self.log("Configuration update: BUILD_COLIBRI_TRANSTABLE automatically enabled because BUILD_COLIBRI_MOSESPHRASETABLE is too",yellow)
+                self.BUILD_COLIBRI_TRANSTABLE = True
+                
+        if self.BUILD_COLIBRI_TRANSTABLE:                
             if not self.BUILD_COLIBRI_ALIGNMENT:    
-                self.log("Configuration update: BUILD_COLIBRI_ALIGNMENT automatically enabled because BUILD_COLIBRI_MOSESPHRASETABLE is too",yellow)
+                self.log("Configuration update: BUILD_COLIBRI_ALIGNMENT automatically enabled because BUILD_COLIBRI_TRANSTABLE is too",yellow)
                 self.BUILD_COLIBRI_ALIGNMENT = True
                 
         if self.BUILD_COLIBRI_ALIGNMENT:
@@ -1379,9 +1391,15 @@ class MTWrapper(object):
             if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -t ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -N ' + self.COLIBRI_ALIGNER_OPTIONS, "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
             if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -t ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -s ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gett2sfilename('alignmodel.colibri') + ' -N ' + self.COLIBRI_ALIGNER_OPTIONS, "Building reverse alignment model",self.gett2sfilename('alignmodel.colibri') ): return False
         
+        if self.BUILD_COLIBRI_TRANSTABLE:            
+            extra = ''
+            if self.BUILD_COLIBRI_MOSESPHRASETABLE:
+                extra = '-S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' --moses'
+            else:
+                extra = ''
+            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -d ' + self.gets2tfilename('alignmodel.colibri') + ' -i ' + self.gett2sfilename('alignmodel.colibri') + ' -Y ' + self.gets2tfilename('translationtable.colibri') + ' ' + extra + ' > ' + self.gets2tfilename('phrasetable') , "Building Translation Table", self.gets2tfilename('translationtable.colibri') ): return False
                 
-        if self.BUILD_COLIBRI_MOSESPHRASETABLE:            
-            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -d ' + self.gets2tfilename('alignmodel.colibri') + ' -i ' + self.gett2sfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' --moses > ' + self.gets2tfilename('phrasetable') , "Decoding to Moses phrasetable", self.gets2tfilename('phrasetable') ): return False
+        
 
         return True
         
@@ -1753,8 +1771,15 @@ WordPenalty: -0.5\n""")
             return False
         return True
     
-    def run_colibri(self):
-        if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('lm') + ' -t ' + self.gets2tfilename('translationtable.colibri') +   < input.txt > output.txt','Moses Decoder'): return False
+    def run_colibri(self):        
+        if os.path.exists(self.gets2tfilename('translationtable.colibri')):
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('lm') + ' -t ' + self.gets2tfilename('translationtable.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' < input.txt > output.txt','Colibri Decoder'): return False
+        elif os.path.exists(self.gets2tfilename('phrasetable')):
+            #moses-style phrase-table
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('lm') + ' -t ' + self.gets2tfilename('phrasetable') + ' --moses -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' < input.txt > output.txt','Colibri Decoder'): return False
+        else:
+            self.log("Error: No phrasetable found! Did you forget to train the system?" ,red)
+            return False                
         return True        
         
     
