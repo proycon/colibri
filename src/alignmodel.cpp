@@ -2640,7 +2640,7 @@ void TranslationTable::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel
 
 
 TranslationTable::TranslationTable(const string & filename) {
-	DEBUG = false;
+    DEBUG = true;
 	unsigned char check;
 		
     ifstream f;
