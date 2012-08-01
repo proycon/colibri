@@ -2603,39 +2603,43 @@ TranslationTable::TranslationTable(AlignmentModel & s2tmodel, AlignmentModel & t
 void TranslationTable::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold, const double t2sthreshold, const double productthreshold) {
     for (std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> >::iterator iter = s2tmodel.alignmatrix.begin(); iter != s2tmodel.alignmatrix.end(); iter++) {
         cerr << "DEBUG1";
-        const EncAnyGram * copysource = s2tmodel.getsourcekey(iter->first);
-        for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-            const EncAnyGram * copytarget = s2tmodel.gettargetkey(iter2->first);
-            cerr << "DEBUG2";
-            if (iter2->second >= s2tthreshold) {
-                cerr << "DEBUG3";
-                if (t2smodel.alignmatrix.count(copytarget) && t2smodel.alignmatrix[copytarget].count(copysource)) {
-                    cerr << "DEBUG4";                                
-                    if (t2smodel.alignmatrix[copytarget][copysource] >= t2sthreshold) {
-                        cerr << "DEBUG5";
-                        if (iter2->second * t2smodel.alignmatrix[copytarget][copysource] >= productthreshold) {
-                            cerr << "DEBUG6";
-                            if (copysource->isskipgram()) {
-                                EncSkipGram skipgram = *((const EncSkipGram *) copysource);
-                                sourceskipgrams.insert(skipgram); 
-                            } else {
-                                EncNGram ngram = *((const EncNGram *) copysource);
-                                sourcengrams.insert(ngram);
-                            }
-                            if (copytarget->isskipgram()) {
-                                EncSkipGram skipgram = *((const EncSkipGram *) copytarget);
-                                targetskipgrams.insert(skipgram); 
-                            } else {
-                                EncNGram ngram = *((const EncNGram *) copytarget);
-                                targetngrams.insert(ngram);
-                            }   
-                            alignmatrix[getsourcekey(copysource)][gettargetkey(copytarget)].push_back(iter2->second);
-                            alignmatrix[getsourcekey(copysource)][gettargetkey(copytarget)].push_back(t2smodel.alignmatrix[copytarget][copysource]);   
-                        }                  
-                    }
-                }        
-            }                            
-        }    
+        const EncAnyGram * copysource_s2t = s2tmodel.getsourcekey(iter->first);
+        const EncAnyGram * copysource_t2s = t2smodel.gettargetkey(iter->first);
+        if ((copysource_s2t != NULL) && (copysource_t2s != NULL)) {
+            for (std::unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                const EncAnyGram * copytarget_s2t = s2tmodel.gettargetkey(iter2->first);
+                const EncAnyGram * copytarget_t2s = t2smodel.getsourcekey(iter2->first);
+                cerr << "DEBUG2";
+                if ((copytarget_s2t != NULL) && (copytarget_t2s != NULL)  && (iter2->second >= s2tthreshold)) {
+                    cerr << "DEBUG3";
+                    if (t2smodel.alignmatrix.count(copytarget_t2s) && t2smodel.alignmatrix[copytarget_t2s].count(copysource_t2s)) {
+                        cerr << "DEBUG4";                                
+                        if (t2smodel.alignmatrix[copytarget_t2s][copysource_t2s] >= t2sthreshold) {
+                            cerr << "DEBUG5";
+                            if (iter2->second * t2smodel.alignmatrix[copytarget_t2s][copysource_t2s] >= productthreshold) {
+                                cerr << "DEBUG6";
+                                if (copysource_t2s->isskipgram()) {
+                                    EncSkipGram skipgram = *((const EncSkipGram *) copysource_t2s);
+                                    sourceskipgrams.insert(skipgram); 
+                                } else {
+                                    EncNGram ngram = *((const EncNGram *) copysource_t2s);
+                                    sourcengrams.insert(ngram);
+                                }
+                                if (copytarget_t2s->isskipgram()) {
+                                    EncSkipGram skipgram = *((const EncSkipGram *) copytarget_t2s);
+                                    targetskipgrams.insert(skipgram); 
+                                } else {
+                                    EncNGram ngram = *((const EncNGram *) copytarget_t2s);
+                                    targetngrams.insert(ngram);
+                                }   
+                                alignmatrix[getsourcekey(copysource_t2s)][gettargetkey(copytarget_t2s)].push_back(iter2->second);
+                                alignmatrix[getsourcekey(copysource_t2s)][gettargetkey(copytarget_t2s)].push_back(t2smodel.alignmatrix[copytarget_t2s][copysource_t2s]);   
+                            }                  
+                        }
+                    }        
+                }                            
+            }   
+        } 
     }    
 
 }
