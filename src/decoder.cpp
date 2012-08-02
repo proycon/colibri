@@ -248,8 +248,14 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     history = NULL;
     const int order = decoder->lm->getorder();
     int begin = targetoffset - (order - 1);
+    if (begin < 0) begin = -1; //TODO : CHECK
     for (int i = begin; i < begin + (order-1); i++) {
-        EncNGram * unigram = getoutputtoken(i);
+        EncNGram * unigram;
+        if (begin == -1) {
+            unigram = new EncNGram((const unsigned char*) &BOSCLASS, 1); //TODO: CHECK
+        } else { 
+            unigram = getoutputtoken(i);
+        }            
         if (!unigram->unknown()) {
             if (history != NULL) {
                 const EncNGram * old = history;
