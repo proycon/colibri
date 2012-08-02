@@ -287,38 +287,40 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     
     
     double lmscore = 0;
-    if (history != NULL) {
-        if (targetgram->isskipgram()) {
-            vector<EncNGram*> parts;
-            ((const EncSkipGram *) targetgram)->parts(parts);
-            int partcount = 0;
-            for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
-                EncNGram * part = *iter;
-                if ((partcount == 0) && (sourcegaps[0].first != 0)) {
-                    //first part, no initial gap, join with history
-                    EncNGram ngram = *history + *part;
-                    lmscore += decoder->lweight * decoder->lm->score(ngram);
-                } else {     
+    if (parent != NULL) {
+        if (history != NULL) {
+            if (targetgram->isskipgram()) {
+                vector<EncNGram*> parts;
+                ((const EncSkipGram *) targetgram)->parts(parts);
+                int partcount = 0;
+                for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
+                    EncNGram * part = *iter;
+                    if ((partcount == 0) && (sourcegaps[0].first != 0)) {
+                        //first part, no initial gap, join with history
+                        EncNGram ngram = *history + *part;
+                        lmscore += decoder->lweight * decoder->lm->score(ngram);
+                    } else {     
+                        lmscore += decoder->lweight * decoder->lm->score(*part);
+                    }
+                    partcount++;
+                    delete part;
+                } 
+            } else {
+                EncNGram ngram = EncNGram(*history + *((const EncNGram* ) targetgram) );
+                lmscore += decoder->lweight * decoder->lm->score(ngram);
+            }
+        } else {
+            if (targetgram->isskipgram()) {
+                vector<EncNGram*> parts;
+                ( (const EncSkipGram *) targetgram)->parts(parts);
+                for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
+                    EncNGram * part = *iter; 
                     lmscore += decoder->lweight * decoder->lm->score(*part);
-                }
-                partcount++;
-                delete part;
-            } 
-        } else {
-            EncNGram ngram = EncNGram(*history + *((const EncNGram* ) targetgram) );
-            lmscore += decoder->lweight * decoder->lm->score(ngram);
-        }
-    } else {
-        if (targetgram->isskipgram()) {
-            vector<EncNGram*> parts;
-            ( (const EncSkipGram *) targetgram)->parts(parts);
-            for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
-                EncNGram * part = *iter; 
-                lmscore += decoder->lweight * decoder->lm->score(*part);
-                delete part;
-            } 
-        } else {
-           lmscore += decoder->lweight * decoder->lm->score( *((const EncNGram *) targetgram));
+                    delete part;
+                } 
+            } else {
+               lmscore += decoder->lweight * decoder->lm->score( *((const EncNGram *) targetgram));
+            }
         }
     }
     
