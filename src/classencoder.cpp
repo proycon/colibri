@@ -287,6 +287,10 @@ EncAnyGram * ClassEncoder::input2anygram(const std::string & querystring, bool a
 	}
 }
 
+void ClassEncoder::add(std::string s, unsigned int cls) {
+    classes[s] = cls;
+}
+
 void ClassEncoder::encodefile(const std::string & inputfilename, const std::string & outputfilename, bool allowunknown) {
 	const char zero = 0;
 	const char one = 1;

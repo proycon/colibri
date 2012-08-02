@@ -27,6 +27,7 @@ class ClassEncoder {
     EncNGram input2ngram(const std::string &,  bool allowunknown);
     EncAnyGram * input2anygram(const std::string &,  bool allowunknown);
     
+    void add(std::string, unsigned int cls);
     
     void save(const std::string & filename);
     

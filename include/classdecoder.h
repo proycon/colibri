@@ -28,6 +28,8 @@ class ClassDecoder {
          return classes[key];
     }
     
+    void add( unsigned int, std::string); 
+    
     bool hasclass(unsigned int key) const { return (classes.count(key) > 0); } 
 };
 

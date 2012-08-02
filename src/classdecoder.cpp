@@ -184,6 +184,10 @@ const int countwords(const unsigned char* data, const int l) {
     }
 }
 
+void ClassDecoder::add(unsigned int cls, std::string s) {
+    classes[cls] = s;
+}
+
 
 pair<int,int> getwords(const unsigned char* data, const int datasize, const int n, const int begin) {
     //cerr << "IN DATASIZE=" << datasize << " N=" << n << " BEGIN=" << begin << endl;
