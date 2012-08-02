@@ -90,7 +90,6 @@ AlignmentModel::AlignmentModel(const string & filename, const int bestn) {
 }
 
 void AlignmentModel::load(const string & filename, const int bestn) {
-	DEBUG = false;
 	unsigned char check;
 		
     ifstream f;
@@ -137,6 +136,7 @@ void AlignmentModel::load(const string & filename, const int bestn) {
         const EncAnyGram * besttargetgram = NULL;
         double lowerbound = 0.0;
         list<double> bestq;
+        if (DEBUG)  cerr << "\t--";
         for (int j = 0; j < targetcount; j++) {
         	const EncAnyGram * targetgram = NULL;   
             f.read(&gapcount, sizeof(char));	    
@@ -154,7 +154,7 @@ void AlignmentModel::load(const string & filename, const int bestn) {
 		        	targetskipgrams.insert(skipgram);		        	
 		        }   
 		        targetgram = gettargetkey((EncAnyGram*) &skipgram);                      
-		    }		    
+		    }		 
 		    double p;
 		    f.read((char*) &p, sizeof(double));
 		    if (sourcegram != NULL and targetgram != NULL) {
@@ -169,6 +169,7 @@ void AlignmentModel::load(const string & filename, const int bestn) {
 		    	exit(6);
 		    }
         }
+        if (DEBUG) cerr << endl;
 		if (bestn) {
 			//pruning stage
 			for (unordered_map<const EncAnyGram *, double>::iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
@@ -2589,14 +2590,17 @@ unsigned int AlignmentModel::prunepatternmodel(IndexedPatternModel & patternmode
 
 
 
-TranslationTable::TranslationTable(const string & s2tfilename, const string & t2sfilename, const double s2tthreshold, const double t2sthreshold, const double productthreshold) {
+TranslationTable::TranslationTable(const string & s2tfilename, const string & t2sfilename, const double s2tthreshold, const double t2sthreshold, const double productthreshold, bool DEBUG) {
+    this->DEBUG = DEBUG;
+    //TODO: optimize reading directly into target matrix?
     AlignmentModel s2tmodel = AlignmentModel(s2tfilename);
     AlignmentModel t2smodel = AlignmentModel(t2sfilename);
     load(s2tmodel, t2smodel, s2tthreshold, t2sthreshold, productthreshold);    
 }
 
 
-TranslationTable::TranslationTable(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold, const double t2sthreshold, const double productthreshold) {
+TranslationTable::TranslationTable(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold, const double t2sthreshold, const double productthreshold, bool DEBUG) {
+    this->DEBUG = DEBUG;
     load(s2tmodel, t2smodel, s2tthreshold, t2sthreshold, productthreshold);
 }
 
@@ -2639,8 +2643,8 @@ void TranslationTable::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel
 }
 
 
-TranslationTable::TranslationTable(const string & filename) {
-    DEBUG = true;
+TranslationTable::TranslationTable(const string & filename, bool DEBUG) {
+    this->DEBUG = DEBUG;
 	unsigned char check;
 		
     ifstream f;
@@ -2650,8 +2654,7 @@ TranslationTable::TranslationTable(const string & filename) {
        exit(3);
     }
     
-    uint64_t model_id;   
-    
+    uint64_t model_id;       
     uint64_t sourcecount = 0;    
     f.read( (char*) &model_id, sizeof(uint64_t));
     bool multiscore;
@@ -2676,7 +2679,7 @@ TranslationTable::TranslationTable(const string & filename) {
         const EncAnyGram * sourcegram;   
         if (gapcount == 0) {
             if (DEBUG)  cerr << "\tNGRAM";
-            EncNGram ngram = EncNGram(&f); //read from file            
+            EncNGram ngram = EncNGram(&f); //read from file
             if (!getsourcekey((EncAnyGram*) &ngram)) {
             	sourcengrams.insert(ngram);            	
             }   
@@ -2690,7 +2693,9 @@ TranslationTable::TranslationTable(const string & filename) {
             sourcegram = getsourcekey((EncAnyGram*) &skipgram);                     
         }        
         uint64_t targetcount;
+        
         f.read( (char*) &targetcount, sizeof(uint64_t));
+        if (DEBUG)  cerr << "\t--" << targetcount << ":";
         const EncAnyGram * besttargetgram = NULL;
         double lowerbound = 0.0;
         list<double> bestq;
@@ -2700,6 +2705,7 @@ TranslationTable::TranslationTable(const string & filename) {
 		    if (gapcount == 0) {
 		        if (DEBUG)  cerr << "\tNGRAM";
 		        EncNGram ngram = EncNGram(&f); //read from file
+		        if (DEBUG)  cerr << "\tread";
 		        if (!gettargetkey((EncAnyGram*) &ngram)) {
 		        	targetngrams.insert(ngram);		        	
 		        }   
@@ -2781,8 +2787,6 @@ void TranslationTable::save(const string & filename) {
         	    exit(6); 
         	}        	        	
         	        	
-        	f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
-        	
         	if (targetgram->isskipgram()) {
     			const EncSkipGram * skipgram = (const EncSkipGram*) targetgram;
 	    		skipgram->writeasbinary(&f);
@@ -2819,9 +2823,8 @@ void TranslationTable::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & 
             for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
                 *OUT << *iter3 << ' ';
             }
-            *OUT << "\n";
+            *OUT << endl;
         }
-        *OUT << endl;
     }
 }
 
