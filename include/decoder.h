@@ -67,7 +67,7 @@ class StackDecoder {
         EncData input;
         unsigned int inputlength;
         TranslationTable * translationtable;
-        LanguageModel * lm; 
+        LanguageModel * lm;    
         
         std::vector<double> tweights; //translation model weights
         double dweight; //distortion model weight

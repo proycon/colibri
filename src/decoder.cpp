@@ -8,6 +8,8 @@
 using namespace std;
 
 unsigned char UNKNOWNCLASS = 2;
+unsigned char BOSCLASS = 3;
+unsigned char EOSCLASS = 4;
 
 StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int maxn) {
         this->input = input;
@@ -28,7 +30,9 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
         this->lweight = lweight;
         
         computefuturecost();
-        //TODO: Deal with unknown tokens?
+        //TODO: Deal with unknown tokens? and <s> </s>
+        
+        
 }
 
 void StackDecoder::setdebug(int debug) {
@@ -520,7 +524,12 @@ void usage() {
     
 }
 
-
+void addsentencemarkers(ClassDecoder & targetclassdecoder, ClassEncoder & targetclassencoder) {
+    targetclassdecoder.add(BOSCLASS,"<s>");
+    targetclassdecoder.add(EOSCLASS,"</s>");
+    targetclassencoder.add("<s>", BOSCLASS);
+    targetclassencoder.add("</s>", EOSCLASS);
+}
 
 
 int main( int argc, char *argv[] ) {
@@ -632,6 +641,7 @@ int main( int argc, char *argv[] ) {
     cerr << "Target classes:       " << targetclassfile << endl;
     ClassEncoder targetclassencoder = ClassEncoder(targetclassfile);    
     ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);
+    addsentencemarkers(targetclassdecoder, targetclassencoder);        
     cerr << "Language model:       " << lmfile << endl;
     LanguageModel lm = LanguageModel(lmfile, targetclassencoder);
     cerr << "   loaded " << lm.size() << " n-grams, order=" << lm.getorder() << endl;
@@ -645,7 +655,10 @@ int main( int argc, char *argv[] ) {
     int size;
     while (getline(cin, input)) {        
         cerr << "INPUT: " << input << endl;        
-        size = sourceclassencoder.encodestring(input, buffer, true);        
+        size = sourceclassencoder.encodestring(input, buffer, true);
+        
+        
+                
         StackDecoder decoder = StackDecoder(EncData(buffer, size), &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn);
         decoder.decode();
         cout << decoder.solution(targetclassdecoder) << endl;        
