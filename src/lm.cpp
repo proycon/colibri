@@ -8,7 +8,7 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
     f.open(filename.c_str(), ios::in);
     while (!f.eof()) {               
         string line;
-        f >> line;                
+        getline(f, line);                
         if (line == "\\data\\") {
             order = 0;
         } else if (line == "\\1-grams:") { //bit inelegant, but simplest
@@ -32,8 +32,10 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
         } else if (!line.empty()) {
             if (order == 0) {
               if (line.substr(0,5) == "ngram") {
-                int n = atoi(line.substr(7,1).c_str());
-                int v = atoi(line.substr(8).c_str());
+                string n_s = line.substr(6,1);
+                string v_s = line.substr(8);
+                int n = atoi(n_s.c_str());
+                int v = atoi(v_s.c_str());
                 total[n] = v;
               }   
             } else if (order > 0) {
