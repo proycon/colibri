@@ -380,7 +380,13 @@ unsigned int TranslationHypothesis::expand(bool finalonly) {
                 for (std::unordered_map<const EncAnyGram*, vector<double> >::iterator iter2 =  decoder->translationtable->alignmatrix[sourcecandidate].begin(); iter2 != decoder->translationtable->alignmatrix[sourcecandidate].end(); iter2++) {
                     //create hypothesis for each target fragment
                     const EncAnyGram * targetcandidate = iter2->first;
-                    TranslationHypothesis * newhypo = new TranslationHypothesis(this, decoder, sourcecandidate, ref.token, targetcandidate, targetoffset + targetgram->n() , iter2->second);
+                    int length;
+                    if (targetgram != NULL) { 
+                        length = targetgram->n();
+                    } else {
+                        length = 0;
+                    }
+                    TranslationHypothesis * newhypo = new TranslationHypothesis(this, decoder, sourcecandidate, ref.token, targetcandidate, targetoffset + length , iter2->second);
                     if ((finalonly) && (!newhypo->final())) {
                         delete newhypo;
                         break;
