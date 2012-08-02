@@ -274,7 +274,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     }
     
     //Precompute score
-    if (decoder->tweights.size() > tscores.size()) {
+    if ((parent != NULL) && (decoder->tweights.size() > tscores.size())) {
         cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << decoder->tweights.size() << ", got " << tscores.size() << endl;
         exit(6);  
     }
