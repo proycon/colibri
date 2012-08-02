@@ -153,6 +153,7 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerierBase::getpatt
 		    //cerr << "TRYING PATTERN " << begin << " " << length << endl;
 			EncNGram * ngram = getencngram(begin,length, data, datasize);
 			const EncAnyGram * anygram =  ngram;			
+			if (getkey(anygram) != NULL) {			
 			//if (occurrencecount(anygram) > 0) {
 			    ///cerr << "FOUND" << endl;
 				patterns.push_back( make_pair<const EncAnyGram*,CorpusReference>(getkey(anygram), CorpusReference(linenum, (char) begin) ) ); //stores the actual pointer used by the model
@@ -211,18 +212,21 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerierBase::getpatt
                             EncSkipGram skipgram = EncSkipGram(subngrams, skipref, initialskip, finalskip);
                             const EncAnyGram * anygram2 = &skipgram;			
 							//if (occurrencecount(anygram2) > 0) {
+							if (getkey(anygram2) != NULL) {
 								patterns.push_back( make_pair<const EncAnyGram*,CorpusReference>(getkey(anygram2), CorpusReference(linenum, (char) begin)) ); //stores the actual pointer used by the model
+							}
 							//}			
 						}
+						
 						for (size_t k = 0; k < subngrams.size(); k++) {
                             delete subngrams[k];
                         }
 					}
 				}
-			//} else {
+			} else {
 				//if this pattern doesn't occur, we could break because longer patterns won't occur either in most models, but this is not always the case, so we don't break
 				//TODO: make more efficient for complete models that are guaranteed not to prune sub-parts								
-			//}
+			}
 			delete ngram;
 		}
 	}

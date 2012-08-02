@@ -17,6 +17,12 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
         this->stacksize = stacksize;
         this->prunethreshold = prunethreshold;
         sourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
+        //sanity check:
+        /*for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
+            const EncAnyGram * anygram = iter->first;
+            cerr << anygram << endl;            
+        }*/
+        
         this->tweights = vector<double>(tweights.begin(), tweights.end());
         this->dweight = dweight;
         this->lweight = lweight;
