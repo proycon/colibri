@@ -674,6 +674,7 @@ int main( int argc, char *argv[] ) {
         
                 
         StackDecoder decoder = StackDecoder(EncData(buffer, size), &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn);
+        decoder.setdebug(1);
         decoder.decode();
         cout << decoder.solution(targetclassdecoder) << endl;        
     }
