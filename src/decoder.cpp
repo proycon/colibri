@@ -279,7 +279,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
         exit(6);  
     }
     double tscore = 0; 
-    for (int i = 0; i < decoder->tweights.size(); i++) {
+    for (int i = 0; i < tscores.size(); i++) {
         double p = tscores[i];
         if (p > 0) p = log10(p); //turn into logprob, base10 
         tscore += decoder->tweights[i] * p;
