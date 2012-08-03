@@ -139,12 +139,12 @@ void StackDecoder::decode() {
             
             bool finalonly = (i == inputlength - 1); 
             unsigned int expanded = hyp->expand(finalonly); //will automatically add to appropriate stacks
-            if (DEBUG >= 1) cerr << "\t\tExpanded " << expanded << " new hypotheses" << endl;
+            if (DEBUG >= 1) cerr << "\t Expanded " << expanded << " new hypotheses" << endl;
             unsigned int pruned = 0;
             for (int j = i+1; j <= inputlength; j++){ //prune further stacks (hypotheses may have been added to any of them)
                 pruned += prune(j); 
             }
-            if (DEBUG >= 1) cerr << "\t\tPruned " << pruned << " hypotheses" << endl;            
+            if (DEBUG >= 1) cerr << "\t Pruned " << pruned << " hypotheses" << endl;            
             if (hyp->children.empty()) delete hyp; //if the hypothesis failed to expand it will be pruned
             stacks[i].clear(); //stack is in itself no longer necessary, included pointer elements may live on though! Unnecessary hypotheses will be cleaned up automatically when higher-order hypotheses are deleted             
         }
@@ -349,9 +349,9 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     _score = tscore + lmscore + dscore + futurescore;
     
     if (decoder->DEBUG >= 2) {
-        cerr << "   Translation Hypothesis:" << endl;
-        cerr << "    score = tscore + lmscore + dscore + futurecost = " << tscore << " + " << lmscore << " + " << dscore << " + " << futurescore << " = " << _score << endl;
-        cerr << "    coverage: ";
+        cerr << "\t   Translation Hypothesis:" << endl;
+        cerr << "\t    score = tscore + lmscore + dscore + futurecost = " << tscore << " + " << lmscore << " + " << dscore << " + " << futurescore << " = " << _score << endl;
+        cerr << "\t    coverage: ";
         for (int i = 0; i < inputcoveragemask.size(); i++) {
             if (inputcoveragemask[i]) {
                 cerr << "1";
@@ -407,6 +407,7 @@ unsigned int TranslationHypothesis::expand(bool finalonly) {
                     } 
                     //add to proper stack
                     int cov = newhypo->inputcoverage();
+                    if (decoder->DEBUG >= 2) cerr << "\t    Adding to stack " << cov << endl;
                     decoder->stacks[cov].insert(newhypo);
                     expanded++;
                     //no delete newhypo
