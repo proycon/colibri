@@ -61,8 +61,8 @@ class StackDecoder {
     private:
         int stacksize;
         int prunethreshold;
-        int DEBUG;
     public:
+        int DEBUG;
         std::map<std::pair<int, int>, double> futurecost; //(start, end) => cost    
         EncData input;
         unsigned int inputlength;

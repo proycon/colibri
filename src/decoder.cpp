@@ -347,6 +347,20 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     
     //total score            
     _score = tscore + lmscore + dscore + futurescore;
+    
+    if (decoder->DEBUG >= 2) {
+        cerr << "   Translation Hypothesis:" << endl;
+        cerr << "    score = tscore + lmscore + dscore + futurecost = " << tscore << " + " << lmscore << " + " << dscore << " + " << futurescore << " = " << _score << endl;
+        cerr << "    coverage: ";
+        for (int i = 0; i < inputcoveragemask.size(); i++) {
+            if (inputcoveragemask[i]) {
+                cerr << "1";
+            } else {
+                cerr << "0";
+            }            
+        }
+        cerr << endl;
+    }
   
 }
 
@@ -671,10 +685,8 @@ int main( int argc, char *argv[] ) {
         cerr << "INPUT: " << input << endl;        
         size = sourceclassencoder.encodestring(input, buffer, true);
         
-        
-                
         StackDecoder decoder = StackDecoder(EncData(buffer, size), &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn);
-        decoder.setdebug(1);
+        decoder.setdebug(2);
         decoder.decode();
         cout << decoder.solution(targetclassdecoder) << endl;        
     }
