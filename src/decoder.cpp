@@ -146,12 +146,14 @@ void StackDecoder::decode() {
             totalexpanded += expanded;
             if (hyp->children.empty()) delete hyp; //if the hypothesis failed to expand it will be pruned
         }
-        if (DEBUG >= 1) cerr << "\t Expanded " << totalexpanded << " new hypotheses in total for stack " << i << endl;
-        unsigned int pruned = 0;
+        if (DEBUG >= 1) cerr << "\t Expanded " << totalexpanded << " new hypotheses in total after processing stack " << i << endl;
+        unsigned int totalpruned = 0;
         for (int j = i+1; j <= inputlength; j++) { //prune further stacks (hypotheses may have been added to any of them)
-            pruned += prune(j); 
+            unsigned int pruned = prune(j);
+            if ((DEBUG >= 1) && (pruned > 0)) cerr << "\t  Pruned " << pruned << " hypotheses from stack " << j << endl;
+            totalpruned += pruned; 
         }
-        if (DEBUG >= 1) cerr << "\t Pruned " << pruned << " hypotheses" << endl;
+        if (DEBUG >= 1) cerr << "\t Pruned " << totalpruned << " hypotheses" << endl;
         stacks[i].clear(); //stack is in itself no longer necessary, included pointer elements may live on though! Unnecessary hypotheses will be cleaned up automatically when higher-order hypotheses are deleted
     }   
     
