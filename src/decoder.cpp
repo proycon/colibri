@@ -127,11 +127,14 @@ void StackDecoder::decode() {
     
     
     //for each stack
-    for (int i = 0; i <= inputlength - 1; i++) {        
-        if (!stacks[i].empty()) {
-            if (DEBUG >= 1) {
-                cerr << "\tDecoding Stack " << i << endl;
-            }
+    for (int i = 0; i <= inputlength - 1; i++) {
+        if (DEBUG >= 1) {
+            cerr << "\tDecoding Stack " << i << endl;
+        }        
+        unsigned int totalexpanded = 0;
+        while (!stacks[i].empty()) {
+
+            cerr << "\t Expanding hypothesis off stack " << i << " -- " << stacks[i].size() -1 << " left:" << endl;
             //pop from stacks[i]
             TranslationHypothesis * hyp = *(stacks[i].begin());
             stacks[i].erase(hyp);
@@ -139,15 +142,17 @@ void StackDecoder::decode() {
             
             bool finalonly = (i == inputlength - 1); 
             unsigned int expanded = hyp->expand(finalonly); //will automatically add to appropriate stacks
-            if (DEBUG >= 1) cerr << "\t Expanded " << expanded << " new hypotheses" << endl;
-            unsigned int pruned = 0;
-            for (int j = i+1; j <= inputlength; j++) { //prune further stacks (hypotheses may have been added to any of them)
-                pruned += prune(j); 
-            }
-            if (DEBUG >= 1) cerr << "\t Pruned " << pruned << " hypotheses" << endl;            
+            if (DEBUG >= 1) cerr << "\t  Expanded " << expanded << " new hypotheses" << endl;
+            totalexpanded += expanded;
             if (hyp->children.empty()) delete hyp; //if the hypothesis failed to expand it will be pruned
-            stacks[i].clear(); //stack is in itself no longer necessary, included pointer elements may live on though! Unnecessary hypotheses will be cleaned up automatically when higher-order hypotheses are deleted             
         }
+        if (DEBUG >= 1) cerr << "\t Expanded " << totalexpanded << " new hypotheses in total for stack " << i << endl;
+        unsigned int pruned = 0;
+        for (int j = i+1; j <= inputlength; j++) { //prune further stacks (hypotheses may have been added to any of them)
+            pruned += prune(j); 
+        }
+        if (DEBUG >= 1) cerr << "\t Pruned " << pruned << " hypotheses" << endl;
+        stacks[i].clear(); //stack is in itself no longer necessary, included pointer elements may live on though! Unnecessary hypotheses will be cleaned up automatically when higher-order hypotheses are deleted
     }   
     
     //solutions are now in last stack: stacks[inputlength]         
