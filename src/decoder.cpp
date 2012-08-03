@@ -141,7 +141,7 @@ void StackDecoder::decode() {
             unsigned int expanded = hyp->expand(finalonly); //will automatically add to appropriate stacks
             if (DEBUG >= 1) cerr << "\t Expanded " << expanded << " new hypotheses" << endl;
             unsigned int pruned = 0;
-            for (int j = i+1; j <= inputlength; j++){ //prune further stacks (hypotheses may have been added to any of them)
+            for (int j = i+1; j <= inputlength; j++) { //prune further stacks (hypotheses may have been added to any of them)
                 pruned += prune(j); 
             }
             if (DEBUG >= 1) cerr << "\t Pruned " << pruned << " hypotheses" << endl;            
@@ -163,7 +163,7 @@ unsigned int StackDecoder::prune(int stackindex) {
         const TranslationHypothesis*  h = *iter;
         count++;
         if (best == 0) best = h->score(); //will only be set once, first is always best
-        if ((count > stacksize) || (h->score() < best * prunethreshold)) {
+        if ((count > stacksize) || (h->score() < best / prunethreshold)) {
             pruned++;
             stacks[stackindex].erase(iter); //delete form here onwards
             delete h;            
