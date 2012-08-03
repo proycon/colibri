@@ -479,17 +479,23 @@ int TranslationHypothesis::inputcoverage() {
 }
 
 EncNGram * TranslationHypothesis::getoutputtoken(int index) {
-    index = index - targetoffset;
-    if ((index < 0) || (index >= targetgram->n())) {
-        cerr << "ERROR: TranslationHypothesis::getoutputtoken() with index " << index << " is out of bounds" << endl;
-        exit(6);
-    }
-    if (targetgram->isskipgram()) {
-        const EncSkipGram * targetskipgram = (const EncSkipGram *) targetgram;
-        return targetskipgram->gettoken(index);
+    if (parent == NULL) {
+        cerr << "ERROR: getoutputtoken left unresolved!" << endl;
+    } else if ((index >= targetoffset) && (index < targetoffset + targetgram->n())) {
+        index = index - targetoffset;
+        if ((index < 0) || (index >= targetgram->n())) {
+            cerr << "ERROR: TranslationHypothesis::getoutputtoken() with index " << index << " is out of bounds" << endl;
+            exit(6);
+        }
+        if (targetgram->isskipgram()) {
+            const EncSkipGram * targetskipgram = (const EncSkipGram *) targetgram;
+            return targetskipgram->gettoken(index);
+        } else {
+            const EncNGram * targetngram = (const EncNGram *) targetgram;        
+            return targetngram->slice(index,1);
+        }
     } else {
-        const EncNGram * targetngram = (const EncNGram *) targetgram;        
-        return targetngram->slice(index,1);
+        return parent->getoutputtoken(index);
     }
 }
 
