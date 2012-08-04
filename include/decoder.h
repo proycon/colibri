@@ -9,6 +9,8 @@
 
 class StackDecoder;
 
+
+
 class TranslationHypothesis {
     private:
         double _score;
@@ -46,9 +48,9 @@ class TranslationHypothesis {
         //void computeinputcoverage(vector<bool> & container); //compute source coverage        
         int inputcoverage(); //return input coverage (absolute number of tokens covered)
         
-        bool operator< (const TranslationHypothesis& other) const {
+        /*bool operator< (const TranslationHypothesis& other) const {
             return (score() < other.score());
-        }
+        }*/
         
         
         EncNGram * getoutputtoken(int index); //get output token (unigram, will return unknown class if in gap)                    
@@ -57,11 +59,40 @@ class TranslationHypothesis {
 };
 
 
+struct HypCompare : public std::binary_function<const TranslationHypothesis*, const TranslationHypothesis*, bool>
+{
+    bool operator()(const TranslationHypothesis* x, TranslationHypothesis* y) const
+    {   
+        return x->score() >= y->score();
+    }
+};
+
+class StackDecoder;
+
+class Stack {
+   private:
+    int index;
+    int stacksize;
+    double prunethreshold;
+   public:
+    Stack(int index, int stacksize, double prunethreshold);
+    ~Stack();
+    Stack(const Stack& ref); //limited copy constructor
+    std::list<TranslationHypothesis *> contents;
+    bool add(TranslationHypothesis *); 
+    double bestscore();
+    double worstscore();
+    size_t size() { return contents.size(); }
+    bool empty() { return contents.empty(); }
+    void clear();   
+    int prune();
+    TranslationHypothesis * pop();
+};
 
 class StackDecoder {
     private:
         int stacksize;
-        int prunethreshold;
+        double prunethreshold;
     public:
         int DEBUG;
         std::map<std::pair<int, int>, double> futurecost; //(start, end) => cost    
@@ -77,7 +108,7 @@ class StackDecoder {
                 
         std::vector<std::pair<const EncAnyGram*, CorpusReference> >  sourcefragments;        
         
-        std::map<unsigned char, std::multiset<TranslationHypothesis *> > stacks;
+        std::vector<Stack> stacks;
                 
         StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int maxn);
         ~StackDecoder();

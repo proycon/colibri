@@ -18,6 +18,11 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
         this->lm = lm;
         this->stacksize = stacksize;
         this->prunethreshold = prunethreshold;
+        //init stacks
+        for (int i = 0; i <= inputlength; i++) {
+            stacks.push_back( Stack(i, stacksize, prunethreshold) );
+        }
+        
         sourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
         //sanity check:
         /*for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
@@ -123,7 +128,7 @@ void StackDecoder::decode() {
     //create initial hypothesis and add to 0th stack
     TranslationHypothesis * initialhypothesis = new TranslationHypothesis(NULL, this, NULL, 0,NULL,0, vector<double>() );
         
-    stacks[0].insert(initialhypothesis);
+    stacks[0].add(initialhypothesis);
     
     
     //for each stack
@@ -136,8 +141,9 @@ void StackDecoder::decode() {
 
             cerr << "\t Expanding hypothesis off stack " << i << " -- " << stacks[i].size() -1 << " left:" << endl;
             //pop from stacks[i]
-            TranslationHypothesis * hyp = *(stacks[i].begin());
-            stacks[i].erase(hyp);
+            
+            TranslationHypothesis * hyp = stacks[i].pop(); 
+            
             
             
             bool finalonly = (i == inputlength - 1); 
@@ -148,12 +154,12 @@ void StackDecoder::decode() {
         }
         if (DEBUG >= 1) cerr << "\t Expanded " << totalexpanded << " new hypotheses in total after processing stack " << i << endl;
         unsigned int totalpruned = 0;
-        for (int j = i+1; j <= inputlength; j++) { //prune further stacks (hypotheses may have been added to any of them)
-            unsigned int pruned = prune(j);
+        for (int j = inputlength; j >= i+1; j--) { //prune further stacks (hypotheses may have been added to any of them).. always prune superior stack first
+            unsigned int pruned = stacks[j].prune();
             if ((DEBUG >= 1) && (pruned > 0)) cerr << "\t  Pruned " << pruned << " hypotheses from stack " << j << endl;
             totalpruned += pruned; 
         }
-        if (DEBUG >= 1) cerr << "\t Pruned " << totalpruned << " hypotheses" << endl;
+        if (DEBUG >= 1) cerr << "\t Pruned " << totalpruned << " hypotheses from all superior stacks" << endl;
         stacks[i].clear(); //stack is in itself no longer necessary, included pointer elements may live on though! Unnecessary hypotheses will be cleaned up automatically when higher-order hypotheses are deleted
     }   
     
@@ -161,29 +167,11 @@ void StackDecoder::decode() {
 }
 
 
-unsigned int StackDecoder::prune(int stackindex) {    
-    //TODO: Add consolidation stage prior to pruning stage? (merge hypotheses with same output)    
-    unsigned int pruned = 0;
-    unsigned int count = 0;
-    double best = 0;
-    for (multiset<TranslationHypothesis*>::const_iterator iter = stacks[stackindex].begin(); iter != stacks[stackindex].end(); iter++) {
-        const TranslationHypothesis*  h = *iter;
-        count++;
-        if (best == 0) best = h->score(); //will only be set once, first is always best
-        if ((count > stacksize) || (h->score() < best / prunethreshold)) {
-            pruned++;
-            stacks[stackindex].erase(iter); //delete form here onwards
-            delete h;            
-        }
-    }
-    return pruned;
-}
 
 
 StackDecoder::~StackDecoder() {
-    for (multiset<TranslationHypothesis*>::const_iterator iter = stacks[inputlength].begin(); iter != stacks[inputlength].end(); iter++) {
-        const TranslationHypothesis*  h = *iter;
-        delete h;
+    for (int i = inputlength; i >= 0; i++) {
+        stacks[i].clear();
     }
 }
 
@@ -192,9 +180,114 @@ string StackDecoder::solution(ClassDecoder & targetclassdecoder) {
         cerr << "ERROR: No solution found!" << endl;
         exit(6);
     }
-    TranslationHypothesis * sol = *(stacks[inputlength].begin());
+    TranslationHypothesis * sol = stacks[inputlength].pop();
     EncData s = sol->getoutput();
     return s.decode(targetclassdecoder);
+}
+
+
+Stack::Stack(int index, int stacksize, double prunethreshold) {
+    this->index = index;
+    this->stacksize = stacksize;
+    this->prunethreshold = prunethreshold;
+}
+
+Stack::~Stack() {
+    //note: superior stacks always have to be deleted before lower stacks!
+    for (list<TranslationHypothesis*>::iterator iter = contents.begin(); iter != contents.end(); iter++) {
+        TranslationHypothesis * h = *iter;
+        if (h->children.empty()) delete h;
+    }
+}
+
+Stack::Stack(const Stack& ref) { //limited copy constructor
+    index = ref.index;
+    stacksize = ref.stacksize;
+    prunethreshold = ref.prunethreshold;
+}
+
+void Stack::clear() {
+    for (list<TranslationHypothesis*>::iterator iter = contents.begin(); iter != contents.end(); iter++) {
+        TranslationHypothesis * h = *iter;
+        if (h->children.empty()) delete h;
+    }
+    contents.clear();
+}
+
+TranslationHypothesis * Stack::pop() {
+    if (contents.empty()) return NULL;
+    TranslationHypothesis * h = contents.front();
+    contents.pop_front();
+    return h;
+}
+
+double Stack::bestscore() {
+    if (contents.empty()) return -999999999;
+    TranslationHypothesis * h = contents.front();
+    return h->score();
+}
+
+double Stack::worstscore() {
+    if (contents.empty()) return -999999999;
+    TranslationHypothesis * h = contents.back();
+    return h->score();
+}
+
+bool Stack::add(TranslationHypothesis * candidate) {
+    if (contents.empty()) {
+        //empty, add:
+        contents.push_back(candidate);
+        return true;
+    }
+    
+    double score = candidate->score();
+    if (contents.size() >= stacksize) {
+        if (score < worstscore()) {
+            if (candidate->children.empty()) delete candidate;
+            return false;
+        } 
+    }
+    
+    //insert at right position and do histogram pruning
+    bool added = false;
+    int count = 0;
+    for (list<TranslationHypothesis*>::iterator iter = contents.begin(); iter != contents.end(); iter++) {
+        count++;
+        TranslationHypothesis * h = *iter;
+        if (score >= h->score()) {
+            //insert here
+            count++;
+            contents.insert(iter, candidate);
+            added = true;
+        }
+        if (count > stacksize) {
+            if (h->children.empty()) delete h;
+            contents.erase(iter);
+            break;
+        }
+    }
+    if ((!added) && (contents.size() < stacksize)) {
+        added = true;
+        contents.push_back(candidate);
+    }
+        
+}
+
+int Stack::prune() {
+    int pruned = 0;
+    if ((prunethreshold != 1) && (prunethreshold != 0)) {
+        //pruning based on prunethreshold
+        double cutoff = bestscore() / prunethreshold;
+        for (list<TranslationHypothesis*>::iterator iter = contents.begin(); iter != contents.end(); iter++) {
+            TranslationHypothesis*  h = *iter;
+            if (h->score() < cutoff) {
+                pruned++;
+                contents.erase(iter); //delete form here onwards
+                if (h->children.empty()) delete h;            
+            }
+        }
+    }
+    return pruned;
 }
 
 
@@ -414,8 +507,15 @@ unsigned int TranslationHypothesis::expand(bool finalonly) {
                     } 
                     //add to proper stack
                     int cov = newhypo->inputcoverage();
-                    if (decoder->DEBUG >= 2) cerr << "\t    Adding to stack " << cov << endl;
-                    decoder->stacks[cov].insert(newhypo);
+                    if (decoder->DEBUG >= 2) cerr << "\t    Adding to stack " << cov;
+                    bool accepted = decoder->stacks[cov].add(newhypo);
+                    if (decoder->DEBUG >= 2) {
+                        if (accepted) {
+                            cerr << " ... ACCEPTED" << endl;
+                        } else {
+                            cerr << " ... REJECTED" << endl;
+                        }
+                    }
                     expanded++;
                     //no delete newhypo
                 }                 
