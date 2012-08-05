@@ -851,14 +851,16 @@ int main( int argc, char *argv[] ) {
     string input;
     unsigned char buffer[8192]; 
     int size;
-    while (getline(cin, input)) {        
+    while (getline(cin, input)) {                
         cerr << "INPUT: " << input << endl;        
         size = sourceclassencoder.encodestring(input, buffer, true) - 1; //weird patch: - 1  to get n() right later        
-        EncData inputdata = EncData(buffer,size); 
-        StackDecoder decoder = StackDecoder(inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn);
-        decoder.setdebug(2);
-        decoder.decode();
+        EncData * inputdata = new EncData(buffer,size); 
+        StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn);
+        decoder->setdebug(2);
+        decoder->decode();
         cerr << "DONE. OUTPUT:" << endl;        
-        cout << decoder.solution(targetclassdecoder) << endl;        
+        cout << decoder->solution(targetclassdecoder) << endl;
+        delete inputdata;
+        delete decoder;
     }
 }
