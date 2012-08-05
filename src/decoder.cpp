@@ -143,14 +143,18 @@ void StackDecoder::decode() {
             //pop from stacks[i]
             
             TranslationHypothesis * hyp = stacks[i].pop(); 
+            //cerr << "DEBUG: EXPANDING HYPOTHESIS " << (size_t) hyp << endl;
             
             
             
-            bool finalonly = (i == inputlength - 1); 
+            bool finalonly = (i == inputlength - 1);
             unsigned int expanded = hyp->expand(finalonly); //will automatically add to appropriate stacks
             if (DEBUG >= 1) cerr << "\t  Expanded " << expanded << " new hypotheses" << endl;
             totalexpanded += expanded;
-            if (hyp->deletable()) delete hyp; //if the hypothesis failed to expand it will be pruned
+            if (hyp->deletable()) {
+                //cerr << "DEBUG: DONE EXPANDING, DELETING HYPOTHESIS " << (size_t) hyp << endl;
+                delete hyp; //if the hypothesis failed to expand it will be pruned
+            }
         }
         if (DEBUG >= 1) cerr << "\t Expanded " << totalexpanded << " new hypotheses in total after processing stack " << i << endl;
         unsigned int totalpruned = 0;
@@ -170,7 +174,7 @@ void StackDecoder::decode() {
 
 
 StackDecoder::~StackDecoder() {
-    for (int i = inputlength; i >= 0; i++) {
+    for (int i = inputlength; i >= 0; i--) {
         stacks[i].clear();
     }
 }
@@ -196,7 +200,7 @@ Stack::~Stack() {
     //note: superior stacks always have to be deleted before lower stacks!
     for (list<TranslationHypothesis*>::iterator iter = contents.begin(); iter != contents.end(); iter++) {
         TranslationHypothesis * h = *iter;
-        if (h->children.empty()) delete h;
+        if (h->deletable()) delete h;
     }
 }
 
@@ -207,6 +211,7 @@ Stack::Stack(const Stack& ref) { //limited copy constructor
 }
 
 void Stack::clear() {
+    cerr << "DEBUG: Clearing stack " << index << endl;
     for (list<TranslationHypothesis*>::iterator iter = contents.begin(); iter != contents.end(); iter++) {
         TranslationHypothesis * h = *iter;
         if (h->deletable()) delete h;
@@ -234,16 +239,18 @@ double Stack::worstscore() {
 }
 
 bool Stack::add(TranslationHypothesis * candidate) {
+    //IMPORTANT NOTE: the task of deleting the hypothesis when discarded is left to the caller!
+
     if (contents.empty()) {
         //empty, add:
         contents.push_back(candidate);
+        candidate->onstack = this;
         return true;
     }
     
     double score = candidate->score();
     if (contents.size() >= stacksize) {
         if (score < worstscore()) {
-            //if (candidate->children.empty()) delete candidate; //TODO: REENABLE AND FIX
             return false;
         } 
     }
@@ -254,14 +261,17 @@ bool Stack::add(TranslationHypothesis * candidate) {
     for (list<TranslationHypothesis*>::iterator iter = contents.begin(); iter != contents.end(); iter++) {
         count++;
         TranslationHypothesis * h = *iter;
-        if (score >= h->score()) {
+        if ( (!added) && (score >= h->score()) ) {
             //insert here
             count++;
             contents.insert(iter, candidate);
             added = true;
         }
         if (count > stacksize) {
-            //if (h->children.empty()) delete h; //TODO: REENABLE
+            if (h->children.empty()) {
+                delete h;
+            }
+            h->onstack = NULL;
             contents.erase(iter);
             break;
         }
@@ -270,8 +280,12 @@ bool Stack::add(TranslationHypothesis * candidate) {
         added = true;
         contents.push_back(candidate);
     }
-        
+    if (added) {
+        candidate->onstack = this;
+    }
+    return added;    
 }
+
 
 int Stack::prune() {
     int pruned = 0;
@@ -282,8 +296,11 @@ int Stack::prune() {
             TranslationHypothesis*  h = *iter;
             if (h->score() < cutoff) {
                 pruned++;
+                h->onstack = NULL;
                 iter = contents.erase(iter);
-                //if (h->deletable()) delete h; //TODO: REENABLE AND FIX -- MEMORY LEAK?
+                if (h->deletable()) {
+                    delete h; //TODO: REENABLE AND FIX -- MEMORY LEAK?
+                }
             }
         }
     }
@@ -292,6 +309,8 @@ int Stack::prune() {
 
 
 TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, StackDecoder * decoder,  const EncAnyGram * sourcegram , unsigned char sourceoffset,  const EncAnyGram * targetgram, unsigned char targetoffset, const vector<double> & tscores) {
+    this->onstack = NULL;
+    this->keep = false;
     this->parent = parent;
     this->decoder = decoder;            
     if (parent != NULL) parent->children.push_back(this);        
@@ -346,9 +365,11 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     
     //find history (last order-1 words) for computation for LM score    
     history = NULL;
+    
     const int order = decoder->lm->getorder();
     int begin = targetoffset - (order - 1);
     if (begin < 0) begin = -1; //TODO : CHECK
+    
     for (int i = begin; i < begin + (order-1); i++) {
         EncNGram * unigram;
         if (begin == -1) {
@@ -373,6 +394,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
         delete unigram;
     }
     
+    
     //Precompute score
     if ((parent != NULL) && (decoder->tweights.size() > tscores.size())) {
         cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << decoder->tweights.size() << ", got " << tscores.size() << endl;
@@ -387,6 +409,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     
     
     double lmscore = 0;
+    
     if (parent != NULL) {
         if (history != NULL) {
             if (targetgram->isskipgram()) {
@@ -424,6 +447,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
         }
     }
     
+    
     //TODO: deal differently with filling in gaps in skips?
     int prevpos = 0;
     if ((parent != NULL) && (!parent->initial())) {
@@ -449,7 +473,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     _score = tscore + lmscore + dscore + futurescore;
     
     if (decoder->DEBUG >= 2) {
-        cerr << "\t   Translation Hypothesis:" << endl;
+        cerr << "\t   Translation Hypothesis "  << endl;  //<< (size_t) this << endl; 
         cerr << "\t    score = tscore + lmscore + dscore + futurecost = " << tscore << " + " << lmscore << " + " << dscore << " + " << futurescore << " = " << _score << endl;
         cerr << "\t    coverage: ";
         for (int i = 0; i < inputcoveragemask.size(); i++) {
@@ -465,18 +489,27 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
 }
 
 bool TranslationHypothesis::deletable() {
-    return (children.empty());
+    return ((!keep) && (children.empty()) && (onstack == NULL));
 }
 
-TranslationHypothesis::~TranslationHypothesis() {
+void TranslationHypothesis::cleanup() {  
+    //cerr << "DEBUG: DELETING HYPOTHESIS " << (size_t) this << endl;
     if (history != NULL) {
         delete history;
     }
-    if (parent != NULL) {         
+    if (parent != NULL) {                 
         vector<TranslationHypothesis *>::iterator iter = find(parent->children.begin(), parent->children.end(), this); 
         parent->children.erase(iter);
-        if (parent->deletable()) delete parent;
+        if (parent->deletable()) {
+            //cerr << "DEBUG: DELETING PARENT HYPOTHESIS " << (size_t) parent << endl;
+            delete parent;
+        }
     } 
+}
+
+
+TranslationHypothesis::~TranslationHypothesis() {  
+    cleanup();
 }
 
 bool TranslationHypothesis::final(){
@@ -486,6 +519,8 @@ bool TranslationHypothesis::final(){
 
 
 unsigned int TranslationHypothesis::expand(bool finalonly) {
+    this->keep = true; //lock this hypothesis, preventing it from being deleted when expanding and rejecting its last dying child
+    
     unsigned int expanded = 0;
     int thiscov = inputcoverage();
     //expand directly in decoder.stack()
@@ -496,50 +531,60 @@ unsigned int TranslationHypothesis::expand(bool finalonly) {
             const CorpusReference ref = iter->second; 
             if (!conflicts(sourcecandidate, ref)) {
                 //find target fragments for this source fragment
-                if (decoder->translationtable->alignmatrix.count(sourcecandidate) == 0) {
-                    cerr << "ERROR: Source candidate not found in translaation table. This should not happen!" << endl;
-                    exit(5);
+                if (decoder->translationtable->alignmatrix.find(sourcecandidate) == decoder->translationtable->alignmatrix.end()) {
+                    cerr << "ERROR: Source candidate not found in translation table. This should never happen!" << endl;
+                    exit(6);
                 }
-                for (std::unordered_map<const EncAnyGram*, vector<double> >::iterator iter2 =  decoder->translationtable->alignmatrix[sourcecandidate].begin(); iter2 != decoder->translationtable->alignmatrix[sourcecandidate].end(); iter2++) {
+                int c = 0;                
+                for (std::unordered_map<const EncAnyGram*, vector<double> >::const_iterator iter2 =  decoder->translationtable->alignmatrix[sourcecandidate].begin(); iter2 != decoder->translationtable->alignmatrix[sourcecandidate].end(); iter2++) {
+                    c++;
+                    //cerr << "DEBUG: " << c << " of " << decoder->translationtable->alignmatrix[sourcecandidate].size() << endl;  
                     //create hypothesis for each target fragment
                     const EncAnyGram * targetcandidate = iter2->first;
                     int length;
                     if (targetgram != NULL) { 
                         length = targetgram->n();
-                    } else {
+                    } else {    
                         length = 0;
                     }
                     TranslationHypothesis * newhypo = new TranslationHypothesis(this, decoder, sourcecandidate, ref.token, targetcandidate, targetoffset + length , iter2->second);
                     if ((finalonly) && (!newhypo->final())) {
+                        if (!newhypo->deletable()) {
+                            cerr << "INTERNAL ERROR: Newly created hypothesis not deletable? shouldn't happen" << endl;
+                            exit(6);
+                        }
                         delete newhypo;
-                        break;
-                    } 
-                    //add to proper stack
-                    int cov = newhypo->inputcoverage();
-                    if (thiscov >= cov) {
-                        cerr << "ERROR: Hypothesis expansion did not lead to coverage expansion! This should not happen. New hypo has coverage " << cov << ", parent: " << thiscov << endl;
-                        exit(6);        
-                    }
-                    if (decoder->DEBUG >= 2) cerr << "\t    Adding to stack " << cov;
-                    bool accepted = decoder->stacks[cov].add(newhypo);
-                    if (decoder->DEBUG >= 2) {
-                        if (accepted) {
-                            cerr << " ... ACCEPTED" << endl;
-                        } else {
-                            cerr << " ... REJECTED" << endl;
+                    } else {
+                        //add to proper stack
+                        int cov = newhypo->inputcoverage();
+                        if (thiscov >= cov) {
+                            cerr << "INTERNAL ERROR: Hypothesis expansion did not lead to coverage expansion! This should not happen. New hypo has coverage " << cov << ", parent: " << thiscov << endl;
+                            exit(6);        
+                        }
+                        if (decoder->DEBUG >= 2) cerr << "\t    Adding to stack " << cov;
+                        bool accepted = decoder->stacks[cov].add(newhypo);
+                        if (decoder->DEBUG >= 2) {
+                            if (accepted) {
+                                cerr << " ... ACCEPTED" << endl;
+                            } else {
+                                cerr << " ... REJECTED" << endl;
+                            }
+                        }
+                        expanded++;
+                        
+                        if (!accepted) {
+                            delete newhypo; 
                         }
                     }
-                    expanded++;
-                    //no delete newhypo
                 }                 
             }        
         }
-        return expanded;
     } else {
         //there are target-side gaps, attempt to fill
         //TODO
-        return expanded;
     }
+    this->keep = false; //release lock
+    return expanded;
 }
 
 bool TranslationHypothesis::conflicts(const EncAnyGram * sourcecandidate, const CorpusReference & ref) {
@@ -601,6 +646,7 @@ int TranslationHypothesis::inputcoverage() {
 EncNGram * TranslationHypothesis::getoutputtoken(int index) {
     if (parent == NULL) {
         cerr << "ERROR: getoutputtoken left unresolved!" << endl;
+        return NULL;
     } else if ((index >= targetoffset) && (index < targetoffset + targetgram->n())) {
         index = index - targetoffset;
         if ((index < 0) || (index >= targetgram->n())) {
@@ -630,7 +676,9 @@ EncData TranslationHypothesis::getoutput(deque<TranslationHypothesis*> * path) {
         map<int, EncNGram *> outputtokens; //unigrams, one per index                                  
         while (!path->empty()) {
             TranslationHypothesis * hyp = path->front();
+            cerr << "DEBUG: pop path";
             path->pop_front(); //WARNING: Calls TranslationHypothesis * destructor??? may have unwanted side-effect
+            cerr << "..DONE" << endl;
             for (int i = hyp->targetoffset; i < hyp->targetoffset + hyp->targetgram->n(); i++) {
                 outputtokens[i] = hyp->getoutputtoken(i);
             }                          
@@ -644,8 +692,10 @@ EncData TranslationHypothesis::getoutput(deque<TranslationHypothesis*> * path) {
                 buffer[cursor++] = unigram->data[i];
             }
             delete unigram; //important cleanup            
-        }         
+        }     
+        cerr << "DEBUG: Deleting path";    
         delete path; //important cleanup
+        cerr << "..DONE" << endl;
         return EncData(buffer, cursor); 
     }    
 }

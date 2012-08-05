@@ -8,13 +8,15 @@
 #include <deque>
 
 class StackDecoder;
-
+class Stack;
 
 
 class TranslationHypothesis {
     private:
         double _score;
+        bool keep; //if true, prevents this hypothesis from being automatically deleted by its last dying child
     public:
+        Stack * onstack;
         StackDecoder * decoder;
         
         TranslationHypothesis * parent;
@@ -34,6 +36,7 @@ class TranslationHypothesis {
         
         TranslationHypothesis(TranslationHypothesis * parent, StackDecoder * decoder,  const EncAnyGram * sourcegram , unsigned char sourceoffset,  const EncAnyGram * targetgram, unsigned char targetoffset, const std::vector<double> & tscores);
         ~TranslationHypothesis();
+        void cleanup();
         
         unsigned int expand(bool finalonly=false); //expands directly in the appropriate stack of the decoder. If finalonly is set, new hypotheses are expected to be final/complete, without gaps
         
