@@ -150,7 +150,7 @@ void StackDecoder::decode() {
             unsigned int expanded = hyp->expand(finalonly); //will automatically add to appropriate stacks
             if (DEBUG >= 1) cerr << "\t  Expanded " << expanded << " new hypotheses" << endl;
             totalexpanded += expanded;
-            if (hyp->children.empty()) delete hyp; //if the hypothesis failed to expand it will be pruned
+            if (hyp->deletable()) delete hyp; //if the hypothesis failed to expand it will be pruned
         }
         if (DEBUG >= 1) cerr << "\t Expanded " << totalexpanded << " new hypotheses in total after processing stack " << i << endl;
         unsigned int totalpruned = 0;
@@ -209,7 +209,7 @@ Stack::Stack(const Stack& ref) { //limited copy constructor
 void Stack::clear() {
     for (list<TranslationHypothesis*>::iterator iter = contents.begin(); iter != contents.end(); iter++) {
         TranslationHypothesis * h = *iter;
-        if (h->children.empty()) delete h;
+        if (h->deletable()) delete h;
     }
     contents.clear();
 }
@@ -243,7 +243,7 @@ bool Stack::add(TranslationHypothesis * candidate) {
     double score = candidate->score();
     if (contents.size() >= stacksize) {
         if (score < worstscore()) {
-            //if (candidate->children.empty()) delete candidate; //TODO: REENABLE
+            //if (candidate->children.empty()) delete candidate; //TODO: REENABLE AND FIX
             return false;
         } 
     }
@@ -283,8 +283,7 @@ int Stack::prune() {
             if (h->score() < cutoff) {
                 pruned++;
                 iter = contents.erase(iter);
-                //if (h->children.empty()) delete h; //TODO: REENABLE AND FIX -- MEMORY LEAK?
-            
+                //if (h->deletable()) delete h; //TODO: REENABLE AND FIX -- MEMORY LEAK?
             }
         }
     }
@@ -465,6 +464,10 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
   
 }
 
+bool TranslationHypothesis::deletable() {
+    return (children.empty());
+}
+
 TranslationHypothesis::~TranslationHypothesis() {
     if (history != NULL) {
         delete history;
@@ -472,7 +475,7 @@ TranslationHypothesis::~TranslationHypothesis() {
     if (parent != NULL) {         
         vector<TranslationHypothesis *>::iterator iter = find(parent->children.begin(), parent->children.end(), this); 
         parent->children.erase(iter);
-        if (parent->children.empty()) delete parent;
+        if (parent->deletable()) delete parent;
     } 
 }
 
@@ -484,6 +487,7 @@ bool TranslationHypothesis::final(){
 
 unsigned int TranslationHypothesis::expand(bool finalonly) {
     unsigned int expanded = 0;
+    int thiscov = inputcoverage();
     //expand directly in decoder.stack()
     if (targetgaps.empty()) {
         //find new source fragment
@@ -512,6 +516,10 @@ unsigned int TranslationHypothesis::expand(bool finalonly) {
                     } 
                     //add to proper stack
                     int cov = newhypo->inputcoverage();
+                    if (thiscov >= cov) {
+                        cerr << "ERROR: Hypothesis expansion did not lead to coverage expansion! This should not happen. New hypo has coverage " << cov << ", parent: " << thiscov << endl;
+                        exit(6);        
+                    }
                     if (decoder->DEBUG >= 2) cerr << "\t    Adding to stack " << cov;
                     bool accepted = decoder->stacks[cov].add(newhypo);
                     if (decoder->DEBUG >= 2) {
@@ -807,6 +815,7 @@ int main( int argc, char *argv[] ) {
         StackDecoder decoder = StackDecoder(inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn);
         decoder.setdebug(2);
         decoder.decode();
+        cerr << "DONE. OUTPUT:" << endl;        
         cout << decoder.solution(targetclassdecoder) << endl;        
     }
 }

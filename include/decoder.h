@@ -48,10 +48,7 @@ class TranslationHypothesis {
         //void computeinputcoverage(vector<bool> & container); //compute source coverage        
         int inputcoverage(); //return input coverage (absolute number of tokens covered)
         
-        /*bool operator< (const TranslationHypothesis& other) const {
-            return (score() < other.score());
-        }*/
-        
+        bool deletable(); 
         
         EncNGram * getoutputtoken(int index); //get output token (unigram, will return unknown class if in gap)                    
         EncData getoutput(std::deque<TranslationHypothesis*> * path = NULL); //get output
