@@ -797,9 +797,9 @@ int main( int argc, char *argv[] ) {
     int size;
     while (getline(cin, input)) {        
         cerr << "INPUT: " << input << endl;        
-        size = sourceclassencoder.encodestring(input, buffer, true);
-        
-        StackDecoder decoder = StackDecoder(EncData(buffer, size), &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn);
+        size = sourceclassencoder.encodestring(input, buffer, true) - 1; //weird patch: - 1  to get n() right later        
+        EncData inputdata = EncData(buffer,size); 
+        StackDecoder decoder = StackDecoder(inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn);
         decoder.setdebug(2);
         decoder.decode();
         cout << decoder.solution(targetclassdecoder) << endl;        
