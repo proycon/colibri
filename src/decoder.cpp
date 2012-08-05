@@ -244,7 +244,6 @@ bool Stack::add(TranslationHypothesis * candidate) {
     if (contents.empty()) {
         //empty, add:
         contents.push_back(candidate);
-        candidate->onstack = this;
         return true;
     }
     
@@ -271,7 +270,6 @@ bool Stack::add(TranslationHypothesis * candidate) {
             if (h->children.empty()) {
                 delete h;
             }
-            h->onstack = NULL;
             contents.erase(iter);
             break;
         }
@@ -279,9 +277,6 @@ bool Stack::add(TranslationHypothesis * candidate) {
     if ((!added) && (contents.size() < stacksize)) {
         added = true;
         contents.push_back(candidate);
-    }
-    if (added) {
-        candidate->onstack = this;
     }
     return added;    
 }
@@ -296,7 +291,6 @@ int Stack::prune() {
             TranslationHypothesis*  h = *iter;
             if (h->score() < cutoff) {
                 pruned++;
-                h->onstack = NULL;
                 iter = contents.erase(iter);
                 if (h->deletable()) {
                     delete h; //TODO: REENABLE AND FIX -- MEMORY LEAK?
@@ -309,7 +303,6 @@ int Stack::prune() {
 
 
 TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, StackDecoder * decoder,  const EncAnyGram * sourcegram , unsigned char sourceoffset,  const EncAnyGram * targetgram, unsigned char targetoffset, const vector<double> & tscores) {
-    this->onstack = NULL;
     this->keep = false;
     this->parent = parent;
     this->decoder = decoder;            
@@ -489,7 +482,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
 }
 
 bool TranslationHypothesis::deletable() {
-    return ((!keep) && (children.empty()) && (onstack == NULL));
+    return ((!keep) && (children.empty()));
 }
 
 void TranslationHypothesis::cleanup() {  

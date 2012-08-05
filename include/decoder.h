@@ -16,7 +16,6 @@ class TranslationHypothesis {
         double _score;
         bool keep; //if true, prevents this hypothesis from being automatically deleted by its last dying child
     public:
-        Stack * onstack;
         StackDecoder * decoder;
         
         TranslationHypothesis * parent;
