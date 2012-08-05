@@ -22,6 +22,8 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
         for (int i = 0; i <= inputlength; i++) {
             stacks.push_back( Stack(i, stacksize, prunethreshold) );
         }
+        this->sourceclassdecoder = NULL; //only for debugging, set by setdebug()
+        this->targetclassdecoder = NULL;
         
         sourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
         //sanity check:
@@ -40,8 +42,10 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
         
 }
 
-void StackDecoder::setdebug(int debug) {
+void StackDecoder::setdebug(int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
     this->DEBUG = debug;
+    this->sourceclassdecoder = sourceclassdecoder;
+    this->targetclassdecoder = targetclassdecoder;
 }
 
 void StackDecoder::computefuturecost() {
@@ -186,6 +190,7 @@ string StackDecoder::solution(ClassDecoder & targetclassdecoder) {
     }
     TranslationHypothesis * sol = stacks[inputlength].pop();
     EncData s = sol->getoutput();
+    s.out();
     return s.decode(targetclassdecoder);
 }
 
@@ -466,7 +471,27 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     _score = tscore + lmscore + dscore + futurescore;
     
     if (decoder->DEBUG >= 2) {
-        cerr << "\t   Translation Hypothesis "  << endl;  //<< (size_t) this << endl; 
+        cerr << "\t   Translation Hypothesis "  << endl;  //<< (size_t) this << endl;
+        if (decoder->sourceclassdecoder != NULL) { 
+            cerr << "\t    Source Fragment: ";
+            if (sourcegram == NULL) {
+                cerr << "NONE (Initial Hypothesis!)" << endl;
+            } else if (sourcegram->isskipgram()) {
+                cerr << ((const EncSkipGram *) sourcegram)->decode(*(decoder->sourceclassdecoder)) << endl;
+            } else {
+                cerr << ((const EncNGram *) sourcegram)->decode(*(decoder->sourceclassdecoder)) << endl;
+            }
+        }
+        if (decoder->targetclassdecoder != NULL) { 
+            cerr << "\t    Target Fragment: ";
+            if (targetgram == NULL) {
+                cerr << "NONE (Initial Hypothesis!)" << endl;
+            } else if (targetgram->isskipgram()) {
+                cerr << ((const EncSkipGram *) targetgram)->decode(*(decoder->targetclassdecoder)) << endl;
+            } else {
+                cerr << ((const EncNGram *) targetgram)->decode(*(decoder->targetclassdecoder)) << endl;
+            }
+        }         
         cerr << "\t    score = tscore + lmscore + dscore + futurecost = " << tscore << " + " << lmscore << " + " << dscore << " + " << futurescore << " = " << _score << endl;
         cerr << "\t    coverage: ";
         for (int i = 0; i < inputcoveragemask.size(); i++) {
@@ -835,7 +860,8 @@ int main( int argc, char *argv[] ) {
     cerr << "Prune threshold:      " << prunethreshold << endl;
     cerr << "----------------------------------------------------" << endl;
     cerr << "Source classes:       " << sourceclassfile << endl;
-    ClassEncoder sourceclassencoder = ClassEncoder(sourceclassfile);       
+    ClassEncoder sourceclassencoder = ClassEncoder(sourceclassfile);
+    ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);       
     cerr << "Target classes:       " << targetclassfile << endl;
     ClassEncoder targetclassencoder = ClassEncoder(targetclassfile);    
     ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);
@@ -856,7 +882,7 @@ int main( int argc, char *argv[] ) {
         size = sourceclassencoder.encodestring(input, buffer, true) - 1; //weird patch: - 1  to get n() right later        
         EncData * inputdata = new EncData(buffer,size); 
         StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn);
-        decoder->setdebug(2);
+        decoder->setdebug(2, &sourceclassdecoder, &targetclassdecoder);
         decoder->decode();
         cerr << "DONE. OUTPUT:" << endl;        
         cout << decoder->solution(targetclassdecoder) << endl;

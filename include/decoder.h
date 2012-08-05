@@ -98,6 +98,8 @@ class StackDecoder {
         EncData input;
         unsigned int inputlength;
         TranslationTable * translationtable;
+        ClassDecoder * sourceclassdecoder;
+        ClassDecoder * targetclassdecoder;
         LanguageModel * lm;    
         
         std::vector<double> tweights; //translation model weights
@@ -121,7 +123,7 @@ class StackDecoder {
         std::string solution(ClassDecoder & targetclassdecoder); //return solution as string
         
         void computefuturecost();
-        void setdebug(int debug);      
+        void setdebug(int debug, ClassDecoder *, ClassDecoder *);      
 
 };
 

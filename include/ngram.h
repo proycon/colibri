@@ -193,6 +193,7 @@ class EncData {
     EncNGram * slice(const int begin,const int length) const;
     
     std::string decode(ClassDecoder& classdecoder) const;    
+    bool out() const;
 };
 
 
