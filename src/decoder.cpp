@@ -243,7 +243,7 @@ bool Stack::add(TranslationHypothesis * candidate) {
     double score = candidate->score();
     if (contents.size() >= stacksize) {
         if (score < worstscore()) {
-            if (candidate->children.empty()) delete candidate;
+            //if (candidate->children.empty()) delete candidate; //TODO: REENABLE
             return false;
         } 
     }
@@ -261,7 +261,7 @@ bool Stack::add(TranslationHypothesis * candidate) {
             added = true;
         }
         if (count > stacksize) {
-            if (h->children.empty()) delete h;
+            //if (h->children.empty()) delete h; //TODO: REENABLE
             contents.erase(iter);
             break;
         }
@@ -282,8 +282,9 @@ int Stack::prune() {
             TranslationHypothesis*  h = *iter;
             if (h->score() < cutoff) {
                 pruned++;
-                contents.erase(iter); //delete form here onwards
-                if (h->children.empty()) delete h;            
+                iter = contents.erase(iter);
+                //if (h->children.empty()) delete h; //TODO: REENABLE AND FIX -- MEMORY LEAK?
+            
             }
         }
     }
@@ -491,6 +492,10 @@ unsigned int TranslationHypothesis::expand(bool finalonly) {
             const CorpusReference ref = iter->second; 
             if (!conflicts(sourcecandidate, ref)) {
                 //find target fragments for this source fragment
+                if (decoder->translationtable->alignmatrix.count(sourcecandidate) == 0) {
+                    cerr << "ERROR: Source candidate not found in translaation table. This should not happen!" << endl;
+                    exit(5);
+                }
                 for (std::unordered_map<const EncAnyGram*, vector<double> >::iterator iter2 =  decoder->translationtable->alignmatrix[sourcecandidate].begin(); iter2 != decoder->translationtable->alignmatrix[sourcecandidate].end(); iter2++) {
                     //create hypothesis for each target fragment
                     const EncAnyGram * targetcandidate = iter2->first;
