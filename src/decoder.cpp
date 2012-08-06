@@ -397,7 +397,8 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
         cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << decoder->tweights.size() << ", got " << tscores.size() << endl;
         exit(6);  
     }
-    double tscore = 0; 
+  
+    tscore = 0; 
     for (int i = 0; i < tscores.size(); i++) {
         double p = tscores[i];
         if (p > 0) p = log10(p); //turn into logprob, base10 
@@ -405,7 +406,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     }
     
     
-    double lmscore = 0;
+    lmscore = 0;
     
     if (parent != NULL) {
         if (history != NULL) {
@@ -446,28 +447,31 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     
     
     //TODO: deal differently with filling in gaps in skips?
+    //Total reordering cost is computed by D(e,f) = - Σi (d_i) where d for each phrase i is defined as d = abs( last word position of previously translated phrase + 1 - first word position of newly translated phrase ).
     int prevpos = 0;
     if ((parent != NULL) && (!parent->initial())) {
         prevpos = parent->sourceoffset + parent->sourcegram->n();        
     } 
-    double dscore = pow(decoder->dweight, abs(sourceoffset - prevpos - 1));  
+    double distance = abs( (prevpos + 1) - sourceoffset);
+    
+    dscore = decoder->dweight * -abs(distance);  
         
     //Compute estimate for future score
-    double futurescore = 0;    
+    
+    futurecost = 0;
     begin = -1;    
     for (int i = 0; i < inputcoveragemask.size(); i++) {
         if (!inputcoveragemask[i]) {
             begin = i;
         } else if (begin != -1) {
-            futurescore += decoder->futurecost[make_pair((int) begin,(int) i-begin)];
+            futurecost += decoder->futurecost[make_pair((int) begin,(int) i-begin)];
             begin = -1;
         }
     }
-    if (begin != -1) futurescore += decoder->futurecost[make_pair((int) begin,(int) inputcoveragemask.size()-begin)];            
+    if (begin != -1) futurecost += decoder->futurecost[make_pair((int) begin,(int) inputcoveragemask.size()-begin)];            
     
-    
-    //total score            
-    _score = tscore + lmscore + dscore + futurescore;
+    const double _score = tscore + lmscore + dscore;
+                    
     
     if (decoder->DEBUG >= 2) {
         cerr << "\t   Translation Hypothesis "  << endl;  //<< (size_t) this << endl;
@@ -495,9 +499,12 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
                 cerr << "\t    Translation: " << s.decode(*(decoder->targetclassdecoder)) << endl;
             }
         }
-                 
-        
-        cerr << "\t    score = tscore + lmscore + dscore + futurecost = " << tscore << " + " << lmscore << " + " << dscore << " + " << futurescore << " = " << _score << endl;
+        if (decoder->DEBUG >=3) {         
+            cerr << "\t    distance = " << distance << endl;
+            cerr << "\t    fragmentscore = tscore + lmscore + dscore = " << tscore << " + " << lmscore << " + " << dscore << " = " << _score << endl;
+        cerr     << "\t    futurecost = " << futurecost << endl;
+        }
+        cerr << "\t    totalscore = allfragmentscores + futurecost = " << score() << endl;
         cerr << "\t    coverage: ";
         for (int i = 0; i < inputcoveragemask.size(); i++) {
             if (inputcoveragemask[i]) {
@@ -510,6 +517,20 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     }
   
 }
+
+
+
+double TranslationHypothesis::score() const {
+    double s = 0;
+    const TranslationHypothesis * h = this;
+    while (h != NULL) {
+        s += h->tscore + h->lmscore + h->dscore;
+        h = h->parent;
+    } 
+    s += futurecost;
+    return s;    
+} 
+
 
 bool TranslationHypothesis::deletable() {
     return ((!keep) && (children.empty()));
@@ -719,11 +740,6 @@ EncData TranslationHypothesis::getoutput(deque<TranslationHypothesis*> * path) {
         return EncData(buffer, cursor); 
     }    
 }
-
-
-double TranslationHypothesis::score() const {
-    return _score;
-} 
 
 
     

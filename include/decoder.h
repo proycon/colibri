@@ -12,10 +12,13 @@ class Stack;
 
 
 class TranslationHypothesis {
-    private:
-        double _score;
+    private:        
         bool keep; //if true, prevents this hypothesis from being automatically deleted by its last dying child
     public:
+        double tscore;
+        double lmscore;
+        double dscore;
+        double futurecost;
         StackDecoder * decoder;
         
         TranslationHypothesis * parent;
