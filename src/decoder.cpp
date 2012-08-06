@@ -143,7 +143,7 @@ void StackDecoder::decode() {
         unsigned int totalexpanded = 0;
         while (!stacks[i].empty()) {
 
-            cerr << "\t Expanding hypothesis off stack " << i << " -- " << stacks[i].size() -1 << " left:" << endl;
+            if (DEBUG >= 1) cerr << "\t Expanding hypothesis off stack " << i << " -- " << stacks[i].size() -1 << " left:" << endl;
             //pop from stacks[i]
             
             TranslationHypothesis * hyp = stacks[i].pop(); 
@@ -490,7 +490,13 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
             } else {
                 cerr << ((const EncNGram *) targetgram)->decode(*(decoder->targetclassdecoder)) << endl;
             }
-        }         
+            if ((targetgram != NULL) && (decoder->DEBUG >= 3)) {
+                EncData s = getoutput();
+                cerr << "\t    Translation: " << s.decode(*(decoder->targetclassdecoder)) << endl;
+            }
+        }
+                 
+        
         cerr << "\t    score = tscore + lmscore + dscore + futurecost = " << tscore << " + " << lmscore << " + " << dscore << " + " << futurescore << " = " << _score << endl;
         cerr << "\t    coverage: ";
         for (int i = 0; i < inputcoveragemask.size(); i++) {
@@ -740,6 +746,7 @@ void usage() {
     cerr << "\t-L weight                 Language model weight" << endl;
     cerr << "\t-D weight                 Distortion model weight" << endl;      
     cerr << "\t--moses                   Translation table is in Moses format" << endl;
+    cerr << "\t-d debug                  Debug level" << endl;
     
 }
 
@@ -779,8 +786,9 @@ int main( int argc, char *argv[] ) {
     stringstream linestream;
     double w;
     
+    int debug = 0;
     char c;    
-    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:d:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -815,7 +823,10 @@ int main( int argc, char *argv[] ) {
         case 'W':
             ws = optarg;
             while (linestream >> w) tweights.push_back(w);
-            break;            
+            break;       
+        case 'd':
+            debug = atoi(optarg);
+            break;     
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
             abort ();
@@ -878,7 +889,7 @@ int main( int argc, char *argv[] ) {
         size = sourceclassencoder.encodestring(input, buffer, true) - 1; //weird patch: - 1  to get n() right later        
         const EncData * const inputdata = new EncData(buffer,size); 
         StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn);
-        decoder->setdebug(2, &sourceclassdecoder, &targetclassdecoder);
+        decoder->setdebug(debug, &sourceclassdecoder, &targetclassdecoder);
         decoder->decode();
         cerr << "DONE. OUTPUT:" << endl;        
         cout << decoder->solution(targetclassdecoder) << endl;
