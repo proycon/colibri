@@ -11,19 +11,23 @@ unsigned char UNKNOWNCLASS = 2;
 unsigned char BOSCLASS = 3;
 unsigned char EOSCLASS = 4;
 
-StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int maxn) {
+StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int maxn, int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
         this->input = input;
         this->inputlength = input.length();
         this->translationtable = translationtable;
         this->lm = lm;
         this->stacksize = stacksize;
         this->prunethreshold = prunethreshold;
+        this->DEBUG = debug;
+        this->sourceclassdecoder = sourceclassdecoder;
+        this->targetclassdecoder = targetclassdecoder;        
+        
+        
         //init stacks
         for (int i = 0; i <= inputlength; i++) {
             stacks.push_back( Stack(i, stacksize, prunethreshold) );
         }
-        this->sourceclassdecoder = NULL; //only for debugging, set by setdebug()
-        this->targetclassdecoder = NULL;
+
         
         sourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
         //sanity check:
@@ -39,14 +43,9 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
         computefuturecost();
         //TODO: Deal with unknown tokens? and <s> </s>
         
-        
+
 }
 
-void StackDecoder::setdebug(int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
-    this->DEBUG = debug;
-    this->sourceclassdecoder = sourceclassdecoder;
-    this->targetclassdecoder = targetclassdecoder;
-}
 
 void StackDecoder::computefuturecost() {
         map<pair<int,int>, double> sourcefragments_costbyspan;
@@ -94,7 +93,7 @@ void StackDecoder::computefuturecost() {
         
         //compute future cost
         for (int length = 1; length <= inputlength; length++) {
-            for (int start = 0; start < inputlength - length; start++) {
+            for (int start = 0; start < inputlength - length + 1; start++) {
                 const pair<int,int> span = make_pair((int) start,(int) length);
                 bool found = false;
                 for (map<pair<int,int>, double>::iterator iter = sourcefragments_costbyspan.find(span); iter != sourcefragments_costbyspan.end(); iter++) {
@@ -109,6 +108,13 @@ void StackDecoder::computefuturecost() {
                     }
                 }
             }
+        }
+        
+        if (DEBUG >= 3) {
+            cerr << "\tFuture cost precomputation:" << endl;
+            for (map<std::pair<int, int>, double>::iterator iter = futurecost.begin(); iter != futurecost.end(); iter++) {
+                cerr << "\t  " << iter->first.first << ":" << iter->first.second << " = " << iter->second << endl;                
+            }            
         }
 }
     
@@ -452,7 +458,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     if ((parent != NULL) && (!parent->initial())) {
         prevpos = parent->sourceoffset + parent->sourcegram->n();        
     } 
-    double distance = abs( (prevpos + 1) - sourceoffset);
+    double distance = abs( prevpos - sourceoffset);
     
     dscore = decoder->dweight * -distance;  
         
@@ -460,19 +466,21 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     
     futurecost = 0;
     begin = -1;    
-    for (int i = 0; i < inputcoveragemask.size(); i++) {
-        if (!inputcoveragemask[i]) {
+    for (int i = 0; i <= inputcoveragemask.size() ; i++) {
+        if ((!inputcoveragemask[i]) && (begin == -1) && (i < inputcoveragemask.size())) {
             begin = i;
-        } else if (begin != -1) {
-            futurecost += decoder->futurecost[make_pair((int) begin,(int) i-begin)];
+        } else if (((i == inputcoveragemask.size()) || (inputcoveragemask[i])) && (begin != -1)) {
+            const double c = decoder->futurecost[make_pair((int) begin,(int) i-begin)];
+            if (c == 0) {
+                cerr << "INTERNAL ERROR: Future cost for " << begin << ":" << i - begin << " is 0! Not possible!" << endl;
+                report();
+                exit(6);
+            }            
+            cerr << "DEBUG: Adding futurecost for " << begin << ":" << i - begin << " = " <<c << endl;
+            futurecost += c;
             begin = -1;
         }
-    }
-    if (begin != -1) futurecost += decoder->futurecost[make_pair((int) begin,(int) inputcoveragemask.size()-begin)];            
-    
-    
-                    
-    
+    }        
     if (decoder->DEBUG >= 2) {
         report();
     }
@@ -904,8 +912,7 @@ int main( int argc, char *argv[] ) {
         cerr << "INPUT: " << input << endl;        
         size = sourceclassencoder.encodestring(input, buffer, true) - 1; //weird patch: - 1  to get n() right later        
         const EncData * const inputdata = new EncData(buffer,size); 
-        StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn);
-        decoder->setdebug(debug, &sourceclassdecoder, &targetclassdecoder);
+        StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn, debug, &sourceclassdecoder, &targetclassdecoder);
         decoder->decode();
         cerr << "DONE. OUTPUT:" << endl;        
         cout << decoder->solution(targetclassdecoder) << endl;

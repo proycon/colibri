@@ -114,7 +114,7 @@ class StackDecoder {
         
         std::vector<Stack> stacks;
                 
-        StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int maxn);
+        StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int maxn, int debug, ClassDecoder *, ClassDecoder *);
         ~StackDecoder();
         
         void decode();
@@ -125,8 +125,7 @@ class StackDecoder {
         
         std::string solution(ClassDecoder & targetclassdecoder); //return solution as string
         
-        void computefuturecost();
-        void setdebug(int debug, ClassDecoder *, ClassDecoder *);      
+        void computefuturecost();      
 
 };
 
