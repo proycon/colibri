@@ -880,13 +880,13 @@ int main( int argc, char *argv[] ) {
     while (getline(cin, input)) {                
         cerr << "INPUT: " << input << endl;        
         size = sourceclassencoder.encodestring(input, buffer, true) - 1; //weird patch: - 1  to get n() right later        
-        EncData * inputdata = new EncData(buffer,size); 
+        const EncData * const inputdata = new EncData(buffer,size); 
         StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn);
         decoder->setdebug(2, &sourceclassdecoder, &targetclassdecoder);
         decoder->decode();
         cerr << "DONE. OUTPUT:" << endl;        
         cout << decoder->solution(targetclassdecoder) << endl;
-        delete inputdata;
+        //delete inputdata; //TODO: REENABLE, MEMORY LEAK
         delete decoder;
     }
 }
