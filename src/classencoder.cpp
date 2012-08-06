@@ -264,27 +264,27 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
       return outputcursor;
 }
 
-EncSkipGram ClassEncoder::input2skipgram(const std::string & querystring, bool allowunknown) {
+EncSkipGram ClassEncoder::input2skipgram(const std::string & querystring, bool allowunknown, bool autoaddunknown) {
 	unsigned char buffer[65536];
 	unsigned char skipref[4];
 	char skipcount = 0;
-	char buffersize = encodestring(querystring, buffer, skipref, &skipcount, allowunknown);
+	char buffersize = encodestring(querystring, buffer, skipref, &skipcount, allowunknown, autoaddunknown);
 	EncSkipGram skipgram = EncSkipGram(buffer,buffersize-1,skipref,skipcount); //-1 to strip last \0 byte
 	return skipgram;
 }
 
-EncNGram ClassEncoder::input2ngram(const std::string & querystring, bool allowunknown) {
+EncNGram ClassEncoder::input2ngram(const std::string & querystring, bool allowunknown,  bool autoaddunknown) {
 	unsigned char buffer[65536];
-	char buffersize = encodestring(querystring, buffer, allowunknown);
+	char buffersize = encodestring(querystring, buffer, allowunknown, autoaddunknown);
 	EncNGram ngram = EncNGram(buffer,buffersize-1); //-1 to strip last \0 byte
 	return ngram;
 }
 
-EncAnyGram * ClassEncoder::input2anygram(const std::string & querystring, bool allowunknown) {
+EncAnyGram * ClassEncoder::input2anygram(const std::string & querystring, bool allowunknown,  bool autoaddunknown) {
 	unsigned char buffer[65536];
 	unsigned char skipref[4];
 	char skipcount = 0;
-	char buffersize = encodestring(querystring, buffer, skipref, &skipcount, allowunknown);
+	char buffersize = encodestring(querystring, buffer, skipref, &skipcount, allowunknown, autoaddunknown);
 	if (skipcount == 0) {
 		return new EncNGram(buffer,buffersize-1); //-1 to strip last \0 byte;
 	} else {
@@ -296,7 +296,7 @@ void ClassEncoder::add(std::string s, unsigned int cls) {
     classes[s] = cls;
 }
 
-void ClassEncoder::encodefile(const std::string & inputfilename, const std::string & outputfilename, bool allowunknown) {
+void ClassEncoder::encodefile(const std::string & inputfilename, const std::string & outputfilename, bool allowunknown, bool autoaddunknown) {
 	const char zero = 0;
 	const char one = 1;
 	ofstream OUT;
@@ -315,46 +315,9 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
       	 OUT.write(&zero, sizeof(char)); //write separator
       	 linenum++;      	 
       }           
-      outputsize = encodestring(line, outputbuffer, allowunknown);
+      outputsize = encodestring(line, outputbuffer, allowunknown, autoaddunknown);
       if (outputsize > 0) OUT.write((const char *) outputbuffer, outputsize);                        
     }
-      /*
-      empty = true;                   
-      int begin = 0;      
-      for (int i = 0; i < line.length(); i++) {
-      	  if ((line[i] == ' ') || (i == line.length() - 1)) {
-          	  string word;
-          	  if (line[i] == ' ') {
-          	  	word  = string(line.begin() + begin, line.begin() + i);
-          	  } else {
-			   	word  = string(line.begin() + begin, line.begin() + i + 1);
-          	  }
-          	  begin = i+1;
-          	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
-          	    empty = false;
-          	    if (classes.count(word) == 0) {
-  	        		cerr << "ERROR: Unknown word '" << word << "', does not occur in model" << endl;
-  	        		exit(6);          	    	
-          	    }
-          	  	unsigned int cls = classes[word];
-          	  	int length = 0;
-  	        	const unsigned char * byterep = inttobytes(cls, length);
-  	        	if (length == 0) {
-  	        		cerr << "INTERNAL ERROR: Error whilst encoding '" << word << "' (class " << cls << "), length==0, not possible!" << endl;
-  	        		exit(13);
-  	        	}  	        		
-  	        	//cerr << "writing " << word << " as " << cls << " in " << length << " bytes" << endl;
-  	        	OUT.write((const char *) byterep, length);
-  	        	delete byterep;
-  	        	OUT.write(&zero, sizeof(char)); //write separator 
-          	  }			 
-          }
-      }
-     */     
-        
-    
-    
-        
     cerr << "Encoded " << linenum << " lines" << endl;
 	IN.close();
 	OUT.close();
