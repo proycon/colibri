@@ -20,8 +20,8 @@ class ClassEncoder {
     
     
     std::vector<unsigned int> encodeseq(const std::vector<std::string> & seq); //not really used yet
-    int encodestring(const std::string & line, unsigned char * outputbuffer, bool allowunknown);
-    int encodestring(const std::string & line, unsigned char * outputbuffer, unsigned char * skipconf, char * skipcount, bool allowunknown);
+    int encodestring(const std::string & line, unsigned char * outputbuffer, bool allowunknown, bool autoaddunknown=false);
+    int encodestring(const std::string & line, unsigned char * outputbuffer, unsigned char * skipconf, char * skipcount, bool allowunknown,  bool autoaddunknown=false);
     void encodefile(const std::string &, const std::string &, bool allowunknown);
     EncSkipGram input2skipgram(const std::string &,  bool allowunknown);
     EncNGram input2ngram(const std::string &,  bool allowunknown);

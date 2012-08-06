@@ -146,7 +146,7 @@ vector<unsigned int> ClassEncoder::encodeseq(const vector<string> & seq) {
     return result;
 }
 
-int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer, bool allowunknown) {
+int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer, bool allowunknown, bool autoaddunknown) {
 	  int outputcursor = 0;
       int begin = 0;      
       for (int i = 0; i < line.length(); i++) {
@@ -161,7 +161,10 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
           	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
           	    unsigned int cls;
           	    if (classes.count(word) == 0) {
-          	    	if (!allowunknown) {	
+                    if (autoaddunknown) {
+                        cls = ++highestclass;
+                        classes[word] = cls;  
+          	    	} if (!allowunknown) {	
   	        			cerr << "ERROR: Unknown word '" << word << "', does not occur in model" << endl;
   	        			return 0;         
 	  	        	} else {
@@ -191,7 +194,7 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
       return outputcursor; //doing -1 to break of possible trailing zero bytes breaks stuff
 }
 
-int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer, unsigned char * skipconf, char * skipcount,  bool allowunknown) {
+int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer, unsigned char * skipconf, char * skipcount,  bool allowunknown,  bool autoaddunknown) {
 	  int outputcursor = 0;
 	  *skipcount = 0;
       int begin = 0;      
@@ -225,7 +228,9 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
           	    } else if (word == "{*9*}") {
           	    	skipconf[(*skipcount)++] = 9;
           	    } else if (classes.count(word) == 0) {
-          	    	if (!allowunknown) { 	
+          	        if (autoaddunknown) {
+                        cls = ++highestclass;
+          	    	} else if (!allowunknown) { 	
   	        			cerr << "ERROR: Unknown word '" << word << "', does not occur in model" << endl;
   	        			return 0;         
 	  	        	} else {

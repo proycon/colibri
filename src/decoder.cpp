@@ -148,15 +148,9 @@ void StackDecoder::decode() {
         }        
         unsigned int totalexpanded = 0;
         while (!stacks[i].empty()) {
-
             if (DEBUG >= 1) cerr << "\t Expanding hypothesis off stack " << i << " -- " << stacks[i].size() -1 << " left:" << endl;
             //pop from stacks[i]
-            
-            TranslationHypothesis * hyp = stacks[i].pop(); 
-            //cerr << "DEBUG: EXPANDING HYPOTHESIS " << (size_t) hyp << endl;
-            
-            
-            
+            TranslationHypothesis * hyp = stacks[i].pop();             
             bool finalonly = (i == inputlength - 1);
             unsigned int expanded = hyp->expand(finalonly); //will automatically add to appropriate stacks
             if (DEBUG >= 1) cerr << "\t  Expanded " << expanded << " new hypotheses" << endl;
