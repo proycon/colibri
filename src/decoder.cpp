@@ -190,7 +190,6 @@ string StackDecoder::solution(ClassDecoder & targetclassdecoder) {
     }
     TranslationHypothesis * sol = stacks[inputlength].pop();
     EncData s = sol->getoutput();
-    s.out();
     return s.decode(targetclassdecoder);
 }
 
@@ -216,7 +215,6 @@ Stack::Stack(const Stack& ref) { //limited copy constructor
 }
 
 void Stack::clear() {
-    cerr << "DEBUG: Clearing stack " << index << endl;
     for (list<TranslationHypothesis*>::iterator iter = contents.begin(); iter != contents.end(); iter++) {
         TranslationHypothesis * h = *iter;
         if (h->deletable()) delete h;
@@ -694,9 +692,7 @@ EncData TranslationHypothesis::getoutput(deque<TranslationHypothesis*> * path) {
         map<int, EncNGram *> outputtokens; //unigrams, one per index                                  
         while (!path->empty()) {
             TranslationHypothesis * hyp = path->front();
-            cerr << "DEBUG: pop path";
-            path->pop_front(); //WARNING: Calls TranslationHypothesis * destructor??? may have unwanted side-effect
-            cerr << "..DONE" << endl;
+            path->pop_front();
             for (int i = hyp->targetoffset; i < hyp->targetoffset + hyp->targetgram->n(); i++) {
                 outputtokens[i] = hyp->getoutputtoken(i);
             }                          
@@ -707,13 +703,12 @@ EncData TranslationHypothesis::getoutput(deque<TranslationHypothesis*> * path) {
             int index = iter->first;
             EncNGram * unigram = iter->second;
             for (int i = 0; i < unigram->size(); i++) {
-                buffer[cursor++] = unigram->data[i];
+                buffer[cursor++] = unigram->data[i];            
             }
+            buffer[cursor++] = 0;
             delete unigram; //important cleanup            
         }     
-        cerr << "DEBUG: Deleting path";    
         delete path; //important cleanup
-        cerr << "..DONE" << endl;
         return EncData(buffer, cursor); 
     }    
 }
