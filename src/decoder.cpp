@@ -190,6 +190,7 @@ string StackDecoder::solution(ClassDecoder & targetclassdecoder) {
     }
     TranslationHypothesis * sol = stacks[inputlength].pop();
     EncData s = sol->getoutput();
+    cerr << "SCORE=" << sol->score() << endl;
     return s.decode(targetclassdecoder);
 }
 
