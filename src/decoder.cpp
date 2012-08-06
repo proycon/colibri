@@ -454,7 +454,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     } 
     double distance = abs( (prevpos + 1) - sourceoffset);
     
-    dscore = decoder->dweight * -abs(distance);  
+    dscore = decoder->dweight * -distance;  
         
     //Compute estimate for future score
     
@@ -470,10 +470,17 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     }
     if (begin != -1) futurecost += decoder->futurecost[make_pair((int) begin,(int) inputcoveragemask.size()-begin)];            
     
-    const double _score = tscore + lmscore + dscore;
+    
                     
     
     if (decoder->DEBUG >= 2) {
+        report();
+    }
+  
+}
+
+void TranslationHypothesis::report() {
+        const double _score = tscore + lmscore + dscore;
         cerr << "\t   Translation Hypothesis "  << endl;  //<< (size_t) this << endl;
         if (decoder->sourceclassdecoder != NULL) { 
             cerr << "\t    Source Fragment: ";
@@ -494,16 +501,13 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
             } else {
                 cerr << ((const EncNGram *) targetgram)->decode(*(decoder->targetclassdecoder)) << endl;
             }
-            if ((targetgram != NULL) && (decoder->DEBUG >= 3)) {
+            if ((targetgram != NULL)) {
                 EncData s = getoutput();
                 cerr << "\t    Translation: " << s.decode(*(decoder->targetclassdecoder)) << endl;
             }
         }
-        if (decoder->DEBUG >=3) {         
-            cerr << "\t    distance = " << distance << endl;
-            cerr << "\t    fragmentscore = tscore + lmscore + dscore = " << tscore << " + " << lmscore << " + " << dscore << " = " << _score << endl;
-        cerr     << "\t    futurecost = " << futurecost << endl;
-        }
+        cerr << "\t    fragmentscore = tscore + lmscore + dscore = " << tscore << " + " << lmscore << " + " << dscore << " = " << _score << endl;
+        cerr << "\t    futurecost = " << futurecost << endl;        
         cerr << "\t    totalscore = allfragmentscores + futurecost = " << score() << endl;
         cerr << "\t    coverage: ";
         for (int i = 0; i < inputcoveragemask.size(); i++) {
@@ -514,11 +518,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
             }            
         }
         cerr << endl;
-    }
-  
 }
-
-
 
 double TranslationHypothesis::score() const {
     double s = 0;

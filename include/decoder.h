@@ -43,7 +43,7 @@ class TranslationHypothesis {
         unsigned int expand(bool finalonly=false); //expands directly in the appropriate stack of the decoder. If finalonly is set, new hypotheses are expected to be final/complete, without gaps
         
         double score() const;        
-                  
+        void report();  
         bool initial() const { return (parent == NULL); }
         
         bool conflicts(const EncAnyGram * sourcecandidate, const CorpusReference & ref); //checks if a source pattern's coverage conflicts with this hypothesis, if not, it is a candidate to be added upon hypothesis expansion
