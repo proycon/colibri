@@ -4,8 +4,12 @@ using namespace std;
 
 LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encoder) { 
     order = 0;
-    ifstream f;
+    ifstream f;    
     f.open(filename.c_str(), ios::in);
+    if ((!f) || (!f.good())) {
+       cerr << "File does not exist: " << filename << endl;
+       exit(3);
+    }    
     while (!f.eof()) {               
         string line;
         getline(f, line);                
