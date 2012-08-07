@@ -154,7 +154,7 @@ void StackDecoder::decode() {
             TranslationHypothesis * hyp = stacks[i].pop();
             if (DEBUG >= 2) {
                 cerr << "\t Popped from stack:" << endl;
-                hyp->out();
+                hyp->report();
             }
                          
             bool finalonly = (i == inputlength - 1);
