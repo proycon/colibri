@@ -165,7 +165,7 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
                         cls = ++highestclass;
                         classes[word] = cls;  
                         added[cls] = word;
-          	    	} if (!allowunknown) {	
+          	    	} else if (!allowunknown) {	
   	        			cerr << "ERROR: Unknown word '" << word << "', does not occur in model" << endl;
   	        			return 0;         
 	  	        	} else {
