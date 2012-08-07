@@ -206,7 +206,7 @@ void StackDecoder::computefuturecost() {
         }
 }
     
-void StackDecoder::decode() {
+TranslationHypothesis * StackDecoder::decode() {
    /*
     initialize hypothesisStack[0 .. nf];
     create initial hypothesis hyp_init;
@@ -224,10 +224,11 @@ void StackDecoder::decode() {
     
     
     //create initial hypothesis and add to 0th stack
-    TranslationHypothesis * initialhypothesis = new TranslationHypothesis(NULL, this, NULL, 0,NULL,0, vector<double>() );
-        
+    TranslationHypothesis * initialhypothesis = new TranslationHypothesis(NULL, this, NULL, 0,NULL,0, vector<double>() );   
     stacks[0].add(initialhypothesis);
     
+    TranslationHypothesis * fallbackhyp = NULL;
+    bool dead = false;
     
     //for each stack
     for (int i = 0; i <= inputlength - 1; i++) {
@@ -235,11 +236,16 @@ void StackDecoder::decode() {
             cerr << "\tDecoding Stack " << i << " -- " << stacks[i].size() << " hypotheses" << endl;
         }        
         unsigned int totalexpanded = 0;
+        bool first = true;        
         while (!stacks[i].empty()) {
             if (DEBUG >= 1) cerr << "\t Expanding hypothesis off stack " << i << " -- " << stacks[i].size() -1 << " left:" << endl;
             
             //pop from stacks[i]
             TranslationHypothesis * hyp = stacks[i].pop();
+            if (first) {
+                fallbackhyp = hyp;
+                first = false;
+            }
             if (DEBUG >= 2) {
                 cerr << "\t  Popped from stack:" << endl;
                 hyp->report();
@@ -250,10 +256,25 @@ void StackDecoder::decode() {
             unsigned int expanded = hyp->expand(finalonly); //will automatically add to appropriate stacks
             if (DEBUG >= 1) cerr << "\t  Expanded " << expanded << " new hypotheses" << endl;
             totalexpanded += expanded;
-            if (hyp->deletable()) {
+            if ((hyp->deletable()) && (hyp != fallbackhyp)) {
+                if ((totalexpanded == 0)  && (!finalonly)) {
+                    dead = true;
+                    for (int j = i + 1; j <= inputlength; j++) {
+                        if (!stacks[j].empty()) dead = false;
+                    }
+                    if (dead) {
+                        cerr << "DECODER ENDED PREMATURELY AFETR STACK " << i << ", NO FURTHER EXPANSIONS POSSIBLE." << endl;
+                        break;
+                    }
+                }
                 //cerr << "DEBUG: DONE EXPANDING, DELETING HYPOTHESIS " << (size_t) hyp << endl;
-                delete hyp; //if the hypothesis failed to expand it will be pruned
+                if ((!dead) || (hyp != fallbackhyp)) {
+                    delete hyp; //if the hypothesis failed to expand it will be pruned
+                }
             }
+        }
+        if ((!dead) && (fallbackhyp != NULL) && (fallbackhyp->deletable())) {
+            delete fallbackhyp;
         }
         if (DEBUG >= 1) cerr << "\t Expanded " << totalexpanded << " new hypotheses in total after processing stack " << i << endl;
         unsigned int totalpruned = 0;
@@ -263,10 +284,20 @@ void StackDecoder::decode() {
             totalpruned += pruned; 
         }
         if (DEBUG >= 1) cerr << "\t Pruned " << totalpruned << " hypotheses from all superior stacks" << endl;
-        stacks[i].clear(); //stack is in itself no longer necessary, included pointer elements may live on though! Unnecessary hypotheses will be cleaned up automatically when higher-order hypotheses are deleted
+        if (!dead) stacks[i].clear(); //stack is in itself no longer necessary, included pointer elements may live on though! Unnecessary hypotheses will be cleaned up automatically when higher-order hypotheses are deleted
     }   
     
-    //solutions are now in last stack: stacks[inputlength]         
+    //solutions are now in last stack: stacks[inputlength]       
+     
+    TranslationHypothesis * solution;
+    if (!stacks[inputlength].empty()) {
+        TranslationHypothesis * solution = stacks[inputlength].pop();
+        return solution;
+    } else if (dead) {
+        return fallbackhyp;
+    } else {
+        return NULL;
+    }
 }
 
 
@@ -278,6 +309,7 @@ StackDecoder::~StackDecoder() {
     }
 }
 
+/*
 string StackDecoder::solution(ClassDecoder & targetclassdecoder) {
     for (int stackindex = inputlength; stackindex >= 1; stackindex--) {
         if (!stacks[stackindex].empty()) {
@@ -293,7 +325,7 @@ string StackDecoder::solution(ClassDecoder & targetclassdecoder) {
     cerr << "NO SOLUTION FOUND!";
     exit(24);
 }
-
+*/
 
 Stack::Stack(int index, int stacksize, double prunethreshold) {
     this->index = index;
@@ -1058,9 +1090,17 @@ int main( int argc, char *argv[] ) {
             if (debug >= 1) cerr << "Setting up decoder" << endl;
             StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn, debug, &sourceclassdecoder, &targetclassdecoder);
             if (debug >= 1) cerr << "Decoding..." << endl;
-            decoder->decode();
+            TranslationHypothesis * solution = decoder->decode();
             cerr << "DONE. OUTPUT:" << endl;        
-            cout << decoder->solution(targetclassdecoder) << endl;
+            if (solution != NULL) {
+                EncData s = solution->getoutput();
+                cerr << "SCORE=" << solution->score() << endl;
+                cout << s.decode(targetclassdecoder) << endl;
+                delete solution;
+            } else {
+                cerr << "ERROR: NO SOLUTION FOUND!!!";
+                exit(12);
+            }                
             //delete inputdata; //TODO: REENABLE, MEMORY LEAK
             delete decoder;
        }

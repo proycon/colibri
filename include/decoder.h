@@ -117,13 +117,13 @@ class StackDecoder {
         StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int maxn, int debug, ClassDecoder *, ClassDecoder *);
         ~StackDecoder();
         
-        void decode();
+        TranslationHypothesis * decode();
                 
         unsigned int getsourcefragments(int maxn);
         
         unsigned int prune(int stackindex);
         
-        std::string solution(ClassDecoder & targetclassdecoder); //return solution as string
+        //std::string solution(ClassDecoder & targetclassdecoder); //return solution as string
         
         void computefuturecost();      
 
