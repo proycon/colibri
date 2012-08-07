@@ -257,22 +257,20 @@ TranslationHypothesis * StackDecoder::decode() {
             if (DEBUG >= 1) cerr << "\t  Expanded " << expanded << " new hypotheses" << endl;
             totalexpanded += expanded;
             if ((hyp->deletable()) && (hyp != fallbackhyp)) {
-                if ((totalexpanded == 0)  && (!finalonly)) {
-                    dead = true;
-                    for (int j = i + 1; j <= inputlength; j++) {
-                        if (!stacks[j].empty()) dead = false;
-                    }
-                    if (dead) {
-                        cerr << "DECODER ENDED PREMATURELY AFETR STACK " << i << ", NO FURTHER EXPANSIONS POSSIBLE." << endl;
-                        break;
-                    }
-                }
                 //cerr << "DEBUG: DONE EXPANDING, DELETING HYPOTHESIS " << (size_t) hyp << endl;
-                if ((!dead) || (hyp != fallbackhyp)) {
-                    delete hyp; //if the hypothesis failed to expand it will be pruned
-                }
+                delete hyp; //if the hypothesis failed to expand it will be pruned                
             }
         }
+        if ((totalexpanded == 0) && (i != inputlength)) {
+            dead = true;
+            for (int j = i + 1; j <= inputlength; j++) {
+                if (!stacks[j].empty()) dead = false;
+            }
+            if (dead) {
+                cerr << "DECODER ENDED PREMATURELY AFETR STACK " << i << ", NO FURTHER EXPANSIONS POSSIBLE." << endl;
+                break;
+            }
+        }                
         if ((!dead) && (fallbackhyp != NULL) && (fallbackhyp->deletable())) {
             delete fallbackhyp;
         }
