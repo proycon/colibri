@@ -794,15 +794,19 @@ int addunknownwords( TranslationTable & ttable, LanguageModel & lm, ClassEncoder
             targetclassencoder.add(word, cls);
             targetclassdecoder.add(cls, word);
             
+            //cerr << "DEBUG1"<< endl;
+            
             EncNGram sourcegram = sourceclassencoder.input2ngram( word,false,false);
             EncNGram targetgram = targetclassencoder.input2ngram( word,false,false);
             
             ttable.sourcengrams.insert(sourcegram);
             ttable.targetngrams.insert(targetgram);
             
+            
+            //cerr << "DEBUG2"<< endl;
             lm.ngrams[targetgram] = -99; //TODO: Use better unknown value from LM?
             
-            
+            //cerr << "DEBUG3"<< endl;
             
             const EncAnyGram * sourcekey = ttable.getkey((const EncAnyGram*) &sourcegram );
             const EncAnyGram * targetkey = ttable.getkey((const EncAnyGram*) &targetgram );
@@ -810,7 +814,7 @@ int addunknownwords( TranslationTable & ttable, LanguageModel & lm, ClassEncoder
             vector<double> scores;
             for (int j = 0; j < tweights_size; j++) scores.push_back(1);
             ttable.alignmatrix[sourcekey][targetkey] = scores;
-                         
+            //cerr << "DEBUG4"<< endl;
             
         }
     }
