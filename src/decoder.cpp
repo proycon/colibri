@@ -28,13 +28,38 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
             stacks.push_back( Stack(i, stacksize, prunethreshold) );
         }
 
-        
+        if (DEBUG >= 3) cerr << "Gathering source fragments:" << endl;        
         sourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
-        //sanity check:
-        /*for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
-            const EncAnyGram * anygram = iter->first;
-            cerr << anygram << endl;            
-        }*/
+        if ((DEBUG >= 3) && (sourceclassdecoder != NULL) && (targetclassdecoder != NULL)) {        
+            for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
+                const EncAnyGram * anygram = iter->first;
+                if (anygram->isskipgram()) {
+                    cerr << "\t" << (int) iter->second.token << ':' << (int) ((const EncSkipGram*) anygram)->n() << " -- " << ((const EncSkipGram*) anygram)->decode(*sourceclassdecoder) << " ==> ";
+                } else {
+                    cerr << "\t" << (int) iter->second.token << ':' << (int) ((const EncNGram*) anygram)->n() << " -- " << ((const EncNGram*) anygram)->decode(*sourceclassdecoder) << " ==> ";
+                }
+                const EncAnyGram * sourcekey = translationtable->getsourcekey(anygram);
+                if (sourcekey == NULL) {
+                    cerr << endl;
+                    cerr << "ERROR: No translation options found!!!!" << endl;
+                    exit(6);
+                } else {
+                    for (std::unordered_map<const EncAnyGram*, std::vector<double> >::iterator iter2 = translationtable->alignmatrix[sourcekey].begin(); iter2 != translationtable->alignmatrix[sourcekey].end(); iter2++) {
+                        const EncAnyGram * anygram2 = iter2->first;
+                        if (anygram2->isskipgram()) {
+                            cerr << ((const EncSkipGram*) anygram2)->decode(*targetclassdecoder) << " [ ";                            
+                        } else {
+                            cerr <<  ((const EncNGram*) anygram2)->decode(*targetclassdecoder) << " [ ";
+                        }                        
+                        for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
+                            cerr << *iter3 << " ";
+                        }
+                        cerr << "]; ";                        
+                    }
+                }
+                cerr << endl;            
+            }
+        }
         
         this->tweights = vector<double>(tweights.begin(), tweights.end());
         this->dweight = dweight;
