@@ -144,13 +144,19 @@ void StackDecoder::decode() {
     //for each stack
     for (int i = 0; i <= inputlength - 1; i++) {
         if (DEBUG >= 1) {
-            cerr << "\tDecoding Stack " << i << endl;
+            cerr << "\tDecoding Stack " << i << " -- " << stacks[i].size() << " hypotheses" << endl;
         }        
         unsigned int totalexpanded = 0;
         while (!stacks[i].empty()) {
             if (DEBUG >= 1) cerr << "\t Expanding hypothesis off stack " << i << " -- " << stacks[i].size() -1 << " left:" << endl;
+            
             //pop from stacks[i]
-            TranslationHypothesis * hyp = stacks[i].pop();             
+            TranslationHypothesis * hyp = stacks[i].pop();
+            if (DEBUG >= 2) {
+                cerr << "\t Popped from stack:" << endl;
+                hyp.out();
+            }
+                         
             bool finalonly = (i == inputlength - 1);
             unsigned int expanded = hyp->expand(finalonly); //will automatically add to appropriate stacks
             if (DEBUG >= 1) cerr << "\t  Expanded " << expanded << " new hypotheses" << endl;
