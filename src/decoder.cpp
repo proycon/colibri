@@ -793,7 +793,7 @@ int addunknownwords( TranslationTable & ttable, LanguageModel & lm, ClassEncoder
             ttable.sourcengrams.insert(sourcegram);
             ttable.targetngrams.insert(targetgram);
             
-            lm.ngrams[targetgram] = -99;
+            lm.ngrams[targetgram] = -99; //TODO: Use better unknown value from LM?
             
             const EncAnyGram * sourcekey = ttable.getkey((const EncAnyGram*) &sourcegram );
             const EncAnyGram * targetkey = ttable.getkey((const EncAnyGram*) &targetgram );

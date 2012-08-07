@@ -153,7 +153,7 @@ class MTWrapper(object):
             ('BUILD_PBMBMT_PARAMSEARCH', False, 'Do parameter optimisation for PBMBMT using wrapped progressive sampling'),
             ('BUILD_COLIBRI_ALIGNMENT', False,'Create an alignment using colibri'),
             ('BUILD_COLIBRI_GIZA', False,'Base aligner on word-alignments using giza (do not manually specify -W -s -t in COLIBRI_ALIGNER_OPTIONS)'),
-            ('BUILD_COLIBRI_TRANSTABLE', False,'Build a translation table using colibri')
+            ('BUILD_COLIBRI_TRANSTABLE', False,'Build a translation table using colibri'),
             ('BUILD_COLIBRI_MOSESPHRASETABLE', False,'Build a Moses-style phrasetable using colibri'),
             ('BUILD_COLIBRI', False,'Build for colibri decoder'),
             ('BUILD_PHRASAL', False,'Build phrasal configuration, necessary for decoding using phrasal'),
