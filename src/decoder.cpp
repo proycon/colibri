@@ -775,6 +775,36 @@ void addsentencemarkers(ClassDecoder & targetclassdecoder, ClassEncoder & target
     targetclassencoder.add("</s>", EOSCLASS);
 }
 
+int addunknownwords( TranslationTable & ttable, ClassEncoder & sourceclassencoder, ClassDecoder & sourceclassdecoder,  ClassEncoder & targetclassencoder, ClassDecoder & targetclassdecoder, int tweights_size) {
+    int added = 0;
+    if (sourceclassencoder.gethighestclass() > sourceclassdecoder.gethighestclass()) {
+        for (unsigned int i = sourceclassdecoder.gethighestclass() + 1; i <= sourceclassencoder.gethighestclass(); i++) {
+            added++;
+            unsigned int cls = i;
+            const string word = sourceclassencoder.added[cls];
+                        
+            sourceclassdecoder.add(cls, word);
+            targetclassencoder.add(word, cls);
+            targetclassdecoder.add(cls, word);
+            
+            EncNGram sourcegram = sourceclassencoder.input2ngram( word,false,false);
+            EncNGram targetgram = targetclassencoder.input2ngram( word,false,false);
+            
+            ttable.sourcengrams.insert(sourcegram);
+            ttable.targetngrams.insert(targetgram);
+            
+            const EncAnyGram * sourcekey = ttable.getkey((const EncAnyGram*) &sourcegram );
+            const EncAnyGram * targetkey = ttable.getkey((const EncAnyGram*) &targetgram );
+            
+            vector<double> scores;
+            for (int j = 0; j < tweights_size; j++) scores.push_back(1);
+            ttable.alignmatrix[sourcekey][targetkey] = scores;             
+        }
+    }
+    sourceclassencoder.added.clear();
+    return added;    
+}
+
 
 int main( int argc, char *argv[] ) {
     int MOSESFORMAT = 0;
@@ -899,13 +929,18 @@ int main( int argc, char *argv[] ) {
     TranslationTable transtable = TranslationTable(transtablefile);
     cerr << "   loaded translations for " << transtable.size() << " patterns" << endl;
         
+    const int firstunknownclass_source = sourceclassencoder.gethighestclass()+1;    
+    const int firstunknownclass_target = targetclassencoder.gethighestclass()+1;
+
+    
     string input;
     unsigned char buffer[8192]; 
     int size;
     while (getline(cin, input)) {                
         cerr << "INPUT: " << input << endl;        
-        size = sourceclassencoder.encodestring(input, buffer, true) - 1; //weird patch: - 1  to get n() right later        
+        size = sourceclassencoder.encodestring(input, buffer, true, true) - 1; //weird patch: - 1  to get n() right later               
         const EncData * const inputdata = new EncData(buffer,size); 
+        addunknownwords(transtable, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
         StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn, debug, &sourceclassdecoder, &targetclassdecoder);
         decoder->decode();
         cerr << "DONE. OUTPUT:" << endl;        

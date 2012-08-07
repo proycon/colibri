@@ -164,6 +164,7 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
                     if (autoaddunknown) {
                         cls = ++highestclass;
                         classes[word] = cls;  
+                        added[cls] = word;
           	    	} if (!allowunknown) {	
   	        			cerr << "ERROR: Unknown word '" << word << "', does not occur in model" << endl;
   	        			return 0;         
@@ -230,6 +231,8 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
           	    } else if (classes.count(word) == 0) {
           	        if (autoaddunknown) {
                         cls = ++highestclass;
+                        classes[word] = cls;
+                        added[cls] = word;
           	    	} else if (!allowunknown) { 	
   	        			cerr << "ERROR: Unknown word '" << word << "', does not occur in model" << endl;
   	        			return 0;         

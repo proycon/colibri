@@ -29,7 +29,7 @@ class ClassDecoder {
     }
     
     void add( unsigned int, std::string); 
-    
+    int gethighestclass() { return highestclass; }
     bool hasclass(unsigned int key) const { return (classes.count(key) > 0); } 
 };
 

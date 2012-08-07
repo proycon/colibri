@@ -17,7 +17,7 @@ class ClassEncoder {
     ClassEncoder(const std::string &); //load an existing classer
     void build(const std::string & filename); //build a class from this dataset
     
-    
+    std::unordered_map<unsigned int, std::string> added;
     
     std::vector<unsigned int> encodeseq(const std::vector<std::string> & seq); //not really used yet
     int encodestring(const std::string & line, unsigned char * outputbuffer, bool allowunknown, bool autoaddunknown=false);
