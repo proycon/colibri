@@ -279,14 +279,17 @@ StackDecoder::~StackDecoder() {
 }
 
 string StackDecoder::solution(ClassDecoder & targetclassdecoder) {
-    if (stacks[inputlength].empty()) {
-        cerr << "ERROR: No solution found!" << endl;
-        exit(6);
+    for (int stackindex = inputlength; stackindex >= 1; stackindex--) {
+        if (stackindex < inputlength) {
+            cerr << "WARNING: INCOMPLETE SOLUTION (LOCAL MAXIMUM IN SEARCH), FROM STACK " << stackindex << " instead of " << inputlength << endl;
+        }
+        TranslationHypothesis * sol = stacks[stackindex].pop();
+        EncData s = sol->getoutput();
+        cerr << "SCORE=" << sol->score() << endl;
+        return s.decode(targetclassdecoder);
     }
-    TranslationHypothesis * sol = stacks[inputlength].pop();
-    EncData s = sol->getoutput();
-    cerr << "SCORE=" << sol->score() << endl;
-    return s.decode(targetclassdecoder);
+    cerr << "NO SOLUTION FOUND!";
+    exit(24);
 }
 
 
