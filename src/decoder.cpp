@@ -401,7 +401,7 @@ bool Stack::add(TranslationHypothesis * candidate) {
             added = true;
         }
         if (count > stacksize) {
-            if (h->children.empty()) {
+            if (h->deletable()) {
                 delete h;
             }
             contents.erase(iter);
