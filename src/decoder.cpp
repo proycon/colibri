@@ -57,9 +57,13 @@ void StackDecoder::computefuturecost() {
             const pair<int,int> span = make_pair<int,int>((int) ref.token, (int) n);
              
             const EncAnyGram * candidate = translationtable->getsourcekey(anygram);
+            if (translationtable->alignmatrix[candidate].size() == 0) {
+                    cerr << "INTERNAL ERROR: No translation options" << endl;
+                    exit(6);  
+            }
             
             //find cheapest translation option
-            double bestscore = -INFINITY;
+            double bestscore = -INFINITY;            
             for (std::unordered_map<const EncAnyGram*, std::vector<double> >::iterator iter2 = translationtable->alignmatrix[candidate].begin(); iter2 != translationtable->alignmatrix[candidate].end(); iter2++) {
                 if (tweights.size() > iter2->second.size()) {
                     cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << tweights.size() << ", got " << iter2->second.size() << endl;
@@ -100,7 +104,14 @@ void StackDecoder::computefuturecost() {
                     found = true;
                     futurecost[span] = sourcefragments_costbyspan[span];
                 }
-                if (!found) futurecost[span] = -INFINITY;
+                if (!found) {
+                    if (length == 1){
+                        cerr << "INTERNAL ERROR: No sourcefragment covers " << span.first << ":" << span.second << " ! Unable to compute future cost!" << endl;
+                        exit(6);
+                    } else {
+                        futurecost[span] = -INFINITY;
+                    }
+                }
                 for (int i = 1; i < length; i++) {
                     double spanscore = futurecost[make_pair((int) start,(int) i)] + futurecost[make_pair((int) start+i,(int) length - i)];
                     if (spanscore > futurecost[span]) { //(higher score -> lower cost)
