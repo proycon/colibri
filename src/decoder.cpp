@@ -800,9 +800,6 @@ int addunknownwords( TranslationTable & ttable, LanguageModel & lm, ClassEncoder
             added++;
             unsigned int cls = i;
             const string word = sourceclassencoder.added[cls];
-
-            
-                        
             sourceclassdecoder.add(cls, word);
             
             
@@ -810,7 +807,7 @@ int addunknownwords( TranslationTable & ttable, LanguageModel & lm, ClassEncoder
             targetclassencoder.add(word, targetcls);
             targetclassdecoder.add(targetcls, word);
             
-            cerr << "NOTICE: Unknown word in input: " << word << endl;
+            cerr << "NOTICE: Unknown word in input: " << word << " (" << cls << ", " << targetcls << ")" << endl;
             
             EncNGram sourcegram = sourceclassencoder.input2ngram( word,false,false);
             EncNGram targetgram = targetclassencoder.input2ngram( word,false,false);
@@ -824,8 +821,8 @@ int addunknownwords( TranslationTable & ttable, LanguageModel & lm, ClassEncoder
             
             
             
-            const EncAnyGram * sourcekey = ttable.getkey((const EncAnyGram*) &sourcegram );
-            const EncAnyGram * targetkey = ttable.getkey((const EncAnyGram*) &targetgram );
+            const EncAnyGram * sourcekey = ttable.getsourcekey((const EncAnyGram*) &sourcegram );
+            const EncAnyGram * targetkey = ttable.gettargetkey((const EncAnyGram*) &targetgram );
             
             vector<double> scores;
             for (int j = 0; j < tweights_size; j++) scores.push_back(1);
