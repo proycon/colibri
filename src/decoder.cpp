@@ -469,8 +469,8 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
                 cerr << "INTERNAL ERROR: Future cost for " << begin << ":" << i - begin << " is 0! Not possible!" << endl;
                 report();
                 exit(6);
-            }            
-            cerr << "DEBUG: Adding futurecost for " << begin << ":" << i - begin << " = " <<c << endl;
+            }           
+            //cerr << "DEBUG: Adding futurecost for " << begin << ":" << i - begin << " = " <<c << endl;
             futurecost += c;
             begin = -1;
         }
