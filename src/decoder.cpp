@@ -100,7 +100,7 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
                 for (int j = 0; j < tweights.size(); j++) scores.push_back(1);                 
                 translationtable->alignmatrix[sourcekey][targetkey] = scores;
                                                 
-                sourcefragments.push_back(make_pair( sourcekey, CorpusReference(0,3) ));
+                sourcefragments.push_back(make_pair( sourcekey, CorpusReference(0,i) ));
                 delete unigram; 
                 
                 if (DEBUG >= 3) {
@@ -131,7 +131,7 @@ void StackDecoder::computefuturecost() {
             const int n = anygram->n();    
             const pair<int,int> span = make_pair<int,int>((int) ref.token, (int) n);
              
-             cerr << "DEBUG: " << span.first << ':' << span.second << endl;
+            //cerr << "DEBUG: " << span.first << ':' << span.second << endl;
              
             const EncAnyGram * candidate = translationtable->getsourcekey(anygram);
             if (translationtable->alignmatrix[candidate].size() == 0) {
