@@ -947,16 +947,18 @@ int main( int argc, char *argv[] ) {
     string input;
     unsigned char buffer[8192]; 
     int size;
-    while (getline(cin, input)) {                
-        cerr << "INPUT: " << input << endl;        
-        size = sourceclassencoder.encodestring(input, buffer, true, true) - 1; //weird patch: - 1  to get n() right later               
-        const EncData * const inputdata = new EncData(buffer,size); 
-        addunknownwords(transtable, lm, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
-        StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn, debug, &sourceclassdecoder, &targetclassdecoder);
-        decoder->decode();
-        cerr << "DONE. OUTPUT:" << endl;        
-        cout << decoder->solution(targetclassdecoder) << endl;
-        //delete inputdata; //TODO: REENABLE, MEMORY LEAK
-        delete decoder;
+    while (getline(cin, input)) {
+        if (input.length() > 0) {                
+            cerr << "INPUT: " << input << endl;        
+            size = sourceclassencoder.encodestring(input, buffer, true, true) - 1; //weird patch: - 1  to get n() right later               
+            const EncData * const inputdata = new EncData(buffer,size); 
+            addunknownwords(transtable, lm, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
+            StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn, debug, &sourceclassdecoder, &targetclassdecoder);
+            decoder->decode();
+            cerr << "DONE. OUTPUT:" << endl;        
+            cout << decoder->solution(targetclassdecoder) << endl;
+            //delete inputdata; //TODO: REENABLE, MEMORY LEAK
+            delete decoder;
+       }
     }
 }
