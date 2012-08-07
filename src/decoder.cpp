@@ -131,6 +131,7 @@ void StackDecoder::computefuturecost() {
             const int n = anygram->n();    
             const pair<int,int> span = make_pair<int,int>((int) ref.token, (int) n);
              
+             cerr << "DEBUG: " << span.first << ':' << span.second << endl;
              
             const EncAnyGram * candidate = translationtable->getsourcekey(anygram);
             if (translationtable->alignmatrix[candidate].size() == 0) {
