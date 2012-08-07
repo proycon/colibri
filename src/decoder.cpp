@@ -949,11 +949,15 @@ int main( int argc, char *argv[] ) {
     int size;
     while (getline(cin, input)) {
         if (input.length() > 0) {                
-            cerr << "INPUT: " << input << endl;        
+            cerr << "INPUT: " << input << endl;
+            if (debug >= 1) cerr << "Processing input" << endl;        
             size = sourceclassencoder.encodestring(input, buffer, true, true) - 1; //weird patch: - 1  to get n() right later               
-            const EncData * const inputdata = new EncData(buffer,size); 
+            const EncData * const inputdata = new EncData(buffer,size);
+            if (debug >= 1) cerr << "Processing unknown words" << endl; 
             addunknownwords(transtable, lm, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
+            if (debug >= 1) cerr << "Setting up decoder" << endl;
             StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn, debug, &sourceclassdecoder, &targetclassdecoder);
+            if (debug >= 1) cerr << "Decoding..." << endl;
             decoder->decode();
             cerr << "DONE. OUTPUT:" << endl;        
             cout << decoder->solution(targetclassdecoder) << endl;
