@@ -297,6 +297,7 @@ EncAnyGram * ClassEncoder::input2anygram(const std::string & querystring, bool a
 
 void ClassEncoder::add(std::string s, unsigned int cls) {
     classes[s] = cls;
+    if (cls > highestclass) highestclass = cls;
 }
 
 void ClassEncoder::encodefile(const std::string & inputfilename, const std::string & outputfilename, bool allowunknown, bool autoaddunknown) {
