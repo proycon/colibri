@@ -775,7 +775,7 @@ void addsentencemarkers(ClassDecoder & targetclassdecoder, ClassEncoder & target
     targetclassencoder.add("</s>", EOSCLASS);
 }
 
-int addunknownwords( TranslationTable & ttable, ClassEncoder & sourceclassencoder, ClassDecoder & sourceclassdecoder,  ClassEncoder & targetclassencoder, ClassDecoder & targetclassdecoder, int tweights_size) {
+int addunknownwords( TranslationTable & ttable, LanguageModel & lm, ClassEncoder & sourceclassencoder, ClassDecoder & sourceclassdecoder,  ClassEncoder & targetclassencoder, ClassDecoder & targetclassdecoder, int tweights_size) {
     int added = 0;
     if (sourceclassencoder.gethighestclass() > sourceclassdecoder.gethighestclass()) {
         for (unsigned int i = sourceclassdecoder.gethighestclass() + 1; i <= sourceclassencoder.gethighestclass(); i++) {
@@ -793,12 +793,16 @@ int addunknownwords( TranslationTable & ttable, ClassEncoder & sourceclassencode
             ttable.sourcengrams.insert(sourcegram);
             ttable.targetngrams.insert(targetgram);
             
+            lm.ngrams[targetgram] = -99;
+            
             const EncAnyGram * sourcekey = ttable.getkey((const EncAnyGram*) &sourcegram );
             const EncAnyGram * targetkey = ttable.getkey((const EncAnyGram*) &targetgram );
             
             vector<double> scores;
             for (int j = 0; j < tweights_size; j++) scores.push_back(1);
-            ttable.alignmatrix[sourcekey][targetkey] = scores;             
+            ttable.alignmatrix[sourcekey][targetkey] = scores;
+                         
+            
         }
     }
     sourceclassencoder.added.clear();
@@ -940,7 +944,7 @@ int main( int argc, char *argv[] ) {
         cerr << "INPUT: " << input << endl;        
         size = sourceclassencoder.encodestring(input, buffer, true, true) - 1; //weird patch: - 1  to get n() right later               
         const EncData * const inputdata = new EncData(buffer,size); 
-        addunknownwords(transtable, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
+        addunknownwords(transtable, lm, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
         StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn, debug, &sourceclassdecoder, &targetclassdecoder);
         decoder->decode();
         cerr << "DONE. OUTPUT:" << endl;        
