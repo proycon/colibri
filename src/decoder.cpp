@@ -30,13 +30,26 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
 
         if (DEBUG >= 3) cerr << "Gathering source fragments:" << endl;        
         sourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
-        if ((DEBUG >= 3) && (sourceclassdecoder != NULL) && (targetclassdecoder != NULL)) {        
-            for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
-                const EncAnyGram * anygram = iter->first;
+        
+        //Build a coverage mask, this will be used to check if their are words uncoverable by translations, these will be added as unknown words 
+        std::vector<bool> inputcoveragemask;
+        for (int i = 0; i < inputlength; i++) inputcoveragemask.push_back(false);                 
+        for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {           
+            const EncAnyGram * anygram = iter->first;
+            int n;
+            if (anygram->isskipgram()) {
+                n = ((const EncSkipGram*) anygram)->n();
+            } else {
+                n = (int) ((const EncNGram*) anygram)->n(); 
+            }
+            for (int j = iter->second.token; j < iter->second.token + n; j++) inputcoveragemask[j] = true;
+            
+            //Output translation options
+            if ((DEBUG >= 3) && (sourceclassdecoder != NULL) && (targetclassdecoder != NULL)) {
                 if (anygram->isskipgram()) {
-                    cerr << "\t" << (int) iter->second.token << ':' << (int) ((const EncSkipGram*) anygram)->n() << " -- " << ((const EncSkipGram*) anygram)->decode(*sourceclassdecoder) << " ==> ";
+                    cerr << "\t" << (int) iter->second.token << ':' << n << " -- " << ((const EncSkipGram*) anygram)->decode(*sourceclassdecoder) << " ==> ";                    
                 } else {
-                    cerr << "\t" << (int) iter->second.token << ':' << (int) ((const EncNGram*) anygram)->n() << " -- " << ((const EncNGram*) anygram)->decode(*sourceclassdecoder) << " ==> ";
+                    cerr << "\t" << (int) iter->second.token << ':' << n << " -- " << ((const EncNGram*) anygram)->decode(*sourceclassdecoder) << " ==> ";
                 }
                 const EncAnyGram * sourcekey = translationtable->getsourcekey(anygram);
                 if (sourcekey == NULL) {
@@ -61,12 +74,48 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
             }
         }
         
+        //Check for uncoverable words
+        for (int i = 0; i < inputlength; i++) {
+            if (!inputcoveragemask[i]) {
+                //found one
+                
+                EncNGram * unigram = input.slice(i, 1);
+                const string word = unigram->decode(*sourceclassdecoder);
+                cerr << "NOTICE: UNTRANSLATABLE WORD: '" << word << "' (adding)" << endl;  
+                                
+                targetclassdecoder->add(targetclassdecoder->gethighestclass() + 1, word);
+                lm->ngrams[*unigram] = -99; //TODO: more sane LM value
+                
+                const EncAnyGram * sourcekey = translationtable->getsourcekey((const EncAnyGram *) unigram);                
+                if (sourcekey == NULL) {
+                    translationtable->sourcengrams.insert(*unigram);
+                    sourcekey = translationtable->getsourcekey((const EncAnyGram *) unigram);
+                }
+                const EncAnyGram * targetkey = translationtable->gettargetkey((const EncAnyGram *) unigram);
+                if (targetkey == NULL) {
+                    translationtable->targetngrams.insert(*unigram);
+                    targetkey = translationtable->gettargetkey((const EncAnyGram *) unigram);
+                }
+                vector<double> scores;
+                for (int j = 0; j < tweights.size(); j++) scores.push_back(1);                 
+                translationtable->alignmatrix[sourcekey][targetkey] = scores;
+                                                
+                sourcefragments.push_back(make_pair( sourcekey, CorpusReference(0,3) ));
+                delete unigram; 
+                
+                if (DEBUG >= 3) {
+                    cerr << "\t" << i << ":1" << " -- " << word << " ==> " << word << " [ 1 1 ];" << endl;                    
+                }
+            }
+        }
+        
+        
         this->tweights = vector<double>(tweights.begin(), tweights.end());
         this->dweight = dweight;
         this->lweight = lweight;
         
         computefuturecost();
-        //TODO: Deal with unknown tokens? and <s> </s>
+        
         
 
 }
@@ -76,10 +125,12 @@ void StackDecoder::computefuturecost() {
         map<pair<int,int>, double> sourcefragments_costbyspan;
         //reorder source fragments by span for more efficiency
         for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
+            
             const EncAnyGram * anygram = iter->first;
-            const CorpusReference ref = iter->second;     
+            const CorpusReference ref = iter->second;
             const int n = anygram->n();    
             const pair<int,int> span = make_pair<int,int>((int) ref.token, (int) n);
+             
              
             const EncAnyGram * candidate = translationtable->getsourcekey(anygram);
             if (translationtable->alignmatrix[candidate].size() == 0) {
@@ -130,7 +181,7 @@ void StackDecoder::computefuturecost() {
                     futurecost[span] = sourcefragments_costbyspan[span];
                 }
                 if (!found) {
-                    if (length == 1){
+                    if (length == 1){                       
                         cerr << "INTERNAL ERROR: No sourcefragment covers " << span.first << ":" << span.second << " ! Unable to compute future cost!" << endl;
                         exit(6);
                     } else {
@@ -825,8 +876,7 @@ int addunknownwords( TranslationTable & ttable, LanguageModel & lm, ClassEncoder
             added++;
             unsigned int cls = i;
             const string word = sourceclassencoder.added[cls];
-            sourceclassdecoder.add(cls, word);
-            
+            sourceclassdecoder.add(cls, word);            
             
             unsigned int targetcls = targetclassencoder.gethighestclass() + 1;
             targetclassencoder.add(word, targetcls);
