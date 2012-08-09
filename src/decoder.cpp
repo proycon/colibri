@@ -691,6 +691,10 @@ bool TranslationHypothesis::deletable() {
 void TranslationHypothesis::cleanup() {  
     if (decoder->DEBUG == 99) {
         cerr << "DEBUG: DELETING HYPOTHESIS " << (size_t) this << endl;
+        if (deleted) {
+             cerr << "INTERNAL ERROR: DELETING AN ALREADY DELETED HYPOTHESIS!!! THIS SHOULD NOT HAPPEN!!!!!" << (size_t) this << endl;
+             exit(6);
+        }
         deleted = true;
     }
      
@@ -724,6 +728,12 @@ bool TranslationHypothesis::final(){
 
 unsigned int TranslationHypothesis::expand(bool finalonly) {
     this->keep = true; //lock this hypothesis, preventing it from being deleted when expanding and rejecting its last dying child
+    if (deleted) { 
+        //only in debug==99
+        cerr << "ERROR: Expanding an already deleted hypothesis! This should never happen! " << (size_t) this << endl;
+        exit(6);        
+    }
+    
     
     unsigned int expanded = 0;
     int thiscov = inputcoverage();
