@@ -48,10 +48,10 @@ class TranslationHypothesis {
         void report();  
         bool initial() const { return (parent == NULL); }
         
-        bool conflicts(const EncAnyGram * sourcecandidate, const CorpusReference & ref); //checks if a source pattern's coverage conflicts with this hypothesis, if not, it is a candidate to be added upon hypothesis expansion
+        bool conflicts(const EncAnyGram * sourcecandidate, const CorpusReference & ref, bool skipduplicatecheck = false); //checks if a source pattern's coverage conflicts with this hypothesis, if not, it is a candidate to be added upon hypothesis expansion. Latter parameter is for internal usage
         bool final();        
         
-        
+        bool fertile();
                 
         //void computeinputcoverage(vector<bool> & container); //compute source coverage        
         int inputcoverage(); //return input coverage (absolute number of tokens covered)

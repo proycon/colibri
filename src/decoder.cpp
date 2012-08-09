@@ -790,9 +790,15 @@ unsigned int TranslationHypothesis::expand() {
                         length = 0;
                     }
                     TranslationHypothesis * newhypo = new TranslationHypothesis(this, decoder, sourcecandidate, ref.token, targetcandidate, targetoffset + length , iter2->second);
-                    //if (!newhypo->wellformed()) {
-                    //}
-                    
+                    if ((!newhypo->fertile()) && (!newhypo->final())) {
+                        if (decoder->DEBUG >= 3) cerr << "\t    Hypothesis not fertile, discarding..."<< endl;
+                        if (decoder->DEBUG == 99) {
+                            newhypo->cleanup();
+                        } else {
+                            delete newhypo;
+                        }                         
+                        continue;
+                    }                    
                     //add to proper stack
                     int cov = newhypo->inputcoverage();
                     if (thiscov >= cov) {
@@ -830,11 +836,18 @@ unsigned int TranslationHypothesis::expand() {
     return expanded;
 }
 
-bool TranslationHypothesis::conflicts(const EncAnyGram * sourcecandidate, const CorpusReference & ref) {
+bool TranslationHypothesis::conflicts(const EncAnyGram * sourcecandidate, const CorpusReference & ref, bool skipduplicatecheck) {
     if ((sourcegram == NULL) && (parent == NULL)) return false; //no sourcegram, no conflict (this is an empty initial hypothesis)
     
-    if (sourcecandidate->hash() == sourcegram->hash()) return true; //source was already added, can not add twice
-     
+    if (skipduplicatecheck) {
+        const TranslationHypothesis * h = this;
+        size_t candidatehash = sourcecandidate->hash(); 
+        while  (h->parent != NULL) {
+            if (candidatehash == h->sourcegram->hash()) return true; //source was already added, can not add twice
+            h = h->parent;
+        }
+    }        
+    
     if ( (ref.token + sourcecandidate->n() > sourceoffset) && (ref.token < sourceoffset + sourcegram->n()  ) ) { 
         //conflict    
         if (sourcegram->isskipgram()) {
@@ -857,13 +870,22 @@ bool TranslationHypothesis::conflicts(const EncAnyGram * sourcecandidate, const 
     
     //no confict, check parents    
     if (parent != NULL) {
-        return parent->conflicts(sourcecandidate, ref);
+        return parent->conflicts(sourcecandidate, ref, true);
     } else {
         return false;
     }
 }
 
-
+bool TranslationHypothesis::fertile() {
+    for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = decoder->sourcefragments.begin(); iter != decoder->sourcefragments.end(); iter++) {
+        const EncAnyGram * sourcecandidate = iter->first;
+        const CorpusReference ref = iter->second; 
+        if (!conflicts(sourcecandidate, ref)) {
+            return true;
+        }
+    }    
+    return false;
+}
 
 int TranslationHypothesis::inputcoverage() {
     int c = 0;
