@@ -255,8 +255,8 @@ TranslationHypothesis * StackDecoder::decode() {
                 cerr << "\t  Expands to:" << endl;
             }
                          
-            bool finalonly = (i == inputlength - 1);
-            unsigned int expanded = hyp->expand(finalonly); //will automatically add to appropriate stacks
+            
+            unsigned int expanded = hyp->expand(); //will automatically add to appropriate stacks
             if (DEBUG >= 1) cerr << "\t  Expanded " << expanded << " new hypotheses" << endl;
             totalexpanded += expanded;
             if ((hyp->deletable()) && (hyp != fallbackhyp)) {                
@@ -753,7 +753,7 @@ bool TranslationHypothesis::final(){
 }
 
 
-unsigned int TranslationHypothesis::expand(bool finalonly) {
+unsigned int TranslationHypothesis::expand() {
     bool oldkeep = this->keep;
     this->keep = true; //lock this hypothesis, preventing it from being deleted when expanding and rejecting its last dying child
     if (deleted) { 
@@ -790,44 +790,35 @@ unsigned int TranslationHypothesis::expand(bool finalonly) {
                         length = 0;
                     }
                     TranslationHypothesis * newhypo = new TranslationHypothesis(this, decoder, sourcecandidate, ref.token, targetcandidate, targetoffset + length , iter2->second);
-                    if ((finalonly) && (!newhypo->final())) {
-                        if (!newhypo->deletable()) {
-                            cerr << "INTERNAL ERROR: Newly created hypothesis not deletable? shouldn't happen" << endl;
-                            exit(6);
+                    //if (!newhypo->wellformed()) {
+                    //}
+                    
+                    //add to proper stack
+                    int cov = newhypo->inputcoverage();
+                    if (thiscov >= cov) {
+                        cerr << "INTERNAL ERROR: Hypothesis expansion did not lead to coverage expansion! This should not happen. New hypo has coverage " << cov << ", parent: " << thiscov << endl;
+                        exit(6);        
+                    }
+                    if (decoder->DEBUG >= 2) cerr << "\t    Adding to stack " << cov;
+                    bool accepted = decoder->stacks[cov].add(newhypo);
+                    if (decoder->DEBUG >= 2) {
+                        if (accepted) {
+                            cerr << " ... ACCEPTED" << endl;
+                        } else {
+                            cerr << " ... REJECTED" << endl;
                         }
+                    }
+                    expanded++;
+                    
+                    if (!accepted) {
                         if (decoder->DEBUG == 99) {
-                            cerr << "DEBUG: IMMEDIATELY DELETING NEWLY CREATED HYPOTHESIS (NOT FINAL) " << (size_t) newhypo << endl;
+                            cerr << "DEBUG: IMMEDIATELY DELETING NEWLY CREATED HYPOTHESIS (REJECTED BY STACK) " << (size_t) newhypo << endl;
                             newhypo->cleanup();
                         } else {
                             delete newhypo;
-                        }
-                    } else {
-                        //add to proper stack
-                        int cov = newhypo->inputcoverage();
-                        if (thiscov >= cov) {
-                            cerr << "INTERNAL ERROR: Hypothesis expansion did not lead to coverage expansion! This should not happen. New hypo has coverage " << cov << ", parent: " << thiscov << endl;
-                            exit(6);        
-                        }
-                        if (decoder->DEBUG >= 2) cerr << "\t    Adding to stack " << cov;
-                        bool accepted = decoder->stacks[cov].add(newhypo);
-                        if (decoder->DEBUG >= 2) {
-                            if (accepted) {
-                                cerr << " ... ACCEPTED" << endl;
-                            } else {
-                                cerr << " ... REJECTED" << endl;
-                            }
-                        }
-                        expanded++;
-                        
-                        if (!accepted) {
-                            if (decoder->DEBUG == 99) {
-                                cerr << "DEBUG: IMMEDIATELY DELETING NEWLY CREATED HYPOTHESIS (REJECTED BY STACK) " << (size_t) newhypo << endl;
-                                newhypo->cleanup();
-                            } else {
-                                delete newhypo;
-                            } 
-                        }
+                        } 
                     }
+                
                 }                 
             }        
         }

@@ -42,7 +42,7 @@ class TranslationHypothesis {
         ~TranslationHypothesis();
         void cleanup();
         
-        unsigned int expand(bool finalonly=false); //expands directly in the appropriate stack of the decoder. If finalonly is set, new hypotheses are expected to be final/complete, without gaps
+        unsigned int expand(); //expands directly in the appropriate stack of the decoder. If finalonly is set, new hypotheses are expected to be final/complete, without gaps
         
         double score() const;        
         void report();  
