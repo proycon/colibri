@@ -70,7 +70,7 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
                         ngrams[ngram] = atof(logprob_s.c_str());
                         hasunk = true;
                         if (DEBUG) {
-                            cerr << " Adding UNKNOWN to LM: " << ngram.n() << "\t" <<  ngramcontent << "\t" << ngrams[ngram] << endl;
+                            cerr << " Adding UNKNOWN to LM: " << (int) ngram.n() << "\t" <<  ngramcontent << "\t" << ngrams[ngram] << endl;
                         }
                     } else {
                         EncNGram ngram = encoder.input2ngram(ngramcontent,  true);
@@ -78,9 +78,9 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
                             ngrams[ngram] = atof(logprob_s.c_str());
                             if (!backofflogprob_s.empty()) {
                                 backoff[ngram] = atof(backofflogprob_s.c_str());
-                                if (DEBUG) cerr << " Adding to LM: " << ngram.n() << "\t" <<  ngramcontent << "\t" << ngrams[ngram] << "\t" << backoff[ngram] << endl;
+                                if (DEBUG) cerr << " Adding to LM: " << (int) ngram.n() << "\t" <<  ngramcontent << "\t" << ngrams[ngram] << "\t" << backoff[ngram] << endl;
                             } else {
-                                if (DEBUG) cerr << " Adding to LM: " << ngram.n() << "\t" << ngramcontent << "\t" << ngrams[ngram] << endl;
+                                if (DEBUG) cerr << " Adding to LM: " << (int) ngram.n() << "\t" << ngramcontent << "\t" << ngrams[ngram] << endl;
                             }
                         }
                     }
