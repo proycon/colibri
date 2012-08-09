@@ -689,7 +689,7 @@ bool TranslationHypothesis::deletable() {
 }
 
 void TranslationHypothesis::cleanup() {  
-    if (decoder->DEBUG = 99) {
+    if (decoder->DEBUG == 99) {
         cerr << "DEBUG: DELETING HYPOTHESIS " << (size_t) this << endl;
         deleted = true;
     }
