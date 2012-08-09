@@ -274,7 +274,7 @@ TranslationHypothesis * StackDecoder::decode() {
                 if (!stacks[j].empty()) dead = false;
             }
             if (dead) {
-                cerr << "WARNING: DECODER ENDED PREMATURELY AFTER STACK " << i << ", NO FURTHER EXPANSIONS POSSIBLE !" << endl;
+                cerr << "WARNING: DECODER ENDED PREMATURELY AFTER STACK " << i << " of " << inputlength <<" , NO FURTHER EXPANSIONS POSSIBLE !" << endl;
                 break;
             }
         }                
@@ -921,6 +921,16 @@ bool TranslationHypothesis::fertile() {
             }
         }    
     }
+    if (decoder->DEBUG >= 3) {
+        cerr << "\t     fertility: ";
+        for (int i = 0; i < decoder->inputlength; i++) {
+            if (fertilitymask[i] >= 0)
+                cerr << fertilitymask[i];
+            else 
+                cerr << 'X';
+        }
+        cerr << endl;
+    }
     //check fertility mask for 0s
     for (int i = 0; i < decoder->inputlength; i++) {
         if (fertilitymask[i] == 0) return false;
@@ -1205,11 +1215,23 @@ int main( int argc, char *argv[] ) {
             if (debug >= 1) cerr << "Setting up decoder" << endl;
             StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn, debug, &sourceclassdecoder, &targetclassdecoder);
             if (debug >= 1) cerr << "Decoding..." << endl;
-            TranslationHypothesis * solution = decoder->decode();
-            cerr << "DONE. OUTPUT:" << endl;        
+            TranslationHypothesis * solution = decoder->decode();                    
             if (solution != NULL) {
                 EncData s = solution->getoutput();
+                if (decoder->DEBUG >= 1) {
+                    TranslationHypothesis * h = solution;            
+                    cerr << "HISTORY=" << endl;
+                    while (h != NULL) {
+                        cerr << "\t";
+                        for (int i = 0; i < decoder->inputlength; i++) {
+                            cerr << h->inputcoveragemask[i];
+                        }
+                        cerr << "  [" << h->score() << "]" << endl;
+                        h = h->parent;
+                    }                
+                }
                 cerr << "SCORE=" << solution->score() << endl;
+                cerr << "DONE. OUTPUT:" << endl;
                 cout << s.decode(targetclassdecoder) << endl;
                 if (decoder->DEBUG == 99) {
                     cerr << "DEBUG: SOLUTION DESTRUCTION. DELETING " << (size_t) solution << endl; 
