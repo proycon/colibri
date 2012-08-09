@@ -4,6 +4,7 @@ using namespace std;
 
 LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encoder) { 
     order = 0;
+    bool hasunk = false;
     ifstream f;    
     f.open(filename.c_str(), ios::in);
     if ((!f) || (!f.good())) {
@@ -62,11 +63,18 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
                     }
                 }
                 if ((!logprob_s.empty()) && (!ngramcontent.empty())) {
-                    EncNGram ngram = encoder.input2ngram(ngramcontent,  true);
-                    if (!ngram.unknown()) {
+                    if (ngramcontent == "<unk>") {
+                        unsigned char unknownclass = 2;
+                        EncNGram ngram = EncNGram(&unknownclass, 1);
                         ngrams[ngram] = atof(logprob_s.c_str());
-                        if (!backofflogprob_s.empty()) {
-                            backoff[ngram] = atof(backofflogprob_s.c_str());
+                        hasunk = true;
+                    } else {
+                        EncNGram ngram = encoder.input2ngram(ngramcontent,  true);
+                        if (!ngram.unknown()) {
+                            ngrams[ngram] = atof(logprob_s.c_str());
+                            if (!backofflogprob_s.empty()) {
+                                backoff[ngram] = atof(backofflogprob_s.c_str());
+                            }
                         }
                     }
                 }
@@ -75,6 +83,11 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
         
     }
     f.close();
+    
+    if (!hasunk) {
+        cerr << "ERROR: Language Model has no value <unk>, make sure to generate SRILM model with -unk parameter" << endl;
+        exit(3);
+    }
 }
 
 

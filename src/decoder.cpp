@@ -11,6 +11,8 @@ unsigned char UNKNOWNCLASS = 2;
 unsigned char BOSCLASS = 3;
 unsigned char EOSCLASS = 4;
 
+const EncNGram UNKNOWNUNIGRAM = EncNGram(&UNKNOWNCLASS,1);
+
 StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int maxn, int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
         this->input = input;
         this->inputlength = input.length();
@@ -85,7 +87,7 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
                 cerr << "NOTICE: UNTRANSLATABLE WORD: '" << word << "' (adding)" << endl;  
                                 
                 targetclassdecoder->add(targetclassdecoder->gethighestclass() + 1, word);
-                lm->ngrams[*unigram] = -99; //TODO: more sane LM value
+                lm->ngrams[*unigram] = lm->ngrams[UNKNOWNUNIGRAM];
                 
                 const EncAnyGram * sourcekey = translationtable->getsourcekey((const EncAnyGram *) unigram);                
                 if (sourcekey == NULL) {
@@ -685,6 +687,12 @@ void TranslationHypothesis::report() {
                 cerr << "\t    Translation: " << s.decode(*(decoder->targetclassdecoder)) << endl;
             }
         }
+        cerr << "\t    History: ";
+        if (history == NULL) {
+            cerr << "NONE" << endl;
+        } else {
+            cerr << history->decode(*(decoder->targetclassdecoder)) << endl;
+        }
         cerr << "\t    fragmentscore = tscore + lmscore + dscore = " << tscore << " + " << lmscore << " + " << dscore << " = " << _score << endl;
         cerr << "\t    futurecost = " << futurecost << endl;        
         cerr << "\t    totalscore = allfragmentscores + futurecost = " << score() << endl;
@@ -1055,7 +1063,7 @@ int addunknownwords( TranslationTable & ttable, LanguageModel & lm, ClassEncoder
             
             
             
-            lm.ngrams[targetgram] = -99; //TODO: Use better unknown value from LM?
+            lm.ngrams[targetgram] = lm.ngrams[UNKNOWNUNIGRAM];
             
             
             
