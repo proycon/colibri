@@ -247,7 +247,7 @@ TranslationHypothesis * StackDecoder::decode() {
                 fallbackhyp = hyp;
                 fallbackhyp->keep = true; //prevent fallback hypothesis from getting pruned
                 first = false;
-                cerr << "DEBUG: FALLBACKHYP=" << (size_t) fallbackhyp << endl;
+                if (DEBUG == 99) cerr << "DEBUG: FALLBACKHYP=" << (size_t) fallbackhyp << endl;
             }
             if (DEBUG >= 2) {
                 cerr << "\t  Popped from stack:" << endl;
