@@ -257,9 +257,9 @@ TranslationHypothesis * StackDecoder::decode() {
             unsigned int expanded = hyp->expand(finalonly); //will automatically add to appropriate stacks
             if (DEBUG >= 1) cerr << "\t  Expanded " << expanded << " new hypotheses" << endl;
             totalexpanded += expanded;
-            if ((hyp->deletable()) && (hyp != fallbackhyp)) {
-                //cerr << "DEBUG: DONE EXPANDING, DELETING HYPOTHESIS " << (size_t) hyp << endl;
+            if ((hyp->deletable()) && (hyp != fallbackhyp)) {                
                 if (DEBUG == 99) {
+                    cerr << "DEBUG: DONE EXPANDING, DELETING HYPOTHESIS " << (size_t) hyp << endl;
                     hyp->cleanup();
                 } else {
                     delete hyp; //if the hypothesis failed to expand it will be pruned
@@ -347,6 +347,7 @@ Stack::~Stack() {
         TranslationHypothesis * h = *iter;
         if (h->deletable()) {
             if (decoder->DEBUG == 99) {
+                cerr << "DEBUG: STACK DESTRUCTION. DELETING " << (size_t) h << endl;
                 h->cleanup();
             } else {
                 delete h;
@@ -356,6 +357,7 @@ Stack::~Stack() {
 }
 
 Stack::Stack(const Stack& ref) { //limited copy constructor
+    decoder = ref.decoder;
     index = ref.index;
     stacksize = ref.stacksize;
     prunethreshold = ref.prunethreshold;
@@ -410,7 +412,7 @@ bool Stack::add(TranslationHypothesis * candidate) {
     for (list<TranslationHypothesis*>::iterator iter = contents.begin(); iter != contents.end(); iter++) {
         count++;
         TranslationHypothesis * h = *iter;
-        if ( (!added) && (score >= h->score()) ) {
+        if ( (!added) && (count < stacksize) && (score >= h->score()) ) {
             //insert here
             count++;
             contents.insert(iter, candidate);
@@ -418,7 +420,12 @@ bool Stack::add(TranslationHypothesis * candidate) {
         }
         if (count > stacksize) {
             if (h->deletable()) {
-                delete h;
+                if (decoder->DEBUG == 99) {
+                    cerr << "DEBUG: STACK OVERFLOW, PRUNING BY DELETING " << (size_t) h << endl;
+                    h->cleanup();
+                } else {                
+                    delete h;
+                }
             }
             contents.erase(iter);
             break;
@@ -768,6 +775,7 @@ unsigned int TranslationHypothesis::expand(bool finalonly) {
                             exit(6);
                         }
                         if (decoder->DEBUG == 99) {
+                            cerr << "DEBUG: IMMEDIATELY DELETING NEWLY CREATED HYPOTHESIS (NOT FINAL) " << (size_t) newhypo << endl;
                             newhypo->cleanup();
                         } else {
                             delete newhypo;
@@ -792,6 +800,7 @@ unsigned int TranslationHypothesis::expand(bool finalonly) {
                         
                         if (!accepted) {
                             if (decoder->DEBUG == 99) {
+                                cerr << "DEBUG: IMMEDIATELY DELETING NEWLY CREATED HYPOTHESIS (REJECTED BY STACK) " << (size_t) newhypo << endl;
                                 newhypo->cleanup();
                             } else {
                                 delete newhypo;
@@ -1127,7 +1136,8 @@ int main( int argc, char *argv[] ) {
                 EncData s = solution->getoutput();
                 cerr << "SCORE=" << solution->score() << endl;
                 cout << s.decode(targetclassdecoder) << endl;
-                if (decoder->DEBUG == 99) { 
+                if (decoder->DEBUG == 99) {
+                    cerr << "DEBUG: SOLUTION DESTRUCTION. DELETING " << (size_t) solution << endl; 
                     solution->cleanup();
                 } else {
                     delete solution;
