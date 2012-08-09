@@ -50,8 +50,8 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
                 string ngramcontent = "";
                 int fields = 0;
                 int begin = 0;
-                for (int i = 0; i  < line.length(); i++) {
-                    if (line[i] == '\t') {
+                for (int i = 0; i  <= line.length(); i++) {
+                    if ((line[i] == '\t') || (line[i] == '\n') || (i == line.length())) {
                         if (fields == 0) {
                             logprob_s = line.substr(begin, i - begin);
                         } else if (fields == 1) {
@@ -63,6 +63,8 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
                         fields++;
                     }
                 }
+                
+                
                 if ((!logprob_s.empty()) && (!ngramcontent.empty())) {
                     if (ngramcontent == "<unk>") {
                         unsigned char unknownclass = 2;
@@ -84,7 +86,11 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
                             }
                         }
                     }
+                } else {
+                    cerr << "WARNING: Ignoring line: " << line << endl;
                 }
+            } else {
+                cerr << "WARNING: Don't know what to do with line: " << line << endl;
             }
         }
         
