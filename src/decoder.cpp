@@ -274,7 +274,7 @@ TranslationHypothesis * StackDecoder::decode() {
                 if (!stacks[j].empty()) dead = false;
             }
             if (dead) {
-                cerr << "DECODER ENDED PREMATURELY AFTER STACK " << i << ", NO FURTHER EXPANSIONS POSSIBLE." << endl;
+                cerr << "WARNING: DECODER ENDED PREMATURELY AFTER STACK " << i << ", NO FURTHER EXPANSIONS POSSIBLE !" << endl;
                 break;
             }
         }                
