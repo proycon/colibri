@@ -877,14 +877,55 @@ bool TranslationHypothesis::conflicts(const EncAnyGram * sourcecandidate, const 
 }
 
 bool TranslationHypothesis::fertile() {
+    vector<int> fertilitymask;
+    for (int i = 0; i < decoder->inputlength; i++) {
+        if (inputcoveragemask[i]) {
+            fertilitymask.push_back(-1); //for tokens already covered
+        } else {
+            fertilitymask.push_back(0);
+        }
+    }
     for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = decoder->sourcefragments.begin(); iter != decoder->sourcefragments.end(); iter++) {
         const EncAnyGram * sourcecandidate = iter->first;
-        const CorpusReference ref = iter->second; 
-        if (!conflicts(sourcecandidate, ref)) {
-            return true;
+        const CorpusReference ref = iter->second;
+        
+        size_t candidatehash = sourcecandidate->hash();
+        bool alreadyused = false;
+        const TranslationHypothesis * h = this;
+        while (h != NULL) {
+            if ((h->sourcegram != NULL) && (candidatehash == h->sourcegram->hash())) {
+                alreadyused = true;
+                break;
+            } 
+            h = h->parent;            
+        } 
+        if (alreadyused) continue;
+                
+        int length;
+        if (sourcecandidate->isskipgram()) {
+            length = ((const EncSkipGram*) sourcecandidate)->n();
+        } else {
+            length = ((const EncNGram*) sourcecandidate)->n();
+        }        
+    
+        bool applicable = true;
+        for (int i = ref.token; i < ref.token + length; i++) {
+            if (fertilitymask[i] < 0) {
+                applicable = false;
+                break;
+            } 
         }
-    }    
-    return false;
+        if (applicable) {
+            for (int i = ref.token; i < ref.token + length; i++) {
+                fertilitymask[i]++;
+            }
+        }    
+    }
+    //check fertility mask for 0s
+    for (int i = 0; i < decoder->inputlength; i++) {
+        if (fertilitymask[i] == 0) return false;
+    }     
+    return true;
 }
 
 int TranslationHypothesis::inputcoverage() {
