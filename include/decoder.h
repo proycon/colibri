@@ -14,6 +14,7 @@ class Stack;
 class TranslationHypothesis {
     private:        
         bool keep; //if true, prevents this hypothesis from being automatically deleted by its last dying child
+        bool deleted; //for debug only
     public:
         double tscore;
         double lmscore;
@@ -76,8 +77,9 @@ class Stack {
     int index;
     int stacksize;
     double prunethreshold;
+    StackDecoder * decoder;
    public:
-    Stack(int index, int stacksize, double prunethreshold);
+    Stack(StackDecoder * decoder, int index, int stacksize, double prunethreshold);
     ~Stack();
     Stack(const Stack& ref); //limited copy constructor
     std::list<TranslationHypothesis *> contents;
