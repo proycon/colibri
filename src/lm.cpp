@@ -2,7 +2,8 @@
 
 using namespace std;
 
-LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encoder) { 
+LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encoder, bool debug) {
+    this->DEBUG = debug; 
     order = 0;
     bool hasunk = false;
     ifstream f;    
@@ -68,12 +69,18 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
                         EncNGram ngram = EncNGram(&unknownclass, 1);
                         ngrams[ngram] = atof(logprob_s.c_str());
                         hasunk = true;
+                        if (DEBUG) {
+                            cerr << " Adding UNKNOWN to LM: " << ngram.n() << "\t" <<  ngramcontent << "\t" << ngrams[ngram] << endl;
+                        }
                     } else {
                         EncNGram ngram = encoder.input2ngram(ngramcontent,  true);
                         if (!ngram.unknown()) {
                             ngrams[ngram] = atof(logprob_s.c_str());
                             if (!backofflogprob_s.empty()) {
                                 backoff[ngram] = atof(backofflogprob_s.c_str());
+                                if (DEBUG) cerr << " Adding to LM: " << ngram.n() << "\t" <<  ngramcontent << "\t" << ngrams[ngram] << "\t" << backoff[ngram] << endl;
+                            } else {
+                                if (DEBUG) cerr << " Adding to LM: " << ngram.n() << "\t" << ngramcontent << "\t" << ngrams[ngram] << endl;
                             }
                         }
                     }

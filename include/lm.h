@@ -7,13 +7,14 @@
 
 class LanguageModel {
     private:
+        bool DEBUG;
         int order;
     public:
         std::unordered_map<EncNGram, double> ngrams;
         std::unordered_map<EncNGram, double> backoff; //MAYBE TODO: merge with ngrams? <EncNGram, pair<double,double> > ?
         std::map<int,unsigned int> total;
         
-        LanguageModel(const std::string & filename,  ClassEncoder & encoder);
+        LanguageModel(const std::string & filename,  ClassEncoder & encoder, bool debug = false);
                 
         
         double score(EncNGram ngram); //returns logprob (base 10)
