@@ -13,9 +13,10 @@ class Stack;
 
 class TranslationHypothesis {
     private:        
-        bool keep; //if true, prevents this hypothesis from being automatically deleted by its last dying child
+        
         bool deleted; //for debug only
     public:
+        bool keep; //if true, prevents this hypothesis from being automatically deleted by its last dying child
         double tscore;
         double lmscore;
         double dscore;
@@ -49,6 +50,7 @@ class TranslationHypothesis {
         
         bool conflicts(const EncAnyGram * sourcecandidate, const CorpusReference & ref); //checks if a source pattern's coverage conflicts with this hypothesis, if not, it is a candidate to be added upon hypothesis expansion
         bool final();        
+        
         
                 
         //void computeinputcoverage(vector<bool> & container); //compute source coverage        

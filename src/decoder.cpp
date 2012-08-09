@@ -243,9 +243,11 @@ TranslationHypothesis * StackDecoder::decode() {
             
             //pop from stacks[i]
             TranslationHypothesis * hyp = stacks[i].pop();
-            if (first) {
+            if (first) {                
                 fallbackhyp = hyp;
+                fallbackhyp->keep = true; //prevent fallback hypothesis from getting pruned
                 first = false;
+                cerr << "DEBUG: FALLBACKHYP=" << (size_t) fallbackhyp << endl;
             }
             if (DEBUG >= 2) {
                 cerr << "\t  Popped from stack:" << endl;
@@ -272,17 +274,19 @@ TranslationHypothesis * StackDecoder::decode() {
                 if (!stacks[j].empty()) dead = false;
             }
             if (dead) {
-                cerr << "DECODER ENDED PREMATURELY AFETR STACK " << i << ", NO FURTHER EXPANSIONS POSSIBLE." << endl;
+                cerr << "DECODER ENDED PREMATURELY AFTER STACK " << i << ", NO FURTHER EXPANSIONS POSSIBLE." << endl;
                 break;
             }
         }                
+        if (fallbackhyp != NULL) fallbackhyp->keep = false;
         if ((!dead) && (fallbackhyp != NULL) && (fallbackhyp->deletable())) {
             if (DEBUG == 99) {
-                fallbackhyp->cleanup();
+                cerr << "DEBUG: DELETING FALLBACK HYPOTHESIS " << (size_t) fallbackhyp << endl;
+                fallbackhyp->cleanup();                
             } else {
-                delete fallbackhyp;
-            }
-        }
+                delete fallbackhyp;                
+            }            
+        }        
         if (DEBUG >= 1) cerr << "\t Expanded " << totalexpanded << " new hypotheses in total after processing stack " << i << endl;
         unsigned int totalpruned = 0;
         for (int j = inputlength; j >= i+1; j--) { //prune further stacks (hypotheses may have been added to any of them).. always prune superior stack first
@@ -291,7 +295,10 @@ TranslationHypothesis * StackDecoder::decode() {
             totalpruned += pruned; 
         }
         if (DEBUG >= 1) cerr << "\t Pruned " << totalpruned << " hypotheses from all superior stacks" << endl;
-        if (!dead) stacks[i].clear(); //stack is in itself no longer necessary, included pointer elements may live on though! Unnecessary hypotheses will be cleaned up automatically when higher-order hypotheses are deleted
+        if (!dead) {
+            fallbackhyp = NULL;
+            stacks[i].clear(); //stack is in itself no longer necessary, included pointer elements may live on though! Unnecessary hypotheses will be cleaned up automatically when higher-order hypotheses are deleted
+        }
     }   
     
     //solutions are now in last stack: stacks[inputlength]       
@@ -364,9 +371,17 @@ Stack::Stack(const Stack& ref) { //limited copy constructor
 }
 
 void Stack::clear() {
+    if (decoder->DEBUG >= 3) cerr << "\tClearing stack " << index << endl; 
     for (list<TranslationHypothesis*>::iterator iter = contents.begin(); iter != contents.end(); iter++) {
         TranslationHypothesis * h = *iter;
-        if (h->deletable()) delete h;
+        if (h->deletable()) {
+            if (decoder->DEBUG == 99) {
+                cerr << "DEBUG: CLEARING STACK " << index << ", DELETING HYPOTHESIS" << (size_t) this << endl;
+                h->cleanup();
+            } else {
+                delete h;
+            }
+        }
     }
     contents.clear();
 }
@@ -421,7 +436,7 @@ bool Stack::add(TranslationHypothesis * candidate) {
         if (count > stacksize) {
             if (h->deletable()) {
                 if (decoder->DEBUG == 99) {
-                    cerr << "DEBUG: STACK OVERFLOW, PRUNING BY DELETING " << (size_t) h << endl;
+                    cerr << endl << "DEBUG: STACK OVERFLOW, PRUNING BY DELETING " << (size_t) h << endl;
                     h->cleanup();
                 } else {                
                     delete h;
@@ -450,7 +465,12 @@ int Stack::prune() {
                 pruned++;
                 iter = contents.erase(iter);
                 if (h->deletable()) {
-                    delete h; //TODO: REENABLE AND FIX -- MEMORY LEAK?
+                    if (decoder->DEBUG) {
+                        cerr << "DEBUG: SCORE EXCEEDS CUTOFF, PRUNING BY DELETING " << (size_t) h << endl;                    
+                        h->cleanup();
+                    } else {
+                        delete h; //TODO: REENABLE AND FIX -- MEMORY LEAK?
+                    }
                 }
             }
         }
@@ -734,6 +754,7 @@ bool TranslationHypothesis::final(){
 
 
 unsigned int TranslationHypothesis::expand(bool finalonly) {
+    bool oldkeep = this->keep;
     this->keep = true; //lock this hypothesis, preventing it from being deleted when expanding and rejecting its last dying child
     if (deleted) { 
         //only in debug==99
@@ -814,7 +835,7 @@ unsigned int TranslationHypothesis::expand(bool finalonly) {
         //there are target-side gaps, attempt to fill
         //TODO
     }
-    this->keep = false; //release lock
+    this->keep = oldkeep; //release lock
     return expanded;
 }
 
