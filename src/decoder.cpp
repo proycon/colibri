@@ -611,8 +611,9 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
                     partcount++;
                     delete part;
                 } 
-            } else {
+            } else {                
                 EncNGram ngram = EncNGram(*history + *((const EncNGram* ) targetgram) );
+                if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM withour history for: " << ngram.decode( *decoder->targetclassdecoder) << endl;
                 lmscore += decoder->lweight * decoder->lm->score(ngram);
             }
         } else {
@@ -625,6 +626,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
                     delete part;
                 } 
             } else {
+               if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM with history for: " << targetgram->decode( *decoder->targetclassdecoder) << endl;  
                lmscore += decoder->lweight * decoder->lm->score( *((const EncNGram *) targetgram));
             }
         }
