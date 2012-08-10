@@ -558,7 +558,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     for (int i = begin; i < targetoffset; i++) {
         if ((!inputcoveragemask[i])) break;
         EncNGram * unigram; 
-        cerr << "DEBUG: history->getoutputtoken " << i << endl;
+        //cerr << "DEBUG: history->getoutputtoken " << i << endl;
         unigram = getoutputtoken(i);
             
         if (!unigram->unknown()) {
@@ -656,13 +656,13 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
        for (int i = targetlength - (order - 1); (i >= 0) && (i < targetlength); i++) {
             if (terminator == NULL) {
                 EncNGram * unigram; 
-                cerr << "DEBUG: final1->getoutputtoken " << i << " (" << targetlength << " )" << endl;
+                //cerr << "DEBUG: final1->getoutputtoken " << i << " (" << targetlength << " )" << endl;
                 unigram = getoutputtoken(i);
                 terminator = new EncNGram(*unigram);
                 delete unigram;               
             } else {
                 EncNGram * unigram; 
-                cerr << "DEBUG: final2->getoutputtoken " << i << endl;
+                //cerr << "DEBUG: final2->getoutputtoken " << i << endl;
                 unigram = getoutputtoken(i);
                 terminator = new EncNGram(*terminator + *unigram);
                 delete unigram;
