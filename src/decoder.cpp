@@ -558,6 +558,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     for (int i = begin; i < targetoffset; i++) {
         if ((!inputcoveragemask[i])) break;
         EncNGram * unigram; 
+        cerr << "DEBUG: history->getoutputtoken " << i << endl;
         unigram = getoutputtoken(i);
             
         if (!unigram->unknown()) {
@@ -614,8 +615,9 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
                 } 
             } else {                
                 EncNGram ngram = EncNGram(*history + *((const EncNGram* ) targetgram) );
-                if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM with history for: " << ngram.decode( *decoder->targetclassdecoder) << endl;
+                if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM with history for: " << ngram.decode( *decoder->targetclassdecoder);
                 lmscore += decoder->lweight * decoder->lm->score(ngram);
+                if (decoder->DEBUG >= 4) cerr << "... DONE" << endl; 
             }
         } else {
             if (targetgram->isskipgram()) {
@@ -627,22 +629,40 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
                     delete part;
                 } 
             } else {
-               if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM without history for: " << targetgram->decode( *decoder->targetclassdecoder) << endl;  
+               if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM without history for: " << targetgram->decode( *decoder->targetclassdecoder);  
                lmscore += decoder->lweight * decoder->lm->score( *((const EncNGram *) targetgram));
+               if (decoder->DEBUG >= 4) cerr << "... DONE" << endl;
             }
         }
     }
     
     if (final()) {
-       EncNGram * terminator = NULL;    
-       for (int i = decoder->inputlength - (order - 1); (i >= 0) && (i < decoder->inputlength); i++) {
+       EncNGram * terminator = NULL;
+       
+       //find length
+       int targetlength = 0;
+       TranslationHypothesis * h = this;
+       while ((h != NULL) && (h->targetgram != NULL)) {
+            int n;
+            if (h->targetgram->isskipgram()) {
+                n = ((const EncSkipGram *) h->targetgram)->n();
+            } else {
+                n = ((const EncNGram *) h->targetgram)->n();
+            }
+            if (h->targetoffset + n > targetlength) targetlength = h->targetoffset + n;
+            h = h->parent; 
+       } 
+         
+       for (int i = targetlength - (order - 1); (i >= 0) && (i < targetlength); i++) {
             if (terminator == NULL) {
                 EncNGram * unigram; 
+                cerr << "DEBUG: final1->getoutputtoken " << i << " (" << targetlength << " )" << endl;
                 unigram = getoutputtoken(i);
                 terminator = new EncNGram(*unigram);
                 delete unigram;               
             } else {
                 EncNGram * unigram; 
+                cerr << "DEBUG: final2->getoutputtoken " << i << endl;
                 unigram = getoutputtoken(i);
                 terminator = new EncNGram(*terminator + *unigram);
                 delete unigram;
@@ -653,8 +673,9 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
        } else {        
             terminator = new EncNGram(*terminator + EncNGram((const unsigned char*) &EOSCLASS, 1) );
        }
-       if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM without history for: " << terminator->decode( *decoder->targetclassdecoder) << endl;
+       if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM for terminator: " << terminator->decode( *decoder->targetclassdecoder);
        lmscore += decoder->lweight * decoder->lm->score( *terminator );
+       if (decoder->DEBUG >= 4) cerr << "...DONE" << endl;
        delete terminator;
     }
     
@@ -990,6 +1011,7 @@ int TranslationHypothesis::inputcoverage() {
     }
     return c;
 }
+
 
 EncNGram * TranslationHypothesis::getoutputtoken(int index) {
     if (parent == NULL) {
