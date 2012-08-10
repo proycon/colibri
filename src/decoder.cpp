@@ -550,15 +550,16 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     
     const int order = decoder->lm->getorder();
     int begin = targetoffset - (order - 1);
-    if (begin < 0) begin = -1; //TODO : CHECK
-    
-    for (int i = begin; i < begin + (order-1); i++) {
-        EncNGram * unigram;
-        if (begin == -1) {
-            unigram = new EncNGram((const unsigned char*) &BOSCLASS, 1); //TODO: CHECK
-        } else { 
-            unigram = getoutputtoken(i);
-        }            
+    if (begin < 0) {        
+        history = new EncNGram((const unsigned char*) &BOSCLASS, 1);
+        begin = 0;
+    }
+     
+    for (int i = begin; i < targetoffset; i++) {
+        if ((!inputcoveragemask[i])) break;
+        EncNGram * unigram; 
+        unigram = getoutputtoken(i);
+            
         if (!unigram->unknown()) {
             if (history != NULL) {
                 const EncNGram * old = history;
@@ -632,6 +633,30 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
         }
     }
     
+    if (final()) {
+       EncNGram * terminator = NULL;    
+       for (int i = decoder->inputlength - (order - 1); (i >= 0) && (i < decoder->inputlength); i++) {
+            if (terminator == NULL) {
+                EncNGram * unigram; 
+                unigram = getoutputtoken(i);
+                terminator = new EncNGram(*unigram);
+                delete unigram;               
+            } else {
+                EncNGram * unigram; 
+                unigram = getoutputtoken(i);
+                terminator = new EncNGram(*terminator + *unigram);
+                delete unigram;
+            }
+       } 
+       if (terminator == NULL) {
+            terminator = new EncNGram((const unsigned char*) &EOSCLASS, 1);
+       } else {        
+            terminator = new EncNGram(*terminator + EncNGram((const unsigned char*) &EOSCLASS, 1) );
+       }
+       if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM without history for: " << terminator->decode( *decoder->targetclassdecoder) << endl;
+       lmscore += decoder->lweight * decoder->lm->score( *terminator );
+       delete terminator;
+    }
     
     //TODO: deal differently with filling in gaps in skips?
     //Total reordering cost is computed by D(e,f) = - Σi (d_i) where d for each phrase i is defined as d = abs( last word position of previously translated phrase + 1 - first word position of newly translated phrase ).
