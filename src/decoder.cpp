@@ -1198,7 +1198,7 @@ int main( int argc, char *argv[] ) {
     ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);
     addsentencemarkers(targetclassdecoder, targetclassencoder);        
     cerr << "Language model:       " << lmfile << endl;
-    LanguageModel lm = LanguageModel(lmfile, targetclassencoder, (debug >= 3) );
+    LanguageModel lm = LanguageModel(lmfile, targetclassencoder, (debug >= 4) );
     cerr << "   loaded " << lm.size() << " n-grams, order=" << lm.getorder() << endl;
     cerr << "Translation table:    " << transtablefile << endl;
     //TODO: Moses format
