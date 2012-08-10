@@ -1039,7 +1039,7 @@ void usage() {
     cerr << "\t-L weight                 Language model weight" << endl;
     cerr << "\t-D weight                 Distortion model weight" << endl;      
     cerr << "\t--moses                   Translation table is in Moses format" << endl;
-    cerr << "\t-d debug                  Debug level" << endl;
+    cerr << "\t-v verbosity              Verbosity/debug level" << endl;
     
 }
 
@@ -1122,7 +1122,7 @@ int main( int argc, char *argv[] ) {
     
     int debug = 0;
     char c;    
-    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:d:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:v:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -1158,7 +1158,7 @@ int main( int argc, char *argv[] ) {
             ws = optarg;
             while (linestream >> w) tweights.push_back(w);
             break;       
-        case 'd':
+        case 'v':
             debug = atoi(optarg);
             break;     
         default:
