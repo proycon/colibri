@@ -556,7 +556,6 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     }
      
     for (int i = begin; i < targetoffset; i++) {
-        if ((!inputcoveragemask[i])) break;
         EncNGram * unigram; 
         //cerr << "DEBUG: history->getoutputtoken " << i << endl;
         unigram = getoutputtoken(i);
