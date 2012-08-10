@@ -85,19 +85,27 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
                 EncNGram * unigram = input.slice(i, 1);
                 const string word = unigram->decode(*sourceclassdecoder);
                 cerr << "NOTICE: UNTRANSLATABLE WORD: '" << word << "' (adding)" << endl;  
-                                
-                targetclassdecoder->add(targetclassdecoder->gethighestclass() + 1, word);
-                lm->ngrams[*unigram] = lm->ngrams[UNKNOWNUNIGRAM];
+                
+                
+                const unsigned int targetcls = targetclassdecoder->gethighestclass() + 1;             
+                targetclassdecoder->add(targetcls, word);
+                
+                //try to make do without an explicit encoder
+                int size = 0;
+                unsigned char * buffer = inttobytes(targetcls, size);                
+                EncNGram targetunigram = EncNGram(buffer, size);
+                delete buffer; 
+                lm->ngrams[targetunigram] = lm->ngrams[UNKNOWNUNIGRAM];
                 
                 const EncAnyGram * sourcekey = translationtable->getsourcekey((const EncAnyGram *) unigram);                
                 if (sourcekey == NULL) {
                     translationtable->sourcengrams.insert(*unigram);
                     sourcekey = translationtable->getsourcekey((const EncAnyGram *) unigram);
                 }
-                const EncAnyGram * targetkey = translationtable->gettargetkey((const EncAnyGram *) unigram);
+                const EncAnyGram * targetkey = translationtable->gettargetkey((const EncAnyGram *) &targetunigram);
                 if (targetkey == NULL) {
-                    translationtable->targetngrams.insert(*unigram);
-                    targetkey = translationtable->gettargetkey((const EncAnyGram *) unigram);
+                    translationtable->targetngrams.insert(targetunigram);
+                    targetkey = translationtable->gettargetkey((const EncAnyGram *) &targetunigram);
                 }
                 vector<double> scores;
                 for (int j = 0; j < tweights.size(); j++) scores.push_back(1);                 
@@ -107,7 +115,9 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
                 delete unigram; 
                 
                 if (DEBUG >= 3) {
-                    cerr << "\t" << i << ":1" << " -- " << word << " ==> " << word << " [ 1 1 ];" << endl;                    
+                    cerr << "\t" << i << ":1" << " -- " << sourcekey->decode(*sourceclassdecoder) << " ==> " << targetkey->decode(*sourceclassdecoder) << " [ ";
+                    for (int j = 0; j < tweights.size(); j++) cerr << translationtable->alignmatrix[sourcekey][targetkey][j] << " ";
+                    cerr << "];" << endl;                     
                 }
             }
         }
