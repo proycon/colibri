@@ -636,7 +636,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
         }
     }
     
-    /*    
+       
     if (final()) {
        EncNGram * terminator = NULL;
        
@@ -679,7 +679,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
        if (decoder->DEBUG >= 4) cerr << "...DONE" << endl;
        delete terminator;
     }
-    */
+    
     
     //TODO: deal differently with filling in gaps in skips?
     //Total reordering cost is computed by D(e,f) = - Σi (d_i) where d for each phrase i is defined as d = abs( last word position of previously translated phrase + 1 - first word position of newly translated phrase ).
