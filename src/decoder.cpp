@@ -13,7 +13,7 @@ unsigned char EOSCLASS = 4;
 
 const EncNGram UNKNOWNUNIGRAM = EncNGram(&UNKNOWNCLASS,1);
 
-StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int maxn, int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
+StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
         this->input = input;
         this->inputlength = input.length();
         this->translationtable = translationtable;
@@ -126,6 +126,7 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
         this->tweights = vector<double>(tweights.begin(), tweights.end());
         this->dweight = dweight;
         this->lweight = lweight;
+        this->dlimit = dlimit;
         
         computefuturecost();
         
@@ -847,6 +848,16 @@ unsigned int TranslationHypothesis::expand() {
                 int c = 0;                
                 for (std::unordered_map<const EncAnyGram*, vector<double> >::const_iterator iter2 =  decoder->translationtable->alignmatrix[sourcecandidate].begin(); iter2 != decoder->translationtable->alignmatrix[sourcecandidate].end(); iter2++) {
                     c++;
+
+                    if ((decoder->dlimit >= 0) && (decoder->dlimit < 999)) {                    
+                        int prevpos = 0;
+                        if ((parent != NULL) && (!parent->initial())) {
+                            prevpos = parent->sourceoffset + parent->sourcegram->n();        
+                        } 
+                        double distance = abs( prevpos - sourceoffset);
+                        if (distance > decoder->dlimit) continue; //skip
+                    }
+                    
                     //cerr << "DEBUG: " << c << " of " << decoder->translationtable->alignmatrix[sourcecandidate].size() << endl;  
                     //create hypothesis for each target fragment
                     const EncAnyGram * targetcandidate = iter2->first;
@@ -1087,7 +1098,8 @@ void usage() {
     cerr << "\t-p prune threshold        Prune threshold" << endl;
     cerr << "\t-W w1,w2,w3               Translation model weights (comma seperated)" << endl;    
     cerr << "\t-L weight                 Language model weight" << endl;
-    cerr << "\t-D weight                 Distortion model weight" << endl;      
+    cerr << "\t-D weight                 Distortion model weight" << endl;
+    cerr << "\t-M distortion-limit       Distortion limit (max number of source words skipped, default: unlimited)" << endl;            
     cerr << "\t--moses                   Translation table is in Moses format" << endl;
     cerr << "\t-v verbosity              Verbosity/debug level" << endl;
     
@@ -1152,6 +1164,7 @@ int main( int argc, char *argv[] ) {
     string sourceclassfile = "";
     string targetclassfile = "";
     int stacksize = 10;
+    int dlimit = 999;
     double prunethreshold = 0.5;
     int maxn = 9;
     static struct option long_options[] = {      
@@ -1172,7 +1185,7 @@ int main( int argc, char *argv[] ) {
     
     int debug = 0;
     char c;    
-    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:v:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:v:M:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -1197,6 +1210,9 @@ int main( int argc, char *argv[] ) {
             break;
         case 'D':
             dweight = atof(optarg);
+            break;
+        case 'M':
+            dlimit = atoi(optarg);
             break;
         case 's':
             stacksize = atoi(optarg);
@@ -1249,6 +1265,7 @@ int main( int argc, char *argv[] ) {
     cerr << "LM weight:            " << lweight << endl;    
     cerr << "Stacksize:            " << stacksize << endl;
     cerr << "Prune threshold:      " << prunethreshold << endl;
+    cerr << "Distortion limit:     " << dlimit << endl;
     cerr << "----------------------------------------------------" << endl;
     cerr << "Source classes:       " << sourceclassfile << endl;
     ClassEncoder sourceclassencoder = ClassEncoder(sourceclassfile);
@@ -1281,7 +1298,7 @@ int main( int argc, char *argv[] ) {
             if (debug >= 1) cerr << "Processing unknown words" << endl; 
             addunknownwords(transtable, lm, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
             if (debug >= 1) cerr << "Setting up decoder" << endl;
-            StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, maxn, debug, &sourceclassdecoder, &targetclassdecoder);
+            StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder);
             if (debug >= 1) cerr << "Decoding..." << endl;
             TranslationHypothesis * solution = decoder->decode();                    
             if (solution != NULL) {

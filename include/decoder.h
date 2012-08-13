@@ -112,13 +112,14 @@ class StackDecoder {
         std::vector<double> tweights; //translation model weights
         double dweight; //distortion model weight
         double lweight; //language model weight
+        int dlimit; //distortion limit
         
                 
         std::vector<std::pair<const EncAnyGram*, CorpusReference> >  sourcefragments;        
         
         std::vector<Stack> stacks;
                 
-        StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int maxn, int debug, ClassDecoder *, ClassDecoder *);
+        StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder *, ClassDecoder *);
         ~StackDecoder();
         
         TranslationHypothesis * decode();
