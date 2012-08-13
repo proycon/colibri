@@ -192,39 +192,43 @@ int EncNGram::getclass(const int index) const {
 } 
 
 std::string EncAnyGram::decode(ClassDecoder& classdecoder) const {
-    //cout << "DECODING NGRAM size=" << (int) _size << " n=" << n() << " data=" << data << endl;
-    std::string result = ""; 
-    int begin = 0;
-    int l = 0;;
-    for (int i = 0; i < _size; i++) {
-        l++;
-        if ((data[i] == 0) && (l > 0)) {             
-            const unsigned int cls = bytestoint(data + begin, l);              
-            if (cls == 1) {
-                //cout << "EOL FOUND" << endl;
-                return result;
-            } else {  
-                //cout << " CLASS " << cls << " (length " << l << ") DECODES TO " << classdecoder[cls] << endl;
-                if (classdecoder.hasclass(cls)) {
-                    result += classdecoder[cls] + ' ';
-                } else {
-                    result += "{NOTFOUND!} ";       //should never happen             
+    //cout << "DECODING NGRAM size=" << (int) _size << " n=" << n() << " data=" << data << endl;    
+    if (isskipgram()) {
+        return ((const EncSkipGram*) this)->decode(classdecoder);
+    } else {
+        std::string result = ""; 
+        int begin = 0;
+        int l = 0;;
+        for (int i = 0; i < _size; i++) {
+            l++;
+            if ((data[i] == 0) && (l > 0)) {             
+                const unsigned int cls = bytestoint(data + begin, l);              
+                if (cls == 1) {
+                    //cout << "EOL FOUND" << endl;
+                    return result;
+                } else {  
+                    //cout << " CLASS " << cls << " (length " << l << ") DECODES TO " << classdecoder[cls] << endl;
+                    if (classdecoder.hasclass(cls)) {
+                        result += classdecoder[cls] + ' ';
+                    } else {
+                        result += "{NOTFOUND!} ";       //should never happen             
+                    }
                 }
+                begin = i + 1;            
+                l = 0;
             }
-            begin = i + 1;            
-            l = 0;
         }
+        if (l > 0) {
+            const unsigned int cls = bytestoint(data + begin, l);
+            if (classdecoder.hasclass(cls)) {  
+                result += classdecoder[cls];            
+            } else {
+                result += "{NOTFOUND!} ";
+            }
+            //cout << "FINAL CLASS " << cls << " DECODES TO " << classdecoder[cls] << endl;
+        }    
+        return result;
     }
-    if (l > 0) {
-        const unsigned int cls = bytestoint(data + begin, l);
-        if (classdecoder.hasclass(cls)) {  
-            result += classdecoder[cls];            
-        } else {
-            result += "{NOTFOUND!} ";
-        }
-        //cout << "FINAL CLASS " << cls << " DECODES TO " << classdecoder[cls] << endl;
-    }    
-    return result;
 }
 
 bool EncAnyGram::out() const {
