@@ -67,11 +67,15 @@ const char EncAnyGram::size() const {
 }
 
 const char EncAnyGram::n() const {
-    char count = 1; 
-    for (int i = 0; i < _size; i++) {
-        if (data[i] == 0) count++;
-    }    
-    return count;
+    if (isskipgram()) {
+        return ((const EncSkipGram *) this)->n();
+    } else {
+        char count = 1; 
+        for (int i = 0; i < _size; i++) {
+            if (data[i] == 0) count++;
+        }    
+        return count;
+    }
 }
 
 const size_t EncAnyGram::hash() const {

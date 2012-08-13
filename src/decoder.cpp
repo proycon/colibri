@@ -39,12 +39,7 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
         for (int i = 0; i < inputlength; i++) inputcoveragemask.push_back(false);                 
         for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {           
             const EncAnyGram * anygram = iter->first;
-            int n;
-            if (anygram->isskipgram()) {
-                n = ((const EncSkipGram*) anygram)->n();
-            } else {
-                n = (int) ((const EncNGram*) anygram)->n(); 
-            }
+            int n = anygram->n();
             for (int j = iter->second.token; j < iter->second.token + n; j++) inputcoveragemask[j] = true;
             
             //Output translation options
@@ -644,12 +639,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
        int targetlength = 0;
        TranslationHypothesis * h = this;
        while ((h != NULL) && (h->targetgram != NULL)) {
-            int n;
-            if (h->targetgram->isskipgram()) {
-                n = ((const EncSkipGram *) h->targetgram)->n();
-            } else {
-                n = ((const EncNGram *) h->targetgram)->n();
-            }
+            int n = h->targetgram->n();
             if (h->targetoffset + n > targetlength) targetlength = h->targetoffset + n;
             h = h->parent; 
        } 
@@ -850,9 +840,10 @@ unsigned int TranslationHypothesis::expand() {
                     c++;
 
                     if ((decoder->dlimit >= 0) && (decoder->dlimit < 999)) {                    
+                                            
                         int prevpos = 0;
-                        if ((parent != NULL) && (!parent->initial())) {
-                            prevpos = parent->sourceoffset + parent->sourcegram->n();        
+                        if (sourcegram != NULL) {                                                                                    
+                            prevpos = sourceoffset + sourcegram->n();        
                         } 
                         double distance = abs( prevpos - sourceoffset);
                         if (distance > decoder->dlimit) continue; //skip
@@ -979,12 +970,7 @@ bool TranslationHypothesis::fertile() {
         } 
         if (alreadyused) continue;
                 
-        int length;
-        if (sourcecandidate->isskipgram()) {
-            length = ((const EncSkipGram*) sourcecandidate)->n();
-        } else {
-            length = ((const EncNGram*) sourcecandidate)->n();
-        }        
+        int length = sourcecandidate->n();
     
         bool applicable = true;
         for (int i = ref.token; i < ref.token + length; i++) {
