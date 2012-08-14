@@ -126,9 +126,7 @@ class StackDecoder {
                 
         unsigned int getsourcefragments(int maxn);
         
-        unsigned int prune(int stackindex);
-        
-        //std::string solution(ClassDecoder & targetclassdecoder); //return solution as string
+        unsigned int prune(int stackindex);    
         
         void computefuturecost();      
 

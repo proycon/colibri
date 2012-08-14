@@ -2643,7 +2643,7 @@ void TranslationTable::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel
 }
 
 
-TranslationTable::TranslationTable(const string & filename, bool DEBUG) {
+TranslationTable::TranslationTable(const string & filename, bool logprobs, bool DEBUG) {
     this->DEBUG = DEBUG;
 	unsigned char check;
 		
@@ -2732,6 +2732,7 @@ TranslationTable::TranslationTable(const string & filename, bool DEBUG) {
 		    for (int i = 0; i < scores; i++) {
                 double p;
 		        f.read((char*) &p, sizeof(double));
+		        if (p > 0) p = log10(p); 
 		        alignmatrix[sourcegram][targetgram].push_back(p);		    
 		    }		  		    
         }
