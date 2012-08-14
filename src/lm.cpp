@@ -105,7 +105,6 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
 
 
 double LanguageModel::score(EncData & data, bool fullsentence) {
-    //TODO: handle fullsentence: add <s></s> wrappers
     if (data.length() <= order) {
         return score(EncNGram(data));
     } else {
@@ -134,7 +133,13 @@ double LanguageModel::score(EncNGram ngram) {
     } else {
         //if n-gram exists, return probability    
         for (unordered_map<EncNGram, double>::iterator iter = ngrams.find(ngram); iter != ngrams.end(); iter++) {
+            if (DEBUG) cerr << "LM DEBUG: Found " << (int) ngram.n() << "-gram, score=" << iter->second << endl; 
             return iter->second;
+        }
+        
+        if (n == 1) {
+            cerr << "INTERNAL ERROR: Unexpected unigram passed to LM for scoring. This should not happen" << endl;
+            exit(6);
         }
 
         //ngram not found: back-off: alpha(history) * p(n-1)
@@ -149,7 +154,9 @@ double LanguageModel::score(EncNGram ngram) {
         for (unordered_map<EncNGram, double>::iterator iter = backoff.find(*history); iter != backoff.end(); iter++) {
             backoffweight = iter->second;
         }
+        if (DEBUG) cerr << "LM DEBUG: Backoffweight " << backoffweight <<", backing off.." << endl;
         result = backoffweight + score(*head);
+        if (DEBUG) cerr << "LM DEBUG: Result=" << result << endl;
         
         delete history;
         delete head;

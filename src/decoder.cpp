@@ -743,7 +743,8 @@ void TranslationHypothesis::report() {
             cerr << "NONE" << endl;
         } else {
             cerr << history->decode(*(decoder->targetclassdecoder)) << endl;
-        }
+        } 
+        cerr << "\t    lmscore_e = " <<  log(pow(10,lmscore)) << endl;        
         cerr << "\t    fragmentscore = tscore + lmscore + dscore = " << tscore << " + " << lmscore << " + " << dscore << " = " << _score << endl;
         cerr << "\t    futurecost = " << futurecost << endl;        
         cerr << "\t    totalscore = allfragmentscores + futurecost = " << score() << endl;
