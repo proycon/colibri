@@ -210,7 +210,8 @@ void StackDecoder::computefuturecost() {
         if (DEBUG >= 3) {
             cerr << "\tFuture cost precomputation:" << endl;
             for (map<std::pair<int, int>, double>::iterator iter = futurecost.begin(); iter != futurecost.end(); iter++) {
-                cerr << "\t  " << iter->first.first << ":" << iter->first.second << " = " << iter->second << endl;                
+                double log_e =  log(pow(10, iter->second)); 
+                cerr << "\t  " << iter->first.first << ":" << iter->first.second << " = " << iter->second << "\tbase_e=" << log_e << endl;                
             }            
         }
 }

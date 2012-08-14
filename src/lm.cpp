@@ -141,13 +141,13 @@ double LanguageModel::score(EncNGram ngram) {
         EncNGram * history = ngram.slice(0,n-1);
         EncNGram * head = ngram.slice(1,n-1);
 
-        double backoffscore = 0;
-        for (unordered_map<EncNGram, double>::iterator iter = backoff.find(*history); iter != ngrams.end(); iter++) {
-            backoffscore = iter->second;
+        double backoffweight = 0;
+        for (unordered_map<EncNGram, double>::iterator iter = backoff.find(*history); iter != backoff.end(); iter++) {
+            backoffweight = iter->second;
         }
         if (backoffscore != 0) {
             //use backoffscore from history
-            result = backoffscore + score(*head);
+            result = backoffweight + score(*head);
         } else {
             //not found, backoff some more
             result = score(*head); 
