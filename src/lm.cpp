@@ -145,7 +145,7 @@ double LanguageModel::score(EncNGram ngram) {
         for (unordered_map<EncNGram, double>::iterator iter = backoff.find(*history); iter != backoff.end(); iter++) {
             backoffweight = iter->second;
         }
-        if (backoffscore != 0) {
+        if (backoffweight != 0) {
             //use backoffscore from history
             result = backoffweight + score(*head);
         } else {
