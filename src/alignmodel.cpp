@@ -2739,6 +2739,73 @@ TranslationTable::TranslationTable(const string & filename, bool DEBUG) {
     f.close();
 }
 
+TranslationTable::TranslationTable(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool DEBUG) {
+    //load from moses-style phrasetable file
+    this->DEBUG = DEBUG;
+	unsigned char check;
+		
+    ifstream f;
+    f.open(filename.c_str(), ios::in | ios::binary);
+    if ((!f) || (!f.good())) {
+       cerr << "File does not exist: " << filename << endl;
+       exit(3);
+    }
+    
+    while (!f.eof()) {
+        string line;
+        getline(f, line);
+        int mode = 0;
+        string source = "";
+        string target = "";
+        vector<double> scores;
+        int begin = 0;        
+        for (int i = 0; i < line.size(); i++) {
+            if (line.substr(i,5) == " ||| ") {
+                if (mode == 0) {
+                    source = line.substr(begin, i - begin);
+                } else if (mode == 1) {
+                    target = line.substr(begin, i - begin);
+                }
+                begin = i+5;
+                mode++;
+            } else if ((mode == 2) && (line[i] == ' ')) {
+                double score = atof(line.substr(begin, i - begin).c_str());
+                scores.push_back(score);
+                begin = i + 1;
+            }
+        }
+        if ((mode == 2) && (begin < line.size())) {
+            double score = atof(line.substr(begin, line.size() - begin).c_str());
+            scores.push_back(score);            
+        }
+        if ((!source.empty()) && (!target.empty()) && (!scores.empty())) {
+            //add to phrasetable
+            EncAnyGram * sourcegram = sourceencoder->input2anygram(source,true,true);
+            if (sourcegram->isskipgram()) {
+                EncSkipGram skipgram = *((EncSkipGram *) sourcegram);
+                if (!getsourcekey(sourcegram)) sourceskipgrams.insert(skipgram);            	
+            } else {
+                EncNGram ngram = *((EncNGram *) sourcegram);
+                if (!getsourcekey(sourcegram)) sourcengrams.insert(ngram);
+            }        
+            const EncAnyGram * sourcegramkey = getsourcekey(sourcegram);
+                        
+            EncAnyGram * targetgram = targetencoder->input2anygram(target,true,true);
+            if (targetgram->isskipgram()) {
+                EncSkipGram skipgram = *((EncSkipGram *) targetgram);
+                if (!gettargetkey(sourcegram)) targetskipgrams.insert(skipgram);            	
+            } else {
+                EncNGram ngram = *((EncNGram *) targetgram);
+                if (!gettargetkey(sourcegram)) targetngrams.insert(ngram);
+            }
+            const EncAnyGram * targetgramkey = gettargetkey(targetgram);            
+            
+            alignmatrix[sourcegramkey][targetgramkey] = scores;
+        }
+    }
+    
+}
+
 
 void TranslationTable::save(const string & filename) {
 	const unsigned char check = 0xff;
