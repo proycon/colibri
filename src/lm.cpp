@@ -104,7 +104,74 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
 }
 
 
-double LanguageModel::score(EncData & data, bool fullsentence) {
+double LanguageModel::score(const EncNGram * ngram, const EncNGram * history) { //returns logprob (base 10)
+    double result = 0;
+    const int n = ngram->n();
+    for (int i = 0; i < n; i++) {
+        EncNGram * word = ngram->slice(i,1);
+        EncNGram * newhistory = NULL;
+        if (i >= order-1) {
+            newhistory = ngram->slice(i-(order-1),order-1);            
+        } else {
+            EncNGram * slice = ngram->slice(0,i);
+            const int leftover = order - 1 - i;
+            if (history != NULL) {
+                EncNGram * historyslice = history->slice(history->n() - leftover, leftover); 
+                newhistory = new EncNGram(*historyslice + *slice);
+                delete historyslice;
+            } 
+            delete slice;
+        }
+        
+        result += scoreword(word, newhistory);
+         
+        delete word;
+        delete newhistory;
+    }
+    return result; 
+}
+
+double LanguageModel::scoreword(const EncNGram * word, const EncNGram * history) {
+    EncNGram lookup = EncNGram( *history + *word);
+    const int n = lookup.n();
+    for (unordered_map<EncNGram, double>::iterator iter = ngrams.find(lookup); iter != ngrams.end(); iter++) {
+        if (DEBUG) cerr << "LM DEBUG: Found " << (int) lookup.n() << "-gram, score=" << iter->second << endl; 
+        return iter->second;        
+    }
+         
+    //not found, back-off    
+    double result = 0;
+
+    double backoffweight = 0; //backoff weight will be 0 if not found 
+    /*
+    Not all N-grams in the model file have backoff weights. The highest order N-grams do not need a backoff weight. For lower order N-grams backoff weights are only recorded for those that appear as the prefix of a longer N-gram included in the model. For other lower order N-grams the backoff weight is implicitly 1 (or 0, in log representation).
+    */    
+
+    if (history != NULL) {    
+            
+        //ngram not found: back-off: alpha(history) * p(n-1)
+        EncNGram * newhistory = history->slice(1,n-2);
+        
+
+        for (unordered_map<EncNGram, double>::iterator iter = backoff.find(*history); iter != backoff.end(); iter++) {
+            backoffweight = iter->second;
+        }
+        if (DEBUG) cerr << "LM DEBUG: Backoffweight " << backoffweight <<", backing off.." << endl;
+        result = backoffweight + scoreword(word, newhistory);
+        if (DEBUG) cerr << "LM DEBUG: Result=" << result << endl;
+        delete word;
+        delete newhistory;
+        
+    } else {
+        cerr << "INTERNAL ERROR: LanguageModel::scoreword() ... unigram not found, and no history.. this should not happen" << endl;
+        exit(6);
+    }
+    return result;
+}
+
+
+
+/*double LanguageModel::score(EncData & data, bool fullsentence) {
     if (data.length() <= order) {
         return score(EncNGram(data));
     } else {
@@ -147,9 +214,7 @@ double LanguageModel::score(EncNGram ngram) {
         EncNGram * head = ngram.slice(1,n-1);
 
         double backoffweight = 0; //backoff weight will be 0 if not found 
-        /*
-        Not all N-grams in the model file have backoff weights. The highest order N-grams do not need a backoff weight. For lower order N-grams backoff weights are only recorded for those that appear as the prefix of a longer N-gram included in the model. For other lower order N-grams the backoff weight is implicitly 1 (or 0, in log representation).
-        */
+
         
         for (unordered_map<EncNGram, double>::iterator iter = backoff.find(*history); iter != backoff.end(); iter++) {
             backoffweight = iter->second;
@@ -163,3 +228,4 @@ double LanguageModel::score(EncNGram ngram) {
         return result;    
     }
 }
+*/

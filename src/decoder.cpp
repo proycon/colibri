@@ -167,12 +167,12 @@ void StackDecoder::computefuturecost() {
                     (*((const EncSkipGram *) translationoption)).parts(parts);
                     for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
                         EncNGram * part = *iter; 
-                        score += lweight * lm->score(*part);
+                        score += lweight * lm->score(part);
                         delete part;
                     }  
                 } else {
                     const EncNGram * ngram = (const EncNGram *) translationoption;
-                    score += lweight * lm->score(*ngram);
+                    score += lweight * lm->score(ngram);
                 }
                 if (score > bestscore) {
                     bestscore = score;
@@ -592,43 +592,27 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     lmscore = 0;
     
     if (parent != NULL) {
-        if (history != NULL) {
-            if (targetgram->isskipgram()) {
-                vector<EncNGram*> parts;
-                ((const EncSkipGram *) targetgram)->parts(parts);
-                int partcount = 0;
-                for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
-                    EncNGram * part = *iter;
-                    if ((partcount == 0) && (sourcegaps[0].first != 0)) {
-                        //first part, no initial gap, join with history
-                        EncNGram ngram = *history + *part;
-                        lmscore += decoder->lweight * decoder->lm->score(ngram);
-                    } else {     
-                        lmscore += decoder->lweight * decoder->lm->score(*part);
-                    }
-                    partcount++;
-                    delete part;
-                } 
-            } else {                
-                EncNGram ngram = EncNGram(*history + *((const EncNGram* ) targetgram) );
-                if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM with history for: " << ngram.decode( *decoder->targetclassdecoder);
-                lmscore += decoder->lweight * decoder->lm->score(ngram);
-                if (decoder->DEBUG >= 4) cerr << "... DONE" << endl; 
-            }
-        } else {
-            if (targetgram->isskipgram()) {
-                vector<EncNGram*> parts;
-                ( (const EncSkipGram *) targetgram)->parts(parts);
-                for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
-                    EncNGram * part = *iter; 
-                    lmscore += decoder->lweight * decoder->lm->score(*part);
-                    delete part;
-                } 
-            } else {
-               if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM without history for: " << targetgram->decode( *decoder->targetclassdecoder);  
-               lmscore += decoder->lweight * decoder->lm->score( *((const EncNGram *) targetgram));
-               if (decoder->DEBUG >= 4) cerr << "... DONE" << endl;
-            }
+        if (targetgram->isskipgram()) {
+            vector<EncNGram*> parts;
+            ((const EncSkipGram *) targetgram)->parts(parts);
+            int partcount = 0;
+            for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
+                EncNGram * part = *iter;
+                if ((partcount == 0) && (sourcegaps[0].first != 0)) {
+                    //first part, no initial gap, call with history
+                    //EncNGram ngram = *history + *part;
+                    lmscore += decoder->lweight * decoder->lm->score(part, history);
+                } else {     
+                    lmscore += decoder->lweight * decoder->lm->score(part);
+                }
+                partcount++;
+                delete part;
+            } 
+        } else {                
+            //EncNGram ngram = EncNGram(*history + *((const EncNGram* ) targetgram) );
+            //if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM with history for: '" << ngram.decode( *decoder->targetclassdecoder) << "'";
+            lmscore += decoder->lweight * decoder->lm->score( (const EncNGram *) targetgram, history);
+            //if (decoder->DEBUG >= 4) cerr << " ... DONE" << endl; 
         }
     }
     
@@ -660,14 +644,10 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
                 delete unigram;
             }
        } 
-       if (terminator == NULL) {
-            terminator = new EncNGram((const unsigned char*) &EOSCLASS, 1);
-       } else {        
-            terminator = new EncNGram(*terminator + EncNGram((const unsigned char*) &EOSCLASS, 1) );
-       }
-       if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM for terminator: " << terminator->decode( *decoder->targetclassdecoder);
-       lmscore += decoder->lweight * decoder->lm->score( *terminator );
-       if (decoder->DEBUG >= 4) cerr << "...DONE" << endl;
+       EncNGram eos = EncNGram((const unsigned char*) &EOSCLASS, 1);
+       //if (decoder->DEBUG >= 4) cerr << "DEBUG4: Calling LM for terminator: " << terminator->decode( *decoder->targetclassdecoder);
+       lmscore += decoder->lweight * decoder->lm->scoreword(&eos , terminator );
+       //if (decoder->DEBUG >= 4) cerr << "...DONE" << endl;
        delete terminator;
     }
     

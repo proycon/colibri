@@ -15,10 +15,14 @@ class LanguageModel {
         std::map<int,unsigned int> total;
         
         LanguageModel(const std::string & filename,  ClassEncoder & encoder, bool debug = false);
-                
         
-        double score(EncNGram ngram); //returns logprob (base 10)
-        double score(EncData & data, bool fullsentence = false); //returns logprob (base 10)
+        
+        double score(const EncNGram * ngram, const EncNGram * history = NULL); //returns logprob (base 10)        
+        double scoreword(const EncNGram * word, const EncNGram * history = NULL); //returns logprob (base 10)
+         
+        
+        //double score(EncNGram ngram); //returns logprob (base 10)
+        //double score(EncData & data, bool fullsentence = false); //returns logprob (base 10)
         
         int getorder() { return order; }
         size_t size() { return ngrams.size(); }
