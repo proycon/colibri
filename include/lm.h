@@ -4,6 +4,7 @@
 #include <ngram.h>
 #include <classencoder.h>
 #include <map>
+#include <cmath>
 
 class LanguageModel {
     private:

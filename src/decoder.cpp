@@ -10,7 +10,6 @@ using namespace std;
 unsigned char UNKNOWNCLASS = 2;
 unsigned char BOSCLASS = 3;
 unsigned char EOSCLASS = 4;
-double LOG10TOLOGE = log(10);
 
 const EncNGram UNKNOWNUNIGRAM = EncNGram(&UNKNOWNCLASS,1);
 
@@ -159,7 +158,7 @@ void StackDecoder::computefuturecost() {
                 double score = 0; 
                 for (int i = 0; i < tweights.size(); i++) {
                     double p = iter2->second[i];
-                    if (p > 0) p = log10(p); //turn into logprob, base10 
+                    if (p > 0) p = log(p); //turn into logprob, base e 
                     score += tweights[i] * p;
                 }
                 const EncAnyGram * translationoption = iter2->first;
@@ -210,9 +209,8 @@ void StackDecoder::computefuturecost() {
         
         if (DEBUG >= 3) {
             cerr << "\tFuture cost precomputation:" << endl;
-            for (map<std::pair<int, int>, double>::iterator iter = futurecost.begin(); iter != futurecost.end(); iter++) {
-                double log_e =  log(pow(10, iter->second)); 
-                cerr << "\t  " << iter->first.first << ":" << iter->first.second << " = " << iter->second << "\tbase_e=" << log_e;
+            for (map<std::pair<int, int>, double>::iterator iter = futurecost.begin(); iter != futurecost.end(); iter++) { 
+                cerr << "\t  " << iter->first.first << ":" << iter->first.second << " = " << iter->second; // << "\tbase_e=" << log_e;
                 if (sourcefragments_costbyspan.find(iter->first) != sourcefragments_costbyspan.end()) {
                      cerr << " *";
                 }
@@ -589,7 +587,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     tscore = 0; 
     for (int i = 0; i < tscores.size(); i++) {
         double p = tscores[i];
-        if (p > 0) p = log10(p); //turn into logprob, base10 
+        if (p > 0) p = log(p); //turn into logprob, base e 
         tscore += decoder->tweights[i] * p;
     }
     
@@ -665,7 +663,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     } 
     double distance = abs( prevpos - sourceoffset);
     
-    dscore = decoder->dweight * -distance;  
+    dscore = decoder->dweight * -distance; 
         
     //Compute estimate for future score
     
@@ -730,9 +728,8 @@ void TranslationHypothesis::report() {
             cerr << history->decode(*(decoder->targetclassdecoder)) << endl;
         }         
         cerr << "\t    fragmentscore = tscore + lmscore + dscore = " << tscore << " + " << lmscore << " + " << dscore << " = " << _score << endl;
-        cerr << "\t     fragmentscore_e = tscore_e + lmscore_e + dscore_e = " << tscore * LOG10TOLOGE  << " + " << lmscore * LOG10TOLOGE  << " + " << dscore * LOG10TOLOGE  << " = " << _score * LOG10TOLOGE  << endl;
-        cerr << "\t    futurecost = " << futurecost << "\tbase_e=" << futurecost * LOG10TOLOGE << endl;        
-        cerr << "\t    totalscore = allfragmentscores + futurecost = " << score() << "\tbase_e=" << score() * LOG10TOLOGE << endl;
+        cerr << "\t    futurecost = " << futurecost << endl;        
+        cerr << "\t    totalscore = allfragmentscores + futurecost = " << score() << endl;
         cerr << "\t    coverage: ";
         for (int i = 0; i < inputcoveragemask.size(); i++) {
             if (inputcoveragemask[i]) {

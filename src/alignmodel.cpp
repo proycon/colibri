@@ -2732,7 +2732,7 @@ TranslationTable::TranslationTable(const string & filename, bool logprobs, bool 
 		    for (int i = 0; i < scores; i++) {
                 double p;
 		        f.read((char*) &p, sizeof(double));
-		        if (p > 0) p = log10(p); 
+		        if (p > 0) p = log(p); //base e 
 		        alignmatrix[sourcegram][targetgram].push_back(p);		    
 		    }		  		    
         }
