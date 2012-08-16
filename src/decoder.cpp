@@ -584,6 +584,8 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
         exit(6);  
     }
   
+    this->tscores = tscores;
+  
     tscore = 0; 
     for (int i = 0; i < tscores.size(); i++) {
         double p = tscores[i];
@@ -726,7 +728,13 @@ void TranslationHypothesis::report() {
             cerr << "NONE" << endl;
         } else {
             cerr << history->decode(*(decoder->targetclassdecoder)) << endl;
-        }         
+        }
+        cerr << "\t    tscore = ";
+        for (int i = 0; i < decoder->tweights.size(); i++) {
+            if (i > 0) cerr << " + ";
+            cerr << decoder->tweights[i] << " * " << tscores[i];
+        }
+        cerr << " = " << tscore << endl;
         cerr << "\t    fragmentscore = tscore + lmscore + dscore = " << tscore << " + " << lmscore << " + " << dscore << " = " << _score << endl;
         cerr << "\t    totalscore = basescore + fragmentscore + futurecost = " << basescore() << " + " << _score << " + " << futurecost << " = " << score() << endl;
         cerr << "\t    coverage: ";

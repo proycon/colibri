@@ -17,6 +17,7 @@ class TranslationHypothesis {
         bool deleted; //for debug only
     public:
         bool keep; //if true, prevents this hypothesis from being automatically deleted by its last dying child
+        std::vector<double> tscores;
         double tscore;
         double lmscore;
         double dscore;
