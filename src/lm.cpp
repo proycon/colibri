@@ -165,9 +165,12 @@ double LanguageModel::scoreword(const EncNGram * word, const EncNGram * history)
         lookup = word;
     }
     const int n = lookup->n();
-    for (unordered_map<EncNGram, double>::iterator iter = ngrams.find(*lookup); iter != ngrams.end(); iter++) {
+    unordered_map<EncNGram, double>::iterator iter = ngrams.find(*lookup); 
+    if (iter != ngrams.end()) {
         if (DEBUG) cerr << "LM DEBUG: scoreword(): Found " << n << "-gram, score=" << iter->second << endl;        
         return iter->second;        
+    } else {
+        if (DEBUG) cerr << "LM DEBUG: scoreword(): " << n << "-gram not found. Backing off..." << endl;
     }
     
     if (history != NULL) delete lookup;
@@ -182,15 +185,29 @@ double LanguageModel::scoreword(const EncNGram * word, const EncNGram * history)
 
     if (history != NULL) {
         //ngram not found: back-off: alpha(history) * p(n-1)    
-        for (unordered_map<EncNGram, double>::iterator iter = backoff.find(*history); iter != backoff.end(); iter++) {
-            backoffweight = iter->second;
-        }
-                    
-        EncNGram * newhistory = NULL;
-        if (n-2 > 0) newhistory = history->slice(1,n-2);
-                
+
+
         
-        if (DEBUG) cerr << "LM DEBUG: scoreword(): Backoffweight " << backoffweight <<", backing off.." << endl;
+
+        const int history_n = history->n();
+                    
+        EncNGram * newhistory;        
+    
+        
+        if (history_n > 1) { 
+            newhistory = history->slice(1,history_n-1);    
+        } else {
+            newhistory = NULL;
+        }
+        unordered_map<EncNGram, double>::iterator iter = backoff.find(*history);
+        if (iter != backoff.end()) {
+            if (DEBUG) cerr << "LM DEBUG: backoffpart=" << iter->first.decode(*classdecoder) << " = " << iter->second << endl;
+            backoffweight = iter->second;        
+        }
+        //if (DEBUG) cerr << "LM DEBUG: scoreword(): Backoffpart=" << backoffpart->decode(*classdecoder) << endl;
+              
+        
+        if (DEBUG) cerr << "LM DEBUG: scoreword(): Backoffweight=" << backoffweight << endl;
         result = backoffweight + scoreword(word, newhistory);
         if (DEBUG) cerr << "LM DEBUG: scoreword() =" << result << endl;
         if (newhistory != NULL) delete newhistory;
