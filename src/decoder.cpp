@@ -730,7 +730,7 @@ void TranslationHypothesis::report() {
             cerr << history->decode(*(decoder->targetclassdecoder)) << endl;
         }
         cerr << "\t    tscore = ";
-        for (int i = 0; i < decoder->tweights.size(); i++) {
+        for (int i = 0; i < tscores.size(); i++) {
             if (i > 0) cerr << " + ";
             cerr << decoder->tweights[i] << " * " << tscores[i];
         }
