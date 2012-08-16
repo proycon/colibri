@@ -10,6 +10,7 @@ using namespace std;
 unsigned char UNKNOWNCLASS = 2;
 unsigned char BOSCLASS = 3;
 unsigned char EOSCLASS = 4;
+double LOG10TOLOGE = log(10);
 
 const EncNGram UNKNOWNUNIGRAM = EncNGram(&UNKNOWNCLASS,1);
 
@@ -211,7 +212,11 @@ void StackDecoder::computefuturecost() {
             cerr << "\tFuture cost precomputation:" << endl;
             for (map<std::pair<int, int>, double>::iterator iter = futurecost.begin(); iter != futurecost.end(); iter++) {
                 double log_e =  log(pow(10, iter->second)); 
-                cerr << "\t  " << iter->first.first << ":" << iter->first.second << " = " << iter->second << "\tbase_e=" << log_e << endl;                
+                cerr << "\t  " << iter->first.first << ":" << iter->first.second << " = " << iter->second << "\tbase_e=" << log_e;
+                if (sourcefragments_costbyspan.find(iter->first) != sourcefragments_costbyspan.end()) {
+                     cerr << " *";
+                }
+                cerr << endl;                
             }            
         }
 }
@@ -518,7 +523,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
         //initial hypothesis: no coverage at all
         for (int i = 0; i < decoder->inputlength; i++) inputcoveragemask.push_back(false);
     } else {
-        //inherit from parent
+        //inheri:t from parent
         for (int i = 0; i < decoder->inputlength; i++) {
              inputcoveragemask.push_back(parent->inputcoveragemask[i]);
         }
@@ -723,11 +728,11 @@ void TranslationHypothesis::report() {
             cerr << "NONE" << endl;
         } else {
             cerr << history->decode(*(decoder->targetclassdecoder)) << endl;
-        } 
-        cerr << "\t    lmscore_e = " <<  log(pow(10,lmscore)) << endl;        
+        }         
         cerr << "\t    fragmentscore = tscore + lmscore + dscore = " << tscore << " + " << lmscore << " + " << dscore << " = " << _score << endl;
-        cerr << "\t    futurecost = " << futurecost << endl;        
-        cerr << "\t    totalscore = allfragmentscores + futurecost = " << score() << endl;
+        cerr << "\t     fragmentscore_e = tscore_e + lmscore_e + dscore_e = " << tscore * LOG10TOLOGE  << " + " << lmscore * LOG10TOLOGE  << " + " << dscore * LOG10TOLOGE  << " = " << _score * LOG10TOLOGE  << endl;
+        cerr << "\t    futurecost = " << futurecost << "\tbase_e=" << futurecost * LOG10TOLOGE << endl;        
+        cerr << "\t    totalscore = allfragmentscores + futurecost = " << score() << "\tbase_e=" << score() * LOG10TOLOGE << endl;
         cerr << "\t    coverage: ";
         for (int i = 0; i < inputcoveragemask.size(); i++) {
             if (inputcoveragemask[i]) {
