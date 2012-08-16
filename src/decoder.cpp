@@ -728,8 +728,7 @@ void TranslationHypothesis::report() {
             cerr << history->decode(*(decoder->targetclassdecoder)) << endl;
         }         
         cerr << "\t    fragmentscore = tscore + lmscore + dscore = " << tscore << " + " << lmscore << " + " << dscore << " = " << _score << endl;
-        cerr << "\t    futurecost = " << futurecost << endl;        
-        cerr << "\t    totalscore = allfragmentscores + futurecost = " << score() << endl;
+        cerr << "\t    totalscore = basescore + fragmentscore + futurecost = " << basescore() << " + " << _score << " + " << futurecost << " = " << score() << endl;
         cerr << "\t    coverage: ";
         for (int i = 0; i < inputcoveragemask.size(); i++) {
             if (inputcoveragemask[i]) {
@@ -741,15 +740,18 @@ void TranslationHypothesis::report() {
         cerr << endl;
 }
 
-double TranslationHypothesis::score() const {
-    double s = 0;
-    const TranslationHypothesis * h = this;
+double TranslationHypothesis::basescore() const {
+   double s = 0;
+    const TranslationHypothesis * h = this->parent;
     while (h != NULL) {
         s += h->tscore + h->lmscore + h->dscore;
         h = h->parent;
     } 
-    s += futurecost;
     return s;    
+}
+
+double TranslationHypothesis::score() const {
+    return basescore() + tscore + lmscore + dscore + futurecost;
 } 
 
 

@@ -110,9 +110,9 @@ double LanguageModel::score(const EncNGram * ngram, const EncNGram * history) { 
     
     if (DEBUG) {
         if (history == NULL) {
-            cerr << "LM DEBUG: score(): history=NULL ngram='" << ngram->decode(*classdecoder) << "'" << endl;
+            cerr << "\t\t\tLM DEBUG: score(): history=NULL ngram='" << ngram->decode(*classdecoder) << "'" << endl;
         } else {
-            cerr << "LM DEBUG: score(): history='" << history->decode(*classdecoder) << "' ngram='" << ngram->decode(*classdecoder) << "'" << endl;
+            cerr << "\t\t\tLM DEBUG: score(): history='" << history->decode(*classdecoder) << "' ngram='" << ngram->decode(*classdecoder) << "'" << endl;
         }
     }  
     double result = 0;
@@ -144,7 +144,7 @@ double LanguageModel::score(const EncNGram * ngram, const EncNGram * history) { 
         delete word;
         if (newhistory != NULL) delete newhistory;
     }
-    if (DEBUG) cerr << "LM DEBUG: score() = " << result << endl;
+    if (DEBUG) cerr << "\t\t\tLM DEBUG: score() = " << result << endl;
     return result; 
 }
 
@@ -152,9 +152,9 @@ double LanguageModel::scoreword(const EncNGram * word, const EncNGram * history)
 
     if (DEBUG) {
         if (history == NULL) {
-            cerr << "LM DEBUG: scoreword(): history=NULL word='" << word->decode(*classdecoder) << "'" << endl;
+            cerr << "\t\t\tLM DEBUG: scoreword(): history=NULL word='" << word->decode(*classdecoder) << "'" << endl;
         } else {
-            cerr << "LM DEBUG: scoreword(): history='" << history->decode(*classdecoder) << "' word='" << word->decode(*classdecoder) << "'" << endl;
+            cerr << "\t\t\tLM DEBUG: scoreword(): history='" << history->decode(*classdecoder) << "' word='" << word->decode(*classdecoder) << "'" << endl;
         }
     }  
 
@@ -168,10 +168,10 @@ double LanguageModel::scoreword(const EncNGram * word, const EncNGram * history)
     const int n = lookup->n();
     unordered_map<EncNGram, double>::iterator iter = ngrams.find(*lookup); 
     if (iter != ngrams.end()) {
-        if (DEBUG) cerr << "LM DEBUG: scoreword(): Found " << n << "-gram, score=" << iter->second << endl;        
+        if (DEBUG) cerr << "\t\t\tLM DEBUG: scoreword(): Found " << n << "-gram, score=" << iter->second << endl;        
         return iter->second;        
     } else {
-        if (DEBUG) cerr << "LM DEBUG: scoreword(): " << n << "-gram not found. Backing off..." << endl;
+        if (DEBUG) cerr << "\t\t\tLM DEBUG: scoreword(): " << n << "-gram not found. Backing off..." << endl;
     }
     
     if (history != NULL) delete lookup;
@@ -202,15 +202,15 @@ double LanguageModel::scoreword(const EncNGram * word, const EncNGram * history)
         }
         unordered_map<EncNGram, double>::iterator iter = backoff.find(*history);
         if (iter != backoff.end()) {
-            if (DEBUG) cerr << "LM DEBUG: backoffpart=" << iter->first.decode(*classdecoder) << " = " << iter->second << endl;
+            if (DEBUG) cerr << "\t\t\tLM DEBUG: backoffpart=" << iter->first.decode(*classdecoder) << " = " << iter->second << endl;
             backoffweight = iter->second;        
         }
         //if (DEBUG) cerr << "LM DEBUG: scoreword(): Backoffpart=" << backoffpart->decode(*classdecoder) << endl;
               
         
-        if (DEBUG) cerr << "LM DEBUG: scoreword(): Backoffweight=" << backoffweight << endl;
+        if (DEBUG) cerr << "\t\t\tLM DEBUG: scoreword(): Backoffweight=" << backoffweight << endl;
         result = backoffweight + scoreword(word, newhistory);
-        if (DEBUG) cerr << "LM DEBUG: scoreword() =" << result << endl;
+        if (DEBUG) cerr << "\t\t\tLM DEBUG: scoreword() =" << result << endl;
         if (newhistory != NULL) delete newhistory;
         
     } else {

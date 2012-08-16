@@ -44,6 +44,7 @@ class TranslationHypothesis {
         
         unsigned int expand(); //expands directly in the appropriate stack of the decoder. If finalonly is set, new hypotheses are expected to be final/complete, without gaps
         
+        double basescore() const;    
         double score() const;        
         void report();  
         bool initial() const { return (parent == NULL); }

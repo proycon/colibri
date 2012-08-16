@@ -18,9 +18,8 @@ class LanguageModel {
         
         LanguageModel(const std::string & filename,  ClassEncoder & encoder, ClassDecoder * classdecoder, bool debug = false);
         
-        
-        double score(const EncNGram * ngram, const EncNGram * history = NULL); //returns logprob (base 10)        
-        double scoreword(const EncNGram * word, const EncNGram * history = NULL); //returns logprob (base 10)
+        double score(const EncNGram * ngram, const EncNGram * history = NULL); //returns logprob (base e)        
+        double scoreword(const EncNGram * word, const EncNGram * history = NULL); //returns logprob (base e)
          
         
         //double score(EncNGram ngram); //returns logprob (base 10)
