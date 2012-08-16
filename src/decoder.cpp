@@ -65,6 +65,9 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
                         for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
                             cerr << *iter3 << " ";
                         }
+                        if (!anygram2->isskipgram()) {
+                           cerr << "LM=" << lm->score((const EncNGram*) anygram2) << " ";
+                        }
                         cerr << "]; ";                        
                     }
                 }
@@ -110,7 +113,7 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
                 delete unigram; 
                 
                 if (DEBUG >= 3) {
-                    cerr << "\t" << i << ":1" << " -- " << sourcekey->decode(*sourceclassdecoder) << " ==> " << targetkey->decode(*sourceclassdecoder) << " [ ";
+                    cerr << "\t" << i << ":1" << " -- " << sourcekey->decode(*sourceclassdecoder) << " ==> " << targetkey->decode(*targetclassdecoder) << " [ ";
                     for (int j = 0; j < tweights.size(); j++) cerr << translationtable->alignmatrix[sourcekey][targetkey][j] << " ";
                     cerr << "];" << endl;                     
                 }
@@ -198,9 +201,12 @@ void StackDecoder::computefuturecost() {
                         futurecost[span] = -INFINITY;
                     }
                 }
-                for (int i = 1; i < length; i++) {
-                    double spanscore = futurecost[make_pair((int) start,(int) i)] + futurecost[make_pair((int) start+i,(int) length - i)];
+                for (int l = 1; l < length; l++) {
+                    double spanscore = futurecost[make_pair((int) start,(int) l)] + futurecost[make_pair((int) start+l,(int) length - l)];
                     if (spanscore > futurecost[span]) { //(higher score -> lower cost)
+                        if (DEBUG >= 3) {
+                            cerr << "[" << span.first << ":" << span.second << "]" << " = [" << start << ":" << l << "] + [" << start + l << ":" << length -l << "] = " << futurecost[make_pair((int) start,(int) l)] << " + " << futurecost[make_pair((int) start+l,(int) length - l)] << " = " << spanscore << endl;
+                        }
                         futurecost[span] = spanscore;
                     }
                 }

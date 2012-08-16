@@ -116,18 +116,21 @@ double LanguageModel::score(const EncNGram * ngram, const EncNGram * history) { 
         }
     }  
     double result = 0;
-    const int n = ngram->n();
+    const int n = ngram->n();       
     for (int i = 0; i < n; i++) {
         EncNGram * word = ngram->slice(i,1);
         EncNGram * newhistory = NULL;
-        if (i >= order-1) {
-            newhistory = ngram->slice(i-(order-1),order-1);            
-        } else {
-            
+        if ((i >= order-1) || ((i > 0) && (history == NULL))) {
+            //new history can be fetched from ngram alone
+            int begin = i - (order - 1);
+            if (begin < 0) begin = 0;              
+            newhistory = ngram->slice(begin,i - begin);            
+        } else if (history != NULL) {
+            //new history has to be fetched from old history and ngram
             EncNGram * slice = NULL;
             if (i > 0) slice = ngram->slice(0,i);
             const int leftover = order - 1 - i;
-            if ((history != NULL) && (leftover > 0)) {
+            if (leftover > 0) {
                 EncNGram * historyslice = history->slice(history->n() - leftover, leftover);
                 if (slice == NULL) {
                     newhistory = historyslice;
