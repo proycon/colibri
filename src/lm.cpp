@@ -122,14 +122,20 @@ double LanguageModel::score(const EncNGram * ngram, const EncNGram * history) { 
         if (i >= order-1) {
             newhistory = ngram->slice(i-(order-1),order-1);            
         } else {
-            EncNGram * slice = ngram->slice(0,i);
+            
+            EncNGram * slice = NULL;
+            if (i > 0) slice = ngram->slice(0,i);
             const int leftover = order - 1 - i;
             if ((history != NULL) && (leftover > 0)) {
-                EncNGram * historyslice = history->slice(history->n() - leftover, leftover); 
-                newhistory = new EncNGram(*historyslice + *slice);
-                delete historyslice;
+                EncNGram * historyslice = history->slice(history->n() - leftover, leftover);
+                if (slice == NULL) {
+                    newhistory = historyslice;
+                } else {   
+                    newhistory = new EncNGram(*historyslice + *slice);
+                    delete historyslice;
+                }            
             } 
-            delete slice;
+            if (slice != NULL) delete slice;
         }
         
         result += scoreword(word, newhistory);
@@ -151,12 +157,20 @@ double LanguageModel::scoreword(const EncNGram * word, const EncNGram * history)
         }
     }  
 
-    EncNGram lookup = EncNGram( *history + *word);
-    const int n = lookup.n();
-    for (unordered_map<EncNGram, double>::iterator iter = ngrams.find(lookup); iter != ngrams.end(); iter++) {
-        if (DEBUG) cerr << "LM DEBUG: scoreword(): Found " << (int) lookup.n() << "-gram, score=" << iter->second << endl;        
+    const EncNGram * lookup;
+    
+    if (history != NULL) {
+        lookup = new EncNGram( *history + *word);
+    } else {
+        lookup = word;
+    }
+    const int n = lookup->n();
+    for (unordered_map<EncNGram, double>::iterator iter = ngrams.find(*lookup); iter != ngrams.end(); iter++) {
+        if (DEBUG) cerr << "LM DEBUG: scoreword(): Found " << n << "-gram, score=" << iter->second << endl;        
         return iter->second;        
     }
+    
+    if (history != NULL) delete lookup;
          
     //not found, back-off    
     double result = 0;
@@ -184,7 +198,7 @@ double LanguageModel::scoreword(const EncNGram * word, const EncNGram * history)
     } else {
         cerr << "INTERNAL ERROR: LanguageModel::scoreword() ... unigram not found, and no history.. this should not happen" << endl;
         exit(6);
-    }
+    }    
     return result;
 }
 
