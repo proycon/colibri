@@ -81,11 +81,11 @@ class StackDecoder;
 
 class Stack {
    private:
-    int index;
     int stacksize;
     double prunethreshold;
     StackDecoder * decoder;
    public:
+   int index;
     Stack(StackDecoder * decoder, int index, int stacksize, double prunethreshold);
     ~Stack();
     Stack(const Stack& ref); //limited copy constructor
@@ -123,11 +123,13 @@ class StackDecoder {
         std::vector<std::pair<const EncAnyGram*, CorpusReference> >  sourcefragments;        
         
         std::vector<Stack> stacks;
+        std::vector<Stack> gappystacks;
                 
         StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder *, ClassDecoder *);
         ~StackDecoder();
         
-        TranslationHypothesis * decode();
+        TranslationHypothesis * decodestack(Stack & stack); //returns fallback hypothesis if dead, NULL otherwise
+        TranslationHypothesis * decode(); //returns solution
                 
         unsigned int getsourcefragments(int maxn);
         

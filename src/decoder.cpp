@@ -224,43 +224,17 @@ void StackDecoder::computefuturecost() {
             }            
         }
 }
-    
-TranslationHypothesis * StackDecoder::decode() {
-   /*
-    initialize hypothesisStack[0 .. nf];
-    create initial hypothesis hyp_init;
-    add to stack hypothesisStack[0];
-    for i=0 to nf-1:
-    for each hyp in hypothesisStack[i]:
-     for each new_hyp that can be derived from hyp:
-       nf[new_hyp] = number of source words covered by new_hyp;
-       add new_hyp to hypothesisStack[nf[new_hyp]];
-       prune hypothesisStack[nf[new_hyp]];
-    find best hypothesis best_hyp in hypothesisStack[nf];
-    output best path that leads to best_hyp;
-  */
 
-    
-    
-    //create initial hypothesis and add to 0th stack
-    TranslationHypothesis * initialhypothesis = new TranslationHypothesis(NULL, this, NULL, 0,NULL,0, vector<double>() );   
-    stacks[0].add(initialhypothesis);
-    
-    TranslationHypothesis * fallbackhyp = NULL;
-    bool dead = false;
-    
-    //for each stack
-    for (int i = 0; i <= inputlength - 1; i++) {
-        if (DEBUG >= 1) {
-            cerr << "\tDecoding Stack " << i << " -- " << stacks[i].size() << " hypotheses" << endl;
-        }        
+TranslationHypothesis * StackDecoder::decodestack(Stack & stack) {
+        bool dead = false;
         unsigned int totalexpanded = 0;
         bool first = true;        
-        while (!stacks[i].empty()) {
-            if (DEBUG >= 1) cerr << "\t Expanding hypothesis off stack " << i << " -- " << stacks[i].size() -1 << " left:" << endl;
+        TranslationHypothesis * fallbackhyp = NULL;
+        while (!stack.empty()) {
+            if (DEBUG >= 1) cerr << "\t Expanding hypothesis off stack " << stack.index << " -- " << stack.size() -1 << " left:" << endl;
             
-            //pop from stacks[i]
-            TranslationHypothesis * hyp = stacks[i].pop();
+            //pop from stack
+            TranslationHypothesis * hyp = stack.pop();
             if (first) {                
                 fallbackhyp = hyp;
                 fallbackhyp->keep = true; //prevent fallback hypothesis from getting pruned
@@ -286,14 +260,17 @@ TranslationHypothesis * StackDecoder::decode() {
                 }                
             }
         }
-        if ((totalexpanded == 0) && (i != inputlength)) {
+        if ((totalexpanded == 0) && (stack.index != inputlength)) {
             dead = true;
-            for (int j = i + 1; j <= inputlength; j++) {
-                if (!stacks[j].empty()) dead = false;
+            for (int j = stack.index + 1; j <= inputlength; j++) {
+                if (!stacks[j].empty() || (!gappystacks[j].empty())) {
+                    dead = false;
+                    break;
+                }                
             }
             if (dead) {
-                cerr << "WARNING: DECODER ENDED PREMATURELY AFTER STACK " << i << " of " << inputlength <<" , NO FURTHER EXPANSIONS POSSIBLE !" << endl;
-                break;
+                cerr << "WARNING: DECODER ENDED PREMATURELY AFTER STACK " << stack.index << " of " << inputlength <<" , NO FURTHER EXPANSIONS POSSIBLE !" << endl;
+                //return fallbackhyp;
             }
         }                
         if (fallbackhyp != NULL) fallbackhyp->keep = false;
@@ -305,18 +282,57 @@ TranslationHypothesis * StackDecoder::decode() {
                 delete fallbackhyp;                
             }            
         }        
-        if (DEBUG >= 1) cerr << "\t Expanded " << totalexpanded << " new hypotheses in total after processing stack " << i << endl;
+        if (DEBUG >= 1) cerr << "\t Expanded " << totalexpanded << " new hypotheses in total after processing stack " << stack.index << endl;
         unsigned int totalpruned = 0;
-        for (int j = inputlength; j >= i+1; j--) { //prune further stacks (hypotheses may have been added to any of them).. always prune superior stack first
+        for (int j = inputlength; j >= stack.index+1; j--) { //prune further stacks (hypotheses may have been added to any of them).. always prune superior stack first
             unsigned int pruned = stacks[j].prune();
-            if ((DEBUG >= 1) && (pruned > 0)) cerr << "\t  Pruned " << pruned << " hypotheses from stack " << j << endl;
+            if ((DEBUG >= 1) && (pruned > 0)) cerr << "\t  Pruned " << pruned << " hypotheses from gapless stack " << j << endl;
+            totalpruned += pruned; 
+            
+            pruned = gappystacks[j].prune();
+            if ((DEBUG >= 1) && (pruned > 0)) cerr << "\t  Pruned " << pruned << " hypotheses from gappy stack " << j << endl;
             totalpruned += pruned; 
         }
         if (DEBUG >= 1) cerr << "\t Pruned " << totalpruned << " hypotheses from all superior stacks" << endl;
         if (!dead) {
             fallbackhyp = NULL;
-            stacks[i].clear(); //stack is in itself no longer necessary, included pointer elements may live on though! Unnecessary hypotheses will be cleaned up automatically when higher-order hypotheses are deleted
+            stack.clear(); //stack is in itself no longer necessary, included pointer elements may live on though! Unnecessary hypotheses will be cleaned up automatically when higher-order hypotheses are deleted
         }
+        return fallbackhyp;
+}
+    
+TranslationHypothesis * StackDecoder::decode() {
+   /*
+    initialize hypothesisStack[0 .. nf];
+    create initial hypothesis hyp_init;
+    add to stack hypothesisStack[0];
+    for i=0 to nf-1:
+    for each hyp in hypothesisStack[i]:
+     for each new_hyp that can be derived from hyp:
+       nf[new_hyp] = number of source words covered by new_hyp;
+       add new_hyp to hypothesisStack[nf[new_hyp]];
+       prune hypothesisStack[nf[new_hyp]];
+    find best hypothesis best_hyp in hypothesisStack[nf];
+    output best path that leads to best_hyp;
+  */
+
+    
+    
+    //create initial hypothesis and add to 0th stack
+    TranslationHypothesis * initialhypothesis = new TranslationHypothesis(NULL, this, NULL, 0,NULL,0, vector<double>() );   
+    stacks[0].add(initialhypothesis);
+    
+    TranslationHypothesis * fallbackhyp = NULL;
+    
+    //for each stack
+    for (int i = 0; i <= inputlength - 1; i++) {
+        if (DEBUG >= 1) cerr << "\tDecoding Gapless Stack " << i << " -- " << stacks[i].size() << " hypotheses" << endl;
+        fallbackhyp = decodestack(stacks[i]);
+        if (fallbackhyp != NULL) break;
+        
+        if (DEBUG >= 1) cerr << "\tDecoding Gappy Stack " << i << " -- " << gappystacks[i].size() << " hypotheses" << endl;
+        fallbackhyp = decodestack(gappystacks[i]);
+        if (fallbackhyp != NULL) break;
     }   
     
     //solutions are now in last stack: stacks[inputlength]       
@@ -325,7 +341,7 @@ TranslationHypothesis * StackDecoder::decode() {
     if (!stacks[inputlength].empty()) {
         TranslationHypothesis * solution = stacks[inputlength].pop();
         return solution;
-    } else if (dead) {
+    } else if (fallbackhyp != NULL) {
         return fallbackhyp;
     } else {
         return NULL;
@@ -906,8 +922,15 @@ unsigned int TranslationHypothesis::expand() {
                         cerr << "INTERNAL ERROR: Hypothesis expansion did not lead to coverage expansion! This should not happen. New hypo has coverage " << cov << ", parent: " << thiscov << endl;
                         exit(6);        
                     }
-                    if (decoder->DEBUG >= 2) cerr << "\t    Adding to stack " << cov;
-                    bool accepted = decoder->stacks[cov].add(newhypo);
+                    
+                    bool accepted;
+                    if (newhypo->hasgaps()) {
+                        if (decoder->DEBUG >= 2) cerr << "\t    Adding to gappy stack " << cov;
+                        accepted = decoder->gappystacks[cov].add(newhypo);
+                    } else {
+                        if (decoder->DEBUG >= 2) cerr << "\t    Adding to gapless stack " << cov;
+                        accepted = decoder->stacks[cov].add(newhypo);
+                    }
                     if (decoder->DEBUG >= 2) {
                         if (accepted) {
                             cerr << " ... ACCEPTED" << endl;
