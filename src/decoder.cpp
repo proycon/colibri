@@ -28,6 +28,7 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
         //init stacks
         for (int i = 0; i <= inputlength; i++) {
             stacks.push_back( Stack(this, i, stacksize, prunethreshold) );
+            gappystacks.push_back( Stack(this, i, stacksize, prunethreshold) );
         }
 
         if (DEBUG >= 3) cerr << "Gathering source fragments:" << endl;        
