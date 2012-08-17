@@ -51,9 +51,12 @@ class TranslationHypothesis {
         bool initial() const { return (parent == NULL); }
         
         bool conflicts(const EncAnyGram * sourcecandidate, const CorpusReference & ref, bool skipduplicatecheck = false); //checks if a source pattern's coverage conflicts with this hypothesis, if not, it is a candidate to be added upon hypothesis expansion. Latter parameter is for internal usage
-        bool final();        
+        bool final();     
+        bool hasgaps() const;   
         
         bool fertile();
+                
+        int fitsgap(const EncAnyGram *, const int offset = 0); //returns -1 if no fit, index of gap begin otherwise
                 
         //void computeinputcoverage(vector<bool> & container); //compute source coverage        
         int inputcoverage(); //return input coverage (absolute number of tokens covered)

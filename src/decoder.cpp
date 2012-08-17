@@ -805,11 +805,26 @@ TranslationHypothesis::~TranslationHypothesis() {
     cleanup();
 }
 
+bool TranslationHypothesis::hasgaps() const {
+    return (!targetgaps.empty());
+}
+
 bool TranslationHypothesis::final(){
         if (!targetgaps.empty()) return false;
         return (inputcoverage() == decoder->inputlength); 
 }
 
+int TranslationHypothesis::fitsgap(const EncAnyGram * candidate, const int offset) {
+    //returns -1 if no fit, begin index of gap otherwise
+    int i = 0;
+    for (vector<pair<unsigned char, unsigned char> >::iterator iter = targetgaps.begin(); iter != targetgaps.end(); iter++) {
+        if (i >= offset)        
+            if (candidate->n() < iter->second)
+                return iter->first;
+        i++; 
+    }     
+    return -1;
+}
 
 unsigned int TranslationHypothesis::expand() {
     bool oldkeep = this->keep;
@@ -824,41 +839,58 @@ unsigned int TranslationHypothesis::expand() {
     unsigned int expanded = 0;
     int thiscov = inputcoverage();
     //expand directly in decoder.stack()
-    if (targetgaps.empty()) {
-        //find new source fragment
-        for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = decoder->sourcefragments.begin(); iter != decoder->sourcefragments.end(); iter++) {
-            const EncAnyGram * sourcecandidate = iter->first;
-            const CorpusReference ref = iter->second; 
-            if (!conflicts(sourcecandidate, ref)) {
-                //find target fragments for this source fragment
-                if (decoder->translationtable->alignmatrix.find(sourcecandidate) == decoder->translationtable->alignmatrix.end()) {
-                    cerr << "ERROR: Source candidate not found in translation table. This should never happen!" << endl;
-                    exit(6);
-                }
-                int c = 0;                
-                for (std::unordered_map<const EncAnyGram*, vector<double> >::const_iterator iter2 =  decoder->translationtable->alignmatrix[sourcecandidate].begin(); iter2 != decoder->translationtable->alignmatrix[sourcecandidate].end(); iter2++) {
-                    c++;
 
-                    if ((decoder->dlimit >= 0) && (decoder->dlimit < 999)) {                    
-                                            
-                        int prevpos = 0;
-                        if (sourcegram != NULL) {                                                                                    
-                            prevpos = sourceoffset + sourcegram->n();        
-                        } 
-                        double distance = abs( prevpos - sourceoffset);
-                        if (distance > decoder->dlimit) continue; //skip
+    //find new source fragment
+    for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = decoder->sourcefragments.begin(); iter != decoder->sourcefragments.end(); iter++) {
+        const EncAnyGram * sourcecandidate = iter->first;
+        const CorpusReference ref = iter->second; 
+        if (!conflicts(sourcecandidate, ref)) {
+            //find target fragments for this source fragment
+            if (decoder->translationtable->alignmatrix.find(sourcecandidate) == decoder->translationtable->alignmatrix.end()) {
+                cerr << "ERROR: Source candidate not found in translation table. This should never happen!" << endl;
+                exit(6);
+            }
+            int c = 0;                
+            for (std::unordered_map<const EncAnyGram*, vector<double> >::const_iterator iter2 =  decoder->translationtable->alignmatrix[sourcecandidate].begin(); iter2 != decoder->translationtable->alignmatrix[sourcecandidate].end(); iter2++) {
+                c++;
+
+                if ((decoder->dlimit >= 0) && (decoder->dlimit < 999)) {                             
+                    int prevpos = 0;
+                    if (sourcegram != NULL) {                                                                                    
+                        prevpos = sourceoffset + sourcegram->n();        
+                    } 
+                    double distance = abs( prevpos - sourceoffset);
+                    if (distance > decoder->dlimit) continue; //skip
+                }
+                
+                //cerr << "DEBUG: " << c << " of " << decoder->translationtable->alignmatrix[sourcecandidate].size() << endl;  
+                //create hypothesis for each target fragment
+                const EncAnyGram * targetcandidate = iter2->first;
+                int length;
+                
+                if (targetgram != NULL) { 
+                    length = targetgram->n();
+                } else {    
+                    length = 0;
+                }
+                int newtargetoffset = targetoffset + length;
+                
+                
+                //If there are target-side gaps, this expansion must fill (one of) those first
+                int gapoffset = 0;
+                int fitsgapindex;
+                do {
+                    fitsgapindex = fitsgap(targetcandidate, gapoffset);
+                    if (hasgaps()) {
+                        if (fitsgapindex == -1) {
+                            //can't fill a gap, don't create hypothesis, break
+                            break;
+                        } else{
+                            newtargetoffset = fitsgapindex;
+                        }             
                     }
                     
-                    //cerr << "DEBUG: " << c << " of " << decoder->translationtable->alignmatrix[sourcecandidate].size() << endl;  
-                    //create hypothesis for each target fragment
-                    const EncAnyGram * targetcandidate = iter2->first;
-                    int length;
-                    if (targetgram != NULL) { 
-                        length = targetgram->n();
-                    } else {    
-                        length = 0;
-                    }
-                    TranslationHypothesis * newhypo = new TranslationHypothesis(this, decoder, sourcecandidate, ref.token, targetcandidate, targetoffset + length , iter2->second);
+                    TranslationHypothesis * newhypo = new TranslationHypothesis(this, decoder, sourcecandidate, ref.token, targetcandidate, newtargetoffset , iter2->second);
                     if ((!newhypo->fertile()) && (!newhypo->final())) {
                         if (decoder->DEBUG >= 3) cerr << "\t    Hypothesis not fertile, discarding..."<< endl;
                         if (decoder->DEBUG == 99) {
@@ -893,14 +925,14 @@ unsigned int TranslationHypothesis::expand() {
                             delete newhypo;
                         } 
                     }
-                
-                }                 
-            }        
-        }
-    } else {
-        //there are target-side gaps, attempt to fill
-        //TODO
+            
+                    gapoffset++; //for next iteration
+                } while (fitsgapindex != -1); //loop until no gaps can be filled (implies only a single iteration if there are no gaps at all)  
+            
+            }                 
+        }        
     }
+
     this->keep = oldkeep; //release lock
     return expanded;
 }
