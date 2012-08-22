@@ -799,14 +799,14 @@ void TranslationHypothesis::report() {
                 cerr << "0";
             }            
         }
+        cerr << endl;
         if (!targetgaps.empty()) {
             cerr << "\t    targetgaps: ";
             for (vector<pair<unsigned char,unsigned char>>::iterator iter = targetgaps.begin(); iter != targetgaps.end(); iter++) {
                 cerr << (int) iter->first << ':' << (int) iter->second << ' ';
             }
             cerr << endl;
-        }
-        cerr << endl;
+        }        
 }
 
 double TranslationHypothesis::basescore() const {
