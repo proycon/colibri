@@ -582,7 +582,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
         //initial hypothesis: no coverage at all
         for (int i = 0; i < decoder->inputlength; i++) inputcoveragemask.push_back(false);
     } else {
-        //inheri:t from parent
+        //inherit from parent
         for (int i = 0; i < decoder->inputlength; i++) {
              inputcoveragemask.push_back(parent->inputcoveragemask[i]);
         }
@@ -807,6 +807,13 @@ void TranslationHypothesis::report() {
             }            
         }
         cerr << endl;
+        if (!sourcegaps.empty()) {
+            cerr << "\t    sourcegaps: ";
+            for (vector<pair<unsigned char,unsigned char>>::iterator iter = sourcegaps.begin(); iter != sourcegaps.end(); iter++) {
+                cerr << (int) iter->first << ':' << (int) iter->second << ' ';
+            }
+            cerr << endl;
+        }               
         if (!targetgaps.empty()) {
             cerr << "\t    targetgaps: ";
             for (vector<pair<unsigned char,unsigned char>>::iterator iter = targetgaps.begin(); iter != targetgaps.end(); iter++) {
