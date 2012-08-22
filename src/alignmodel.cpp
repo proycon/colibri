@@ -2719,8 +2719,8 @@ TranslationTable::TranslationTable(const string & filename, bool logprobs, bool 
 		        targetgram = gettargetkey((EncAnyGram*) &ngram);                                           
 		    } else {
 		        if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
-		        if (allowskipgrams) {
-		            EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              		        
+		        EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file
+		        if (allowskipgrams) {		                          		        
 		            if (!gettargetkey((EncAnyGram*) &skipgram)) {
 		            	targetskipgrams.insert(skipgram);		        	
 		            }   
