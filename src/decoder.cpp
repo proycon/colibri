@@ -554,9 +554,15 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
             h = h->parent;
         }
         
+        
+        
         int gapbegin = 0;
         int gaplength = 0;
+        if (decoder->DEBUG >= 4) cerr << "DEBUG: Targetcoverage: ";
         for (int i = 0; i <= targetcoverage.size(); i++) {
+            if ((decoder->DEBUG >= 4) && (i < targetcoverage.size())) {
+                cerr << (int) targetcoverage[i];                
+            }
             if (i == targetcoverage.size() || targetcoverage[i]) {
                 if (gaplength > 0) {
                     targetgaps.push_back( make_pair<unsigned char, unsigned char>( (unsigned char) gapbegin, (unsigned char) gaplength) );        
@@ -567,6 +573,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
                 gaplength++;
             }
         }        
+        if (decoder->DEBUG >= 4) cerr << endl;
     }    
     
            
