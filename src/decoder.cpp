@@ -984,7 +984,7 @@ unsigned int TranslationHypothesis::expand() {
                     int cov = newhypo->inputcoverage();
                     if (thiscov >= cov) {
                         cerr << "INTERNAL ERROR: Hypothesis expansion did not lead to coverage expansion! This should not happen. New hypo has coverage " << cov << ", parent: " << thiscov << endl;
-                        exit(6);        
+                        continue;        
                     }
                     
                     bool accepted;
