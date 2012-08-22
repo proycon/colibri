@@ -36,8 +36,8 @@ class TranslationHypothesis {
         
         const EncNGram * history; //order-1 n-gram in targetlanguage, used for computation of LM score 
                 
-        std::vector<std::pair<unsigned char, unsigned char> > sourcegaps;
-        std::vector<std::pair<unsigned char, unsigned char> > targetgaps; //filling gaps will take priority upon expansion 
+        std::vector<std::pair<unsigned char, unsigned char> > sourcegaps; //offsets are relative to sourcegram
+        std::vector<std::pair<unsigned char, unsigned char> > targetgaps; //filling gaps will take priority upon expansion, offsets are relative to the entire hypothesis  
         
         TranslationHypothesis(TranslationHypothesis * parent, StackDecoder * decoder,  const EncAnyGram * sourcegram , unsigned char sourceoffset,  const EncAnyGram * targetgram, unsigned char targetoffset, const std::vector<double> & tscores);
         ~TranslationHypothesis();

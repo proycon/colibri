@@ -532,13 +532,44 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     }
     
     if ((targetgram != NULL) && (targetgram->isskipgram())) {
-        vector<pair<int, int> > gaps;
-        (*((const EncSkipGram *) targetgram)).getgaps(gaps);
-        for (vector<pair<int, int> >::iterator iter = gaps.begin(); iter != gaps.end(); iter++) targetgaps.push_back( make_pair<unsigned char, unsigned char>(iter->first, iter->second) );
+        vector<bool> targetcoverage; //intermediary data structure used for computing target gaps
+        const TranslationHypothesis * h = this;
+        while (h != NULL) {
+            while (targetcoverage.size() <  h->targetoffset + h->targetgram->n()) {
+               targetcoverage.push_back(false);   
+            }        
+            if (!h->targetgram->isskipgram()) {
+                for (int i = h->targetoffset; i < h->targetoffset + h->targetgram->n(); i++) {
+                     targetcoverage[i] = true;
+                } 
+            } else {
+                vector<pair<int, int> > gaps;
+                (*((const EncSkipGram *) targetgram)).getgaps(gaps);
+                for (vector<pair<int, int> >::iterator iter = gaps.begin(); iter != gaps.end(); iter++) {
+                    for (int i = h->targetoffset + iter->first; i < h->targetoffset + iter->first + iter->second; i++) {
+                        targetcoverage[i] = true;
+                    } 
+                }               
+            }        
+            h = h->parent;
+        }
+        
+        int gapbegin = 0;
+        int gaplength = 0;
+        for (int i = 0; i <= targetcoverage.size(); i++) {
+            if (i == targetcoverage.size() || targetcoverage[i]) {
+                if (gaplength > 0) {
+                    targetgaps.push_back( make_pair<unsigned char, unsigned char>( (unsigned char) gapbegin, (unsigned char) gaplength) );        
+                }
+                gapbegin = i + 1;
+                gaplength= 0;
+            } else {
+                gaplength++;
+            }
+        }        
     }    
     
-       
-    
+           
     //compute input coverage
     if (parent == NULL) {
         //initial hypothesis: no coverage at all
@@ -835,7 +866,7 @@ int TranslationHypothesis::fitsgap(const EncAnyGram * candidate, const int offse
     //returns -1 if no fit, begin index of gap otherwise
     int i = 0;
     for (vector<pair<unsigned char, unsigned char> >::iterator iter = targetgaps.begin(); iter != targetgaps.end(); iter++) {
-        if (i >= offset)        
+        if (i >= offset) //offset is gap index (for skipping gaps), NOT begin offset        
             if (candidate->n() < iter->second)
                 return iter->first;
         i++; 
@@ -1324,6 +1355,7 @@ int main( int argc, char *argv[] ) {
     LanguageModel lm = LanguageModel(lmfile, targetclassencoder, &targetclassdecoder, (debug >= 4) );
     cerr << "   loaded " << lm.size() << " n-grams, order=" << lm.getorder() << endl;
     cerr << "Translation table:    " << transtablefile << endl;
+    
     //TODO: Moses format
     TranslationTable transtable = TranslationTable(transtablefile, true, DOSKIPGRAMS);
     cerr << "   loaded translations for " << transtable.size() << " patterns" << endl;
