@@ -786,6 +786,7 @@ void TranslationHypothesis::report() {
                 cerr << "\t    Translation: " << s.decode(*(decoder->targetclassdecoder)) << endl;
             }
         }
+        cerr << "\t    targetoffset: " << (int) targetoffset << endl;
         cerr << "\t    History: ";
         if (history == NULL) {
             cerr << "NONE" << endl;
@@ -889,9 +890,11 @@ int TranslationHypothesis::fitsgap(const EncAnyGram * candidate, const int offse
     //returns -1 if no fit, begin index of gap otherwise
     int i = 0;
     for (vector<pair<unsigned char, unsigned char> >::iterator iter = targetgaps.begin(); iter != targetgaps.end(); iter++) {
-        if (i >= offset) //offset is gap index (for skipping gaps), NOT begin offset        
-            if (candidate->n() < iter->second)
+        if (i >= offset) { //offset is gap index (for skipping gaps), NOT begin offset        
+            if (candidate->n() < iter->second) {
                 return iter->first;
+            }
+        }
         i++; 
     }     
     return -1;
@@ -951,7 +954,7 @@ unsigned int TranslationHypothesis::expand() {
                 int gapoffset = 0;
                 int fitsgapindex;
                 do {
-                    fitsgapindex = fitsgap(targetcandidate, gapoffset);
+                    fitsgapindex = fitsgap(targetcandidate, gapoffset++);
                     if (hasgaps()) {
                         if (fitsgapindex == -1) {
                             //can't fill a gap, don't create hypothesis, break
@@ -959,9 +962,9 @@ unsigned int TranslationHypothesis::expand() {
                         } else{
                             newtargetoffset = fitsgapindex;
                         }             
-                    }
+                    }                    
                     
-                    TranslationHypothesis * newhypo = new TranslationHypothesis(this, decoder, sourcecandidate, ref.token, targetcandidate, newtargetoffset , iter2->second);
+                    TranslationHypothesis * newhypo = new TranslationHypothesis(this, decoder, sourcecandidate, ref.token, targetcandidate, newtargetoffset , iter2->second);                    
                     if ((!newhypo->fertile()) && (!newhypo->final())) {
                         if (decoder->DEBUG >= 3) cerr << "\t    Hypothesis not fertile, discarding..."<< endl;
                         if (decoder->DEBUG == 99) {
@@ -1003,8 +1006,7 @@ unsigned int TranslationHypothesis::expand() {
                             delete newhypo;
                         } 
                     }
-            
-                    gapoffset++; //for next iteration
+        
                 } while (fitsgapindex != -1); //loop until no gaps can be filled (implies only a single iteration if there are no gaps at all)  
             
             }                 
