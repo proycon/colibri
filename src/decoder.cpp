@@ -590,15 +590,19 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
         bool isskipgram = sourcegram->isskipgram();
         for (int i = sourceoffset; i < sourceoffset + sourcegram->n(); i++) {
             if (isskipgram) {
+                //cerr << "DEBUG: processing " << i << " length=" << (int) sourcegram->n() << ": ";
                 bool ingap = false;
-                for (vector<pair<unsigned char, unsigned char> >::iterator iter = sourcegaps.begin(); iter < sourcegaps.end(); iter++) {
-                    if ( (i + sourcegram->n() > sourceoffset + iter->first) &&  ( i < sourceoffset +iter->first + iter->second ) ) {
+                for (vector<pair<unsigned char, unsigned char> >::iterator iter = sourcegaps.begin(); iter != sourcegaps.end(); iter++) {
+                    if ( (i >= sourceoffset + iter->first) &&  ( i < sourceoffset + iter->first + iter->second ) ) {
                         ingap = true;
                         break;       
                     }             
                 }
                 if (!ingap) {
+                    //cerr << "no gap" << endl;
                     inputcoveragemask[i] = true;
+                } else {
+                    //cerr << "in a gap" << endl;
                 }
             } else {
                 inputcoveragemask[i] = true;
