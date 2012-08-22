@@ -153,6 +153,7 @@ class EncSkipGram: public EncAnyGram {
       }
       
       void getgaps(std::vector<std::pair<int,int> > &) const;
+      void getparts(std::vector<std::pair<int,int> > &) const; //inverse of getgaps, returns indices of parts. different from parts()
       EncSkipGram extractskipcontent(EncNGram & instance) const;
       
       

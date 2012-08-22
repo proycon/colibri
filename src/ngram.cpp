@@ -649,7 +649,6 @@ void EncSkipGram::mask(std::vector<bool> & container) const { //returns a boolea
 
 
 void EncSkipGram::getgaps(std::vector<std::pair<int,int> > & gaps) const {
-    //TODO
     int pos = 0;
     bool prevnull = false;
     int skipnum = 0;
@@ -669,6 +668,25 @@ void EncSkipGram::getgaps(std::vector<std::pair<int,int> > & gaps) const {
         pos++;        
     }  
 }
+
+void EncSkipGram::getparts(std::vector<std::pair<int,int> > & p) const {    
+    std::vector<std::pair<int,int> > gaps;
+    getgaps(gaps);
+    
+    int beginpart = 0;
+    for (vector<pair<int,int> >::iterator iter = gaps.begin(); iter != gaps.end(); iter++) {
+        if (iter->first - beginpart > 0) {
+            p.push_back(pair<int,int>(beginpart, iter->first - beginpart) );
+            beginpart = iter->first + iter->second;
+        }        
+    } 
+    if (beginpart != n()) {
+        p.push_back(pair<int,int>(beginpart, n() - beginpart) );
+    }    
+}
+
+
+
 
 EncSkipGram EncSkipGram::extractskipcontent(EncNGram & instance) const {
     if (instance.n() != n()) {

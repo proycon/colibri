@@ -543,9 +543,9 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
                      targetcoverage[i] = true;
                 } 
             } else {
-                vector<pair<int, int> > gaps;
-                (*((const EncSkipGram *) targetgram)).getgaps(gaps);
-                for (vector<pair<int, int> >::iterator iter = gaps.begin(); iter != gaps.end(); iter++) {
+                vector<pair<int, int> > parts;
+                (*((const EncSkipGram *) targetgram)).getparts(parts);
+                for (vector<pair<int, int> >::iterator iter = parts.begin(); iter != parts.end(); iter++) {
                     for (int i = h->targetoffset + iter->first; i < h->targetoffset + iter->first + iter->second; i++) {
                         targetcoverage[i] = true;
                     } 
