@@ -531,50 +531,48 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
         for (vector<pair<int, int> >::iterator iter = gaps.begin(); iter != gaps.end(); iter++) sourcegaps.push_back( make_pair<unsigned char, unsigned char>(iter->first, iter->second) );        
     }
     
-    if ((targetgram != NULL) && (targetgram->isskipgram())) {
-        vector<bool> targetcoverage; //intermediary data structure used for computing target gaps
-        const TranslationHypothesis * h = this;
-        while (h->parent != NULL) {
-            while (targetcoverage.size() <  h->targetoffset + h->targetgram->n()) {
-               targetcoverage.push_back(false);   
-            }        
-            if (!h->targetgram->isskipgram()) {
-                for (int i = h->targetoffset; i < h->targetoffset + h->targetgram->n(); i++) {
-                     targetcoverage[i] = true;
-                } 
-            } else {
-                vector<pair<int, int> > parts;
-                (*((const EncSkipGram *) targetgram)).getparts(parts);
-                for (vector<pair<int, int> >::iterator iter = parts.begin(); iter != parts.end(); iter++) {
-                    for (int i = h->targetoffset + iter->first; i < h->targetoffset + iter->first + iter->second; i++) {
-                        targetcoverage[i] = true;
-                    } 
-                }               
-            }        
-            h = h->parent;
-        }
-        
-        
-        
-        int gapbegin = 0;
-        int gaplength = 0;
-        if (decoder->DEBUG >= 4) cerr << "DEBUG: Targetcoverage: ";
-        for (int i = 0; i <= targetcoverage.size(); i++) {
-            if ((decoder->DEBUG >= 4) && (i < targetcoverage.size())) {
-                cerr << (int) targetcoverage[i];                
-            }
-            if (i == targetcoverage.size() || targetcoverage[i]) {
-                if (gaplength > 0) {
-                    targetgaps.push_back( make_pair<unsigned char, unsigned char>( (unsigned char) gapbegin, (unsigned char) gaplength) );        
-                }
-                gapbegin = i + 1;
-                gaplength= 0;
-            } else {
-                gaplength++;
-            }
+
+    vector<bool> targetcoverage; //intermediary data structure used for computing target gaps
+    const TranslationHypothesis * h = this;
+    while (h->parent != NULL) {
+        while (targetcoverage.size() <  h->targetoffset + h->targetgram->n()) {
+           targetcoverage.push_back(false);   
         }        
-        if (decoder->DEBUG >= 4) cerr << endl;
-    }    
+        if (!h->targetgram->isskipgram()) {
+            for (int i = h->targetoffset; i < h->targetoffset + h->targetgram->n(); i++) {
+                 targetcoverage[i] = true;
+            } 
+        } else {
+            vector<pair<int, int> > parts;
+            (*((const EncSkipGram *) targetgram)).getparts(parts);
+            for (vector<pair<int, int> >::iterator iter = parts.begin(); iter != parts.end(); iter++) {
+                for (int i = h->targetoffset + iter->first; i < h->targetoffset + iter->first + iter->second; i++) {
+                    targetcoverage[i] = true;
+                } 
+            }               
+        }        
+        h = h->parent;
+    }
+        
+    int gapbegin = 0;
+    int gaplength = 0;
+    if (decoder->DEBUG >= 4) cerr << "DEBUG: Targetcoverage: ";
+    for (int i = 0; i <= targetcoverage.size(); i++) {
+        if ((decoder->DEBUG >= 4) && (i < targetcoverage.size())) {
+            cerr << (int) targetcoverage[i];                
+        }
+        if (i == targetcoverage.size() || targetcoverage[i]) {
+            if (gaplength > 0) {
+                targetgaps.push_back( make_pair<unsigned char, unsigned char>( (unsigned char) gapbegin, (unsigned char) gaplength) );        
+            }
+            gapbegin = i + 1;
+            gaplength= 0;
+        } else {
+            gaplength++;
+        }
+    }        
+    if (decoder->DEBUG >= 4) cerr << endl;
+ 
     
            
     //compute input coverage
