@@ -534,7 +534,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     if ((targetgram != NULL) && (targetgram->isskipgram())) {
         vector<bool> targetcoverage; //intermediary data structure used for computing target gaps
         const TranslationHypothesis * h = this;
-        while (h != NULL) {
+        while (h->parent != NULL) {
             while (targetcoverage.size() <  h->targetoffset + h->targetgram->n()) {
                targetcoverage.push_back(false);   
             }        
