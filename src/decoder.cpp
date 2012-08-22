@@ -1141,7 +1141,8 @@ void usage() {
     cerr << "\t-W w1,w2,w3               Translation model weights (comma seperated)" << endl;    
     cerr << "\t-L weight                 Language model weight" << endl;
     cerr << "\t-D weight                 Distortion model weight" << endl;
-    cerr << "\t-M distortion-limit       Distortion limit (max number of source words skipped, default: unlimited)" << endl;            
+    cerr << "\t-M distortion-limit       Distortion limit (max number of source words skipped, default: unlimited)" << endl;
+    cerr << "\t-N                        No skipgrams" << endl;            
     cerr << "\t--moses                   Translation table is in Moses format" << endl;
     cerr << "\t-v verbosity              Verbosity/debug level" << endl;
     
@@ -1215,7 +1216,7 @@ int main( int argc, char *argv[] ) {
      };
     /* getopt_long stores the option index here. */
     int option_index = 0;
-    
+    bool DOSKIPGRAMS = true;
     
     //temp:
     string raw;
@@ -1227,7 +1228,7 @@ int main( int argc, char *argv[] ) {
     
     int debug = 0;
     char c;    
-    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:v:M:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:v:M:N",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -1269,6 +1270,9 @@ int main( int argc, char *argv[] ) {
         case 'v':
             debug = atoi(optarg);
             break;     
+        case 'N':
+            DOSKIPGRAMS = false;
+            break;
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
             abort ();
@@ -1321,7 +1325,7 @@ int main( int argc, char *argv[] ) {
     cerr << "   loaded " << lm.size() << " n-grams, order=" << lm.getorder() << endl;
     cerr << "Translation table:    " << transtablefile << endl;
     //TODO: Moses format
-    TranslationTable transtable = TranslationTable(transtablefile);
+    TranslationTable transtable = TranslationTable(transtablefile, true, DOSKIPGRAMS);
     cerr << "   loaded translations for " << transtable.size() << " patterns" << endl;
         
     const int firstunknownclass_source = sourceclassencoder.gethighestclass()+1;    

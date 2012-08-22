@@ -2643,10 +2643,12 @@ void TranslationTable::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel
 }
 
 
-TranslationTable::TranslationTable(const string & filename, bool logprobs, bool DEBUG) {
+TranslationTable::TranslationTable(const string & filename, bool logprobs, bool allowskipgrams, bool DEBUG) {
     this->DEBUG = DEBUG;
 	unsigned char check;
-		
+	bool sourceisskipgram = false;
+	bool targetisskipgram = false;
+	
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
     if ((!f) || (!f.good())) {
@@ -2677,6 +2679,7 @@ TranslationTable::TranslationTable(const string & filename, bool logprobs, bool 
         }
         f.read(&gapcount, sizeof(char));	 
         const EncAnyGram * sourcegram;   
+        bool sourceisskipgram = false;
         if (gapcount == 0) {
             if (DEBUG)  cerr << "\tNGRAM";
             EncNGram ngram = EncNGram(&f); //read from file
@@ -2686,11 +2689,14 @@ TranslationTable::TranslationTable(const string & filename, bool logprobs, bool 
             sourcegram = getsourcekey((EncAnyGram*) &ngram);                                           
         } else {
             if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
-            EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              
-            if (!getsourcekey((EncAnyGram*) &skipgram)) {
-            	sourceskipgrams.insert(skipgram);            	
+            EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file
+            if (allowskipgrams) {              
+                if (!getsourcekey((EncAnyGram*) &skipgram)) {
+                	sourceskipgrams.insert(skipgram);            	
+                }   
+                sourcegram = getsourcekey((EncAnyGram*) &skipgram);
             }   
-            sourcegram = getsourcekey((EncAnyGram*) &skipgram);                     
+            sourceisskipgram = true;                  
         }        
         uint64_t targetcount;
         
@@ -2701,7 +2707,8 @@ TranslationTable::TranslationTable(const string & filename, bool logprobs, bool 
         list<double> bestq;
         for (int j = 0; j < targetcount; j++) {
         	const EncAnyGram * targetgram = NULL;   
-            f.read(&gapcount, sizeof(char));	    
+            f.read(&gapcount, sizeof(char));
+            bool targetisskipgram = false;	    
 		    if (gapcount == 0) {
 		        if (DEBUG)  cerr << "\tNGRAM";
 		        EncNGram ngram = EncNGram(&f); //read from file
@@ -2712,11 +2719,14 @@ TranslationTable::TranslationTable(const string & filename, bool logprobs, bool 
 		        targetgram = gettargetkey((EncAnyGram*) &ngram);                                           
 		    } else {
 		        if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
-		        EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              		        
-		        if (!gettargetkey((EncAnyGram*) &skipgram)) {
-		        	targetskipgrams.insert(skipgram);		        	
-		        }   
-		        targetgram = gettargetkey((EncAnyGram*) &skipgram);                      
+		        if (allowskipgrams) {
+		            EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file              		        
+		            if (!gettargetkey((EncAnyGram*) &skipgram)) {
+		            	targetskipgrams.insert(skipgram);		        	
+		            }   
+		            targetgram = gettargetkey((EncAnyGram*) &skipgram);
+		        }
+		        targetisskipgram = true;                    
 		    }		    
 		    char scores;
 		    if (multiscore) {
@@ -2725,15 +2735,19 @@ TranslationTable::TranslationTable(const string & filename, bool logprobs, bool 
 		        scores = 1;
 		    }		    
 		
-		    if (sourcegram == NULL || targetgram == NULL) {
-		     	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
-		    	exit(6);
-		    }		
+
 		    for (int i = 0; i < scores; i++) {
                 double p;
 		        f.read((char*) &p, sizeof(double));
-		        if (p > 0) p = log(p); //base e 
-		        alignmatrix[sourcegram][targetgram].push_back(p);		    
+		        if (p > 0) p = log(p); //base e
+		        
+		        if ((allowskipgrams) || ((!sourceisskipgram) && (!targetisskipgram))) {  
+           		    if ((sourcegram == NULL) || (targetgram == NULL)) {
+		             	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
+		            	exit(6);
+		            }		 		      
+		            alignmatrix[sourcegram][targetgram].push_back(p);
+		        }		    
 		    }		  		    
         }
 	}

@@ -544,7 +544,7 @@ int main( int argc, char *argv[] ) {
     
     } else { //modelfile not empty
     
-         if ((EXTRACTSKIPGRAMS) && (!outputprefix.empty())) && (!sourcemodelfile.empty()) && (!targetmodelfile.empty())) {
+         if (  (EXTRACTSKIPGRAMS) && (!outputprefix.empty()) && (!sourcemodelfile.empty()) && (!targetmodelfile.empty()) ) {
             cerr << "Extracting skipgrams from existing model" << endl;
             //bad code duplication, I know:
             cerr << "Loading source model " << sourcemodelfile << endl;
