@@ -13,7 +13,7 @@ unsigned char EOSCLASS = 4;
 
 const EncNGram UNKNOWNUNIGRAM = EncNGram(&UNKNOWNCLASS,1);
 
-StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
+StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool globalstats) {
         this->input = input;
         this->inputlength = input.length();
         this->translationtable = translationtable;
@@ -23,7 +23,7 @@ StackDecoder::StackDecoder(const EncData & input, TranslationTable * translation
         this->DEBUG = debug;
         this->sourceclassdecoder = sourceclassdecoder;
         this->targetclassdecoder = targetclassdecoder;        
-        
+        this->globalstats = globalstats;
         
         //init stacks
         for (int i = 0; i <= inputlength; i++) {
@@ -231,6 +231,7 @@ TranslationHypothesis * StackDecoder::decodestack(Stack & stack) {
         unsigned int totalexpanded = 0;
         bool first = true;        
         TranslationHypothesis * fallbackhyp = NULL;
+        
         while (!stack.empty()) {
             if (DEBUG >= 1) cerr << "\t Expanding hypothesis off stack " << stack.index << " -- " << stack.size() -1 << " left:" << endl;
             
@@ -251,7 +252,7 @@ TranslationHypothesis * StackDecoder::decodestack(Stack & stack) {
             
             unsigned int expanded = hyp->expand(); //will automatically add to appropriate stacks
             if (DEBUG >= 1) cerr << "\t  Expanded " << expanded << " new hypotheses" << endl;
-            totalexpanded += expanded;
+            totalexpanded += expanded;            
             if ((hyp->deletable()) && (hyp != fallbackhyp)) {                
                 if (DEBUG == 99) {
                     cerr << "DEBUG: DONE EXPANDING, DELETING HYPOTHESIS " << (size_t) hyp << endl;
@@ -293,12 +294,15 @@ TranslationHypothesis * StackDecoder::decodestack(Stack & stack) {
             pruned = gappystacks[j].prune();
             if ((DEBUG >= 1) && (pruned > 0)) cerr << "\t  Pruned " << pruned << " hypotheses from gappy stack " << j << endl;
             totalpruned += pruned; 
+            
         }
-        if (DEBUG >= 1) cerr << "\t Pruned " << totalpruned << " hypotheses from all superior stacks" << endl;
+        if (DEBUG >= 1) cerr << "\t Pruned " << totalpruned << " hypotheses from all superior stacks" << endl;        
         if (!dead) {
             fallbackhyp = NULL;
             stack.clear(); //stack is in itself no longer necessary, included pointer elements may live on though! Unnecessary hypotheses will be cleaned up automatically when higher-order hypotheses are deleted
         }
+        stats.expanded += totalexpanded;
+        stats.pruned += totalpruned;
         return fallbackhyp;
 }
     
@@ -327,11 +331,13 @@ TranslationHypothesis * StackDecoder::decode() {
     
     //for each stack
     for (int i = 0; i <= inputlength - 1; i++) {
-        if (DEBUG >= 1) cerr << "\tDecoding Gapless Stack " << i << " -- " << stacks[i].size() << " hypotheses" << endl;
+        if (DEBUG >= 1) cerr << "\tDecoding gapless stack " << i << " -- " << stacks[i].size() << " hypotheses" << endl;
+        stats.stacksizes[i] = stacks[i].size();
         fallbackhyp = decodestack(stacks[i]);
         if (fallbackhyp != NULL) break;
         
-        if (DEBUG >= 1) cerr << "\tDecoding Gappy Stack " << i << " -- " << gappystacks[i].size() << " hypotheses" << endl;
+        if (DEBUG >= 1) cerr << "\tDecoding gappy stack " << i << " -- " << gappystacks[i].size() << " hypotheses" << endl;
+        stats.gappystacksizes[i] = gappystacks[i].size();
         fallbackhyp = decodestack(gappystacks[i]);
         if (fallbackhyp != NULL) break;
     }   
@@ -989,6 +995,9 @@ unsigned int TranslationHypothesis::expand() {
                         if (decoder->DEBUG >= 2) cerr << "\t    Adding to gapless stack " << cov;
                         accepted = decoder->stacks[cov].add(newhypo);
                     }
+                    if (decoder->globalstats && accepted) {
+                        newhypo->stats();
+                    }                    
                     if (decoder->DEBUG >= 2) {
                         if (accepted) {
                             cerr << " ... ACCEPTED" << endl;
@@ -996,9 +1005,10 @@ unsigned int TranslationHypothesis::expand() {
                             cerr << " ... REJECTED" << endl;
                         }
                     }
-                    expanded++;
+                    expanded++;                    
                     
                     if (!accepted) {
+                        decoder->stats.discarded++;
                         if (decoder->DEBUG == 99) {
                             cerr << "DEBUG: IMMEDIATELY DELETING NEWLY CREATED HYPOTHESIS (REJECTED BY STACK) " << (size_t) newhypo << endl;
                             newhypo->cleanup();
@@ -1177,7 +1187,27 @@ EncData TranslationHypothesis::getoutput(deque<TranslationHypothesis*> * path) {
     }    
 }
 
-
+void TranslationHypothesis::stats() {
+    TranslationHypothesis * h = this;
+    int stepcount = 0;    
+    while ((h != NULL) && (h->parent != NULL)) {
+        stepcount++;
+        const int source_n = h->sourcegram->n();
+        if (h->sourcegram->isskipgram()) {            
+            decoder->stats.sourceskipgramusage[source_n]++;
+        } else {
+            decoder->stats.sourcengramusage[source_n]++;
+        }
+        const int target_n = h->targetgram->n();
+        if (h->targetgram->isskipgram()) {            
+            decoder->stats.targetskipgramusage[target_n]++;
+        } else {
+            decoder->stats.targetngramusage[target_n]++;
+        }
+        h = h->parent;
+    }
+    decoder->stats.steps.push_back(stepcount);        
+}
     
  
 
@@ -1201,7 +1231,8 @@ void usage() {
     cerr << "\t-N                        No skipgrams" << endl;            
     cerr << "\t--moses                   Translation table is in Moses format" << endl;
     cerr << "\t-v verbosity              Verbosity/debug level" << endl;
-    
+    cerr << "\t--stats                   Compute and output decoding statistics for each solution" << endl;
+    cerr << "\t--globalstats             Compute and output decoding statistics for all hypothesis accepted on a stack" << endl;    
 }
 
 void addsentencemarkers(ClassDecoder & targetclassdecoder, ClassEncoder & targetclassencoder) {
@@ -1252,9 +1283,65 @@ int addunknownwords( TranslationTable & ttable, LanguageModel & lm, ClassEncoder
     return added;    
 }
 
+void DecodeStats::output() {
+    unsigned int totalsourcengrams = 0;
+    unsigned int totaltargetngrams = 0;
+    unsigned int totalsourceskipgrams = 0;
+    unsigned int totaltargetskipgrams = 0;
+    int maxn = 0;
+    cerr << "N\tsource-ngrams\tsource-skipgrams\ttarget-ngrams\ttarget-skipgrams" << endl;
+    cerr << "-------------------------------------------------------------------------------------------------------" << endl;
+    for (int i = 0; i <= 9; i++) {
+        if (sourcengramusage[i] ||sourceskipgramusage[i] || targetngramusage[i]  || targetskipgramusage[i]) {
+            maxn = i;
+        }
+        totalsourcengrams += sourcengramusage[i];
+        totalsourceskipgrams += sourceskipgramusage[i];
+        totaltargetngrams += targetngramusage[i];
+        totaltargetskipgrams += targetskipgramusage[i];
+    }
+    for (int i = 0; i <= maxn; i++) {
+        double p;                    
+        if (sourcengramusage[i] ||  sourceskipgramusage[i] || targetngramusage[i]  || targetskipgramusage[i]) {                    
+            cerr << i << "\t";
+            if (totalsourcengrams > 0) {
+                p = (double) sourcengramusage[i] / totalsourcengrams;
+            } else {
+                p = 0;
+            }
+            cerr << sourcengramusage[i] << " (" << p << ")\t";
+            
+            if (totalsourceskipgrams > 0) {            
+                p = (double)  sourceskipgramusage[i] / totalsourceskipgrams;
+            } else {
+                p = 0;
+            }                                                
+            cerr << sourceskipgramusage[i] << " (" << p << ")\t";
+            
+            if (totaltargetngrams > 0) {
+                p = (double)  targetngramusage[i] / totaltargetngrams;
+            } else {
+                p = 0;
+            }
+            cerr << targetngramusage[i] << " (" << p << ")\t";
+            
+            if (totaltargetskipgrams > 0) {
+                p = (double)  targetskipgramusage[i] / totaltargetskipgrams;
+            } else {
+                p = 0;
+            }                                                
+            cerr << targetskipgramusage[i] << " (" << p << ")" << endl;                        
+        }                     
+    }
+        cerr << "-------------------------------------------------------------------------------------------------------" << endl;
+        cerr << " \t" << totalsourcengrams << "\t" << totalsourceskipgrams << "\t" << totaltargetngrams << "\t" << totaltargetskipgrams << endl;    
+}
+
 
 int main( int argc, char *argv[] ) {
     int MOSESFORMAT = 0;
+    int STATS = 0;
+    int GLOBALSTATS = 0;
     vector<double> tweights;
     double lweight = 1.0;
     double dweight = 1.0;
@@ -1267,7 +1354,9 @@ int main( int argc, char *argv[] ) {
     double prunethreshold = 0.5;
     int maxn = 9;
     static struct option long_options[] = {      
-       {"moses", no_argument,             &MOSESFORMAT, 1},                       
+       {"moses", no_argument,             &MOSESFORMAT, 1},
+       {"stats", no_argument,             &STATS, 1},
+       {"globalstats", no_argument,             &GLOBALSTATS, 1},                       
        {0, 0, 0, 0}
      };
     /* getopt_long stores the option index here. */
@@ -1388,12 +1477,13 @@ int main( int argc, char *argv[] ) {
     const int firstunknownclass_source = sourceclassencoder.gethighestclass()+1;    
     const int firstunknownclass_target = targetclassencoder.gethighestclass()+1;
 
+    DecodeStats overallstats;
     
     string input;
     unsigned char buffer[8192]; 
     int size;
-    while (getline(cin, input)) {
-        if (input.length() > 0) {                
+    while (getline(cin, input)) {        
+        if (input.length() > 0) {                    
             cerr << "INPUT: " << input << endl;
             if (debug >= 1) cerr << "Processing input" << endl;        
             size = sourceclassencoder.encodestring(input, buffer, true, true) - 1; //weird patch: - 1  to get n() right later               
@@ -1401,7 +1491,7 @@ int main( int argc, char *argv[] ) {
             if (debug >= 1) cerr << "Processing unknown words" << endl; 
             addunknownwords(transtable, lm, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
             if (debug >= 1) cerr << "Setting up decoder" << endl;
-            StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder);
+            StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder, (bool) GLOBALSTATS);
             if (debug >= 1) cerr << "Decoding..." << endl;
             TranslationHypothesis * solution = decoder->decode();                    
             if (solution != NULL) {
@@ -1418,11 +1508,27 @@ int main( int argc, char *argv[] ) {
                         h = h->parent;
                     }                
                 }
-                cerr << "SCORE=" << solution->score() << endl;
+                cerr << "GAPLESS STACKSIZES: ";
+                for (map<int,int>::iterator iter = decoder->stats.stacksizes.begin(); iter != decoder->stats.stacksizes.end(); iter++) {
+                    if (iter->first > 0) cerr << iter->second << ' ';
+                }
+                cerr << endl;
+                if (DOSKIPGRAMS) {
+                    cerr << "GAPPY STACKSIZES: ";
+                    for (map<int,int>::iterator iter = decoder->stats.gappystacksizes.begin(); iter != decoder->stats.gappystacksizes.end(); iter++) {
+                        if (iter->first > 0) cerr << iter->second << ' ';
+                    }
+                }
+                cerr << endl;                
+                cerr << "STATS:\tTotal expansions: " << decoder->stats.expanded << endl;
+                cerr << "       \tof which rejected: " << decoder->stats.discarded << endl;
+                cerr << "       \tof which pruned: " << decoder->stats.pruned << endl;
+                cerr << "SCORE=" << solution->score() << endl;                
                 cerr << "DONE. OUTPUT:" << endl;
                 cout << s.decode(targetclassdecoder) << endl;
+                if ((STATS) && (!GLOBALSTATS)) solution->stats(); 
                 if (decoder->DEBUG == 99) {
-                    cerr << "DEBUG: SOLUTION DESTRUCTION. DELETING " << (size_t) solution << endl; 
+                    cerr << "DEBUG: SOLUTION DESTRUCTION. DELETING " << (size_t) solution << endl;
                     solution->cleanup();
                 } else {
                     delete solution;
@@ -1431,9 +1537,27 @@ int main( int argc, char *argv[] ) {
                 cerr << "ERROR: NO SOLUTION FOUND!!!" << endl;
                 exit(12);
             }                
+            
+
+            
+            
+            //output statistics
+            if (STATS) {
+                decoder->stats.output();
+                overallstats.add(decoder->stats);
+            }
+            
+            
             //delete inputdata; //TODO: REENABLE, MEMORY LEAK
             if (decoder->DEBUG == 99) cerr << "DEALLOCATING DECODER" << endl;
             delete decoder;
        }
+    }
+    
+    if (STATS) {
+        cerr << "==========================================================================" << endl;
+        cerr << "OVERALL STATISTICS FOR ALL SENTENCES:" << endl;
+        overallstats.output();
+        cerr << endl; 
     }
 }

@@ -54,6 +54,8 @@ class TranslationHypothesis {
         bool final();     
         bool hasgaps() const;   
         
+        void stats();
+        
         bool fertile();
                 
         int fitsgap(const EncAnyGram *, const int offset = 0); //returns -1 if no fit, index of gap begin otherwise
@@ -75,6 +77,52 @@ struct HypCompare : public std::binary_function<const TranslationHypothesis*, co
     {   
         return x->score() >= y->score();
     }
+};
+
+class DecodeStats {
+  public:
+    //statistics
+    unsigned int discarded;
+    unsigned int expanded; 
+    unsigned int pruned;
+    std::map<int,int> stacksizes;
+    std::map<int,int> gappystacksizes;
+            
+    std::map<int,int> sourcengramusage;
+    std::map<int,int> sourceskipgramusage;
+    std::map<int,int> targetngramusage;
+    std::map<int,int> targetskipgramusage;
+    std::vector<int> steps;
+     
+    DecodeStats() { reset(); } 
+    void reset() {
+
+        discarded = 0;
+        expanded = 0; 
+        pruned = 0;
+    
+        sourcengramusage.clear();
+        sourceskipgramusage.clear();
+        targetngramusage.clear();
+        targetskipgramusage.clear();
+        stacksizes.clear();
+        gappystacksizes.clear();
+        steps.clear();
+    }
+
+    void output();
+    
+    void add(DecodeStats& other) {
+        for (std::map<int,int>::iterator iter = other.sourcengramusage.begin(); iter != other.sourcengramusage.end(); iter++) sourcengramusage[iter->first] += iter->second; 
+        for (std::map<int,int>::iterator iter = other.sourceskipgramusage.begin(); iter != other.sourceskipgramusage.end(); iter++) sourceskipgramusage[iter->first] += iter->second;
+        for (std::map<int,int>::iterator iter = other.targetngramusage.begin(); iter != other.targetngramusage.end(); iter++) targetngramusage[iter->first] += iter->second; 
+        for (std::map<int,int>::iterator iter = other.targetskipgramusage.begin(); iter != other.targetskipgramusage.end(); iter++) targetskipgramusage[iter->first] += iter->second; 
+         
+        discarded += other.discarded;
+        expanded += other.expanded;
+        pruned += other.pruned;
+    } 
+
 };
 
 class StackDecoder;
@@ -113,6 +161,9 @@ class StackDecoder {
         ClassDecoder * sourceclassdecoder;
         ClassDecoder * targetclassdecoder;
         LanguageModel * lm;    
+        bool globalstats;
+        
+        
         
         std::vector<double> tweights; //translation model weights
         double dweight; //distortion model weight
@@ -125,7 +176,7 @@ class StackDecoder {
         std::vector<Stack> stacks;
         std::vector<Stack> gappystacks;
                 
-        StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder *, ClassDecoder *);
+        StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder *, ClassDecoder *, bool globalstats = false);
         ~StackDecoder();
         
         TranslationHypothesis * decodestack(Stack & stack); //returns fallback hypothesis if dead, NULL otherwise
@@ -136,6 +187,9 @@ class StackDecoder {
         unsigned int prune(int stackindex);    
         
         void computefuturecost();      
+
+        DecodeStats stats;
+
 
 };
 
