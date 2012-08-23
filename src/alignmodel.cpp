@@ -2739,7 +2739,7 @@ TranslationTable::TranslationTable(const string & filename, bool logprobs, bool 
 		    for (int i = 0; i < scores; i++) {
                 double p;
 		        f.read((char*) &p, sizeof(double));
-		        if (p > 0) p = log(p); //base e
+		        if ((p > 0) && (logprobs)) p = log(p); //base e
 		        
 		        if ((allowskipgrams) || ((!sourceisskipgram) && (!targetisskipgram))) {  
            		    if ((sourcegram == NULL) || (targetgram == NULL)) {
@@ -2754,7 +2754,7 @@ TranslationTable::TranslationTable(const string & filename, bool logprobs, bool 
     f.close();
 }
 
-TranslationTable::TranslationTable(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool DEBUG) {
+TranslationTable::TranslationTable(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs, bool DEBUG) {
     //load from moses-style phrasetable file
     this->DEBUG = DEBUG;
 	unsigned char check;
@@ -2785,12 +2785,14 @@ TranslationTable::TranslationTable(const std::string & filename, ClassEncoder * 
                 mode++;
             } else if ((mode == 2) && (line[i] == ' ')) {
                 double score = atof(line.substr(begin, i - begin).c_str());
+                if ((score > 0) && (logprobs)) score = log(score); //base e
                 scores.push_back(score);
                 begin = i + 1;
             }
         }
         if ((mode == 2) && (begin < line.size())) {
             double score = atof(line.substr(begin, line.size() - begin).c_str());
+            if ((score > 0) && (logprobs)) score = log(score); //base e
             scores.push_back(score);            
         }
         if ((!source.empty()) && (!target.empty()) && (!scores.empty())) {

@@ -97,7 +97,7 @@ class TranslationTable: public ModelQuerierBase {
     TranslationTable(const std::string & s2tfilename, const std::string & t2sfilename, const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0, bool DEBUG = false); //create on the basis of two alignment models, will generate two scores: p(t|s) and p(s|t)
     
     TranslationTable(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0, bool DEBUG = false); //create on the basis of two already loaded alignment models, will generate two scores: p(t|s) and p(s|t)
-    TranslationTable(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool DEBUG); //load from Moses text file
+    TranslationTable(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs= true, bool DEBUG = false); //load from Moses text file
 
     
     const EncAnyGram * getsourcekey(const EncAnyGram* key);

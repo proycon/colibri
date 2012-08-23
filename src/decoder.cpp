@@ -1470,9 +1470,14 @@ int main( int argc, char *argv[] ) {
     cerr << "   loaded " << lm.size() << " n-grams, order=" << lm.getorder() << endl;
     cerr << "Translation table:    " << transtablefile << endl;
     
-    //TODO: Moses format
-    TranslationTable transtable = TranslationTable(transtablefile, true, DOSKIPGRAMS);
-    cerr << "   loaded translations for " << transtable.size() << " patterns" << endl;
+    TranslationTable * transtable;
+    if (MOSESFORMAT) {
+        transtable = new TranslationTable(transtablefile, true, DOSKIPGRAMS);
+    } else {
+        transtable = new TranslationTable(transtablefile, &sourceclassencoder, &targetclassencoder);
+    }
+     
+    cerr << "   loaded translations for " << transtable->size() << " patterns" << endl;
         
     const int firstunknownclass_source = sourceclassencoder.gethighestclass()+1;    
     const int firstunknownclass_target = targetclassencoder.gethighestclass()+1;
@@ -1489,9 +1494,9 @@ int main( int argc, char *argv[] ) {
             size = sourceclassencoder.encodestring(input, buffer, true, true) - 1; //weird patch: - 1  to get n() right later               
             const EncData * const inputdata = new EncData(buffer,size);
             if (debug >= 1) cerr << "Processing unknown words" << endl; 
-            addunknownwords(transtable, lm, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
+            addunknownwords(*transtable, lm, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
             if (debug >= 1) cerr << "Setting up decoder" << endl;
-            StackDecoder * decoder = new StackDecoder(*inputdata, &transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder, (bool) GLOBALSTATS);
+            StackDecoder * decoder = new StackDecoder(*inputdata, transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder, (bool) GLOBALSTATS);
             if (debug >= 1) cerr << "Decoding..." << endl;
             TranslationHypothesis * solution = decoder->decode();                    
             if (solution != NULL) {
@@ -1560,4 +1565,6 @@ int main( int argc, char *argv[] ) {
         overallstats.output();
         cerr << endl; 
     }
+    
+    delete transtable;
 }
