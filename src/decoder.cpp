@@ -195,12 +195,12 @@ void StackDecoder::computefuturecost() {
                     futurecost[span] = sourcefragments_costbyspan[span];
                 }
                 if (!found) {
-                    if (length == 1){                       
+                    /*if (length == 1){                       
                         cerr << "INTERNAL ERROR: No sourcefragment covers " << span.first << ":" << span.second << " ! Unable to compute future cost!" << endl;
                         exit(6);
-                    } else {
+                    } else {*/
                         futurecost[span] = -INFINITY;
-                    }
+                    /*}*/
                 }
                 for (int l = 1; l < length; l++) {
                     double spanscore = futurecost[make_pair((int) start,(int) l)] + futurecost[make_pair((int) start+l,(int) length - l)];
