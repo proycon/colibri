@@ -2810,10 +2810,10 @@ TranslationTable::TranslationTable(const std::string & filename, ClassEncoder * 
             EncAnyGram * targetgram = targetencoder->input2anygram(target,true,true);
             if (targetgram->isskipgram()) {
                 EncSkipGram skipgram = *((EncSkipGram *) targetgram);
-                if (!gettargetkey(sourcegram)) targetskipgrams.insert(skipgram);            	
+                if (!gettargetkey(targetgram)) targetskipgrams.insert(skipgram);            	
             } else {
                 EncNGram ngram = *((EncNGram *) targetgram);
-                if (!gettargetkey(sourcegram)) targetngrams.insert(ngram);
+                if (!gettargetkey(targetgram)) targetngrams.insert(ngram);
             }
             const EncAnyGram * targetgramkey = gettargetkey(targetgram);            
             
