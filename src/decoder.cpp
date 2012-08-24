@@ -1472,9 +1472,9 @@ int main( int argc, char *argv[] ) {
     
     TranslationTable * transtable;
     if (MOSESFORMAT) {
-        transtable = new TranslationTable(transtablefile, true, DOSKIPGRAMS);
-    } else {
         transtable = new TranslationTable(transtablefile, &sourceclassencoder, &targetclassencoder);
+    } else {
+        transtable = new TranslationTable(transtablefile, true, DOSKIPGRAMS);        
     }
      
     cerr << "   loaded translations for " << transtable->size() << " patterns" << endl;
