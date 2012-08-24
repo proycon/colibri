@@ -499,7 +499,7 @@ int Stack::prune() {
     int pruned = 0;
     if ((prunethreshold != 1) && (prunethreshold != 0)) {
         //pruning based on prunethreshold
-        double cutoff = bestscore() / prunethreshold;
+        double cutoff = bestscore() + log(prunethreshold);
         for (list<TranslationHypothesis*>::iterator iter = contents.begin(); iter != contents.end(); iter++) {
             TranslationHypothesis*  h = *iter;
             if (h->score() < cutoff) {
