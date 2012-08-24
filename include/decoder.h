@@ -85,9 +85,12 @@ class DecodeStats {
     unsigned int discarded;
     unsigned int expanded; 
     unsigned int pruned;
+    unsigned int gapresolutions;
+    
     std::map<int,int> stacksizes;
     std::map<int,int> gappystacksizes;
-            
+
+
     std::map<int,int> sourcengramusage;
     std::map<int,int> sourceskipgramusage;
     std::map<int,int> targetngramusage;
@@ -100,6 +103,7 @@ class DecodeStats {
         discarded = 0;
         expanded = 0; 
         pruned = 0;
+        gapresolutions = 0;
     
         sourcengramusage.clear();
         sourceskipgramusage.clear();
@@ -121,6 +125,7 @@ class DecodeStats {
         discarded += other.discarded;
         expanded += other.expanded;
         pruned += other.pruned;
+        gapresolutions += other.gapresolutions;
     } 
 
 };

@@ -994,6 +994,7 @@ unsigned int TranslationHypothesis::expand() {
                     } else {
                         if (decoder->DEBUG >= 2) cerr << "\t    Adding to gapless stack " << cov;
                         accepted = decoder->stacks[cov].add(newhypo);
+                        if (hasgaps()) decoder->stats.gapresolutions++;
                     }
                     if (decoder->globalstats && accepted) {
                         newhypo->stats();
@@ -1528,6 +1529,7 @@ int main( int argc, char *argv[] ) {
                 cerr << "STATS:\tTotal expansions: " << decoder->stats.expanded << endl;
                 cerr << "       \tof which rejected: " << decoder->stats.discarded << endl;
                 cerr << "       \tof which pruned: " << decoder->stats.pruned << endl;
+                cerr << "       \tof which gapresolutions: " << decoder->stats.gapresolutions << endl;
                 cerr << "SCORE=" << solution->score() << endl;                
                 cerr << "DONE. OUTPUT:" << endl;
                 cout << s.decode(targetclassdecoder) << endl;
