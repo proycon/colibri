@@ -338,7 +338,6 @@ class MTWrapper(object):
 
     def findpath(self, name, basepath = ''):                        
         if not name.strip():
-            print >>sys.stderr, yellow("Warning: Did not find " + name)
             return ""
         if os.path.exists(name):
             return name
