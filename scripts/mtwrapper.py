@@ -181,8 +181,8 @@ class MTWrapper(object):
             ('EXEC_PERL', 'perl','Path to perl binary'),
             ('EXEC_JAVA', 'java','Path to java binary'),
             ('EXEC_MOSES', 'moses','Path to Moses binary'),            
-            ('EXEC_MOSES_GIZA2BAL', 'scripts/training/symal/giza2bal.pl', ''),
-            ('EXEC_MOSES_SYMAL', 'scripts/training/symal/symal', ''),
+            ('EXEC_MOSES_GIZA2BAL', 'symal/giza2bal.pl', ''),
+            ('EXEC_MOSES_SYMAL', 'symal/symal', ''),
             ('EXEC_MOSES_WORDTRANSTABLE','scripts/moses-lexicaltranslationtable.py',''),
             ('EXEC_MOSES_PHRASEEXTRACT','scripts/training/phrase-extract/extract',''),
             ('EXEC_MOSES_PHRASEEXTRACT_CONSOLIDATE','scripts/training/phrase-extract/consolidate',''),
@@ -345,6 +345,9 @@ class MTWrapper(object):
             if os.path.exists(path + '/' + name) and not os.path.isdir(path + '/' + name):
                 self.log("Found " + name + " in " + path,green)
                 return path + '/' + name
+            elif os.path.exists(path + '/' + os.path.basename(name) ) and not os.path.isdir(path + '/' + os.path.basename(name) ):    
+                self.log("Found " + os.path.basename(name) + " in " + path,green)
+                return path + '/' + os.path.basename(name)                
         if basepath and os.path.exists(basepath + '/' + name): 
             self.log("Found " + name + " in " + basepath,green)
             return basepath + '/' + name        
