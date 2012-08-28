@@ -349,7 +349,7 @@ class MTWrapper(object):
         if basepath and os.path.exists(basepath + '/' + name): 
             self.log("Found " + name + " in " + basepath,green)
             return basepath + '/' + name        
-        print >>sys.stderr, yellow("Warning: Did not find " + name)
+        print >>sys.stderr, yellow("Warning: Did not find " + name + ' ('+ basepath+')' )
         return ""
 
     def check_common(self):
