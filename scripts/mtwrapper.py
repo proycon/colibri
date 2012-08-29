@@ -1165,11 +1165,15 @@ class MTWrapper(object):
         matplotlib.pyplot.title('Phrase table size for ' + title)
         matplotlib.pyplot.xticks(xlocations2+width/2., names_phrasetable)# size='small')
         fig.autofmt_xdate()
-        matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in phrasetablesize)),100000))
-        matplotlib.pyplot.legend( (p_count[0],p_uniquecount[0]), ('Count', 'Unique') )
-        autolabel(p_count)
-        fig.savefig(self.WORKDIR + '/batchreport-phrasetable.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
+        try:        
+            matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in phrasetablesize)),100000))
+            matplotlib.pyplot.legend( (p_count[0],p_uniquecount[0]), ('Count', 'Unique') )
+            autolabel(p_count)
+            fig.savefig(self.WORKDIR + '/batchreport-phrasetable.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)
+        except:
+            self.log("Error during plotting of phrasetable size",red)
         matplotlib.pyplot.clf()
+            
 
                 
 
