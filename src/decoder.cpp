@@ -550,7 +550,11 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
             } 
         } else {
             vector<pair<int, int> > parts;
-            (*((const EncSkipGram *) targetgram)).getparts(parts);
+            (*((const EncSkipGram *) h->targetgram)).getparts(parts);
+            /*if (decoder->DEBUG >= 4) {
+                    (*((const EncSkipGram *) h->targetgram)).out();
+                    cerr << endl;
+            }*/
             for (vector<pair<int, int> >::iterator iter = parts.begin(); iter != parts.end(); iter++) {
                 if (decoder->DEBUG >= 4) cerr << "DEBUG: part: " << iter->first << ":" << iter->second << endl;
                 for (int i = h->targetoffset + iter->first; i < h->targetoffset + iter->first + iter->second; i++) {

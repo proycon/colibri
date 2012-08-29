@@ -154,6 +154,32 @@ int main( int argc, char *argv[] ) {
 	for (vector<pair<int,int >>::iterator iter2 = p.begin(); iter2 != p.end(); iter2++) {
         cout << iter2->first << ':' << iter2->second << endl; 
 	}	
+	cerr << "----------------------------------------------------" << endl;
+	string querystring6 = "be {*1*} not";
+	EncSkipGram skipgram6 = encoder.input2skipgram(querystring6, true);
+	cout << skipgram6.decode(classdecoder) << endl;
+	skipgram6.out();
+	
+	cerr << "Parts: " << endl;
+    parts2.clear();
+    skipgram6.parts(parts2);
+    for (vector<EncNGram*>::iterator iter2 = parts2.begin(); iter2 != parts2.end(); iter2++) {                
+        const EncAnyGram * subngram = *iter2;
+    	cout << "'" << subngram->decode(classdecoder) << "'" << endl;
+    }    	 
+	cerr << "getgaps: " << endl;
+	vector<pair<int,int> > gaps6;
+	skipgram6.getgaps(gaps6);
+	for (vector<pair<int,int >>::iterator iter2 = gaps6.begin(); iter2 != gaps6.end(); iter2++) {
+	    cout << iter2->first << ':' << iter2->second << endl; 
+	}
+	cerr << "getparts: " << endl;
+	vector<pair<int,int> > p6;
+	skipgram6.getparts(p6);
+	for (vector<pair<int,int >>::iterator iter2 = p6.begin(); iter2 != p6.end(); iter2++) {
+        cout << iter2->first << ':' << iter2->second << endl; 
+	}	
+
 	
  		  	
 }
