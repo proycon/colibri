@@ -130,7 +130,30 @@ int main( int argc, char *argv[] ) {
 	cerr << "N: " << (int) rengram.n() << endl;
 	cerr << "Size: " << (int) rengram.size() << endl;
 	 
-	 
+	cerr << "----------------------------------------------------" << endl;
+	string querystring5 = "be {*1*} not {*2*} be";
+	EncSkipGram skipgram5 = encoder.input2skipgram(querystring5, true);
+	cout << skipgram5.decode(classdecoder) << endl;
+	
+	cerr << "Parts: " << endl;
+    parts2.clear();
+    skipgram5.parts(parts2);
+    for (vector<EncNGram*>::iterator iter2 = parts2.begin(); iter2 != parts2.end(); iter2++) {                
+        const EncAnyGram * subngram = *iter2;
+    	cout << "'" << subngram->decode(classdecoder) << "'" << endl;
+    }    	 
+	cerr << "getgaps: " << endl;
+	vector<pair<int,int> > gaps;
+	skipgram5.getgaps(gaps);
+	for (vector<pair<int,int >>::iterator iter2 = gaps.begin(); iter2 != gaps.end(); iter2++) {
+	    cout << iter2->first << ':' << iter2->second << endl; 
+	}
+	cerr << "getparts: " << endl;
+	vector<pair<int,int> > p;
+	skipgram5.getparts(p);
+	for (vector<pair<int,int >>::iterator iter2 = p.begin(); iter2 != p.end(); iter2++) {
+        cout << iter2->first << ':' << iter2->second << endl; 
+	}	
 	
  		  	
 }

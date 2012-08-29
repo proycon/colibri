@@ -657,15 +657,17 @@ void EncSkipGram::getgaps(std::vector<std::pair<int,int> > & gaps) const {
         //cerr << (int) data[i] << ':' << prevnull << ':' << skipcount << endl;
         if (data[i] == 0) {
             if (prevnull) {                  
-                gaps.push_back(pair<int,int>( pos -1 , skipsize[skipnum] ) );
+                gaps.push_back(pair<int,int>( pos , skipsize[skipnum] ) );
                 pos += skipsize[skipnum];
                 skipnum++;              
+            } else {
+                pos++;
             }
-            prevnull = true;
+            prevnull = true;        
         } else {
-            prevnull = false;
+            prevnull = false;            
         }
-        pos++;        
+        
     }  
 }
 
@@ -676,7 +678,7 @@ void EncSkipGram::getparts(std::vector<std::pair<int,int> > & p) const {
     int beginpart = 0;
     for (vector<pair<int,int> >::iterator iter = gaps.begin(); iter != gaps.end(); iter++) {
         if (iter->first - beginpart > 0) {
-            p.push_back(pair<int,int>(beginpart, iter->first - beginpart) );
+            p.push_back(pair<int,int>(beginpart, iter->first - beginpart  ) );
             beginpart = iter->first + iter->second;
         }        
     } 
