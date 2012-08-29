@@ -506,7 +506,7 @@ int Stack::prune() {
                 pruned++;
                 iter = contents.erase(iter);
                 if (h->deletable()) {
-                    if (decoder->DEBUG) {
+                    if (decoder->DEBUG == 9) {
                         cerr << "DEBUG: SCORE EXCEEDS CUTOFF, PRUNING BY DELETING " << (size_t) h << endl;                    
                         h->cleanup();
                     } else {
