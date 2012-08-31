@@ -67,7 +67,8 @@ class EncAnyGram {
      
      //virtual bool is_supergram() const; //TODO?
      
-    virtual bool unknown(); //does this anygram have an unknown class in it? 
+    virtual bool unknown(); //does this anygram have an unknown class in it?
+    virtual bool variablewidth() const { return false; } 
 };
 
 class EncNullGram: public EncAnyGram {

@@ -902,7 +902,7 @@ int TranslationHypothesis::fitsgap(const EncAnyGram * candidate, const int offse
     int i = 0;
     for (vector<pair<unsigned char, unsigned char> >::iterator iter = targetgaps.begin(); iter != targetgaps.end(); iter++) {
         if (i >= offset) { //offset is gap index (for skipping gaps), NOT begin offset        
-            if (candidate->n() <= iter->second) {
+            if ((candidate->variablewidth()) || (candidate->n() <= iter->second)) {
                 return iter->first;
             }
         }
