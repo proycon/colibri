@@ -499,7 +499,11 @@ std::string EncSkipGram::decode(ClassDecoder& classdecoder) const {
         if ((data[i] == 0) && (l > 0)) {            
             if ((i > 0) && (data[i-1] == 0)) {
                 char chr[2];
-                chr[0] = 48 + skipsize[skipnum];
+                if (skipsize[skipnum] == 0) {
+                    chr[0] = 'V';
+                } else {
+                    chr[0] = 48 + skipsize[skipnum];
+                }
                 chr[1] = '\0';                
                 skipnum++;
                 result += std::string("{*") + std::string(chr) + std::string("*} ");                
@@ -578,7 +582,6 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
 
 EncNGram * EncSkipGram::gettoken(int index) const {
     const unsigned char unknownclass = 2;
-
     bool prevnull = false;
     int skipnum = 0;
     int cursor = 0;
@@ -591,6 +594,7 @@ EncNGram * EncSkipGram::gettoken(int index) const {
                  return new EncNGram(data + begin,i-begin);                
             }        
             if (prevnull) {
+                if (skipsize[skipnum] == 0) throw Variablewidthexception();
                 for (int j = 0; j < skipsize[skipnum]; j++) {                    
                     if (cursor == index) return new EncNGram(&unknownclass,1); 
                     cursor++;
@@ -642,6 +646,7 @@ void EncSkipGram::mask(std::vector<bool> & container) const { //returns a boolea
         //cerr << (int) data[i] << ':' << prevnull << ':' << skipcount << endl;
         if (data[i] == 0) {
             if (prevnull) {       
+                if (skipsize[skipnum] == 0) throw Variablewidthexception();
                 for (int j = 0; j < skipsize[skipnum]; j++) {
                     container.push_back(false);
                 }           
