@@ -11,7 +11,7 @@
 #include <set>
 #include <unordered_set>
 #include <iomanip> // contains setprecision()
-
+#include <exception>
 
 const char MAXSKIPS = 4; //Maximum number of skips - THESE NUMBERS CAN NOT BE CHANGED WITHOUT ALSO CHANGING THE SkipConf IMPLEMENTATION!
 const char MAXSKIPSIZE = 16; //Maximum length of each skip   - THESE NUMBERS CAN NOT BE CHANGED WITHOUT ALSO CHANGING THE SkipConf IMPLEMENTATION!
@@ -157,6 +157,7 @@ class EncSkipGram: public EncAnyGram {
       
       EncSkipGram extractskipcontent(EncNGram & instance) const;
       
+      bool variablewidth() const;
       
       int parts(std::vector<EncNGram*> & container) const; //returns all consecutive parts
       void mask( std::vector<bool> & container) const; //returns a boolean mask of the skipgram (0 = gap(encapsulation) , 1 = skipgram coverage)
@@ -196,6 +197,13 @@ class EncData {
     
     std::string decode(ClassDecoder& classdecoder) const;    
     bool out() const;
+};
+
+class Variablewidthexception: public std::exception {
+  virtual const char* what() const throw()
+  {
+    return "A fixed-width-only method was invoked on a variable-width skipgram";
+  }
 };
 
 

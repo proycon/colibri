@@ -436,6 +436,13 @@ bool EncSkipGram::operator!=(const EncSkipGram &other) const {
     return !(*this == other);
 }
 
+bool EncSkipGram::variablewidth() const {
+    for (int i = 0; i < skipcount; i++) {
+        if (skipsize[i] == 0) return true;
+    }
+    return false;
+}
+
 const char EncSkipGram::n() const {    
     char count = 0;
     bool item = (data[0] != 0);
@@ -449,6 +456,7 @@ const char EncSkipGram::n() const {
     }    
     if (item) count++;
     for (int i = 0; i < skipcount; i++) {
+        if (skipsize[i] ==0) throw Variablewidthexception();
         count += skipsize[i]; //minus two because each skip already counted for two in the previous loop
     }
     return count;    
