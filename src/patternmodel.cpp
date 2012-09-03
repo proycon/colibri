@@ -3601,10 +3601,11 @@ void GraphRelations::readrelations(std::istream * in, const EncAnyGram * anygram
         if ((!ignore) && (secondpass) && (anygram != NULL) && (relationhash != NULL)) {
             const EncAnyGram * key = getkey(anygram);
         	const EncAnyGram * key2 = getkey((EncAnyGram*) &ngram);
-        	if (!key2) {
-        		cerr << "INTERNAL WARNING: Ngram not found ";
-        		ngram.out();
-        		cerr << endl;        	
+        	if (!key2) {        	    
+        	    //no warning, this is common if some types are ignored
+        		//cerr << "INTERNAL WARNING: Ngram not found ";
+        		//ngram.out();
+        		//cerr << endl;        	
         	} else if (key) {
         		(*relationhash)[key].insert(key2);
 			}        		
@@ -3615,9 +3616,10 @@ void GraphRelations::readrelations(std::istream * in, const EncAnyGram * anygram
             const EncAnyGram * key = getkey(anygram);
         	const EncAnyGram * key2 = getkey((EncAnyGram*) &skipgram);
         	if (!key2) {
-        		cerr << "INTERNAL WARNING: Ngram not found ";
-        		skipgram.out();
-        		cerr << endl;        	
+        	    //no warning, this is common if some types are ignored
+        		//cerr << "INTERNAL WARNING: Ngram not found ";
+        		//skipgram.out();
+        		//cerr << endl;        	
         	} else if (key) {
         		(*relationhash)[key].insert(key2);
 			} 
