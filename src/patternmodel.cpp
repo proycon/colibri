@@ -3167,6 +3167,9 @@ SelectivePatternModel::SelectivePatternModel(const std::string & filename,  cons
 	this->alignconstrain = alignconstrain;
 	this->alignconstrainsource = alignconstrainsource;
 	
+    if (((XCOUNTRATIOTHRESHOLD > 0) || (XCOUNTTHRESHOLD > 0)) && (!DOXCOUNT)) {
+        cerr << "WARNING: Exclusive count not being loaded, but threshold parameters set!" << endl;
+    }
 
 	totaltokens = 0;
 	ignoredtypes = 0;
