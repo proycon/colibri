@@ -348,7 +348,7 @@ int main( int argc, char *argv[] ) {
 	    GraphFilter filter;
         filter.DOPARENTS = (graphweightfactor > 0);
         filter.DOCHILDREN = DOCHILDREN;
-        filter.DOXCOUNT = DOXCOUNT;
+        filter.DOXCOUNT = (DOXCOUNT || (XCOUNTRATIOTHRESHOLD > 0) || (XCOUNTTHRESHOLD > 0));
         filter.DOTEMPLATES = DOTEMPLATES;
         filter.DOINSTANCES = DOINSTANCES;
         filter.DOSKIPUSAGE = DOSKIPUSAGE;
@@ -551,7 +551,7 @@ int main( int argc, char *argv[] ) {
 	        GraphFilter filter;
             filter.DOPARENTS = (graphweightfactor > 0);
             filter.DOCHILDREN = DOCHILDREN;
-            filter.DOXCOUNT = DOXCOUNT;
+            filter.DOXCOUNT = (DOXCOUNT || (XCOUNTRATIOTHRESHOLD > 0) || (XCOUNTTHRESHOLD > 0));
             filter.DOTEMPLATES = DOTEMPLATES;
             filter.DOINSTANCES = DOINSTANCES;
             filter.DOSKIPUSAGE = DOSKIPUSAGE;

@@ -90,6 +90,7 @@ int main( int argc, char *argv[] ) {
 	
 	cerr << "Loading model " << modelfile << endl;
 	GraphFilter filter;
+	filter.DOXCOUNT = ((XCOUNTRATIOTHRESHOLD > 0) || (XCOUNTTHRESHOLD > 0));
     SelectivePatternModel model = SelectivePatternModel(modelfile, filter,false, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS, MINLENGTH, MAXLENGTH,NULL, false ,DEBUG);
     cerr << "  Loaded " << model.types() << " types, " << model.tokens() << " tokens" << endl;
     cerr << "  Ignored " << model.ignoredtypes << " types, " << model.ignoredoccurrences << " occurrences due to set thresholds" << endl;
