@@ -13,7 +13,7 @@ unsigned char EOSCLASS = 4;
 
 const EncNGram UNKNOWNUNIGRAM = EncNGram(&UNKNOWNCLASS,1);
 
-StackDecoder::StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool globalstats) {
+StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool globalstats) {
         this->input = input;
         this->inputlength = input.length();
         this->translationtable = translationtable;
@@ -1248,7 +1248,7 @@ void addsentencemarkers(ClassDecoder & targetclassdecoder, ClassEncoder & target
     targetclassencoder.add("</s>", EOSCLASS);
 }
 
-int addunknownwords( TranslationTable & ttable, LanguageModel & lm, ClassEncoder & sourceclassencoder, ClassDecoder & sourceclassdecoder,  ClassEncoder & targetclassencoder, ClassDecoder & targetclassdecoder, int tweights_size) {
+int addunknownwords( AlignmentModel & ttable, LanguageModel & lm, ClassEncoder & sourceclassencoder, ClassDecoder & sourceclassdecoder,  ClassEncoder & targetclassencoder, ClassDecoder & targetclassdecoder, int tweights_size) {
     int added = 0;
     if (sourceclassencoder.gethighestclass() > sourceclassdecoder.gethighestclass()) {
         for (unsigned int i = sourceclassdecoder.gethighestclass() + 1; i <= sourceclassencoder.gethighestclass(); i++) {
@@ -1476,11 +1476,11 @@ int main( int argc, char *argv[] ) {
     cerr << "   loaded " << lm.size() << " n-grams, order=" << lm.getorder() << endl;
     cerr << "Translation table:    " << transtablefile << endl;
     
-    TranslationTable * transtable;
+    AlignmentModel * transtable;
     if (MOSESFORMAT) {
-        transtable = new TranslationTable(transtablefile, &sourceclassencoder, &targetclassencoder);
+        transtable = new AlignmentModel(transtablefile, &sourceclassencoder, &targetclassencoder);
     } else {
-        transtable = new TranslationTable(transtablefile, true, DOSKIPGRAMS);        
+        transtable = new AlignmentModel(transtablefile, true, DOSKIPGRAMS);        
     }
      
     cerr << "   loaded translations for " << transtable->size() << " patterns" << endl;

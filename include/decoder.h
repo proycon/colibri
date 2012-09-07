@@ -162,7 +162,7 @@ class StackDecoder {
         std::map<std::pair<int, int>, double> futurecost; //(start, end) => cost    
         EncData input;
         unsigned int inputlength;
-        TranslationTable * translationtable;
+        AlignmentModel * translationtable;
         ClassDecoder * sourceclassdecoder;
         ClassDecoder * targetclassdecoder;
         LanguageModel * lm;    
@@ -181,7 +181,7 @@ class StackDecoder {
         std::vector<Stack> stacks;
         std::vector<Stack> gappystacks;
                 
-        StackDecoder(const EncData & input, TranslationTable * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder *, ClassDecoder *, bool globalstats = false);
+        StackDecoder(const EncData & input, AlignmentModel * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder *, ClassDecoder *, bool globalstats = false);
         ~StackDecoder();
         
         TranslationHypothesis * decodestack(Stack & stack); //returns fallback hypothesis if dead, NULL otherwise
