@@ -142,7 +142,7 @@ class EncSkipGram: public EncAnyGram {
       			std::cerr << "ERROR: Request for size of gap " << i << " exceed maximum amount of gaps" << std::endl;
       			exit(14);
       		}
-      		return skipsize[i]; 
+      		return skipsize[(int) i]; 
             //return skipconf.skipsize(); 
       }
       double gapratio() const {

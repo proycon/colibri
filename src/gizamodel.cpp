@@ -77,7 +77,7 @@ void GizaSentenceAlignment::parsesource(const string & line, ClassEncoder * clas
    
   int begin = 0;
   unsigned char sourceindex = 0;
-  for (int i = 0; i < line.size(); i++) {
+  for (unsigned int i = 0; i < line.size(); i++) {
       if ((line[i] == ' ') || (i == line.size() - 1)) {
       	  int offset = 0;      	        	  
       	  if (i == line.size() - 1) offset = 1;

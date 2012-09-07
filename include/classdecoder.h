@@ -9,8 +9,8 @@
 class ClassDecoder {
     private:
      std::unordered_map<unsigned int,std::string> classes;
-     int unknownclass;
-     int highestclass;
+     unsigned int unknownclass;
+     unsigned int highestclass;
     public:
     
     ClassDecoder(const std::string & filename);
@@ -29,7 +29,7 @@ class ClassDecoder {
     }
     
     void add( unsigned int, std::string); 
-    int gethighestclass() { return highestclass; }
+    unsigned int gethighestclass() { return highestclass; }
     bool hasclass(unsigned int key) const { return (classes.count(key) > 0); } 
 };
 

@@ -56,7 +56,8 @@ ClassEncoder::ClassEncoder(const string & filename) {
         while (IN.good()) {
           string line;
           getline(IN, line);              
-          for (int i = 0; i < line.size(); i++) {
+          const int s = line.size();
+          for (int i = 0; i < s; i++) {
               if (line[i] == '\t') {
                   const string cls_s = string(line.begin(), line.begin() + i);
                   unsigned int cls = (unsigned int) atoi(cls_s.c_str());
@@ -65,7 +66,7 @@ ClassEncoder::ClassEncoder(const string & filename) {
                   if (cls == 2) {
                     unknownclass = 0;
                   }
-                  if (cls > highestclass) highestclass = cls;
+                  if (cls > (unsigned int) highestclass) highestclass = cls;
                   //cerr << "CLASS=" << cls << " WORD=" << word << endl;
               }
               
@@ -94,10 +95,11 @@ void ClassEncoder::build(const string & filename) {
           string line;
           getline(IN, line);         
           int begin = 0;
-          for (int i = 0; i < line.size(); i++) {
-              if ((line[i] == ' ') || (i == line.size() - 1)) {
+          const int s = line.size();
+          for (int i = 0; i < s; i++) {
+              if ((line[i] == ' ') || (i == s - 1)) {
               	  int offset = 0;
-              	  if (i == line.size() - 1) offset = 1;              	  
+              	  if (i == s - 1) offset = 1;              	  
               	  string word = string(line.begin() + begin, line.begin() + i + offset);              	  
               	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
               	    word = trim(word, " \t\n\r"); //trim whitespace, control characters
@@ -149,8 +151,9 @@ vector<unsigned int> ClassEncoder::encodeseq(const vector<string> & seq) {
 int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer, bool allowunknown, bool autoaddunknown) {
 	  int outputcursor = 0;
       int begin = 0;      
-      for (int i = 0; i < line.length(); i++) {
-      	  if ((line[i] == ' ') || (i == line.length() - 1)) {
+      const int l = line.length();
+      for (int i = 0; i < l; i++) {
+      	  if ((line[i] == ' ') || (i == l - 1)) {
           	  string word;
           	  if (line[i] == ' ') {
           	  	word  = string(line.begin() + begin, line.begin() + i);
@@ -199,8 +202,9 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
 	  int outputcursor = 0;
 	  *skipcount = 0;
       int begin = 0;      
-      for (int i = 0; i < line.length(); i++) {
-      	  if ((line[i] == ' ') || (i == line.length() - 1)) {
+      const int l = line.length();
+      for (int i = 0; i < l; i++) {
+      	  if ((line[i] == ' ') || (i == l - 1)) {
           	  string word;
           	  if (line[i] == ' ') {
           	  	word  = string(line.begin() + begin, line.begin() + i);
@@ -211,23 +215,23 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
           	  if ((word.length() > 0) && (word != "\r") && (word != "\t") && (word != " ")) {
           	    unsigned int cls = 0;
           	    if (word == "{*1*}") { //not very elegant, but gets the job done for now
-          	    	skipconf[(*skipcount)++] = 1; 
+          	    	skipconf[(int) (*skipcount)++] = 1; 
           	    } else if (word == "{*2*}") {
-          	    	skipconf[(*skipcount)++] = 2;
+          	    	skipconf[(int) (*skipcount)++] = 2;
           	    } else if (word == "{*3*}") {
-          	    	skipconf[(*skipcount)++] = 3;
+          	    	skipconf[(int) (*skipcount)++] = 3;
           	    } else if (word == "{*4*}") {
-          	    	skipconf[(*skipcount)++] = 4;
+          	    	skipconf[(int) (*skipcount)++] = 4;
           	    } else if (word == "{*5*}") {
-          	    	skipconf[(*skipcount)++] = 5;
+          	    	skipconf[(int) (*skipcount)++] = 5;
           	    } else if (word == "{*6*}") {
-          	    	skipconf[(*skipcount)++] = 6;
+          	    	skipconf[(int) (*skipcount)++] = 6;
           	    } else if (word == "{*7*}") {
-          	    	skipconf[(*skipcount)++] = 7;
+          	    	skipconf[(int) (*skipcount)++] = 7;
           	    } else if (word == "{*8*}") {
-          	    	skipconf[(*skipcount)++] = 8;
+          	    	skipconf[(int) (*skipcount)++] = 8;
           	    } else if (word == "{*9*}") {
-          	    	skipconf[(*skipcount)++] = 9;
+          	    	skipconf[(int) (*skipcount)++] = 9;
           	    } else if (classes.count(word) == 0) {
           	        if (autoaddunknown) {
                         cls = ++highestclass;
@@ -310,7 +314,6 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
 	unsigned char outputbuffer[65536];
 	int outputsize = 0;
 	unsigned int linenum = 1;
-	bool empty = true;
 	while (IN.good()) {	
       string line = "";
       getline(IN, line);

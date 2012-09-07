@@ -34,9 +34,9 @@ void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthresho
 			        alignmatrix[sourcegram][targetgram][i] = alignmatrix[sourcegram][targetgram][i] * reversemodel->alignmatrix[targetgram][sourcegram][i];			         
 			    } 			 
 				const double p = listproduct(alignmatrix[sourcegram][targetgram]);
-				if ((bestn) && ((p > lowerbound) || (bestq.size() < bestn))) {
+				if ((bestn) && ((p > lowerbound) || (bestq.size() < (size_t) bestn))) {
 		    		orderedinsert(bestq, p);
-		    		while (bestq.size() > bestn) bestq.pop_front();
+		    		while (bestq.size() > (size_t) bestn) bestq.pop_front();
 		    		lowerbound = *bestq.begin();		    			
 		    	}
 			} else {
@@ -105,7 +105,6 @@ unsigned int AlignmentModel::trainCooc(CoocMode mode, const EncAnyGram * sourceg
     unsigned int prunedabs = 0;
     unsigned int prunedprob = 0;
     double totalcooc = 0;
-    double bestcooc = 0;
     uint32_t prevsentencenumber = 0;
 	unordered_set<const EncAnyGram *> targetpatterns;
     //cerr << "Processing new construction" << endl;
@@ -143,9 +142,9 @@ unsigned int AlignmentModel::trainCooc(CoocMode mode, const EncAnyGram * sourceg
 		    	prunedabs++;
 		    }
 		    totalcooc += coocvalue;	
-		    if ((bestn) && ((coocvalue > lowerbound) || (bestq.size() < bestn)))  {
+		    if ((bestn) && ((coocvalue > lowerbound) || (bestq.size() < (size_t) bestn)))  {
 		    	orderedinsert(bestq, coocvalue);		    	
-				while (bestq.size() > bestn) bestq.pop_front();
+				while (bestq.size() > (size_t) bestn) bestq.pop_front();
 				lowerbound = *bestq.begin();
 		    } 		    
 	}
@@ -354,10 +353,9 @@ void AlignmentModel::trainEM(const int MAXROUNDS, const double CONVERGEDTHRESHOL
 				double lowerbound = 0.0;
 				list<double> bestq;
 				for (t_aligntargets::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
-					const EncAnyGram * targetgram = targetiter->first;
-					if ((targetiter->second[0] > lowerbound) || (bestq.size() < bestn)) {
+					if ((targetiter->second[0] > lowerbound) || (bestq.size() < (size_t) bestn)) {
 						orderedinsert(bestq, targetiter->second[0]);
-						while (bestq.size() > bestn) bestq.pop_front();
+						while (bestq.size() > (size_t) bestn) bestq.pop_front();
 						lowerbound = *bestq.begin();
 					}
 				}
@@ -377,16 +375,15 @@ void AlignmentModel::normalize() {
 		//compute sum
 		vector<double> sum;		
 		for (t_aligntargets::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
-			const EncAnyGram * targetgram = targetiter->first;
 			while (sum.size() < targetiter->second.size()) sum.push_back(0); //init
-			for (int i = 0; i < targetiter->second.size(); i++) {
+			for (unsigned int i = 0; i < targetiter->second.size(); i++) {
 			    sum[i] += targetiter->second[i]; 
 			}			
 		}
 		//normalize
 		for (t_aligntargets::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
 			const EncAnyGram * targetgram = targetiter->first;
-			for (int i = 0; i < targetiter->second.size(); i++) {
+			for (unsigned int i = 0; i < targetiter->second.size(); i++) {
 			    alignmatrix[sourcegram][targetgram][i] = alignmatrix[sourcegram][targetgram][i] / sum[i];
 			 } 
 		}
@@ -463,7 +460,7 @@ int AlignmentModel::graphalign(SelectivePatternModel & sourcemodel, SelectivePat
 			//convert the weights from to: -inf -- 0 -- inf  --> 0 -- 1 -- inf , so they can be applied directly
 			
 			const double weight = weightmatrix[sourcegram][targetgram];
-            for (int i = 0; i < alignmatrix[sourcegram][targetgram].size(); i++) {									
+            for (unsigned int i = 0; i < alignmatrix[sourcegram][targetgram].size(); i++) {									
 			    const double a = alignmatrix[sourcegram][targetgram][i];
 			    if (weight < 0) {					 
 				    alignmatrix[sourcegram][targetgram][i] = pow(a, weight+1);
@@ -799,7 +796,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                     const EncAnyGram * besttargetpattern = NULL;
                     int count_t = 0;                           
                     
-                    multiset<uint32_t> * sourcesentenceindex; //used only if coocthreshold > 0                         
+                    multiset<uint32_t> * sourcesentenceindex = NULL; //used only if coocthreshold > 0                         
                     if (coocthreshold > 0) {
                         if (sourcepattern->isskipgram()) {
                             sourcesentenceindex = &sourcemodel->skipgrams[*( (EncSkipGram*) sourcepattern)].sentences;    
@@ -1270,10 +1267,10 @@ void AlignmentModel::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel, 
                                     EncNGram ngram = *((const EncNGram *) copytarget_t2s);
                                     targetngrams.insert(ngram);
                                 }   
-                                for (int i = 0; i < iter2->second.size(); i++) {
+                                for (unsigned int i = 0; i < iter2->second.size(); i++) {
                                     alignmatrix[getsourcekey(copysource_t2s)][gettargetkey(copytarget_t2s)].push_back(iter2->second[0]);
                                 }
-                                for (int i = 0; i < t2smodel.alignmatrix[copytarget_t2s][copysource_t2s].size(); i++) {
+                                for (unsigned int i = 0; i < t2smodel.alignmatrix[copytarget_t2s][copysource_t2s].size(); i++) {
                                     alignmatrix[getsourcekey(copysource_t2s)][gettargetkey(copytarget_t2s)].push_back(t2smodel.alignmatrix[copytarget_t2s][copysource_t2s][i]);
                                 }   
                             }                  
@@ -1294,8 +1291,6 @@ AlignmentModel::AlignmentModel(const string & filename, bool logprobs, bool allo
 
 void AlignmentModel::load(const string & filename, bool logprobs, bool allowskipgrams, const int bestn) {
 	unsigned char check;
-	bool sourceisskipgram = false;
-	bool targetisskipgram = false;
 	
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
@@ -1308,11 +1303,11 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
     uint64_t sourcecount = 0;    
     f.read( (char*) &model_id, sizeof(uint64_t));
     bool multiscore;
-    if ((model_id < ALIGNMENTMODEL) || (model_id > ALIGNMENTMODEL + 99))  {
+    if ((model_id < (unsigned int) ALIGNMENTMODEL) || (model_id > (unsigned int) ALIGNMENTMODEL + 99))  {
         cerr << "File '" << filename << "' is not an alignment model" << endl;
         exit(6);
     }
-    if ((model_id >= ALIGNMENTMODEL) && (model_id <= 101))  { 
+    if ((model_id >= (unsigned int) ALIGNMENTMODEL) && (model_id <= 101))  { 
         multiscore = false; //backward compatibility with old models
     } else {
         multiscore = true;
@@ -1320,7 +1315,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
     f.read( (char*) &sourcecount, sizeof(uint64_t));        
      
     char gapcount;    
-    for (int i = 0; i < sourcecount; i++) {	    
+    for (unsigned int i = 0; i < sourcecount; i++) {	    
 	    if (DEBUG) cerr << "\t@" << i << endl;
         f.read((char*) &check, sizeof(char));
         if (check != 0xff) {
@@ -1354,10 +1349,9 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
         
         f.read( (char*) &targetcount, sizeof(uint64_t));
         if (DEBUG)  cerr << "\t--" << targetcount << ":";
-        const EncAnyGram * besttargetgram = NULL;
         double lowerbound = 0.0;
         list<double> bestq;
-        for (int j = 0; j < targetcount; j++) {
+        for (unsigned int j = 0; j < targetcount; j++) {
         	const EncAnyGram * targetgram = NULL;   
             f.read(&gapcount, sizeof(char));
             bool targetisskipgram = false;	    
@@ -1405,9 +1399,9 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
 		        } else {
 		           p = listproduct(alignmatrix[sourcegram][targetgram]);
 		        }
-		        if ((p > lowerbound) || (bestq.size() < bestn)) {
+		        if ((p > lowerbound) || (bestq.size() < (size_t) bestn)) {
     	    		orderedinsert(bestq, p);
-	    		    while (bestq.size() > bestn) bestq.pop_front();
+	    		    while (bestq.size() > (size_t) bestn) bestq.pop_front();
 	    		    lowerbound = *bestq.begin();		    			
 		        }
 		    }
@@ -1433,7 +1427,6 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
 AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs, bool DEBUG) {
     //load from moses-style phrasetable file
     this->DEBUG = DEBUG;
-	unsigned char check;
 		
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
@@ -1450,7 +1443,7 @@ AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sour
         string target = "";
         vector<double> scores;
         int begin = 0;        
-        for (int i = 0; i < line.size(); i++) {
+        for (unsigned int i = 0; i < line.size(); i++) {
             if (line.substr(i,5) == " ||| ") {
                 if (mode == 0) {
                     source = line.substr(begin, i - begin);
@@ -1466,7 +1459,7 @@ AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sour
                 begin = i + 1;
             }
         }
-        if ((mode == 2) && (begin < line.size())) {
+        if ((mode == 2) && ((size_t) begin < line.size())) {
             double score = atof(line.substr(begin, line.size() - begin).c_str());
             if ((score > 0) && (logprobs)) score = log(score); //base e
             scores.push_back(score);            

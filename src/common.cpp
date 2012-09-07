@@ -48,7 +48,6 @@ double listsum(const vector<double> & l) {
 } 
 
 void orderedinsert(list<double> & l, double value) {
-	size_t index = 0;
 	for (list<double>::iterator iter = l.begin(); iter != l.end(); iter++) {
 		if (value < *iter) {
 			l.insert(iter, value);

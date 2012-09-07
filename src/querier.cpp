@@ -25,7 +25,6 @@ int main( int argc, char *argv[] ) {
     int FREQTHRESHOLD = 0; 
     double XCOUNTTHRESHOLD = 0;
     double XCOUNTRATIOTHRESHOLD = 0;
-    bool DOBIDIRECTIONAL = false;
     int MINLENGTH = 0;
     int MAXLENGTH = 99;
     bool DOSKIPGRAMS = true;

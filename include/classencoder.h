@@ -10,8 +10,8 @@
 class ClassEncoder {
     private:
      std::unordered_map<std::string,unsigned int> classes;
-     int unknownclass;
-     int highestclass;
+     unsigned int unknownclass;
+     unsigned int highestclass;
     public:
     ClassEncoder();
     ClassEncoder(const std::string &); //load an existing classer
@@ -29,7 +29,7 @@ class ClassEncoder {
     
     void add(std::string, unsigned int cls);
     
-    int gethighestclass() { return highestclass; }
+    unsigned int gethighestclass() { return highestclass; }
     
     void save(const std::string & filename);
     

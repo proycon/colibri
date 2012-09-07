@@ -52,7 +52,7 @@ LanguageModel::LanguageModel(const std::string & filename, ClassEncoder & encode
                 string ngramcontent = "";
                 int fields = 0;
                 int begin = 0;
-                for (int i = 0; i  <= line.length(); i++) {
+                for (unsigned int i = 0; i  <= line.length(); i++) {
                     if ((line[i] == '\t') || (line[i] == '\n') || (i == line.length())) {
                         if (fields == 0) {
                             logprob_s = line.substr(begin, i - begin);

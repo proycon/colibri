@@ -62,7 +62,7 @@ void ModelReader::readfile(const string & filename, const bool DEBUG ) {
     
     readheader(&f);
     unsigned char check;    
-    for (int i = 0; i < totaltypes; i++) {           
+    for (unsigned int i = 0; i < totaltypes; i++) {           
         char gapcount;
         if (DEBUG) cerr << "\t@" << i + 1 << '/' << totaltypes;
         f.read((char*) &check, sizeof(char));
@@ -170,8 +170,7 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerierBase::getpatt
                         bool initialskip = false;
                         bool finalskip = false;
                         int cursor = 0;
-                        bool docount = true;    
-                        int oc = 0;             
+                        bool docount = true;                 
 
                         
                     	//Iterate over all gaps in this configuration    
@@ -470,7 +469,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
        int pruned = 0;
        for(unordered_map<EncNGram,NGramData>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
             if (iter->first.n() == n) {
-                if (iter->second.count() < MINTOKENS) {
+                if (iter->second.count() < (unsigned int) MINTOKENS) {
                     pruned++;
                     ngrams.erase(iter->first);                        
                 }
@@ -485,14 +484,14 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
            for(unordered_map<EncSkipGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {     
                if (iter->first.n() == n) {                          
                     bool pruneskipgram = false;
-                    if ((iter->second.count() < MINTOKENS) || ((iter->second.skipcontent.size() < MINSKIPTYPES)))  {
+                    if ((iter->second.count() < (unsigned int) MINTOKENS) || ((iter->second.skipcontent.size() < (unsigned int) MINSKIPTYPES)))  {
                         pruneskipgram = true;
                     } else {                                    
                         int prunedskiptokens = 0;
                         
                         //prune content with insufficient occurrences:                        
                         for(std::unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {
-                            if (iter2->second.count() < MINSKIPTOKENS) {
+                            if (iter2->second.count() < (unsigned int) MINSKIPTOKENS) {
                                 //prune skip
                                 iter->second._count -= iter2->second.count();
                                 prunedskiptokens += iter2->second.count();
@@ -504,7 +503,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
                         if (!skipgramvarietycheck(iter->second, MINSKIPTYPES)) pruneskipgram = true;
 
                         
-                        if ( (prunedskiptokens > 0) && ( (iter->second.skipcontent.size() < MINSKIPTYPES) || (iter->second.count() - prunedskiptokens < MINTOKENS) ) ) { //reevaluate
+                        if ( (prunedskiptokens > 0) && ( (iter->second.skipcontent.size() < (unsigned int) MINSKIPTYPES) || (iter->second.count() - prunedskiptokens < (unsigned int) MINTOKENS) ) ) { //reevaluate
                             pruneskipgram = true;
                             //skiptokencount[n] -= prunedskiptokens;
                         } else {
@@ -640,7 +639,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatte
 void IndexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, bool ignore) {
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
-    for (int j = 0; j < count; j++) {
+    for (unsigned int j = 0; j < count; j++) {
         CorpusReference ref = CorpusReference(f); //read from file
         if (!ignore) ngrams[ngram].refs.insert(ref);
         /*if (DOREVERSEINDEX) {
@@ -675,10 +674,10 @@ void IndexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram &
     }            
     uint32_t skipcontentcount;
     f->read((char*) &skipcontentcount, sizeof(uint32_t));   
-    for (int j = 0; j < skipcontentcount; j++) {                                
+    for (unsigned int j = 0; j < skipcontentcount; j++) {                                
         EncSkipGram skipcontent = EncSkipGram(f);  
         f->read((char*) &count, sizeof(uint32_t)); //read occurrence count                
-        for (int k = 0; k < count; k++) {
+        for (unsigned int k = 0; k < count; k++) {
             CorpusReference ref = CorpusReference(f); //read from file
             if (!ignore) skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
         }        
@@ -693,7 +692,7 @@ void IndexedPatternModel::readfooter(std::istream * f, bool ignore) {
     if (model_id >= INDEXEDPATTERNMODEL+1) {
         uint64_t count;
         f->read( (char*) &count, sizeof(uint64_t));
-        for (int i = 1; i <= count; i++) {
+        for (unsigned int i = 1; i <= count; i++) {
             unsigned char slen;
             f->read((char*) &slen, sizeof(unsigned char));
             if (!ignore) sentencesize.push_back(slen);       
@@ -704,7 +703,7 @@ void IndexedPatternModel::readfooter(std::istream * f, bool ignore) {
 void IndexedPatternModel::writefooter(std::ostream * f) {
    uint64_t count = sentencesize.size() - 1; //minus 0-index dummy
    f->write( (char*) &count, sizeof(uint64_t));
-   for (int i = 1; i <= count; i++) {
+   for (unsigned int i = 1; i <= count; i++) {
         unsigned char slen = sentencesize[i];
         f->write( (char*) &slen, sizeof(unsigned char));
    }    
@@ -860,15 +859,15 @@ void IndexedPatternModel::computestats() {
 
     for (unordered_map<const EncNGram,NGramData >::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
         const EncAnyGram * anygram = &iter->first;
-        ngramtypes[anygram->n()]++;
-        ngramcount[anygram->n()] += iter->second.refs.size();  
+        ngramtypes[(int) anygram->n()]++;
+        ngramcount[(int) anygram->n()] += iter->second.refs.size();  
         totalngramcount += iter->second.refs.size();   
     }
     for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
         const EncAnyGram * anygram = &iter->first;
-        skipgramtypes[anygram->n()]++;
+        skipgramtypes[(int)  anygram->n()]++;
         for(unordered_map<EncSkipGram,NGramData>::iterator iter2 = iter->second.skipcontent.begin(); iter2 != iter->second.skipcontent.end(); iter2++ ) {
-          skipgramcount[anygram->n()] += iter2->second.refs.size();  
+          skipgramcount[(int) anygram->n()] += iter2->second.refs.size();  
           totalskipgramcount += iter2->second.refs.size();                        
         }
     }    
@@ -960,8 +959,6 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, const string & corpu
         
     int totalngramcoverage = 0;
     int totalskipgramcoverage = 0;
-    int totalskipgramencapsulation = 0;
-    int totalskipgramoutside = 0;
     int ngramcoverage[MAXN+1];    
     int skipgramcoverage[MAXN+1];
     int skipgramencapsulation[MAXN+1];
@@ -973,7 +970,7 @@ void IndexedPatternModel::coveragereport(std::ostream *OUT, const string & corpu
     int uncovered = 0;
     int outside = 0; // uncovered + unencapsulated
 
-    for (int sentence = 1; sentence < sentencesize.size(); sentence++) {
+    for (unsigned int sentence = 1; sentence < sentencesize.size(); sentence++) {
         unsigned char slen = sentencesize[sentence];
         //cerr << "SENTENCE=" << sentence << ";SLEN=" << (int) slen << endl;
         
@@ -1252,7 +1249,7 @@ void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
     
        const double freqall = (double) iter->second.count() / occurrences();
        const double freqg = (double) iter->second.count() / totalngramcount;
-       const double freqn = (double) iter->second.count() / ngramcount[iter->first.n()];
+       const double freqn = (double) iter->second.count() / ngramcount[(int) iter->first.n()];
     
        
        const EncNGram ngram = iter->first;
@@ -1272,7 +1269,7 @@ void IndexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
            
             const double freqall = (double) iter->second.count() / occurrences();
             const double freqg = (double) iter->second.count() / totalskipgramcount;
-            const double freqn = (double) iter->second.count() / skipgramcount[iter->first.n()];
+            const double freqn = (double) iter->second.count() / skipgramcount[(int) iter->first.n()];
                           
            const EncSkipGram skipgram = iter->first;                              
            *OUT << (int) skipgram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << skipgram.decode(classdecoder) << '\t' << iter->second.count() << '\t' << covtokens << '\t' << cov << '\t' << freqall << '\t' << freqg << '\t' << freqn;
@@ -1420,7 +1417,7 @@ bool IndexedPatternModel::skipgramvarietycheck(SkipGramData & skipgramdata, int 
         
     //check
     for (map<int,unordered_set<int>>::iterator iter = variety.begin(); iter != variety.end(); iter++) {
-        if (iter->second.size() < mintypecount) return false;
+        if (iter->second.size() < (size_t) mintypecount) return false;
     } 
     return true;
 }
@@ -1633,7 +1630,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
        int pruned = 0;
        for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
             if (iter->first.n() == n) {
-                if (iter->second < MINTOKENS) {
+                if (iter->second < (size_t) MINTOKENS) {
                     pruned++;
                     ngrams.erase(iter->first);                        
                 }
@@ -1647,9 +1644,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
            pruned = 0;
            for(unordered_map<EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {     
                if (iter->first.n() == n) {                          
-                    bool pruneskipgram = false;
-                    if ( (iter->second < MINTOKENS) || (lastskipcontenthash[iter->first] != 1) ) {
-                        pruneskipgram = true;
+                    if ( (iter->second < (size_t) MINTOKENS) || (lastskipcontenthash[iter->first] != 1) ) {
                         //skiptokencount[n] -= iter->second;
                         pruned++;
                         skipgrams.erase(iter->first);
@@ -1722,8 +1717,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, Unindexe
 		vector<pair<const EncAnyGram*, CorpusReference> > patterns = refmodel.getpatterns(line,linesize, true, sentence,1,MAXLENGTH);
 		//cerr << "   " << patterns.size() << " patterns..." << endl;
 		for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = patterns.begin(); iter != patterns.end(); iter++) {
-			const EncAnyGram * anygram = iter->first;			
-			const CorpusReference ref = iter->second;			
+			const EncAnyGram * anygram = iter->first;						
 			if (getkey(anygram) || refmodel.getkey(anygram)) {		
 			    //cerr << "Found pattern" << endl;	
 			    if (anygram->isskipgram()) {
@@ -1741,7 +1735,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, Unindexe
        //prune n-grams
        int pruned = 0;
        for(unordered_map<EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++ ) {
-                if (iter->second < MINTOKENS) {
+                if (iter->second < (unsigned int) MINTOKENS) {
                     pruned++;
                     ngrams.erase(iter->first);                        
                 }
@@ -1753,9 +1747,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, Unindexe
            //prune skipgrams
            pruned = 0;
            for(unordered_map<EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++ ) {                               
-                    bool pruneskipgram = false;
-                    if (iter->second < MINTOKENS) {
-                        pruneskipgram = true;
+                    if (iter->second < (unsigned int) MINTOKENS) {
                         pruned++;
                         skipgrams.erase(iter->first);
                     }
@@ -1772,7 +1764,7 @@ void UnindexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngr
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
     if (model_id >= INDEXEDPATTERNMODEL) { //read and ignore references        
-        for (int j = 0; j < count; j++) {
+        for (unsigned int j = 0; j < count; j++) {
             CorpusReference ref = CorpusReference(f); //read from file (and ignore)
         }
     }
@@ -1791,11 +1783,11 @@ void UnindexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram
         uint32_t skipcontentcount;
         f->read((char*) &skipcontentcount, sizeof(uint32_t));
         uint32_t occount;   
-        for (int j = 0; j < skipcontentcount; j++) {   
+        for (unsigned int j = 0; j < skipcontentcount; j++) {   
             EncSkipGram skipcontent = EncSkipGram(f);  
             f->read((char*) &occount, sizeof(uint32_t)); //read occurrence count                
-            for (int k = 0; k < occount; k++) {
-                CorpusReference ref = CorpusReference(f); //read from file
+            for (unsigned int k = 0; k < occount; k++) {
+                CorpusReference ref = CorpusReference(f); //read from file (and ignore)
             }        
         }        
     }
@@ -1918,14 +1910,14 @@ void UnindexedPatternModel::computestats() {
 
     for (unordered_map<const EncNGram,uint32_t >::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
         const EncAnyGram * anygram = &iter->first;
-        ngramtypes[anygram->n()]++;
-        ngramcount[anygram->n()] += iter->second;  
+        ngramtypes[(int) anygram->n()]++;
+        ngramcount[(int) anygram->n()] += iter->second;  
         totalngramcount += iter->second;   
     }
     for (unordered_map<const EncSkipGram,uint32_t >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
         const EncAnyGram * anygram = &iter->first;
-        skipgramtypes[anygram->n()]++;
-        skipgramcount[anygram->n()] += iter->second;  
+        skipgramtypes[(int) anygram->n()]++;
+        skipgramcount[(int) anygram->n()] += iter->second;  
         totalskipgramcount += iter->second;
     }    
 }
@@ -1941,7 +1933,7 @@ void UnindexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
         
        const double freqall = (double) iter->second / occurrences();
        const double freqg = (double) iter->second / totalngramcount;
-       const double freqn = (double) iter->second / ngramcount[iter->first.n()];
+       const double freqn = (double) iter->second / ngramcount[(int) iter->first.n()];
        //const double freq1 = (double) iter->second / tokencount[iter->first.n()];       
        //const double freq2 = (double) iter->second / ngramtokencount;
        //const double freq3 = (double) iter->second / grandtotal;
@@ -1959,7 +1951,7 @@ void UnindexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
            
             const double freqall = (double) iter->second / occurrences();
             const double freqg = (double) iter->second / totalskipgramcount;
-            const double freqn = (double) iter->second / skipgramcount[iter->first.n()];
+            const double freqn = (double) iter->second / skipgramcount[(int) iter->first.n()];
            //const double freq1 = (double) iter->second / skiptokencount[iter->first.n()]; 
            //const double freq2 = (double) iter->second / skipgramtokencount;           
            //const double freq3 = (double) iter->second / grandtotal;                          
@@ -2160,7 +2152,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
 		    	vector<EncNGram*> contentparts;
 		    	skipgram_skipcontent->parts(contentparts);
 		    	if ((DOINSTANCES || DOTEMPLATES) && (contentparts.size() > 0)) {
-		    		if (contentparts.size() == skipgram->skipcount) {
+		    		if (contentparts.size() == (unsigned int) skipgram->skipcount) {
 						const EncNGram instancengram = skipgram->instantiate(skipgram_skipcontent, contentparts);					
 						const EncAnyGram * instance = model->getkey(&instancengram);
 						if (instance != NULL) {
@@ -2403,13 +2395,11 @@ int GraphPatternModel::computexcount(const EncAnyGram* anygram) {
 }*/
 
 void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relationhash) {
-	const char zero = 0;
 	unordered_set<const EncAnyGram*> * relations = &relationhash[model->getkey(anygram)];
 		
     uint32_t count = (uint32_t) relations->size();
     out->write((char*) &count, sizeof(uint32_t));
-    char gapcount;
-    int i = 0;                           
+    unsigned int i = 0;                           
     for (unordered_set<const EncAnyGram*>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
     	i++;
 		model->writeanygram(*iter, out);
@@ -2579,7 +2569,6 @@ GraphPatternModel::~GraphPatternModel() {
 
 
 void GraphPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT, bool dooutputrelations) {
-    const int grandtotal = model->tokens();
 
     *OUT << "#N\tVALUE\tOCC.COUNT\tTOKENS\tCOVERAGE";
     if (DOXCOUNT) *OUT << "\tXCOUNT\tXRATIO";
@@ -2690,8 +2679,6 @@ void GraphPatternModel::coveragereport(std::ostream *OUT, int segmentsize, doubl
     int totalskipgramcoverage = 0;
     int totalngramxcoverage = 0;
     int totalskipgramxcoverage = 0;
-    int totalskipgramencapsulation = 0;
-    int totalskipgramoutside = 0;
     int ngramcoverage[MAXN+1];    
     int skipgramcoverage[MAXN+1];
     int ngramxcoverage[MAXN+1];    
@@ -2706,7 +2693,7 @@ void GraphPatternModel::coveragereport(std::ostream *OUT, int segmentsize, doubl
     int uncovered = 0;
     int outside = 0; // uncovered + unencapsulated
 
-    for (int sentence = 1; sentence < model->sentencesize.size(); sentence++) {
+    for (unsigned int sentence = 1; sentence < model->sentencesize.size(); sentence++) {
         unsigned char slen = model->sentencesize[sentence];
         //cerr << "SENTENCE=" << sentence << ";SLEN=" << (int) slen << endl;
         
@@ -3305,7 +3292,7 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
     in->read((char*) &count, sizeof(uint32_t)); //read occurrence count		
 	if (model_id != UNINDEXEDPATTERNMODEL) {	
 	    index.reserve(count);
-		for (int j = 0; j < count; j++) {
+		for (unsigned int j = 0; j < count; j++) {
 		    CorpusReference ref = CorpusReference(in); //read from file
 		    if (!ignore) index.push_back(ref.sentence);         
 		}
@@ -3337,7 +3324,7 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
     
     //THRESHOLD CHECK STAGE - deciding whether to ignore based on unreached thresholds
     
-	if ((count < COUNTTHRESHOLD) || ((double) count / totaltypes < FREQTHRESHOLD)) ignore = true;
+	if ((count < (unsigned int) COUNTTHRESHOLD) || ((double) count / totaltypes < FREQTHRESHOLD)) ignore = true;
 	if ((DOXCOUNT) && (HASXCOUNT) && ((xcount < XCOUNTTHRESHOLD) || (( (double) xcount / count) < XCOUNTRATIOTHRESHOLD) ) ) ignore = true;
 
 
@@ -3392,10 +3379,10 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
     
     if (model_id != UNINDEXEDPATTERNMODEL) {
 		in->read((char*) &skipcontentcount, sizeof(uint32_t));   
-		for (int j = 0; j < skipcontentcount; j++) {                                
+		for (unsigned int j = 0; j < skipcontentcount; j++) {                                
 		    EncSkipGram skipcontent = EncSkipGram(in);  
 		    in->read((char*) &count, sizeof(uint32_t)); //read occurrence count
-		    for (int k = 0; k < count; k++) {
+		    for (unsigned int k = 0; k < count; k++) {
 		        CorpusReference ref = CorpusReference(in); //read from file       
 		        if (!ignore) index.push_back(ref.sentence);            
 		    }        
@@ -3425,7 +3412,7 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
             
     //THRESHOLD CHECK STAGE - deciding whether to ignore based on unreached thresholds
     
-	if ((count < COUNTTHRESHOLD) || ((double) count / totaltypes < FREQTHRESHOLD)) ignore = true;
+	if ((count < (unsigned int) COUNTTHRESHOLD) || ((double) count / totaltypes < FREQTHRESHOLD)) ignore = true;
 	if ((DOXCOUNT) && (HASXCOUNT) && ((xcount < XCOUNTTHRESHOLD) || ((double) (xcount / count) < XCOUNTRATIOTHRESHOLD) ) ) ignore = true;
 	
 	//ALIGNMENT MODEL CONSTRAINTS
@@ -3542,14 +3529,14 @@ void SelectivePatternModel::computestats() {
 
     for (unordered_map<const EncNGram,IndexCountData >::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
         const EncAnyGram * anygram = &iter->first;
-        ngramtypes[anygram->n()]++;
-        ngramcount[anygram->n()] += iter->second.count;  
+        ngramtypes[(int) anygram->n()]++;
+        ngramcount[(int) anygram->n()] += iter->second.count;  
         totalngramcount += iter->second.count;   
     }
     for (unordered_map<const EncSkipGram,IndexCountData >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
         const EncAnyGram * anygram = &iter->first;
-        skipgramtypes[anygram->n()]++;
-        skipgramcount[anygram->n()] += iter->second.count;  
+        skipgramtypes[(int) anygram->n()]++;
+        skipgramcount[(int) anygram->n()] += iter->second.count;  
         totalskipgramcount += iter->second.count;
     }    
 }
@@ -3594,7 +3581,7 @@ void GraphRelations::readrelations(std::istream * in, const EncAnyGram * anygram
     uint32_t count;
     in->read((char*) &count,  sizeof(uint32_t));
     char gapcount;        
-    for (int i = 0; i < count; i++) {                        
+    for (unsigned int i = 0; i < count; i++) {                        
        in->read(&gapcount, sizeof(char));
        if (gapcount == 0) {
         EncNGram ngram = EncNGram(in);

@@ -26,7 +26,7 @@ ClassDecoder::ClassDecoder(const string & filename) {
         while (IN->good()) {
           string line;
           getline(*IN, line);              
-          for (int i = 0; i < line.size(); i++) {
+          for (unsigned int i = 0; i < line.size(); i++) {
               if (line[i] == '\t') {
                   const string cls_s = string(line.begin(), line.begin() + i);
                   unsigned int cls = (unsigned int) atoi(cls_s.c_str());

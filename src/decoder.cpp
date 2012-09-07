@@ -26,7 +26,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         this->globalstats = globalstats;
         
         //init stacks
-        for (int i = 0; i <= inputlength; i++) {
+        for (unsigned int i = 0; i <= inputlength; i++) {
             stacks.push_back( Stack(this, i, stacksize, prunethreshold) );
             gappystacks.push_back( Stack(this, i, stacksize, prunethreshold) );
         }
@@ -37,7 +37,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         //Build a coverage mask, this will be used to check if their are words uncoverable by translations, these will be added as unknown words 
         std::vector<bool> inputcoveragemask;
         inputcoveragemask.reserve(inputlength);
-        for (int i = 0; i < inputlength; i++) inputcoveragemask.push_back(false);                 
+        for (unsigned int i = 0; i < inputlength; i++) inputcoveragemask.push_back(false);                 
         for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {           
             const EncAnyGram * anygram = iter->first;
             int n = anygram->n();
@@ -77,7 +77,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         }
         
         //Check for uncoverable words
-        for (int i = 0; i < inputlength; i++) {
+        for (unsigned int i = 0; i < inputlength; i++) {
             if (!inputcoveragemask[i]) {
                 //found one
                 
@@ -107,7 +107,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                     targetkey = translationtable->gettargetkey((const EncAnyGram *) &targetunigram);
                 }
                 vector<double> scores;
-                for (int j = 0; j < tweights.size(); j++) scores.push_back(1);                 
+                for (unsigned int j = 0; j < tweights.size(); j++) scores.push_back(1);                 
                 translationtable->alignmatrix[sourcekey][targetkey] = scores;
                                                 
                 sourcefragments.push_back(make_pair( sourcekey, CorpusReference(0,i) ));
@@ -115,7 +115,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 
                 if (DEBUG >= 3) {
                     cerr << "\t" << i << ":1" << " -- " << sourcekey->decode(*sourceclassdecoder) << " ==> " << targetkey->decode(*targetclassdecoder) << " [ ";
-                    for (int j = 0; j < tweights.size(); j++) cerr << translationtable->alignmatrix[sourcekey][targetkey][j] << " ";
+                    for (unsigned int j = 0; j < tweights.size(); j++) cerr << translationtable->alignmatrix[sourcekey][targetkey][j] << " ";
                     cerr << "];" << endl;                     
                 }
             }
@@ -160,7 +160,7 @@ void StackDecoder::computefuturecost() {
                     exit(6);  
                 }
                 double score = 0; 
-                for (int i = 0; i < tweights.size(); i++) {
+                for (unsigned int i = 0; i < tweights.size(); i++) {
                     double p = iter2->second[i];
                     if (p > 0) p = log(p); //turn into logprob, base e 
                     score += tweights[i] * p;
@@ -186,8 +186,8 @@ void StackDecoder::computefuturecost() {
         }   
         
         //compute future cost
-        for (int length = 1; length <= inputlength; length++) {
-            for (int start = 0; start < inputlength - length + 1; start++) {
+        for (unsigned int length = 1; length <= inputlength; length++) {
+            for (unsigned int start = 0; start < inputlength - length + 1; start++) {
                 const pair<int,int> span = make_pair((int) start,(int) length);
                 bool found = false;
                 for (map<pair<int,int>, double>::iterator iter = sourcefragments_costbyspan.find(span); iter != sourcefragments_costbyspan.end(); iter++) {
@@ -202,7 +202,7 @@ void StackDecoder::computefuturecost() {
                         futurecost[span] = -INFINITY;
                     /*}*/
                 }
-                for (int l = 1; l < length; l++) {
+                for (unsigned int l = 1; l < length; l++) {
                     double spanscore = futurecost[make_pair((int) start,(int) l)] + futurecost[make_pair((int) start+l,(int) length - l)];
                     if (spanscore > futurecost[span]) { //(higher score -> lower cost)
                         if (DEBUG >= 3) {
@@ -262,9 +262,9 @@ TranslationHypothesis * StackDecoder::decodestack(Stack & stack) {
                 }                
             }
         }
-        if ((totalexpanded == 0) && (stack.index != inputlength)) {
+        if ((totalexpanded == 0) && ((unsigned int) stack.index != inputlength)) {
             dead = true;
-            for (int j = stack.index + 1; j <= inputlength; j++) {
+            for (unsigned int j = stack.index + 1; j <= inputlength; j++) {
                 if (!stacks[j].empty() || (!gappystacks[j].empty())) {
                     dead = false;
                     break;
@@ -330,7 +330,7 @@ TranslationHypothesis * StackDecoder::decode() {
     TranslationHypothesis * fallbackhyp = NULL;
     
     //for each stack
-    for (int i = 0; i <= inputlength - 1; i++) {
+    for (unsigned int i = 0; i <= inputlength - 1; i++) {
         if (DEBUG >= 1) cerr << "\tDecoding gapless stack " << i << " -- " << stacks[i].size() << " hypotheses" << endl;
         stats.stacksizes[i] = stacks[i].size();
         fallbackhyp = decodestack(stacks[i]);
@@ -344,7 +344,7 @@ TranslationHypothesis * StackDecoder::decode() {
     
     //solutions are now in last stack: stacks[inputlength]       
      
-    TranslationHypothesis * solution;
+    
     if (!stacks[inputlength].empty()) {
         TranslationHypothesis * solution = stacks[inputlength].pop();
         return solution;
@@ -456,7 +456,7 @@ bool Stack::add(TranslationHypothesis * candidate) {
     }
     
     double score = candidate->score();
-    if (contents.size() >= stacksize) {
+    if (contents.size() >= (size_t) stacksize) {
         if (score < worstscore()) {
             return false;
         } 
@@ -487,7 +487,7 @@ bool Stack::add(TranslationHypothesis * candidate) {
             break;
         }
     }
-    if ((!added) && (contents.size() < stacksize)) {
+    if ((!added) && (contents.size() < (size_t) stacksize)) {
         added = true;
         contents.push_back(candidate);
     }
@@ -541,7 +541,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     vector<bool> targetcoverage; //intermediary data structure used for computing target gaps
     const TranslationHypothesis * h = this;
     while (h->parent != NULL) {
-        while (targetcoverage.size() <  h->targetoffset + h->targetgram->n()) {
+        while (targetcoverage.size() < (size_t) (h->targetoffset + h->targetgram->n()) ) {
            targetcoverage.push_back(false);   
         }        
         if (!h->targetgram->isskipgram()) {
@@ -568,7 +568,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     int gapbegin = 0;
     int gaplength = 0;
     if (decoder->DEBUG >= 4) cerr << "DEBUG: Targetcoverage: ";
-    for (int i = 0; i <= targetcoverage.size(); i++) {
+    for (unsigned int i = 0; i <= targetcoverage.size(); i++) {
         if ((decoder->DEBUG >= 4) && (i < targetcoverage.size())) {
             cerr << (int) targetcoverage[i];                
         }
@@ -589,10 +589,10 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     //compute input coverage
     if (parent == NULL) {
         //initial hypothesis: no coverage at all
-        for (int i = 0; i < decoder->inputlength; i++) inputcoveragemask.push_back(false);
+        for (unsigned int i = 0; i < decoder->inputlength; i++) inputcoveragemask.push_back(false);
     } else {
         //inherit from parent
-        for (int i = 0; i < decoder->inputlength; i++) {
+        for (unsigned int i = 0; i < decoder->inputlength; i++) {
              inputcoveragemask.push_back(parent->inputcoveragemask[i]);
         }
         //add sourcegram coverage
@@ -661,7 +661,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     this->tscores = tscores;
   
     tscore = 0; 
-    for (int i = 0; i < tscores.size(); i++) {
+    for (unsigned int i = 0; i < tscores.size(); i++) {
         double p = tscores[i];
         if (p > 0) p = log(p); //turn into logprob, base e 
         tscore += decoder->tweights[i] * p;
@@ -745,7 +745,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     
     futurecost = 0;
     begin = -1;    
-    for (int i = 0; i <= inputcoveragemask.size() ; i++) {
+    for (unsigned int i = 0; i <= inputcoveragemask.size() ; i++) {
         if ((!inputcoveragemask[i]) && (begin == -1) && (i < inputcoveragemask.size())) {
             begin = i;
         } else if (((i == inputcoveragemask.size()) || (inputcoveragemask[i])) && (begin != -1)) {
@@ -805,7 +805,7 @@ void TranslationHypothesis::report() {
             cerr << history->decode(*(decoder->targetclassdecoder)) << endl;
         }
         cerr << "\t    tscore = ";
-        for (int i = 0; i < tscores.size(); i++) {
+        for (unsigned int i = 0; i < tscores.size(); i++) {
             if (i > 0) cerr << " + ";
             cerr << decoder->tweights[i] << " * " << tscores[i];
         }
@@ -813,7 +813,7 @@ void TranslationHypothesis::report() {
         cerr << "\t    fragmentscore = tscore + lmscore + dscore = " << tscore << " + " << lmscore << " + " << dscore << " = " << _score << endl;
         cerr << "\t    totalscore = basescore + fragmentscore + futurecost = " << basescore() << " + " << _score << " + " << futurecost << " = " << score() << endl;
         cerr << "\t    coverage: ";
-        for (int i = 0; i < inputcoveragemask.size(); i++) {
+        for (unsigned int i = 0; i < inputcoveragemask.size(); i++) {
             if (inputcoveragemask[i]) {
                 cerr << "1";
             } else {
@@ -894,7 +894,7 @@ bool TranslationHypothesis::hasgaps() const {
 
 bool TranslationHypothesis::final(){
         if (!targetgaps.empty()) return false;
-        return (inputcoverage() == decoder->inputlength); 
+        return ((unsigned int) inputcoverage() == decoder->inputlength); 
 }
 
 int TranslationHypothesis::fitsgap(const EncAnyGram * candidate, const int offset) {
@@ -1075,7 +1075,7 @@ bool TranslationHypothesis::conflicts(const EncAnyGram * sourcecandidate, const 
 
 bool TranslationHypothesis::fertile() {
     vector<int> fertilitymask;
-    for (int i = 0; i < decoder->inputlength; i++) {
+    for (unsigned int i = 0; i < decoder->inputlength; i++) {
         if (inputcoveragemask[i]) {
             fertilitymask.push_back(-1); //for tokens already covered
         } else {
@@ -1115,7 +1115,7 @@ bool TranslationHypothesis::fertile() {
     }
     if (decoder->DEBUG >= 3) {
         cerr << "\t     fertility: ";
-        for (int i = 0; i < decoder->inputlength; i++) {
+        for (unsigned int i = 0; i < decoder->inputlength; i++) {
             if (fertilitymask[i] >= 0)
                 cerr << fertilitymask[i];
             else 
@@ -1124,7 +1124,7 @@ bool TranslationHypothesis::fertile() {
         cerr << endl;
     }
     //check fertility mask for 0s
-    for (int i = 0; i < decoder->inputlength; i++) {
+    for (unsigned int i = 0; i < decoder->inputlength; i++) {
         if (fertilitymask[i] == 0) return false;
     }     
     return true;
@@ -1132,7 +1132,7 @@ bool TranslationHypothesis::fertile() {
 
 int TranslationHypothesis::inputcoverage() {
     int c = 0;
-    for (int i = 0; i < inputcoveragemask.size(); i++) {
+    for (unsigned int i = 0; i < inputcoveragemask.size(); i++) {
         if (inputcoveragemask[i]) c++; 
     }
     return c;
@@ -1180,7 +1180,6 @@ EncData TranslationHypothesis::getoutput(deque<TranslationHypothesis*> * path) {
         unsigned char buffer[8192];
         int cursor = 0;
         for (map<int, EncNGram *>::iterator iter = outputtokens.begin(); iter != outputtokens.end(); iter++) {
-            int index = iter->first;
             EncNGram * unigram = iter->second;
             for (int i = 0; i < unigram->size(); i++) {
                 buffer[cursor++] = unigram->data[i];            
@@ -1371,7 +1370,6 @@ int main( int argc, char *argv[] ) {
     
     //temp:
     string raw;
-    string::size_type pos;
     
     string ws;
     stringstream linestream;
@@ -1456,7 +1454,7 @@ int main( int argc, char *argv[] ) {
     cerr << "   Maarten van Gompel, Radboud University Nijmegen" << endl;
     cerr << "----------------------------------------------------" << endl;
     cerr << "Translation weights:  ";
-    for (int i = 0; i < tweights.size(); i++) cerr << tweights[i] << " "; 
+    for (unsigned int i = 0; i < tweights.size(); i++) cerr << tweights[i] << " "; 
     cerr << endl;
     cerr << "Distortion weight:    " << dweight << endl;
     cerr << "LM weight:            " << lweight << endl;    
@@ -1485,8 +1483,8 @@ int main( int argc, char *argv[] ) {
      
     cerr << "   loaded translations for " << transtable->size() << " patterns" << endl;
         
-    const int firstunknownclass_source = sourceclassencoder.gethighestclass()+1;    
-    const int firstunknownclass_target = targetclassencoder.gethighestclass()+1;
+    //const int firstunknownclass_source = sourceclassencoder.gethighestclass()+1;    
+    //const int firstunknownclass_target = targetclassencoder.gethighestclass()+1;
 
     DecodeStats overallstats;
     
@@ -1512,7 +1510,7 @@ int main( int argc, char *argv[] ) {
                     cerr << "HISTORY=" << endl;
                     while (h != NULL) {
                         cerr << "\t";
-                        for (int i = 0; i < decoder->inputlength; i++) {
+                        for (unsigned int i = 0; i < decoder->inputlength; i++) {
                             cerr << h->inputcoveragemask[i];
                         }
                         cerr << "  [" << h->score() << "]" << endl;

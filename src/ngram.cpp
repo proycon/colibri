@@ -170,6 +170,7 @@ int EncNGram::splits(vector<pair<EncNGram*, EncNGram*> > & container) const {
     	count++;
     	container.push_back( make_pair<EncNGram *,EncNGram *>(slice(0,begin),slice(begin,length) ) ); 
     }        	
+    return count;
 }
 
 int EncNGram::getclass(const int index) const {
@@ -626,7 +627,6 @@ EncNGram * EncNGram::gettoken(int index) const {
 
 bool EncAnyGram::unknown() { //does this anygram have an unknown class in it?
     unsigned char unknownclass= 2;
-    bool prevnull = false;
     for (int i = 0; i < _size; i++) {
         if ((i == 0) && (data[i] == unknownclass) && ((_size == 1) || (data[i+1] == 0))) {
             return true;
@@ -750,8 +750,7 @@ EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::ve
     int l = 0;
     int skipnum = 0;
 	int buffercursor = 0;
-	unsigned char lastbyte = 0;
-	if (skipcount != contentparts.size()) {
+	if ((size_t) skipcount != contentparts.size()) {
 		cerr << "FATAL ERROR: content parts should be equal to skipcount! " <<  contentparts.size() << " content parts, " << (int) skipcount << " skipcount" << endl;
 		exit(13);
 	}
@@ -759,7 +758,7 @@ EncNGram EncSkipGram::instantiate(const EncSkipGram * skipcontent, const std::ve
         l++;
         if ((data[i] == 0) && (l > 0)) {            
             if ((i > 0) && (data[i-1] == 0)) {
-		        if (skipnum >= contentparts.size()) {
+		        if ((size_t) skipnum >= contentparts.size()) {
 					cerr << "FATAL ERROR: not enough content parts for instantiation! " <<  contentparts.size() << " content parts, i=" << i << endl;
 					cerr << "DEBUG: skipgram out:" << endl;
 					out();
@@ -1038,7 +1037,7 @@ bool EncData::match(const EncSkipGram * skipgram, const int offset) {
         const int gapbegin = iter->first;
         const int gapsize = iter->second;        
         if (gapbegin > begin) {
-            if (partindex >= parts.size()) {
+            if ((size_t) partindex >= parts.size()) {
                 cerr << "INTERNAL ERROR: EncData::match(), partindex >= parts" << endl;
                 exit(6); 
             }
@@ -1052,7 +1051,7 @@ bool EncData::match(const EncSkipGram * skipgram, const int offset) {
             begin = gapbegin + gapsize; 
         }
     }     
-    if (partindex < parts.size()) {
+    if ((size_t) partindex < parts.size()) {
         if (!match(parts[partindex], begin)) {
             result = false;
         }
@@ -1107,7 +1106,7 @@ EncNGram EncNGram::operator +(const EncNGram& other) const {
     if (buffer[_size -1] != 0) {
         newsize++;
         offset++;
-        buffer[_size] = 0;
+        buffer[(int) _size] = 0;
     }    
     for (int i = 0; i < other.size(); i++) {
         buffer[offset+i] = other.data[i];
