@@ -17,21 +17,24 @@ void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthresho
 	for (t_alignmatrix::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
 		if (sourceiter->first == NULLGRAM) continue;
 		const EncAnyGram * sourcegram = sourceiter->first;
-		
+		const EncAnyGram * revsourcegram = reversemodel->gettargetkey(sourcegram);
+		if (revsourcegram == NULL) continue;
 		double lowerbound = 0.0;
         list<double> bestq;
 		
 		for (t_aligntargets::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
 			const EncAnyGram * targetgram = targetiter->first;
-			if ((reversemodel->alignmatrix.count(targetgram) > 0) && (reversemodel->alignmatrix[targetgram].count(sourcegram) > 0) && (listproduct(reversemodel->alignmatrix[targetgram][sourcegram]) * listproduct(targetiter->second) >= probthreshold)) {
-			    if (reversemodel->alignmatrix[targetgram][sourcegram].size() != targetiter->second.size()) {
-			        cerr << "AlignmentModel::intersect: Unable to compute intersection with reverse model, score vectors are of different length " << targetiter->second.size() << "vs " << reversemodel->alignmatrix[targetgram][sourcegram].size();
+			const EncAnyGram * revtargetgram = reversemodel->getsourcekey(targetgram);
+			
+			if ((revtargetgram != NULL) &&  (reversemodel->alignmatrix.count(revtargetgram) > 0) && (reversemodel->alignmatrix[revtargetgram].count(revsourcegram) > 0) && (listproduct(reversemodel->alignmatrix[revtargetgram][revsourcegram]) * listproduct(targetiter->second) >= probthreshold)) {
+			    if (reversemodel->alignmatrix[revtargetgram][revsourcegram].size() != targetiter->second.size()) {
+			        cerr << "AlignmentModel::intersect: Unable to compute intersection with reverse model, score vectors are of different length " << targetiter->second.size() << "vs " << reversemodel->alignmatrix[revtargetgram][revsourcegram].size();
 			        exit(6);
 			    }			    
 			    //score vector [a,b] * [x,y]  == [a*x,b*y]
 			    const int scores = targetiter->second.size();
 			    for (int i = 0; i < scores; i++) {
-			        alignmatrix[sourcegram][targetgram][i] = alignmatrix[sourcegram][targetgram][i] * reversemodel->alignmatrix[targetgram][sourcegram][i];			         
+			        alignmatrix[sourcegram][targetgram][i] = alignmatrix[sourcegram][targetgram][i] * reversemodel->alignmatrix[revtargetgram][revsourcegram][i];
 			    } 			 
 				const double p = listproduct(alignmatrix[sourcegram][targetgram]);
 				if ((bestn) && ((p > lowerbound) || (bestq.size() < (size_t) bestn))) {

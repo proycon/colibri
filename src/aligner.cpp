@@ -498,14 +498,19 @@ int main( int argc, char *argv[] ) {
 				
 	if (DOBIDIRECTIONAL) {
 	    //************ INTERSECTION OF MODELS ****************		    
-		cerr << "Computing intersection of both alignment models..." << endl;			
+					
 		
 		if (DOBIDIRECTIONAL == 1) {
+		    cerr << "Computing intersection of both alignment models (joint score)..." << endl;
 		    alignmodel->intersect(reversealignmodel, bidirprobthreshold, bestn);
 		} else if (DOBIDIRECTIONAL == 2) {			    
+		    cerr << "Computing intersection of both alignment models (split scores)..." << endl;
 		    alignmodel = new AlignmentModel(*alignmodel, *reversealignmodel);
 		}			
-		if (DONORM) alignmodel->normalize();
+		if (DONORM) {
+		    cerr << "Normalizing..." << endl;
+		    alignmodel->normalize();
+		}    
 	}			
      
 	// post intersection:		
@@ -519,7 +524,7 @@ int main( int argc, char *argv[] ) {
 
 	if (!outputprefix.empty()) {
 	    //************ SAVING ****************
-	    cerr << "Saving alignment model..." << endl;
+	    cerr << "Saving alignment model (" << outputprefix << ")" << endl;
 		alignmodel->save(outputprefix);
 	}
 
