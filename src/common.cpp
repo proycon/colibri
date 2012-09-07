@@ -1,6 +1,6 @@
 #include <common.h>
 
-
+using namespace std;
 
 std::string trim(const std::string &t, const std::string &ws) {
     std::string str = t;
@@ -27,3 +27,36 @@ bool strip_extension(std::string& filename, const std::string extension) {
         }
     return false;
 }
+
+
+double listproduct(const vector<double> & l) {
+    double p = 1;
+    for (vector<double>::const_iterator iter = l.begin(); iter != l.end(); iter++) {
+        p = p * *iter;
+    }    
+    return p; 
+} 
+
+
+
+double listsum(const vector<double> & l) {
+    double p = 0;
+    for (vector<double>::const_iterator iter = l.begin(); iter != l.end(); iter++) {
+        p += *iter;
+    }    
+    return p; 
+} 
+
+void orderedinsert(list<double> & l, double value) {
+	size_t index = 0;
+	for (list<double>::iterator iter = l.begin(); iter != l.end(); iter++) {
+		if (value < *iter) {
+			l.insert(iter, value);
+			return;
+		}
+	} 
+	l.push_back(value);
+}
+
+
+

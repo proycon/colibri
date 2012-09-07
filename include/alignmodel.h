@@ -2,7 +2,7 @@
 #define ALIGNMODEL_H
 
 #include <patternmodel.h>
-#include <list>
+#include <common.h>
 #include <gizamodel.h>
 
 enum CoocMode {
@@ -17,8 +17,14 @@ void recompute_token_index(std::unordered_map<const EncAnyGram *, std::vector<in
 size_t get_templates(const EncAnyGram * anygram, SelectivePatternModel * model, std::unordered_set<const EncSkipGram *> & container);
 void find_clusters(std::unordered_map<const EncSkipGram*,uint16_t> skipgrams, std::vector<std::unordered_set<const EncSkipGram*> > & clusters , SelectivePatternModel * model );
 
+const short ALIGNMENTMODELVERSION = 3;
+const int ALIGNMENTMODEL = 100;
 
-class AlignmentModel: public AlignConstraintInterface {
+
+typedef std::unordered_map<const EncAnyGram*, std::vector<double> > t_aligntargets;
+typedef std::unordered_map<const EncAnyGram*, t_aligntargets > t_alignmatrix;
+
+class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
    protected:
     bool DEBUG;
    public:
@@ -30,23 +36,49 @@ class AlignmentModel: public AlignConstraintInterface {
     SelectivePatternModel * sourcemodel;
     SelectivePatternModel * targetmodel; 
    
-    AlignmentModel() { DEBUG = false; }
-    AlignmentModel(const std::string & filename, const int bestn = 0);
-    AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const bool DEBUG = false);
+   
+    //Empty model
+    AlignmentModel() { DEBUG = false; } //an empty alignment model
     
+    //Initialise new alignment model from pattern models (actual computation needs to be invoked explicitly, different types possible)    
+    AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const bool DEBUG = false); //prepare to compute on the basis of two pattern models
+
+
+    //Load alignment model from (binary) file
+    AlignmentModel(const std::string & filename, bool logprobs = true, bool allowskipgrams = true, const int bestn = 0, bool DEBUG = false); //load from binary file
+        
+    //Load alignment model from Moses phrasetable (text)
+    AlignmentModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs= true, bool DEBUG = false); //load from Moses text file
+    
+    //create on the basis of two alignment models (intersection), scores from both models will be represented in the score array (e.g p(t|s) and p(s|t))
+    AlignmentModel(const std::string & s2tfilename, const std::string & t2sfilename, const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0, bool DEBUG = false); //create on the basis of two alignment models, will generate two scores: p(t|s) and p(s|t) 
+    AlignmentModel(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0, bool DEBUG = false); 
+    void load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0); //take the intersection of two existing models
+
+        
     void load(const std::string & filename, const int bestn = 0);
     
-    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > alignmatrix;    
-    virtual void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT, bool mosesformat = false);
-    //virtual void simpletableoutput(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT, bool targetfirst = false, bool wordbased = false, bool mosesformat = false);
+    
+    size_t size() { return alignmatrix.size(); }
+    
+    t_alignmatrix alignmatrix;    
+    //std::unordered_map<const EncAnyGram*, std::vector<EncNGram> > sourcekeywords;    
+        
+    
+    void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT, bool mosesformat = false);
+    
+    
     void enabledebug() { DEBUG = true; }
     
     const EncAnyGram * getsourcekey(const EncAnyGram* key);
     const EncAnyGram * gettargetkey(const EncAnyGram* key);
+    const EncAnyGram * getkey(const EncAnyGram* key) { return getsourcekey(key); } //alias for getsourcekey, needed by ModelQuerier
+    
+    std::pair<EncNGram, EncNGram> getsourcecontext(const EncAnyGram* key);
     
     unsigned int totalsize() {
     	unsigned int c = 0;
-    	for (std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+    	for (t_alignmatrix::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
     		c += iter->second.size();
     	}
     	return c;
@@ -78,7 +110,7 @@ class AlignmentModel: public AlignConstraintInterface {
 	void save(const std::string & filename);	
 };
 
-
+/*
 class TranslationTable: public ModelQuerierBase {
    protected:
     bool DEBUG;
@@ -88,10 +120,12 @@ class TranslationTable: public ModelQuerierBase {
     std::unordered_set<EncNGram> sourcengrams;
     std::unordered_set<EncNGram> targetngrams;
     std::unordered_set<EncSkipGram> sourceskipgrams;
-    std::unordered_set<EncSkipGram> targetskipgrams;   
+    std::unordered_set<EncSkipGram> targetskipgrams;
     
-    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, std::vector<double> > > alignmatrix;
-        
+       
+    
+    std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, std::vector<double> > > alignmatrix; 
+            
     TranslationTable(const std::string & filename, bool logprobs = true, bool allowskipgrams = true, bool DEBUG = false); //load from binary file
         
     TranslationTable(const std::string & s2tfilename, const std::string & t2sfilename, const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0, bool DEBUG = false); //create on the basis of two alignment models, will generate two scores: p(t|s) and p(s|t)
@@ -111,6 +145,7 @@ class TranslationTable: public ModelQuerierBase {
     
     size_t size() { return alignmatrix.size(); }
 };
+*/
 
 /*
 class BiAlignmentModel: public AlignmentModel {
@@ -161,7 +196,7 @@ class EMAlignmentModel: public AlignmentModel {
     void trainEM(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0);     
     void save(const std::string & filename);
 };
-*/
+
 
 
 class EMAlignmentModel2: public AlignmentModel {
@@ -175,7 +210,7 @@ class EMAlignmentModel2: public AlignmentModel {
     void save(const std::string & filename);
 };
 
-
+*/
 
 
 /*class ItEMAlignmentModel: public EMAlignmentModel {

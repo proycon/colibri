@@ -7,20 +7,20 @@ using namespace std;
 void usage() {
     cerr << "Usage: aligner [-J|-D|-E] -s source-model -t target-model [-S source-class-file -T target-class-file]" << endl;
     cerr << " Input:" << endl;
-    cerr << "\t-s sourcemodelfile        Source graph model file (*.graphmodel.colibri)" << endl;    
-    cerr << "\t-t targetmodelfile        Target model file (*.graphmodel.colibri)"  << endl;
-    cerr << "\t-S sourceclassfile        Source class file (for decoding)" << endl;
-    cerr << "\t-T targetclassfile        Target class file (for decoding)" << endl;
-    cerr << "\t-d alignmodelfile         Load an existing alignment model (*.alignmodel.colibri), for decoding specify with -S and -T" << endl;
-    cerr << "\t-i inv-alignmodelfile     Load inverse alignment model as well (*.alignmodel.colibri), for decoding specify with -S and -T" << endl;
-    cerr << "\t-H translationtable       Load a translation table model (*.transtable.colibri) for decoding, specify with -S and -T" << endl;    
+    cerr << "\t-s sourcemodelfile        Source model file (patternmodel/graphmodel)" << endl;    
+    cerr << "\t-t targetmodelfile        Target model file (patternmodel/graphmodel)"  << endl;
+    cerr << "\t-S sourceclassfile        Source class file (for model decoding)" << endl;
+    cerr << "\t-T targetclassfile        Target class file (for model decoding)" << endl;
+    cerr << "\t-d alignmodelfile         Load an existing alignment model (*.alignmodel.colibri), for model decoding specify with -S and -T" << endl;
+    cerr << "\t-i inv-alignmodelfile     Load inverse alignment model as well (*.alignmodel.colibri), for model decoding specify with -S and -T" << endl;
+    //cerr << "\t-H translationtable       Load a translation table model (*.transtable.colibri) for decoding, specify with -S and -T" << endl;    
     cerr << " Alignment method (choose one, though some may be combined):" << endl;
-    cerr << "\t-J                        Use Jaccard co-occurrence method (simplest)" << endl;
+    cerr << "\t-J                        Use Jaccard co-occurrence method" << endl;
     //cerr << "\t-D                        Use Dice co-occurrence method" << endl;
-    cerr << "\t-E                        Use EM alignment method (sentence-based)" << endl;
-    cerr << "\t-2                        Use Alternative EM alignment method (type-based)" << endl;
-    cerr << "\t-3                        Use Iterative EM alignment method" << endl;
-    cerr << "\t-W giza-s-t.A3:giza-t-s.A3   Extract phrases by matching giza word-alignments with pattern models" << endl;       
+    cerr << "\t-E                        Use EM alignment method" << endl;
+    //cerr << "\t-2                        Use Alternative EM alignment method (type-based)" << endl;
+    //cerr << "\t-3                        Use Iterative EM alignment method" << endl;
+    cerr << "\t-W giza-s-t.A3:giza-t-s.A3   Extract phrases by matching giza word-alignments with pattern models. Specify two GIZA alignment models (one for each direction), separated by a colon" << endl;       
     cerr << " Generic alignment options:" << endl;    
     cerr << "\t-V				         Verbose debugging output" << endl;
     cerr << "\t-b n                      Best n alignments only" << endl;
@@ -48,10 +48,7 @@ void usage() {
     cerr << "\t-l n                      Minimum N length" << endl; 
     cerr << "\t-L n                      Maximum N length" << endl;         
     cerr << " Output options:" << endl;    
-    cerr << "\t-Y filename               Output a translation table in binary format (use with -d and -i)",
-    //cerr << "\t--simplelex               Output simple word-based lexicon (use with -H or with -d and -i)"" << endl;
-    //cerr << "\t--simpletable             Output simple phrase-based translation table (use with -H or with -d and -i)" << endl;
-    //cerr << "\t--targetfirst             Output target before source in simple lexicon and simple translation table output (use with --simplelex, --simpletable)" << endl;
+    cerr << "\t-o filename               Write an alignment model to file using this filename (extension *.alignmodel.colibri will be automatically added)",
     cerr << "\t--moses                   Output phrase-translation table in Moses format" << endl;    
 }
 
@@ -135,7 +132,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:H:NVZEI:v:G:i:23W:a:c:UY:H:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEI:v:G:i:23W:a:c:U",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -252,12 +249,6 @@ int main( int argc, char *argv[] ) {
             break;
         case 'c':
             pairthreshold = atoi(optarg);
-            break;
-        case 'H':
-            ttablefile = optarg;
-            break;            
-        case 'Y':
-            ttableoutfile = optarg;
             break;
         case 'Z':
         	DONORM = true;

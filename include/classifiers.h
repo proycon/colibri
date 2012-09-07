@@ -21,7 +21,7 @@ class BuildClassifier {
     bool opened;
     bool append;
   public:
-    BuildClassifier(const std::string & trainfile, bool append = false, bool examplarweights = false);        
+    BuildClassifier(const std::string & id, bool append = false, bool examplarweights = false);        
     ~BuildClassifier();
     void addinstance(vector<const std::string> featurevector, const std::string & label, double exemplarweight = 1);
     void train(const std::string & timbloptions);
@@ -43,9 +43,12 @@ class ClassifierInterface {
 };
 
 class NClassifierArray: public ClassifierInterface {
+    protected:
+        int leftcontextsize;
+        int rightcontextsize;
     public:
-        NClassifierArray(const std::string & id): ClassifierInterface(id) {};
-        void build(const string & traincorpusfile, const TranslationTable * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);        
+        NClassifierArray(const std::string & id, int leftcontextsize, int rightcontextsize): ClassifierInterface(id) {};
+        void build(const string & enctraincorpusfile, const TranslationTable * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);        
         void load();        
         void train();        
 };
