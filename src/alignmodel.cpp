@@ -1289,6 +1289,10 @@ void AlignmentModel::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel, 
 
 AlignmentModel::AlignmentModel(const string & filename, bool logprobs, bool allowskipgrams, const int bestn, bool DEBUG) {
     this->DEBUG = DEBUG;
+    load(filename,logprobs, allowskipgrams, bestn);
+}
+
+void AlignmentModel::load(const string & filename, bool logprobs, bool allowskipgrams, const int bestn) {
 	unsigned char check;
 	bool sourceisskipgram = false;
 	bool targetisskipgram = false;

@@ -46,6 +46,7 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 
     //Load alignment model from (binary) file
     AlignmentModel(const std::string & filename, bool logprobs = true, bool allowskipgrams = true, const int bestn = 0, bool DEBUG = false); //load from binary file
+    void load(const std::string & filename, bool logprobs = true, bool allowskipgrams = true, const int bestn = 0);
         
     //Load alignment model from Moses phrasetable (text)
     AlignmentModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs= true, bool DEBUG = false); //load from Moses text file
@@ -56,7 +57,7 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     void load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0); //take the intersection of two existing models
 
         
-    void load(const std::string & filename, const int bestn = 0);
+    
     
     
     size_t size() { return alignmatrix.size(); }
