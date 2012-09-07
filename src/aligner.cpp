@@ -28,7 +28,7 @@ void usage() {
     cerr << "\t-b n                      Best n alignments only" << endl;
     cerr << "\t-G weight-factor          Weigh alignment results based on graph information (subsumption relations)" << endl;
     cerr << "\t-B probability-threshold  Probability threshold used when computing bidirectional alignment (intersection) of alignment model and reverse alignment model (-I, -i)" << endl;
-    cerr << "\t-Z				         Do normalisation" << endl;
+    cerr << "\t-z				         No normalisation" << endl;
     cerr << "\t-U                        Extract skip-grams from n-grams (requires source and target models to be graph models with template and instance relations)" << endl;    
     cerr << " Co-occurrence alignment options:" << endl;       
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;   
@@ -84,7 +84,7 @@ int main( int argc, char *argv[] ) {
     bool DOSKIPGRAMS = true;
     bool EXTRACTSKIPGRAMS = false;
     bool DODEBUG = false;
-    bool DONORM = false;
+    bool DONORM = true;
     bool DOGIZA = false;
     string gizast = "";
     string gizats = "";
@@ -134,7 +134,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVZEM:v:G:i:23W:a:c:UI:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVzEM:v:G:i:23W:a:c:UI:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -256,8 +256,8 @@ int main( int argc, char *argv[] ) {
         case 'c':
             pairthreshold = atoi(optarg);
             break;
-        case 'Z':
-        	DONORM = true;
+        case 'z':
+        	DONORM = false;
         	break;        	
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
