@@ -468,10 +468,12 @@ int main( int argc, char *argv[] ) {
 	    cerr << "Loading alignment model..." << endl;
 	    if ((sourcemodel != NULL) && (targetmodel != NULL)) {
 	        alignmodel = new AlignmentModel(sourcemodel,targetmodel, DODEBUG);
-	        alignmodel->load(modelfile, false, DOSKIPGRAMS, bestn);	    	        
+	        alignmodel->load(modelfile, false, DOSKIPGRAMS, bestn);	    
+	        
         } else {
-            alignmodel = new AlignmentModel(modelfile, false, DOSKIPGRAMS, bestn); 
+            alignmodel = new AlignmentModel(modelfile, false, DOSKIPGRAMS, bestn);            
         }  
+        cerr << "\tLoaded " << alignmodel->size() << " source patterns." << endl;	        
         
         if (!invmodelfile.empty()) {
         	cerr << "Loading inverse alignment model..." << endl;
@@ -481,6 +483,7 @@ int main( int argc, char *argv[] ) {
             } else {
                 reversealignmodel = new AlignmentModel(invmodelfile, false, DOSKIPGRAMS, bestn); 
             }     
+            cerr << "\tLoaded " << reversealignmodel->size() << " source patterns for inverse model" << endl;
         }
 	} else {
 	    cerr << "Error: Don't know what to do.. No model to load or build?" << endl;
@@ -493,6 +496,7 @@ int main( int argc, char *argv[] ) {
         //************ EXTRACTSKIPGRAMS ****************
         cerr << "Extracting skipgrams" << endl;
         alignmodel->extractskipgrams();
+        cerr << "\t" << alignmodel->size() << " source patterns." << endl;
     }
 				
 				
@@ -505,8 +509,9 @@ int main( int argc, char *argv[] ) {
 		    alignmodel->intersect(reversealignmodel, bidirprobthreshold, bestn);
 		} else if (DOBIDIRECTIONAL == 2) {			    
 		    cerr << "Computing intersection of both alignment models (split scores)..." << endl;
-		    alignmodel = new AlignmentModel(*alignmodel, *reversealignmodel);
-		}			
+		    alignmodel = new AlignmentModel(*alignmodel, *reversealignmodel);		    
+		}	
+		cerr << "\t" << alignmodel->size() << " source patterns."	 << endl;
 		if (DONORM) {
 		    cerr << "Normalizing..." << endl;
 		    alignmodel->normalize();
