@@ -453,18 +453,21 @@ int main( int argc, char *argv[] ) {
     		ClassEncoder targetclassencoder = ClassEncoder(targetclassfile);    
 				
 		    cerr << "Initialising GIZA++ Word Alignments" << endl;
-		    GizaModel gizamodels2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);
-		    GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
-		    
-		    
-		    cerr << "Extracting phrases based on GIZA++ Word Alignments" << endl;
-		    int found = alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold);
-		    cerr << "\tFound " << found << " pairs, " << alignmodel->size()  << " source patterns." << endl;
-		    
+
+		    {   
+		        GizaModel gizamodels2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);
+		        GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
+		        		    
+		        cerr << "Extracting phrases based on GIZA++ Word Alignments" << endl;
+		        int found = alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold);
+		        cerr << "\tFound " << found << " pairs, " << alignmodel->size()  << " source patterns." << endl;
+		    }
 		    
 		    if (DOBIDIRECTIONAL) {
-		        cerr << "Extracting phrases based on GIZA++ Word Alignments (reverse)" << endl;		    
-		        found = reversealignmodel->extractgizapatterns(gizamodelt2s, gizamodels2t, pairthreshold, coocprunevalue, alignthreshold);
+		        GizaModel gizamodels2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);
+		        GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
+		        cerr << "Extracting phrases based on GIZA++ Word Alignments (reverse)" << endl;
+		        int found = reversealignmodel->extractgizapatterns(gizamodelt2s, gizamodels2t, pairthreshold, coocprunevalue, alignthreshold);
 		        cerr << "\tFound " << found << " pairs, " << reversealignmodel->size()  << " source patterns." << endl;
 		    }
 		    
