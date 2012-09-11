@@ -456,12 +456,19 @@ int main( int argc, char *argv[] ) {
 		    GizaModel gizamodels2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);
 		    GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
 		    
+		    
 		    cerr << "Extracting phrases based on GIZA++ Word Alignments" << endl;
-		    alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold);
+		    int found = alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold);
+		    cerr << "\tFound " << found << " pairs, " << alignmodel->size()  << " source patterns." << endl;
+		    
 		    
 		    if (DOBIDIRECTIONAL) {
-		        reversealignmodel->extractgizapatterns(gizamodelt2s, gizamodels2t, pairthreshold, coocprunevalue, alignthreshold);
-		    }		  
+		        cerr << "Extracting phrases based on GIZA++ Word Alignments (reverse)" << endl;		    
+		        found = reversealignmodel->extractgizapatterns(gizamodelt2s, gizamodels2t, pairthreshold, coocprunevalue, alignthreshold);
+		        cerr << "\tFound " << found << " pairs, " << reversealignmodel->size()  << " source patterns." << endl;
+		    }
+		    
+		    		  
 		}
 	} else if (!modelfile.empty()) { //modelfile not empty
 	    //************ LOAD ****************
