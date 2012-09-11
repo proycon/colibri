@@ -1235,12 +1235,16 @@ AlignmentModel::AlignmentModel(const string & s2tfilename, const string & t2sfil
     //TODO: optimize reading directly into target matrix?
     AlignmentModel s2tmodel = AlignmentModel(s2tfilename);
     AlignmentModel t2smodel = AlignmentModel(t2sfilename);
+    sourcemodel = NULL;
+    targetmodel = NULL;
     load(s2tmodel, t2smodel, s2tthreshold, t2sthreshold, productthreshold);    
 }
 
 
 AlignmentModel::AlignmentModel(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold, const double t2sthreshold, const double productthreshold, bool DEBUG) {
     this->DEBUG = DEBUG;
+    sourcemodel = NULL;
+    targetmodel = NULL;
     load(s2tmodel, t2smodel, s2tthreshold, t2sthreshold, productthreshold);
 }
 
@@ -1430,6 +1434,8 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
 AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs, bool DEBUG) {
     //load from moses-style phrasetable file
     this->DEBUG = DEBUG;
+    sourcemodel = NULL;
+    targetmodel = NULL;    
 		
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
@@ -1584,6 +1590,7 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
 }
 
 const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram* key) {
+    if (sourcemodel != NULL) return sourcemodel->getkey(key);
     if (key->gapcount() == 0) {
         std::unordered_set<EncNGram>::iterator iter = sourcengrams.find(*( (EncNGram*) key) );
         if (iter != sourcengrams.end()) {
@@ -1603,6 +1610,7 @@ const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram* key) {
 
 
 const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key) {
+    if (targetmodel != NULL) return targetmodel->getkey(key);
     if (key->gapcount() == 0) {
         std::unordered_set<EncNGram>::iterator iter = targetngrams.find(*( (EncNGram*) key) );
         if (iter != targetngrams.end()) {
