@@ -505,8 +505,14 @@ int main( int argc, char *argv[] ) {
     if (EXTRACTSKIPGRAMS) {
         //************ EXTRACTSKIPGRAMS ****************
         cerr << "Extracting skipgrams" << endl;
-        alignmodel->extractskipgrams();
-        cerr << "\t" << alignmodel->size() << " source patterns." << endl;
+        int found = alignmodel->extractskipgrams();
+        cerr << "\tExtracted " << found << " skipgrams, total " << alignmodel->size() << " source patterns." << endl;
+        
+        if (DOBIDIRECTIONAL) {
+            cerr << "Extracting skipgrams (reverse)" << endl;
+            found = reversealignmodel->extractskipgrams();
+            cerr << "\tExtracted " << found << " skipgrams, total " << reversealignmodel->size() << " source patterns." << endl;
+        }
     }
 				
 				
