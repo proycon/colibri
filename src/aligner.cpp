@@ -47,7 +47,8 @@ void usage() {
     cerr << "\t-F freq-threshold         Consider only patterns occuring more than specified (relative frequency of all patterns).  Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
     cerr << "\t-x xcount-threshold       Consider only patterns with an *exclusive* count over this threshold" << endl;
     cerr << "\t-X xcount-ratio           Consider only patterns with an *exclusivity ratio* over this threshold (between 0.0 [not exclusive] and 1.0 [entirely exclusive])" << endl;
-    cerr << "\t-l n                      Minimum N length" << endl; 
+    cerr << "\t-l n                      Left context size (in words, default 0)" << endl;
+    cerr << "\t-r n                      Right context size (in words, default 0)" << endl; 
     cerr << "\t-L n                      Maximum N length" << endl;         
     cerr << " Output options:" << endl;    
     cerr << "\t-o filename               Write an alignment model to file using this filename (extension *.alignmodel.colibri will be automatically added)",
@@ -109,6 +110,8 @@ int main( int argc, char *argv[] ) {
     bool DOTEMPLATES = false; 
     bool DOINSTANCES = false;    
     
+    unsigned char LEFTCONTEXTSIZE = 0;
+    unsigned char RIGHTCONTEXTSIZE = 0;
     
     double alignthreshold = 0.5;
     int pairthreshold = 1;
@@ -134,7 +137,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:L:NVzEM:v:G:i:23W:a:c:UI:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -216,8 +219,11 @@ int main( int argc, char *argv[] ) {
             XCOUNTRATIOTHRESHOLD = atof(optarg);
             break;
 		case 'l':
-            MINLENGTH = atoi(optarg);
+            LEFTCONTEXTSIZE = atoi(optarg);
             break;     
+        case 'r':
+            RIGHTCONTEXTSIZE = atoi(optarg);
+            break;                 
         case 'v':       
             CONVERGENCE = atof(optarg);
             break;
@@ -391,8 +397,8 @@ int main( int argc, char *argv[] ) {
 
 		
 		
-		alignmodel = new AlignmentModel(sourcemodel,targetmodel, DODEBUG);
-		reversealignmodel = new AlignmentModel(targetmodel,sourcemodel, DODEBUG); 				
+		alignmodel = new AlignmentModel(sourcemodel,targetmodel, LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE, DODEBUG);
+		reversealignmodel = new AlignmentModel(targetmodel,sourcemodel, 0,0, DODEBUG); 				
 		bool EM_INIT = true;
 		
 		if (COOCMODE) {
@@ -477,7 +483,7 @@ int main( int argc, char *argv[] ) {
 	    //************ LOAD ****************
 	    cerr << "Loading alignment model..." << endl;
 	    if ((sourcemodel != NULL) && (targetmodel != NULL)) {
-	        alignmodel = new AlignmentModel(sourcemodel,targetmodel, DODEBUG);
+	        alignmodel = new AlignmentModel(sourcemodel,targetmodel, LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE,DODEBUG);
 	        alignmodel->load(modelfile, false, DOSKIPGRAMS, bestn);	    
 	        
         } else {
@@ -488,7 +494,7 @@ int main( int argc, char *argv[] ) {
         if (!invmodelfile.empty()) {
         	cerr << "Loading inverse alignment model..." << endl;
 	        if ((sourcemodel != NULL) && (targetmodel != NULL)) {
-	            reversealignmodel = new AlignmentModel(targetmodel,sourcemodel, DODEBUG);
+	            reversealignmodel = new AlignmentModel(targetmodel,sourcemodel, 0,0, DODEBUG);
 	            reversealignmodel->load(modelfile, false, DOSKIPGRAMS, bestn);	    	        
             } else {
                 reversealignmodel = new AlignmentModel(invmodelfile, false, DOSKIPGRAMS, bestn); 

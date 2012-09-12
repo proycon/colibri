@@ -17,12 +17,14 @@ void recompute_token_index(std::unordered_map<const EncAnyGram *, std::vector<in
 size_t get_templates(const EncAnyGram * anygram, SelectivePatternModel * model, std::unordered_set<const EncSkipGram *> & container);
 void find_clusters(std::unordered_map<const EncSkipGram*,uint16_t> skipgrams, std::vector<std::unordered_set<const EncSkipGram*> > & clusters , SelectivePatternModel * model );
 
-const short ALIGNMENTMODELVERSION = 3;
+const short ALIGNMENTMODELVERSION = 4;
 const int ALIGNMENTMODEL = 100;
 
 
 typedef std::unordered_map<const EncAnyGram*, std::vector<double> > t_aligntargets;
 typedef std::unordered_map<const EncAnyGram*, t_aligntargets > t_alignmatrix;
+
+typedef std::unordered_map<const EncAnyGram*, std::unordered_set<const EncAnyGram *> > t_contexts;
 
 class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
    protected:
@@ -36,12 +38,14 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     SelectivePatternModel * sourcemodel;
     SelectivePatternModel * targetmodel; 
    
-   
+    unsigned char leftsourcecontext;
+    unsigned char rightsourcecontext;
+    
     //Empty model
     AlignmentModel() { DEBUG = false; } //an empty alignment model
     
     //Initialise new alignment model from pattern models (actual computation needs to be invoked explicitly, different types possible)    
-    AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, const bool DEBUG = false); //prepare to compute on the basis of two pattern models
+    AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, unsigned char leftsourcecontext=0, unsigned char rightsourcecontext=0, const bool DEBUG = false); //prepare to compute on the basis of two pattern models
 
 
     //Load alignment model from (binary) file
@@ -62,7 +66,8 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     
     size_t size() { return alignmatrix.size(); }
     
-    t_alignmatrix alignmatrix;    
+    t_alignmatrix alignmatrix;
+    t_contexts sourcecontexts; //focus pattern -> [patterns_in_context]     
     //std::unordered_map<const EncAnyGram*, std::vector<EncNGram> > sourcekeywords;    
         
     

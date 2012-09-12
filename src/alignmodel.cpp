@@ -5,10 +5,12 @@ using namespace std;
 const EncNullGram * NULLGRAM = new EncNullGram();
 
 
-AlignmentModel::AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, bool DEBUG) {    
+AlignmentModel::AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, unsigned char leftsourcecontext, unsigned char rightsourcecontext, bool DEBUG) {    
     this->DEBUG = DEBUG;
     this->sourcemodel = sourcemodel;
-    this->targetmodel = targetmodel;     
+    this->targetmodel = targetmodel;
+    this->leftsourcecontext = leftsourcecontext;
+    this->rightsourcecontext = rightsourcecontext;     
 }
 
 
@@ -1237,6 +1239,8 @@ AlignmentModel::AlignmentModel(const string & s2tfilename, const string & t2sfil
     AlignmentModel t2smodel = AlignmentModel(t2sfilename);
     sourcemodel = NULL;
     targetmodel = NULL;
+    this->leftsourcecontext = s2tmodel.leftsourcecontext;
+    this->rightsourcecontext = s2tmodel.rightsourcecontext;     
     load(s2tmodel, t2smodel, s2tthreshold, t2sthreshold, productthreshold);    
 }
 
@@ -1318,9 +1322,14 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
         multiscore = false; //backward compatibility with old models
     } else {
         multiscore = true;
-    }           
-    f.read( (char*) &sourcecount, sizeof(uint64_t));        
-     
+    }
+    if (model_id >= (unsigned int) ALIGNMENTMODEL + 4) { 
+        f.read( (char*) &leftsourcecontext, sizeof(unsigned char));
+        f.read( (char*) &rightsourcecontext, sizeof(unsigned char));
+    }        
+    f.read( (char*) &sourcecount, sizeof(uint64_t));  
+    
+
     char gapcount;    
     for (unsigned int i = 0; i < sourcecount; i++) {	    
 	    if (DEBUG) cerr << "\t@" << i << endl;
@@ -1436,6 +1445,7 @@ AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sour
     this->DEBUG = DEBUG;
     sourcemodel = NULL;
     targetmodel = NULL;    
+    leftsourcecontext = rightsourcecontext = 0;
 		
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
@@ -1514,10 +1524,14 @@ void AlignmentModel::save(const string & filename) {
     
     uint64_t _id = ALIGNMENTMODEL + ALIGNMENTMODELVERSION;
     f.write( (char*) &_id, sizeof(uint64_t));
+    
+    f.write( (char*) &leftsourcecontext, sizeof(unsigned char));
+    f.write( (char*) &rightsourcecontext, sizeof(unsigned char));
             
     uint64_t sourcecount = alignmatrix.size();
     if (alignmatrix.count(NULLGRAM) > 0) sourcecount--;
-    f.write( (char*) &sourcecount, sizeof(uint64_t));         
+    f.write( (char*) &sourcecount, sizeof(uint64_t));   
+    
 
     for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, vector<double> > >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
     	if (iter->first == NULLGRAM) continue;
