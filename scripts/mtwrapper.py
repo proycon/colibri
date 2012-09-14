@@ -989,7 +989,7 @@ class MTWrapper(object):
             if not self.clean('all'):
                 sys.exit(1)                        
                         
-            sourcecorpusfile, targetcorpusfile, testsourcecorpusfile, testtargetcorpusfile, devsourcecorpusfile, devtargetcorpusfile = resource(sourcecorpusfile, targetcorpusfile, testsize, devsize, trainsize, self.WORKDIR, self.SOURCELANG, self.TARGETLANG)
+            sourcecorpusfile, targetcorpusfile, testsourcecorpusfile, testtargetcorpusfile, devsourcecorpusfile, devtargetcorpusfile = resource(sourcecorpusfile, targetcorpusfile, testsize, devsize, trainsize, self.WORKDIR, self.SOURCELANG, self.TARGETLANG, self.CORPUSNAME)
             if sourcecorpusfile != None:  self.TRAINSOURCECORPUS = sourcecorpusfile
             if targetcorpusfile != None:  self.TRAINTARGETCORPUS = targetcorpusfile
             if testsourcecorpusfile != None:  self.TESTSOURCECORPUS = testsourcecorpusfile
@@ -2170,7 +2170,7 @@ WordPenalty: -0.5\n""")
         return settingsfile
 
 
-def resource(sourcecorpusfile, targetcorpusfile, testset, devset, trainset, workdir, sourcelang, targetlang):
+def resource(sourcecorpusfile, targetcorpusfile, testset, devset, trainset, workdir, sourcelang, targetlang, corpusname):
         """re-source: draw new samples from sources"""
         filesampler([sourcecorpusfile, targetcorpusfile],  testset, devset, trainset, workdir )        
                 
@@ -2318,7 +2318,7 @@ if __name__ == "__main__":
             print>>sys.stderr, "Error: You need to specify -s and -t on the command line!"
             sys.exit(2)
         
-        sourcecorpusfile, targetcorpusfile, testsourcecorpusfile, testtargetcorpusfile, devsourcecorpusfile, devtargetcorpusfile = resource( sourcecorpusfile, targetcorpusfile, testset, devset, trainset, workdir, sourcelang, targetlang)
+        sourcecorpusfile, targetcorpusfile, testsourcecorpusfile, testtargetcorpusfile, devsourcecorpusfile, devtargetcorpusfile = resource( sourcecorpusfile, targetcorpusfile, testset, devset, trainset, workdir, sourcelang, targetlang, corpusname)
         
      
                 
