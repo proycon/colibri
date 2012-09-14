@@ -796,7 +796,14 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                     count_s++;                    
                     
                     const EncAnyGram * sourcepattern = *iter_s;
-                    unsigned char sourcepatternsize = sourcepattern->n(); 
+                    unsigned char sourcepatternsize = sourcepattern->n();
+                    
+                    const EncAnyGram * sourcepatternwithcontext = NULL;
+                    bool sourcepatternused = false; 
+                    if (leftsourcecontext || rightsourcecontext) {
+                        //extract context
+                    }                    
+                     
                     double bestscore = 0;             
                     const EncAnyGram * besttargetpattern = NULL;
                     int count_t = 0;                           
@@ -822,6 +829,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                           
                          if (targettokenfwindex.count(targetpattern)) {
                              if (coocthreshold > 0) {
+                                //filter by co-occurrence threshold
                                 multiset<uint32_t> * targetsentenceindex; //used only if coocthreshold > 0                         
                                 if (targetpattern->isskipgram()) {
                                     targetsentenceindex = &targetmodel->skipgrams[*( (EncSkipGram*) targetpattern)].sentences;    
@@ -834,6 +842,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                                         continue; //threshold not reached, skipping
                                 }                                    
                              }                               
+                             
                              for (vector<int>::iterator iter2 = targettokenfwindex[targetpattern].begin(); iter2 != targettokenfwindex[targetpattern].end(); iter2++) { //loops over all occurences of the target pattern in the target sentence                         
                                  const int targetindex = *iter2; //begin index of target pattern
                                 
@@ -867,7 +876,10 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                                                         
                                  
                                  double score = (double) aligned / maxpatternsize;
+
                                  if (DEBUG) cerr << "     DEBUG score(1): " << aligned << " / " << (int) maxpatternsize << " = " << score << endl;
+                                 
+                                 
                                  if (score < 1) {
                                      //check alignment points in union 
                                      int halfaligned = -aligned; //start negative so intersection points are not counted twice
@@ -890,7 +902,8 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                                         if (DEBUG) cerr << "     DEBUG score(2): " << score << endl;
                                         if (score > 1) score = 1;
                                      }
-                                }          
+                                }
+                                             
                                 if (score > bestscore) { 
                                     //retain only the best target pattern given an occurrence of a source pattern
                                     bestscore = score;
@@ -902,18 +915,34 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                     
                     
                     if ((besttargetpattern != NULL) && (bestscore >= alignscorethreshold)) {
-                        //add alignment
-                        if (alignmatrix[sourcepattern][besttargetpattern].empty()) {
-                            alignmatrix[sourcepattern][besttargetpattern].push_back(1);
+                    
+                        const EncAnyGram * sp;
+                        if (sourcepatternwithcontext != NULL) {
+                            sp = sourcepatternwithcontext; 
                         } else {
-                            alignmatrix[sourcepattern][besttargetpattern][0] += 1;
+                            sp = sourcepattern;
                         }
+                    
+                    
+                        //add alignment
+                        if (alignmatrix[sp][besttargetpattern].empty()) {
+                            alignmatrix[sp][besttargetpattern].push_back(1);
+                        } else {
+                            alignmatrix[sp][besttargetpattern][0] += 1;
+                        }
+                        sourcepatternused = true;
                         found++;
                         if ((sourcedecoder != NULL) && (targetdecoder != NULL)) {
-                            cout << sourcepattern->decode(*sourcedecoder) << " ||| " << besttargetpattern->decode(*targetdecoder) << " ||| " << bestscore << endl;                             
+                            cout << sp->decode(*sourcedecoder) << " ||| " << besttargetpattern->decode(*targetdecoder) << " ||| " << bestscore << endl;
                         }
                     }
-                                                    
+                    if (sourcepatternwithcontext != NULL) {
+                        if (sourcepatternused) {
+                            sourcecontexts[sourcepattern].insert(sourcepatternwithcontext);
+                        } else {
+                            delete sourcepatternwithcontext;
+                        }
+                    }                                   
                 }
              }
           }  //sourceindex iterator
@@ -1341,7 +1370,8 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
         	exit(13);        	
         }
         f.read(&gapcount, sizeof(char));	 
-        const EncAnyGram * sourcegram;   
+        
+        const EncAnyGram * sourcegram;
         bool sourceisskipgram = false;
         if (gapcount == 0) {
             if (DEBUG)  cerr << "\tNGRAM";
@@ -1349,7 +1379,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
             if (!getsourcekey((EncAnyGram*) &ngram)) {
             	sourcengrams.insert(ngram);            	
             }   
-            sourcegram = getsourcekey((EncAnyGram*) &ngram);                                           
+            sourcegram = getsourcekey((EncAnyGram*) &ngram);
         } else {
             if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
             EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file
@@ -1358,9 +1388,14 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
                 	sourceskipgrams.insert(skipgram);            	
                 }   
                 sourcegram = getsourcekey((EncAnyGram*) &skipgram);
-            }   
+            }               
             sourceisskipgram = true;                  
         }        
+        if ( (leftsourcecontext || rightsourcecontext) && ( !(sourceisskipgram && !allowskipgrams) ) ) {
+            //deal with source-side context
+            const EncAnyGram * sourcegramfocus = sourcegram->slice(leftsourcecontext, sourcegram->n() - leftsourcecontext - rightsourcecontext);
+            sourcecontexts[sourcegramfocus].insert(sourcegram);
+        }                                                   
         uint64_t targetcount;
         
         f.read( (char*) &targetcount, sizeof(uint64_t));
@@ -1435,6 +1470,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
 					alignmatrix[sourcegram].erase(iter->first);
 				}				
 			}		
+			//TODO: prune orphaned sourcecontexts
 		}  
 	}
     f.close();

@@ -979,9 +979,9 @@ class MTWrapper(object):
             try:
                 sourcecorpusfile = sys.argv[2]
                 targetcorpusfile = sys.argv[3]
-                trainsize = sys.argv[4]
-                testsize = sys.argv[5]
-                devsize = sys.argv[6]
+                trainsize = int(sys.argv[4])
+                testsize = int(sys.argv[5])
+                devsize = int(sys.argv[6])
             except:
                 self.log("Invalid arguments for generate",red)
                 sys.exit(2)         
