@@ -682,6 +682,7 @@ class MTWrapper(object):
         print >>sys.stderr,"\tbatchreport [batchname] [batchname2]    Write a batch report for the specified batched if none are specified, all specified batches will be included)"
         print >>sys.stderr,"\tbatchtest [batchname] [batchname2]      (Re-)score batches (if none are specified, all specified batches will be tested sequentially)"
         print >>sys.stderr,"\tbatchscore [batchname] [batchname2]     (Re-)score batches (if none are specified, all specified batches will be scored sequentially)"
+        print >>sys.stderr,"\rresource [sourcecorpus] [targetcorpus] [trainsize] [testsize] [devsize]    Regenerate training/test/dev sets from specified sources, trainsize may be '*' for all remaining data. Will automatically issue a 'clean all' as well"
 
     def start(self):        
         os.chdir(self.WORKDIR)
@@ -974,6 +975,30 @@ class MTWrapper(object):
             self.batchreport(selectedbatches)                
             self.log("Done")
                                             
+        elif cmd == 'resource' or cmd == 'resource':
+            try:
+                sourcecorpusfile = sys.argv[2]
+                targetcorpusfile = sys.argv[3]
+                trainsize = sys.argv[4]
+                testsize = sys.argv[5]
+                devsize = sys.argv[6]
+            except:
+                self.log("Invalid arguments for generate",red)
+                sys.exit(2)         
+            
+            if not self.clean('all'):
+                sys.exit(1)                        
+                        
+            sourcecorpusfile, targetcorpusfile, testsourcecorpusfile, testtargetcorpusfile, devsourcecorpusfile, devtargetcorpusfile = resource(sourcecorpusfile, targetcorpusfile, testsize, devsize, trainsize, self.WORKDIR, self.SOURCELANG, self.TARGETLANG)
+            if sourcecorpusfile != None:  self.TRAINSOURCECORPUS = sourcecorpusfile
+            if targetcorpusfile != None:  self.TRAINTARGETCORPUS = targetcorpusfile
+            if testsourcecorpusfile != None:  self.TESTSOURCECORPUS = testsourcecorpusfile
+            if testtargetcorpusfile != None:  self.TESTTARGETCORPUS = testtargetcorpusfile
+            if devsourcecorpusfile != None:  self.DEVSOURCECORPUS = devsourcecorpusfile
+            if devtargetcorpusfile != None:  self.DEVTARGETCORPUS = devtargetcorpusfile             
+            
+            self.writesettings()
+            self.log("Done",green)
             
         elif cmd == 'help' or cmd == '-h':
             self.usage()
@@ -2144,6 +2169,56 @@ WordPenalty: -0.5\n""")
 
         return settingsfile
 
+
+def resource(sourcecorpusfile, targetcorpusfile, testset, devset, trainset, workdir, sourcelang, targetlang):
+        """re-source: draw new samples from sources"""
+        filesampler([sourcecorpusfile, targetcorpusfile],  testset, devset, trainset, workdir )        
+                
+                    
+        #rename files
+        oldfile = workdir + '/' + os.path.basename(sourcecorpusfile) + '.dev' 
+        if os.path.exists(oldfile): 
+            os.rename(oldfile, workdir + '/' + corpusname + '-' + sourcelang + '-dev.txt')
+            devsourcecorpusfile = workdir + '/' + corpusname + '-' + sourcelang + '-dev.txt'
+        else:
+            devsourcecorpusfile = None
+        
+        oldfile = workdir + '/' + os.path.basename(targetcorpusfile) + '.dev' 
+        if os.path.exists(oldfile): 
+            os.rename(oldfile, workdir + '/'+ corpusname + '-' + targetlang + '-dev.txt')
+            devtargetcorpusfile = workdir + '/' +corpusname + '-' + targetlang + '-dev.txt'
+        else:
+            devtargetcorpusfile = None            
+
+        oldfile = workdir + '/' + os.path.basename(sourcecorpusfile) + '.test' 
+        if os.path.exists(oldfile): 
+            os.rename(oldfile, workdir + '/' +corpusname + '-' + sourcelang + '-test.txt')
+            testsourcecorpusfile = workdir + '/' +corpusname + '-' + sourcelang + '-test.txt'
+        else:
+            testsourcecorpusfile = None            
+        
+        oldfile = workdir + '/' + os.path.basename(targetcorpusfile) + '.test' 
+        if os.path.exists(oldfile): 
+            os.rename(oldfile, workdir + '/' + corpusname + '-' + targetlang + '-test.txt')
+            testtargetcorpusfile = workdir + '/' + corpusname + '-' + targetlang + '-test.txt'
+        else:
+            testtargetcorpusfile = None            
+        
+        oldfile = workdir + '/' + os.path.basename(sourcecorpusfile) + '.train' 
+        if os.path.exists(oldfile): 
+            os.rename(oldfile, workdir + '/' + corpusname + '-' + sourcelang + '-train.txt')
+            sourcecorpusfile = workdir + '/' + corpusname + '-' + sourcelang + '-train.txt'
+        else:
+            sourcecorpusfile = None                   
+        
+        oldfile = workdir + '/' + os.path.basename(targetcorpusfile) + '.train' 
+        if os.path.exists(oldfile):
+            os.rename(oldfile, workdir + '/' + corpusname + '-' + targetlang + '-train.txt')
+            targetcorpusfile = workdir + '/' + corpusname + '-' + targetlang + '-train.txt'
+        else:
+            targetcorpusfile = None                
+            
+        return (sourcecorpusfile, targetcorpusfile, testsourcecorpusfile, testtargetcorpusfile, devsourcecorpusfile, devtargetcorpusfile) 
     
 def usage():
     print >>sys.stderr,"mtwrapper.py -- MT wrapper - Outputs a MT wrapper script (python)"
@@ -2159,6 +2234,9 @@ def usage():
     print >>sys.stderr,"\t--devset=n           Extract a random sample of n lines as development set, and exclude from training"
     print >>sys.stderr,"\t--trainset=n         Restrict the training set to a random sample of n lines"
     print >>sys.stderr,"\t-i <dirs>         Colon-separated directories where python can find non-standard modules"
+
+
+
 
 if __name__ == "__main__":        
     
@@ -2238,38 +2316,11 @@ if __name__ == "__main__":
     if testset or devset:
         if not sourcecorpusfile or not targetcorpusfile:
             print>>sys.stderr, "Error: You need to specify -s and -t on the command line!"
-        filesampler([sourcecorpusfile, targetcorpusfile],  testset, devset, trainset, workdir )
+            sys.exit(2)
         
-        #rename files
-        oldfile = workdir + '/' + os.path.basename(sourcecorpusfile) + '.dev' 
-        if os.path.exists(oldfile): 
-            os.rename(oldfile, workdir + '/' + corpusname + '-' + sourcelang + '-dev.txt')
-            devsourcecorpusfile = workdir + '/' + corpusname + '-' + sourcelang + '-dev.txt'
+        sourcecorpusfile, targetcorpusfile, testsourcecorpusfile, testtargetcorpusfile, devsourcecorpusfile, devtargetcorpusfile = resource( sourcecorpusfile, targetcorpusfile, testset, devset, trainset, workdir, sourcelang, targetlang)
         
-        oldfile = workdir + '/' + os.path.basename(targetcorpusfile) + '.dev' 
-        if os.path.exists(oldfile): 
-            os.rename(oldfile, workdir + '/'+ corpusname + '-' + targetlang + '-dev.txt')
-            devtargetcorpusfile = workdir + '/' +corpusname + '-' + targetlang + '-dev.txt'
-
-        oldfile = workdir + '/' + os.path.basename(sourcecorpusfile) + '.test' 
-        if os.path.exists(oldfile): 
-            os.rename(oldfile, workdir + '/' +corpusname + '-' + sourcelang + '-test.txt')
-            testsourcecorpusfile = workdir + '/' +corpusname + '-' + sourcelang + '-test.txt'
-        
-        oldfile = workdir + '/' + os.path.basename(targetcorpusfile) + '.test' 
-        if os.path.exists(oldfile): 
-            os.rename(oldfile, workdir + '/' + corpusname + '-' + targetlang + '-test.txt')
-            testtargetcorpusfile = workdir + '/' + corpusname + '-' + targetlang + '-test.txt'
-        
-        oldfile = workdir + '/' + os.path.basename(sourcecorpusfile) + '.train' 
-        if os.path.exists(oldfile): 
-            os.rename(oldfile, workdir + '/' + corpusname + '-' + sourcelang + '-train.txt')
-            sourcecorpusfile = workdir + '/' + corpusname + '-' + sourcelang + '-train.txt'
-        
-        oldfile = workdir + '/' + os.path.basename(targetcorpusfile) + '.train' 
-        if os.path.exists(oldfile):
-            os.rename(oldfile, workdir + '/' + corpusname + '-' + targetlang + '-train.txt')
-            targetcorpusfile = workdir + '/' + corpusname + '-' + targetlang + '-train.txt'
+     
                 
     if expname:
         settingsfile = workdir + '/mt-' + corpusname + '-' + sourcelang + '-' + targetlang + '-' + expname + '.py'
