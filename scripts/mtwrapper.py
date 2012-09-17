@@ -1981,11 +1981,14 @@ WordPenalty: -0.5\n""")
                             self.nist = float(line[13:21].strip())
                             print >>sys.stderr,"NIST score: ", self.nist
                         if line[21:33] == "BLEU score =":
-                            if self.bleu == 0:
-                                self.bleu = float(line[34:40].strip())
-                                self.log("BLEU score: " + str(self.bleu), white)
-                            else:
-                                self.log("BLEU score (not stored): " + str(float(line[10:].strip())))
+                            try:
+                                if self.bleu == 0:
+                                    self.bleu = float(line[34:40].strip())
+                                    self.log("BLEU score: " + str(self.bleu), white)
+                                else:
+                                    self.log("BLEU score (not stored): " + str(float(line[34:40].strip())))
+                            except:
+                                raise
                     f.close()
                 except:                
                     self.log("Error reading mteval.score",red)
