@@ -1979,9 +1979,9 @@ WordPenalty: -0.5\n""")
                     for line in f:
                         if line[0:12] == "NIST score =":
                             self.nist = float(line[13:21].strip())
-                            print >>sys.stderr,"NIST score: ", self.blist
+                            print >>sys.stderr,"NIST score: ", self.nist
                         if line[21:33] == "BLEU score =":
-                            if self.bleu > 0:
+                            if self.bleu == 0:
                                 self.bleu = float(line[34:40].strip())
                                 self.log("BLEU score: " + str(self.bleu), white)
                             else:
