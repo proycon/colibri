@@ -1272,7 +1272,7 @@ class MTWrapper(object):
         if self.TOKENIZE_SOURCECORPUS and not self.tokenize_sourcecorpus(): return False
         if self.TOKENIZE_TARGETCORPUS and not self.tokenize_targetcorpus(): return False
 
-        if self.TRAINLIMIT and not self.trainlimit(self.TRAINLIMIT): return False 
+        if self.TRAINLIMIT and not self.trainlimit(): return False 
         
         if self.BUILD_SRILM_TARGETMODEL and not self.build_srilm_targetmodel(): return False    
         if self.BUILD_SRILM_SOURCEMODEL and not self.build_srilm_sourcemodel(): return False       
