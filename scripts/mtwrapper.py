@@ -134,7 +134,8 @@ class MTWrapper(object):
             ('TESTSOURCECORPUS', '','The file containing to the source-language part of the parallel corpus used for testing, one sentence per line'),
             ('TESTTARGETCORPUS', '','The file containing to the target-language part of the parallel corpus used as reference for testing.'),
             ('DEVSOURCECORPUS', '','The file containing to the source-language part of the parallel corpus used for parameter tuning, one sentence per line'),
-            ('DEVTARGETCORPUS', '','The file containing to the target-language part of the parallel corpus used for parameter tuning, one sentence per line. Used as reference in parameter tuning.'),           
+            ('DEVTARGETCORPUS', '','The file containing to the target-language part of the parallel corpus used for parameter tuning, one sentence per line. Used as reference in parameter tuning.'),
+            ('TRAINLIMIT','','If set, only use the first x sentences for training'),            
             ('TOKENIZE_SOURCECORPUS', False,''),
             ('TOKENIZE_TARGETCORPUS', False,''),
             ('BUILD_SRILM_SOURCEMODEL',False,'Build a source-language model'),
@@ -1271,6 +1272,7 @@ class MTWrapper(object):
         if self.TOKENIZE_SOURCECORPUS and not self.tokenize_sourcecorpus(): return False
         if self.TOKENIZE_TARGETCORPUS and not self.tokenize_targetcorpus(): return False
 
+        if self.TRAINLIMIT and not self.trainlimit(self.TRAINLIMIT): return False 
         
         if self.BUILD_SRILM_TARGETMODEL and not self.build_srilm_targetmodel(): return False    
         if self.BUILD_SRILM_SOURCEMODEL and not self.build_srilm_sourcemodel(): return False       
@@ -1489,6 +1491,16 @@ class MTWrapper(object):
     def build_srilm_sourcemodel(self):
         if not self.runcmd(self.EXEC_SRILM +' -order ' + str(self.SRILM_ORDER) + ' ' + self.SRILM_OPTIONS + ' -text ' + self.getsourcefilename('txt') + ' -lm ' + self.getsourcefilename('srilm'),'SRILM Source-language Model', self.getsourcefilename('srilm')): return False
         return True        
+
+
+    def trainlimit(self):        
+        if not self.runcmd('head -n ' + str(self.TRAINLIMIT) + ' ' + self.getsourcefilename('txt') + ' > ' + self.getsourcefilename(str(self.TRAINLIMIT) + '.txt')): return False
+        if not self.runcmd('head -n ' + str(self.TRAINLIMIT) + ' ' + self.gettargetfilename('txt') + ' > ' + self.gettargetfilename(str(self.TRAINLIMIT) + '.txt')): return False
+        os.unlink(self.getsourcefilename('txt'))
+        os.unlink(self.gettargetfilename('txt'))
+        os.symlink( self.getsourcefilename(str(self.TRAINLIMIT) + '.txt'), self.getsourcefilename('txt') )
+        os.symlink( self.gettargetfilename(str(self.TRAINLIMIT) + '.txt'), self.gettargetfilename('txt') )
+        return True 
 
     def tokenize_sourcecorpus(self):
         if not os.path.exists(self.getsourcefilename('notok')):
