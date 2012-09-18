@@ -1494,12 +1494,14 @@ class MTWrapper(object):
 
 
     def trainlimit(self):        
-        if not self.runcmd('head -n ' + str(self.TRAINLIMIT) + ' ' + self.getsourcefilename('txt') + ' > ' + self.getsourcefilename(str(self.TRAINLIMIT) + '.txt')): return False
-        if not self.runcmd('head -n ' + str(self.TRAINLIMIT) + ' ' + self.gettargetfilename('txt') + ' > ' + self.gettargetfilename(str(self.TRAINLIMIT) + '.txt')): return False
-        os.unlink(self.getsourcefilename('txt'))
-        os.unlink(self.gettargetfilename('txt'))
-        os.symlink( self.getsourcefilename(str(self.TRAINLIMIT) + '.txt'), self.getsourcefilename('txt') )
-        os.symlink( self.gettargetfilename(str(self.TRAINLIMIT) + '.txt'), self.gettargetfilename('txt') )
+        if not os.path.exists(self.getsourcefilename(str(self.TRAINLIMIT) + '.txt')):        
+            if not self.runcmd('head -n ' + str(self.TRAINLIMIT) + ' ' + self.getsourcefilename('txt') + ' > ' + self.getsourcefilename(str(self.TRAINLIMIT) + '.txt')): return False
+            os.unlink(self.getsourcefilename('txt'))
+            os.symlink( self.getsourcefilename(str(self.TRAINLIMIT) + '.txt'), self.getsourcefilename('txt') )
+        if not os.path.exists( self.gettargetfilename(str(self.TRAINLIMIT) + '.txt')):
+            if not self.runcmd('head -n ' + str(self.TRAINLIMIT) + ' ' + self.gettargetfilename('txt') + ' > ' + self.gettargetfilename(str(self.TRAINLIMIT) + '.txt')): return False
+            os.unlink(self.gettargetfilename('txt'))        
+            os.symlink( self.gettargetfilename(str(self.TRAINLIMIT) + '.txt'), self.gettargetfilename('txt') )
         return True 
 
     def tokenize_sourcecorpus(self):
