@@ -177,8 +177,9 @@ class EncSkipGram: public EncAnyGram {
      int instancetemplaterelation(const EncSkipGram *other) const;
       
      EncNGram * gettoken(int index) const;
+     int gettokendata(int index, unsigned char * buffer) const;
      
-     //EncAnyGram * slice(const int begin,const int length) const; //TODO
+    EncAnyGram * slice(const int begin,const int length) const;
 };
 
 class EncData {

@@ -146,43 +146,101 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
     }
     return new EncNGram(line + beginpos, bytesize);
 }
+
+
+EncAnyGram * EncSkipGram::slice(const int start,const int length) const {
+    const unsigned char unknownclass = 2;
+    unsigned char * buffer = new unsigned char[4048];
+    unsigned char * tokenbuffer = new unsigned char[4048];
+    unsigned char * newskipconf = new unsigned char[10];
+    char newskipnum = 0;
+    newskipconf[newskipnum] = 0;
+    
+    int newsize = 0;
+    bool skip = false;
+    for (int i = start; i < start+length; i++) {
+        int tokensize = gettokendata(i, tokenbuffer);
+        if (tokensize == 0) {
+            //skip 
+            skip = true;
+            if (newsize == 0) {
+                buffer[newsize++] = 0; //initial skip
+            }
+            newskipconf[newskipnum]++;
+        } else {
+            if (skip) {
+                buffer[newsize++] = 0;
+                newskipnum++;
+                newskipconf[newskipnum] = 0;
+            }
+            for (int j = 0; j < tokensize;j++)
+                buffer[newsize++] = tokenbuffer[j]; 
+            buffer[newsize++] = 0;
+            skip = false;            
+        }        
+    }
+    if (skip) {
+        //trailing skip
+        buffer[newsize++] = 0;
+        newskipnum++;
+    }    
+    EncAnyGram * anygram;
+    if (newskipnum > 0) {
+        if ((newsize > 2) && (buffer[newsize-1] == 0) && (buffer[newsize-2] != 0)) newsize--;
+        EncSkipGram * skipgram = new EncSkipGram(buffer, newsize, newskipconf, newskipnum);        
+        anygram = (EncAnyGram * ) skipgram;
+    } else {
+        if (buffer[newsize-1] == 0) newsize--;
+        EncNGram * ngram = new EncNGram(buffer, newsize);
+        anygram = (EncAnyGram * ) ngram;
+    }
+    delete [] buffer;
+    delete [] tokenbuffer;
+    delete [] newskipconf;
+    return anygram;
+}
+
 /*
 EncAnyGram * EncSkipGram::slice(const int start,const int length) const {
     //low level slice algorithm for skipgrams
 
-    const unsigned char * newskipconf;
+    unsigned char * newskipconf = new unsigned char[5];
     unsigned char * buffer = new unsigned char[4048];
-    unsigned char newsize = 0;   
+    char newsize = 0;   
 
     const unsigned char unknownclass = 2;
     bool prevnull = false;
-    int skipnum = 0;
-    int cursor = 0;
-    bool capture = false;
-    int begin = 0;    
+    char skipnum = 0;
+    char newskipnum = 0;
+    int cursor = 0;    
     for (int i = 0; i < _size; i++) {
         if (data[i] == 0) {
-            //if (capture) {
-                 //return new EncNGram(data + begin,i-begin);                
-            //}        
             if (prevnull) {
-                if (skipsize[skipnum] == 0) throw Variablewidthexception();
-                for (int j = 0; j < skipsize[skipnum]; j++) {                    
-                    if (cursor == start) {
-                        begin = i + 1;
-                        buffer[newsize++] = 0;
-                                             
-                        //return new EncNGram(&unknownclass,1);
+                if (skipsize[skipnum] == 0) throw Variablewidthexception();                                        
+                bool newskip = false;            
+                newskipconf[newskipnum] = 0;
+                for (int j = 0; j < skipsize[skipnum]; j++) {
+                    if ((cursor >= start) && (cursor<start+length)) {
+                        newskipconf[newskipnum]++;
+                        newskip = true;
+                        cout << cursor <<" INGAP " << endl;
                     }
-                    if (cursor==start+length) (
-                        
-                    }  
                     cursor++;
-                }           
+                }
+                if (newskip) {       
+                    if (newsize == 0) {
+                        buffer[newsize++] = 0; //initial
+                        cout << cursor <<" PREGAP0: " << 0 << endl;
+                    }           
+                    buffer[newsize++] = 0; //closing
+                    cout << cursor << " POSTGAP0: " << 0 << endl;
+                    newskipnum++;
+                }
                 skipnum++;              
             } else {
-                if ((cursor >= start) && (cursor <= start+length)) {  
-                    buffer[newsize++] = data[i];
+                if ((cursor >= start) && (cursor < start+length) && (newsize > 0)) {  
+                    buffer[newsize++] = 0;
+                    cout << cursor << " DELIMITER: " << 0 << endl;
                 }            
                 cursor++;
             }            
@@ -191,16 +249,32 @@ EncAnyGram * EncSkipGram::slice(const int start,const int length) const {
             prevnull = false;
             if ((cursor >= start) && (cursor <= start+length)) {            
                 buffer[newsize++] = data[i];
+                cout << cursor << " NORMAL: " << (int) data[i] << endl;
             }         
         }        
     }
-    if (capture) {
-        return new EncNGram(data + begin,_size-begin);
+    
+    EncAnyGram * r;    
+    cerr << "BUFFER:" << endl;
+    for (int i = 0; i < newsize; i++) {
+        cout << (int) buffer[i] << endl;
+    }
+    cerr << "SKIPCONF:" << endl;
+    for (int i = 0; i < newskipnum; i++) {
+        cout << (int) newskipconf[i] << endl;
+    }
+    cerr << "---" << endl;
+    if (newskipnum > 0) {        
+        EncSkipGram * skipgram = new EncSkipGram(buffer, newsize, newskipconf, newskipnum);
+        r = (EncAnyGram *) skipgram;
     } else {
-        cerr << "ERROR: EncSkipGram::gettoken(): index not found " << index << endl;
-        exit(6);
-        return NULL;        
-    }  
+        if (buffer[newsize-1] == 0) newsize--;
+        EncNGram * ngram = new EncNGram(buffer, newsize);
+        r = (EncAnyGram *) ngram;
+    }
+    delete [] newskipconf;
+    delete [] buffer;
+    return r;
 }
 */
 
@@ -637,7 +711,7 @@ int EncSkipGram::parts(std::vector<EncNGram*> & container) const {
     return container.size();
 }
 
-
+/*
 EncNGram * EncSkipGram::gettoken(int index) const {
     const unsigned char unknownclass = 2;
     bool prevnull = false;
@@ -679,6 +753,80 @@ EncNGram * EncSkipGram::gettoken(int index) const {
         return NULL;        
     }  
 }
+*/
+
+EncNGram * EncSkipGram::gettoken(int index) const {
+    const unsigned char unknownclass = 2;
+    unsigned char * tokenbuffer = new unsigned char[16]; 
+    char tokensize = gettokendata(index, tokenbuffer);
+    /*cerr << "gettokendata(" << index << ") = " << (int) tokensize << endl;
+    for (int i = 0; i < tokensize; i++) {
+        cerr << (int) tokenbuffer[i] << endl;
+    } */   
+    EncNGram * unigram; 
+    if (tokensize == 0) {
+        unigram = new EncNGram(&unknownclass,1);
+    } else {        
+    
+        unigram = new EncNGram(tokenbuffer, tokensize);
+    }
+    delete [] tokenbuffer;
+    return unigram;
+}
+
+int EncSkipGram::gettokendata(int index, unsigned char * buffer) const {
+    //returns token data, fills the buffer and returns buffer size, returns size 0 for skips
+    int newsize = 0;
+    bool prevnull = false;
+    int skipnum = 0;
+    int cursor = 0;
+    
+    int begin = 0;
+    bool capture = false;    
+    for (int i = 0; i < _size; i++) {
+        //cerr << (int) data[i] << ':' << prevnull << ':' << skipcount << endl;
+        if (data[i] == 0) {
+            if ((capture) && (i-begin > 0)) {
+                 for (int j = begin; j < begin+ i - begin; j++) {
+                    buffer[newsize] = data[j];
+                    newsize++;
+                 }                                 
+                 return newsize;
+            }        
+            if (prevnull) {
+                if (skipsize[skipnum] == 0) throw Variablewidthexception();
+                for (int j = 0; j < skipsize[skipnum]; j++) {                    
+                    if (cursor == index) {
+                        return 0;
+                    } 
+                    cursor++;
+                }           
+                skipnum++;              
+            } else {                
+                if (i > 0) cursor++;              
+            }
+            if (cursor == index) {
+                begin = i+1;
+                capture = true;
+            }  
+            prevnull = true;
+        } else {
+            prevnull = false;            
+        }
+    }
+    
+    if ((capture) && (_size-begin> 0)) {
+        for (int j = begin; j < begin+ _size-begin; j++) {
+             buffer[newsize] = data[j];
+             newsize++;
+        }                      
+        return newsize;
+    } else {
+        cerr << "ERROR: EncSkipGram::gettokendata(): index not found " << index << endl;
+        exit(6);            
+    }  
+}
+
 
 EncNGram * EncNGram::gettoken(int index) const {
     return slice(index,1);

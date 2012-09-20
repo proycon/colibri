@@ -169,6 +169,19 @@ int main( int argc, char *argv[] ) {
     cerr << "gettoken(5): " << endl;
     EncNGram * token = skipgram5.gettoken(5);
     cout << token->decode(classdecoder) << endl;
+    
+
+    cerr << "slice(2,4): " << endl;	    
+    EncAnyGram * s5slice2 = skipgram5.slice(2,4);
+    cout << s5slice2->decode(classdecoder) << endl;
+    cerr << endl; 
+    
+    
+    cerr << "slice(1,3): " << endl;	    
+    EncAnyGram * s5slice3 = skipgram5.slice(1,3);
+    cout << s5slice3->decode(classdecoder) << endl;
+    cerr << endl;     
+
 	
 	cerr << "----------------------------------------------------" << endl;
 	string querystring6 = "be {*1*} not";
@@ -277,7 +290,22 @@ int main( int argc, char *argv[] ) {
     
     cerr << "gettoken(2): " << endl;
     token = skipgram8.gettoken(2);
-    cout << token->decode(classdecoder) << endl;
-	    
+    cout << token->decode(classdecoder) << endl;	   
+    cerr << endl;
+    
+    cerr << "slice(0,4): " << endl;	    
+    EncAnyGram * s8slice1 = skipgram8.slice(0,4);
+    cout << s8slice1->decode(classdecoder) << endl;
+    cerr << endl; 
+
+    cerr << "slice(1,2): " << endl;	    
+    EncAnyGram * s8slice2 = skipgram8.slice(1,2);
+    cout << s8slice2->decode(classdecoder) << endl;
+    cerr << endl; 
+
+    cerr << "slice(1,4): " << endl;	    
+    EncAnyGram * s8slice3 = skipgram8.slice(1,4);
+    cout << s8slice3->decode(classdecoder) << endl;
+    cerr << endl; 
      		  	
 }
