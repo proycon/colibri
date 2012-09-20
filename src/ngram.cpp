@@ -147,6 +147,13 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
     return new EncNGram(line + beginpos, bytesize);
 }
 
+EncAnyGram * EncAnyGram::slice(const int start,const int length) const {
+    if (isskipgram()) {
+        return ((const EncSkipGram *) this)->slice(start, length);
+    } else {
+        return (EncAnyGram *) ((const EncNGram *) this)->slice(start, length);
+    }
+}
 
 EncAnyGram * EncSkipGram::slice(const int start,const int length) const {
     const unsigned char unknownclass = 2;

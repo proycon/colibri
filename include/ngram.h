@@ -70,7 +70,7 @@ class EncAnyGram {
     virtual bool unknown(); //does this anygram have an unknown class in it?
     virtual bool variablewidth() const { return false; } 
     
-    //EncAnyGram * slice(const int begin,const int length) const; //TODO    
+    EncAnyGram * slice(const int begin,const int length) const; //TODO    
 };
 
 class EncNullGram: public EncAnyGram {
@@ -179,7 +179,7 @@ class EncSkipGram: public EncAnyGram {
      EncNGram * gettoken(int index) const;
      int gettokendata(int index, unsigned char * buffer) const;
      
-    EncAnyGram * slice(const int begin,const int length) const;
+     EncAnyGram * slice(const int begin,const int length) const;
 };
 
 class EncData {
