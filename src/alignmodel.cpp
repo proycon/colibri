@@ -1392,9 +1392,9 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
             sourceisskipgram = true;                  
         }        
         if ( (leftsourcecontext || rightsourcecontext) && ( !(sourceisskipgram && !allowskipgrams) ) ) {
-            //deal with source-side context
-            const EncAnyGram * sourcegramfocus = sourcegram->slice(leftsourcecontext, sourcegram->n() - leftsourcecontext - rightsourcecontext);
-            sourcecontexts[sourcegramfocus].insert(sourcegram);
+            //deal with source-side context // TODO!
+            //const EncAnyGram * sourcegramfocus = sourcegram->slice(leftsourcecontext, sourcegram->n() - leftsourcecontext - rightsourcecontext);
+            //sourcecontexts[sourcegramfocus].insert(sourcegram);
         }                                                   
         uint64_t targetcount;
         

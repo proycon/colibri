@@ -146,6 +146,63 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
     }
     return new EncNGram(line + beginpos, bytesize);
 }
+/*
+EncAnyGram * EncSkipGram::slice(const int start,const int length) const {
+    //low level slice algorithm for skipgrams
+
+    const unsigned char * newskipconf;
+    unsigned char * buffer = new unsigned char[4048];
+    unsigned char newsize = 0;   
+
+    const unsigned char unknownclass = 2;
+    bool prevnull = false;
+    int skipnum = 0;
+    int cursor = 0;
+    bool capture = false;
+    int begin = 0;    
+    for (int i = 0; i < _size; i++) {
+        if (data[i] == 0) {
+            //if (capture) {
+                 //return new EncNGram(data + begin,i-begin);                
+            //}        
+            if (prevnull) {
+                if (skipsize[skipnum] == 0) throw Variablewidthexception();
+                for (int j = 0; j < skipsize[skipnum]; j++) {                    
+                    if (cursor == start) {
+                        begin = i + 1;
+                        buffer[newsize++] = 0;
+                                             
+                        //return new EncNGram(&unknownclass,1);
+                    }
+                    if (cursor==start+length) (
+                        
+                    }  
+                    cursor++;
+                }           
+                skipnum++;              
+            } else {
+                if ((cursor >= start) && (cursor <= start+length)) {  
+                    buffer[newsize++] = data[i];
+                }            
+                cursor++;
+            }            
+            prevnull = true;
+        } else {
+            prevnull = false;
+            if ((cursor >= start) && (cursor <= start+length)) {            
+                buffer[newsize++] = data[i];
+            }         
+        }        
+    }
+    if (capture) {
+        return new EncNGram(data + begin,_size-begin);
+    } else {
+        cerr << "ERROR: EncSkipGram::gettoken(): index not found " << index << endl;
+        exit(6);
+        return NULL;        
+    }  
+}
+*/
 
 int EncNGram::subngrams(vector<EncNGram*> & container) const {
     int count = 0;
@@ -586,12 +643,13 @@ EncNGram * EncSkipGram::gettoken(int index) const {
     bool prevnull = false;
     int skipnum = 0;
     int cursor = 0;
-    bool capture = false;
-    int begin = 0;    
+    
+    int begin = 0;
+    bool capture = false;    
     for (int i = 0; i < _size; i++) {
         //cerr << (int) data[i] << ':' << prevnull << ':' << skipcount << endl;
         if (data[i] == 0) {
-            if (capture) {
+            if ((capture) && (i-begin > 0)) {
                  return new EncNGram(data + begin,i-begin);                
             }        
             if (prevnull) {
@@ -601,15 +659,16 @@ EncNGram * EncSkipGram::gettoken(int index) const {
                     cursor++;
                 }           
                 skipnum++;              
+            } else {                
+                cursor++;              
             }
+            if (cursor == index) {
+                begin = i+1;
+                capture = true;
+            }  
             prevnull = true;
         } else {
-            prevnull = false;
-            if (cursor == index) {
-                begin = i;
-                capture = true;
-            }
-            cursor++;
+            prevnull = false;            
         }
     }
     if (capture) {
@@ -651,13 +710,15 @@ void EncSkipGram::mask(std::vector<bool> & container) const { //returns a boolea
                     container.push_back(false);
                 }           
                 skipnum++;              
+            } else {
+                container.push_back(true);
             }
             prevnull = true;
         } else {
-            prevnull = false;
-            container.push_back(true);
+            prevnull = false;            
         }
-    }  
+    }
+    if (data[_size-1] != 0) container.push_back(true);
 }
 
 

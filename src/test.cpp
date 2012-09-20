@@ -18,7 +18,7 @@ int main( int argc, char *argv[] ) {
     
     ofstream f;
     f.open(classfile.c_str(), ios::out);
-    f << "2\tbe\n3\tTo\n4\tto\n5\tor\n6\tnot\n";            
+    f << "2\tbe\n3\tTo\n4\tto\n5\tor\n6\tnot\n73477272\tblah\n";            
     f.close();
 
     
@@ -154,6 +154,22 @@ int main( int argc, char *argv[] ) {
 	for (vector<pair<int,int >>::iterator iter2 = p.begin(); iter2 != p.end(); iter2++) {
         cout << iter2->first << ':' << iter2->second << endl; 
 	}	
+	cerr << "mask: " << endl;
+	vector<bool> m;
+	skipgram5.mask(m);
+	for (vector<bool>::iterator iter2 = m.begin(); iter2 != m.end(); iter2++) {
+        if (*iter2)  {
+            cout << "1";
+        } else {
+            cout << "0";
+        }
+	}		
+	cout << endl;
+	
+    cerr << "gettoken(5): " << endl;
+    EncNGram * token = skipgram5.gettoken(5);
+    cout << token->decode(classdecoder) << endl;
+	
 	cerr << "----------------------------------------------------" << endl;
 	string querystring6 = "be {*1*} not";
 	EncSkipGram skipgram6 = encoder.input2skipgram(querystring6, true);
@@ -180,6 +196,88 @@ int main( int argc, char *argv[] ) {
         cout << iter2->first << ':' << iter2->second << endl; 
 	}	
 
+
+
+    cerr << "----------------------------------------------------" << endl;
+    string querystring7 = "blah {*1*} or {*2*} blah";
+	EncSkipGram skipgram7 = encoder.input2skipgram(querystring7, true);
+	cout << skipgram7.decode(classdecoder) << endl;
 	
- 		  	
+	cerr << "Parts: " << endl;
+    parts2.clear();
+    skipgram7.parts(parts2);
+    for (vector<EncNGram*>::iterator iter2 = parts2.begin(); iter2 != parts2.end(); iter2++) {                
+        const EncAnyGram * subngram = *iter2;
+    	cout << "'" << subngram->decode(classdecoder) << "'" << endl;
+    }    	 
+	cerr << "getgaps: " << endl;
+	gaps.clear();
+	skipgram7.getgaps(gaps);
+	for (vector<pair<int,int >>::iterator iter2 = gaps.begin(); iter2 != gaps.end(); iter2++) {
+	    cout << iter2->first << ':' << iter2->second << endl; 
+	}
+	cerr << "getparts: " << endl;
+	p.clear();
+	skipgram7.getparts(p);
+	for (vector<pair<int,int >>::iterator iter2 = p.begin(); iter2 != p.end(); iter2++) {
+        cout << iter2->first << ':' << iter2->second << endl; 
+	}	
+    cerr << "mask: " << endl;
+	m.clear();
+	skipgram7.mask(m);
+	for (vector<bool>::iterator iter2 = m.begin(); iter2 != m.end(); iter2++) {
+        if (*iter2)  {
+            cout << "1";
+        } else {
+            cout << "0";
+        }
+	}		
+	cout << endl;
+    
+    cerr << "gettoken(5): " << endl;
+    token = skipgram7.gettoken(5);
+    cout << token->decode(classdecoder) << endl;
+    
+    cerr << "----------------------------------------------------" << endl;
+    string querystring8 = "{*1*} or blah {*2*}";
+	EncSkipGram skipgram8 = encoder.input2skipgram(querystring8, true);
+	cout << skipgram8.decode(classdecoder) << endl;
+	
+		
+	cerr << "Parts: " << endl;
+    parts2.clear();
+    skipgram8.parts(parts2);
+    for (vector<EncNGram*>::iterator iter2 = parts2.begin(); iter2 != parts2.end(); iter2++) {                
+        const EncAnyGram * subngram = *iter2;
+    	cout << "'" << subngram->decode(classdecoder) << "'" << endl;
+    }    	 
+	cerr << "getgaps: " << endl;
+	gaps.clear();
+	skipgram8.getgaps(gaps);
+	for (vector<pair<int,int >>::iterator iter2 = gaps.begin(); iter2 != gaps.end(); iter2++) {
+	    cout << iter2->first << ':' << iter2->second << endl; 
+	}
+	cerr << "getparts: " << endl;
+	p.clear();
+	skipgram8.getparts(p);
+	for (vector<pair<int,int >>::iterator iter2 = p.begin(); iter2 != p.end(); iter2++) {
+        cout << iter2->first << ':' << iter2->second << endl; 
+	}	
+    cerr << "mask: " << endl;
+	m.clear();
+	skipgram8.mask(m);
+	for (vector<bool>::iterator iter2 = m.begin(); iter2 != m.end(); iter2++) {
+        if (*iter2)  {
+            cout << "1";
+        } else {
+            cout << "0";
+        }
+	}		
+	cout << endl;
+    
+    cerr << "gettoken(2): " << endl;
+    token = skipgram8.gettoken(2);
+    cout << token->decode(classdecoder) << endl;
+	    
+     		  	
 }
