@@ -22,7 +22,8 @@ void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthresho
 		const EncAnyGram * revsourcegram = reversemodel->gettargetkey(sourcegram);
 		if (revsourcegram == NULL) continue;
 		double lowerbound = 0.0;
-        list<double> bestq;
+		list<double> bestq;
+
 		
 		for (t_aligntargets::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
 			const EncAnyGram * targetgram = targetiter->first;
