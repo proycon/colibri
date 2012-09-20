@@ -202,6 +202,7 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
 	  int outputcursor = 0;
 	  *skipcount = 0;
       int begin = 0;      
+      bool finalskip = false;
       const int l = line.length();
       for (int i = 0; i < l; i++) {
       	  if ((line[i] == ' ') || (i == l - 1)) {
@@ -250,6 +251,8 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
           	  	
 	      	  	
 		      	if (cls > 0) {
+		      	    //word, no skip
+		      	    finalskip = false;
 		      		int length = 0;
 	  	        	unsigned char * byterep = inttobytes(cls, length);
    	   	        	if (length == 0) {
@@ -260,14 +263,22 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
 	  	        	for (int j = 0; j < length; j++) {
 	  	        		outputbuffer[outputcursor++] = byterep[j];
 	  	        	}  	        	
-	  	        	//OUT.write((const char *) byterep, length);
+	  	        	//OUT.write((const char *) byterep, length);	  	        
 	  	        	delete byterep;
+				} else {
+				    //skip
+				    if (outputcursor == 0) {
+				        //initial skip
+				        outputbuffer[outputcursor++] = 0;
+				    }
+				    finalskip = true;
 				}
   	        	outputbuffer[outputcursor++] = 0; //write separator
   	        	//OUT.write(&zero, sizeof(char)); //write separator 
           	  }			 
           }
       }
+      if (finalskip) outputbuffer[outputcursor++] = 0;
       return outputcursor;
 }
 
