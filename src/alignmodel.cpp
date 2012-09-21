@@ -1059,8 +1059,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                         if (sourcepatternused) {
                             sourcecontexts[sourcepattern].insert(sourcepatternwithcontext);
                         } else {
-                            delete sourcepatternwithcontext;
-                            //prevsourcepatternwithcontext = NULL;
+                            //delete sourcepatternwithcontext; //TODO: Reenable: causes segfault
                         }
                     }                                   
                 }
