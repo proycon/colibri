@@ -281,7 +281,7 @@ namespace std {
      public: 
             bool operator()(const EncAnyGram * anygram, const EncAnyGram * anygram2) const throw() {
                 if ((anygram == NULL) || (anygram2 == NULL)) return false;         
-                return (anygram->hash() == anygram2->hash());
+                return (anygram->hash() == anygram2->hash() ); //TODO: extra conditions? this assumes no collisions
             }
     };
     

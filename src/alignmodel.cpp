@@ -886,19 +886,6 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                     bool sourcepatternused = false; 
                     if (leftsourcecontext || rightsourcecontext) {
                         //extract context
-                        /*
-                        
-                        if ((prevsourcepatternwithcontext != NULL) && (sourcepatternwithcontext->hash() == prevsourcepatternwithcontext->hash())) {
-                            cout << "CONTEXT EXISTS @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
-                            delete sourcepatternwithcontext;
-                            sourcepatternwithcontext = prevsourcepatternwithcontext;
-                        } else {
-                            cout << "CONTEXT NEW @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
-                        }
-                        prevsourcepatternwithcontext = sourcepatternwithcontext;
-                        */
-                        
-                        
                         
                         //make sure we re-use any previously used sourcepatternwithcontext rather than using this newly generated one
                         cout << endl; //DEBUG
@@ -907,9 +894,9 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                         if (key != NULL) {
                             delete sourcepatternwithcontext; //delete generated one
                             sourcepatternwithcontext = key; //use existing key
-                            cout << "CONTEXT EXISTS @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
-                        } else {
-                            cout << "CONTEXT NEW @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
+                            //cout << "CONTEXT EXISTS @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
+                        //} else {
+                            //cout << "CONTEXT NEW @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
                         }
                         
                     }                    
@@ -1030,11 +1017,11 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                         const EncAnyGram * key;
                         if (sourcepatternwithcontext != NULL) {
                             key = sourcepatternwithcontext;
-                            cout << "KEY=CONTEXT @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
+                            //cout << "KEY=CONTEXT @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
 
                         } else {
                             key = sourcepattern;
-                            cout << "KEY=NORMAL @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
+                            //cout << "KEY=NORMAL @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
                         }
                                         
                         //add alignment
