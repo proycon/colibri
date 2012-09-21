@@ -1474,6 +1474,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
                 //no
                 alignmatrix[(const EncAnyGram*) ngram];
                 sourcegram = getsourcekey((const EncAnyGram*) ngram);
+                if (sourcegram == NULL) { cerr << "INTERNAL ERROR: sourcegram still not found after insertion! Should never happen!"; exit(6); }
             	//sourcengrams.insert(ngram);            	            
             } else {
                 //yes
@@ -1488,7 +1489,10 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
                     alignmatrix[(const EncAnyGram*) skipgram];
                 	//sourceskipgrams.insert(skipgram);
                 	sourcegram = getsourcekey((const EncAnyGram*) skipgram);
-                }                   
+                    if (sourcegram == NULL) { cerr << "INTERNAL ERROR: sourcegram still not found after insertion! Should never happen!"; exit(6); }             	
+                } else {
+                    delete skipgram;
+                }                 
             } else {
                 delete skipgram;
             }
@@ -1752,9 +1756,11 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
 const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram* key) {
     t_alignmatrix::iterator keyiter = alignmatrix.find(key);
     if (keyiter != alignmatrix.end()) {
-        return &(*keyiter->first);
-    } else if (sourcemodel != NULL) {
+        return keyiter->first;
+    } else if (sourcemodel != NULL) {    
         return sourcemodel->getkey(key);
+    } else {
+        return NULL;
     }
     /*            
     if (sourcemodel != NULL) return sourcemodel->getkey(key);
