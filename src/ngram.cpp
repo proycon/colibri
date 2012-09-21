@@ -147,6 +147,7 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
     return new EncNGram(line + beginpos, bytesize);
 }
 
+
 EncAnyGram * EncAnyGram::slice(const int start,const int length) const {
     if (isskipgram()) {
         return ((const EncSkipGram *) this)->slice(start, length);
@@ -156,7 +157,7 @@ EncAnyGram * EncAnyGram::slice(const int start,const int length) const {
 }
 
 EncAnyGram * EncSkipGram::slice(const int start,const int length) const {
-    const unsigned char unknownclass = 2;
+    
     unsigned char * buffer = new unsigned char[4048];
     unsigned char * tokenbuffer = new unsigned char[4048];
     unsigned char * newskipconf = new unsigned char[10];
@@ -206,6 +207,14 @@ EncAnyGram * EncSkipGram::slice(const int start,const int length) const {
     delete [] newskipconf;
     return anygram;
 }
+    
+EncAnyGram * EncAnyGram::addcontext(const EncNGram * leftcontext, const EncNGram * rightcontext) const {
+    if (isskipgram()) {
+        return ((EncSkipGram *) this)->addcontext(leftcontext, rightcontext);
+    } else {
+        return ((EncNGram *) this)->addcontext(leftcontext, rightcontext);
+    }
+} 
 
 /*
 EncAnyGram * EncSkipGram::slice(const int start,const int length) const {
@@ -1368,3 +1377,35 @@ std::string EncData::decode(ClassDecoder& classdecoder) const {
     }    
     return result;
 }
+
+
+EncAnyGram * EncNGram::addcontext(const EncNGram * leftcontext, const EncNGram * rightcontext) const {
+    return (EncAnyGram *) new EncNGram(*leftcontext + *this + *rightcontext);  
+}
+
+
+EncAnyGram * EncSkipGram::addcontext(const EncNGram * leftcontext, const EncNGram * rightcontext) const {
+    const int leftoffset = leftcontext->n();
+    unsigned char * buffer = new unsigned char[4048];
+    char buffersize = 0;
+    for (int i = 0; i < leftcontext->size(); i++) buffer[buffersize++] = leftcontext->data[i];
+    if ((buffer[buffersize] != '0') && !((_size >= 2) && (data[0] == '0') && (data[1] == '0') ) ) buffer[buffersize++] = '0'; //add delimiter if skipgram has no initial skip
+    for (int i = 0; i < _size; i++) buffer[buffersize++] = data[i];
+    if ( ( !((_size >= 2) && (data[_size-2] == '0') &&  (data[_size-1] == '0')) ) || (data[_size-1] != '0') ) buffer[buffersize++] = '0'; //add delimiter if skipgram has no trailing skip
+    for (int i = 0; i < rightcontext->size(); i++) buffer[buffersize++] = rightcontext->data[i];
+    if ((buffer[buffersize] == '0') &&  (buffer[buffersize-1] != '0')) buffersize--; //no trailing 0        
+    
+    unsigned char * newskipsize = new unsigned char[6];
+    for (int i = 0; i <= skipcount; i++) {    
+        newskipsize[i] = (unsigned char) skipsize[i] + leftoffset;
+    } 
+    
+    EncSkipGram * result = new EncSkipGram(buffer, buffersize, newskipsize, skipcount);
+    
+    delete [] buffer;
+    return (EncAnyGram *) result;  
+}
+
+
+
+

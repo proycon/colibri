@@ -11,6 +11,8 @@ class ClassEncoder {
     private:
      std::unordered_map<std::string,unsigned int> classes;
      unsigned int unknownclass;
+     unsigned int bosclass;
+     unsigned int eosclass;
      unsigned int highestclass;
     public:
     ClassEncoder();

@@ -40,13 +40,17 @@ unsigned char * inttobytes(unsigned int cls, int & length) {
 
 ClassEncoder::ClassEncoder() {
     unknownclass = 2;
+    bosclass = 3;
+    eosclass = 4;
     highestclass = 5; //5 and lower are reserved
 }
 
 ClassEncoder::ClassEncoder(const string & filename) {
        unknownclass = 2;
        highestclass = 0; 
-    
+       bosclass = 3;
+       eosclass = 4;
+       
 	   ifstream IN;
 	   IN.open( filename.c_str() );    
        if (!(IN)) {
@@ -78,6 +82,10 @@ ClassEncoder::ClassEncoder(const string & filename) {
             highestclass++;
             unknownclass = highestclass;
             classes["{UNKNOWN}"] = unknownclass;
+        } else {        
+            classes["{UNKNOWN}"] = unknownclass;
+            classes["{BEGIN}"] = bosclass;
+            classes["{END}"] = eosclass;
         }
 }
 

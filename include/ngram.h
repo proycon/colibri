@@ -17,6 +17,7 @@ const char MAXSKIPS = 4; //Maximum number of skips - THESE NUMBERS CAN NOT BE CH
 const char MAXSKIPSIZE = 16; //Maximum length of each skip   - THESE NUMBERS CAN NOT BE CHANGED WITHOUT ALSO CHANGING THE SkipConf IMPLEMENTATION!
 
 class EncData;
+class EncNGram;
 
 class EncAnyGram {
     protected:
@@ -70,7 +71,9 @@ class EncAnyGram {
     virtual bool unknown(); //does this anygram have an unknown class in it?
     virtual bool variablewidth() const { return false; } 
     
-    EncAnyGram * slice(const int begin,const int length) const; //TODO    
+    EncAnyGram * slice(const int begin,const int length) const; //TODO
+    
+    virtual EncAnyGram * addcontext(const EncNGram * leftcontext, const EncNGram * rightcontext) const;
 };
 
 class EncNullGram: public EncAnyGram {
@@ -102,6 +105,8 @@ class EncNGram: public EncAnyGram {
     EncNGram * gettoken(int index) const;
     
     EncNGram operator +(const EncNGram&) const;
+    
+    EncAnyGram * addcontext(const EncNGram * leftcontext, const EncNGram * rightcontext) const;
 };
 
 EncNGram * getencngram(const int index, const int n, const unsigned char *line, const int size, const unsigned int linenum = 0);
@@ -180,6 +185,8 @@ class EncSkipGram: public EncAnyGram {
      int gettokendata(int index, unsigned char * buffer) const;
      
      EncAnyGram * slice(const int begin,const int length) const;
+     EncAnyGram * addcontext(const EncNGram * leftcontext, const EncNGram * rightcontext) const; //TODO: implement
+     
 };
 
 class EncData {

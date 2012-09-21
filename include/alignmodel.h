@@ -111,6 +111,8 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 	int extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold=0, const double coocthreshold=0, const double alignscorethreshold=0.5,  ClassDecoder * sourcedecoder = NULL, ClassDecoder * targetdecoder = NULL);
 	int extractskipgrams(const int absolutecoocthreshold = 2);
 	
+	EncAnyGram * addcontext(EncData * sentence, const EncAnyGram * focus, int sourceindex);
+	
 	unsigned int prunepatternmodel(IndexedPatternModel & patternmodel, double threshold);
 	
 	void save(const std::string & filename);	

@@ -17,6 +17,8 @@ unsigned int bytestoint(const unsigned char* a, const int l) {
 ClassDecoder::ClassDecoder(const string & filename) {
        unknownclass = 2;
        highestclass = 0;
+       bosclass = 3;
+       eosclass = 4;
        
        ifstream *IN =  new ifstream( filename.c_str() );    
        if (!(*IN)) {
@@ -44,8 +46,11 @@ ClassDecoder::ClassDecoder(const string & filename) {
         if (unknownclass == 0) {
             highestclass++;
             unknownclass = highestclass;
-        }
-        classes[unknownclass] = "{UNKNOWN}";
+        } else {
+            classes[unknownclass] = "{UNKNOWN}";
+            classes[bosclass] = "{BEGIN}";
+            classes[eosclass] = "{END}";
+        }        
 }
 
         
