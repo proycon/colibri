@@ -81,6 +81,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
             if (!inputcoveragemask[i]) {
                 //found one
                 
+                bool keepunigram = false;
                 EncNGram * unigram = input.slice(i, 1);
                 const string word = unigram->decode(*sourceclassdecoder);
                 cerr << "NOTICE: UNTRANSLATABLE WORD: '" << word << "' (adding)" << endl;  
@@ -98,7 +99,9 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 
                 const EncAnyGram * sourcekey = translationtable->getsourcekey((const EncAnyGram *) unigram);                
                 if (sourcekey == NULL) {
-                    translationtable->sourcengrams.insert(*unigram);
+                    translationtable->alignmatrix[(const EncAnyGram *) unigram];
+                    keepunigram = true;
+                    //translationtable->sourcengrams.insert(*unigram);
                     sourcekey = translationtable->getsourcekey((const EncAnyGram *) unigram);
                 }
                 const EncAnyGram * targetkey = translationtable->gettargetkey((const EncAnyGram *) &targetunigram);
@@ -111,7 +114,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 translationtable->alignmatrix[sourcekey][targetkey] = scores;
                                                 
                 sourcefragments.push_back(make_pair( sourcekey, CorpusReference(0,i) ));
-                delete unigram; 
+                if (!keepunigram) delete unigram; 
                 
                 if (DEBUG >= 3) {
                     cerr << "\t" << i << ":1" << " -- " << sourcekey->decode(*sourceclassdecoder) << " ==> " << targetkey->decode(*targetclassdecoder) << " [ ";
@@ -1265,16 +1268,18 @@ int addunknownwords( AlignmentModel & ttable, LanguageModel & lm, ClassEncoder &
             EncNGram sourcegram = sourceclassencoder.input2ngram( word,false,false);
             EncNGram targetgram = targetclassencoder.input2ngram( word,false,false);
             
-            ttable.sourcengrams.insert(sourcegram);
-            ttable.targetngrams.insert(targetgram);
             
-            
-            
+            //ttable.sourcengrams.insert(sourcegram);
+            ttable.targetngrams.insert(targetgram);            
+                
             lm.ngrams[targetgram] = lm.ngrams[UNKNOWNUNIGRAM];
             
             
             
             const EncAnyGram * sourcekey = ttable.getsourcekey((const EncAnyGram*) &sourcegram );
+            if (sourcekey == NULL) {
+                sourcekey = new EncNGram(sourcegram); //new pointer
+            }
             const EncAnyGram * targetkey = ttable.gettargetkey((const EncAnyGram*) &targetgram );
             
             vector<double> scores;

@@ -30,9 +30,9 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
    protected:
     bool DEBUG;
    public:
-    std::unordered_set<EncNGram> sourcengrams;
+    //std::unordered_set<EncNGram> sourcengrams;
+    //std::unordered_set<EncSkipGram> sourceskipgrams;
     std::unordered_set<EncNGram> targetngrams;
-    std::unordered_set<EncSkipGram> sourceskipgrams;
     std::unordered_set<EncSkipGram> targetskipgrams;   
    
     SelectivePatternModel * sourcemodel;

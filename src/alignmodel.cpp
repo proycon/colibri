@@ -14,6 +14,8 @@ AlignmentModel::AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePat
     this->rightsourcecontext = rightsourcecontext;     
 }
 
+//TODO: Can conserve space by removing sourcengrams/sourceskipgrams, they are all in alignmatrix anyhow.
+
 
 void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthreshold, int bestn) {
 	 //Compute intersection with reverse model
@@ -884,6 +886,13 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                     if (leftsourcecontext || rightsourcecontext) {
                         //extract context
                         sourcepatternwithcontext = addcontext(sentence_s2t.source, sourcepattern, sourceindex);
+                        
+                        //make sure we re-use any previously used sourcepatternwithcontext rather than using this newly generated one. Keys will be in alignmatrix (not in sourcemodel nor sourcengrams/sourceskipgrams)
+                        t_alignmatrix::iterator keyiter = alignmatrix.find(sourcepatternwithcontext);                        
+                        if (keyiter != alignmatrix.end()) {                            
+                            delete sourcepatternwithcontext;
+                            sourcepatternwithcontext = &(*keyiter->first);;
+                        }
                     }                    
                      
                     double bestscore = 0;             
@@ -1375,12 +1384,14 @@ void AlignmentModel::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel, 
                     if (t2smodel.alignmatrix.count(copytarget_t2s) && t2smodel.alignmatrix[copytarget_t2s].count(copysource_t2s)) {                                                        
                         if ((t2sthreshold == 0) || (listproduct(t2smodel.alignmatrix[copytarget_t2s][copysource_t2s]) >= t2sthreshold)) {                            
                             if ((productthreshold == 0) || (listproduct(iter2->second) * listproduct(t2smodel.alignmatrix[copytarget_t2s][copysource_t2s]) >= productthreshold)) {                                
-                                if (copysource_t2s->isskipgram()) {
-                                    EncSkipGram skipgram = *((const EncSkipGram *) copysource_t2s);
-                                    sourceskipgrams.insert(skipgram); 
-                                } else {
-                                    EncNGram ngram = *((const EncNGram *) copysource_t2s);
-                                    sourcengrams.insert(ngram);
+                                if (copysource_t2s->isskipgram()) {                                    
+                                    alignmatrix[copysource_t2s]; //should be enough to insert the pointer
+                                    //EncSkipGram skipgram = *((const EncSkipGram *) copysource_t2s);
+                                    //sourceskipgrams.insert(skipgram); 
+                                } else {                                    
+                                    alignmatrix[copysource_t2s]; //should be enough to insert the pointer
+                                    //EncNGram ngram = *((const EncNGram *) copysource_t2s);
+                                    //sourcengrams.insert(ngram);
                                 }
                                 if (copytarget_t2s->isskipgram()) {
                                     EncSkipGram skipgram = *((const EncSkipGram *) copytarget_t2s);
@@ -1457,20 +1468,30 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
         bool sourceisskipgram = false;
         if (gapcount == 0) {
             if (DEBUG)  cerr << "\tNGRAM";
-            EncNGram ngram = EncNGram(&f); //read from file
-            if (!getsourcekey((EncAnyGram*) &ngram)) {
-            	sourcengrams.insert(ngram);            	
-            }   
-            sourcegram = getsourcekey((EncAnyGram*) &ngram);
+            const EncNGram * ngram = new EncNGram(&f); //read from file
+            sourcegram = getsourcekey((EncAnyGram*) ngram); //does the key already exist?
+            if (sourcegram == NULL) {            
+                //no
+                alignmatrix[(const EncAnyGram*) ngram];
+                sourcegram = getsourcekey((const EncAnyGram*) ngram);
+            	//sourcengrams.insert(ngram);            	            
+            } else {
+                //yes
+                delete ngram; //ngram not necessary
+            }               
         } else {
             if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
-            EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file
+            const EncSkipGram * skipgram = new EncSkipGram( &f, gapcount); //read from file
             if (allowskipgrams) {              
-                if (!getsourcekey((EncAnyGram*) &skipgram)) {
-                	sourceskipgrams.insert(skipgram);            	
-                }   
-                sourcegram = getsourcekey((EncAnyGram*) &skipgram);
-            }               
+                sourcegram = getsourcekey((EncAnyGram*) skipgram);  //does the key already exist?
+                if (sourcegram == NULL) {
+                    alignmatrix[(const EncAnyGram*) skipgram];
+                	//sourceskipgrams.insert(skipgram);
+                	sourcegram = getsourcekey((const EncAnyGram*) skipgram);
+                }                   
+            } else {
+                delete skipgram;
+            }
             sourceisskipgram = true;                  
         }        
         if ( (leftsourcecontext || rightsourcecontext) && ( !(sourceisskipgram && !allowskipgrams) ) ) {
@@ -1604,14 +1625,21 @@ AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sour
         if ((!source.empty()) && (!target.empty()) && (!scores.empty())) {
             //add to phrasetable
             EncAnyGram * sourcegram = sourceencoder->input2anygram(source,true,true);
+            
+            /*
             if (sourcegram->isskipgram()) {
                 EncSkipGram skipgram = *((EncSkipGram *) sourcegram);
                 if (!getsourcekey(sourcegram)) sourceskipgrams.insert(skipgram);            	
             } else {
                 EncNGram ngram = *((EncNGram *) sourcegram);
                 if (!getsourcekey(sourcegram)) sourcengrams.insert(ngram);
-            }        
+            }*/      
             const EncAnyGram * sourcegramkey = getsourcekey(sourcegram);
+            if (sourcegramkey == NULL) {
+                alignmatrix[sourcegram]; //does the insert
+                sourcegramkey = sourcegram; //getsourcekey(sourcegram);
+            }
+            
                         
             EncAnyGram * targetgram = targetencoder->input2anygram(target,true,true);
             if (targetgram->isskipgram()) {
@@ -1651,17 +1679,17 @@ void AlignmentModel::save(const string & filename) {
     f.write( (char*) &sourcecount, sizeof(uint64_t));   
     
 
-    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, vector<double> > >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+    for (t_alignmatrix::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
     	if (iter->first == NULLGRAM) continue;
 
     	
 		f.write((char*) &check, sizeof(char));
 			  
-    	const EncAnyGram * sourcegram = getsourcekey(iter->first);
-    	if (sourcegram == NULL) {
-    	    cerr << "AlignmentModel::save(): Source key not found! This should not happen!";
+    	const EncAnyGram * sourcegram = iter->first; // getsourcekey(iter->first);
+    	/*if (sourcegram == NULL) { //check not needed? pointer should be right anyhow? getsourcekey == NULL will happen with source-context!
+    	    cerr << "AlignmentModel::save(): Source key not found! This should not happen!"; 
     	    exit(6); 
-    	}
+    	}*/
     	if (sourcegram->isskipgram()) {
     		const EncSkipGram * skipgram = (const EncSkipGram*) sourcegram;
     		skipgram->writeasbinary(&f);
@@ -1673,7 +1701,7 @@ void AlignmentModel::save(const string & filename) {
     	uint64_t targetcount = iter->second.size();
     	f.write( (char*) &targetcount, sizeof(uint64_t));
     	            
-        for (unordered_map<const EncAnyGram*, vector<double> >::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+        for (t_aligntargets::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
         	const EncAnyGram* targetgram = gettargetkey(iter2->first);
         	if (targetgram == NULL) {
         	    cerr << "AlignmentModel::save(): Target key not found! This should not happen!";
@@ -1722,6 +1750,13 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
 }
 
 const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram* key) {
+    t_alignmatrix::iterator keyiter = alignmatrix.find(key);
+    if (keyiter != alignmatrix.end()) {
+        return &(*keyiter->first);
+    } else if (sourcemodel != NULL) {
+        return sourcemodel->getkey(key);
+    }
+    /*            
     if (sourcemodel != NULL) return sourcemodel->getkey(key);
     if (key->gapcount() == 0) {
         std::unordered_set<EncNGram>::iterator iter = sourcengrams.find(*( (EncNGram*) key) );
@@ -1738,6 +1773,7 @@ const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram* key) {
             return NULL;
         }        
     }
+    */
 }
 
 

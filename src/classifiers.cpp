@@ -85,7 +85,7 @@ NClassifierArray::build(const string & enctraincorpusfile, const TranslationTabl
 			     
 			     vector<const string> featurevector;
 			     //obtain left context
-			     
+			     knowledge-based
 			     
 			     //obtain focus part			    
                  const int n = anygram->n();			     			        
