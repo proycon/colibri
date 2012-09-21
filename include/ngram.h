@@ -231,14 +231,15 @@ namespace std {
     };
     
     template <>
-    struct hash<const EncAnyGram*> {
+    struct hash<const EncAnyGram *> {
      public: 
-            size_t operator()(const EncAnyGram * anygram) const throw() {            
+            size_t operator()(const EncAnyGram * anygram) const throw() {         
                 return anygram->hash();
             }
     };
     
-
+    
+    
     template <>
     struct hash<EncNGram> {
      public: 
@@ -275,6 +276,15 @@ namespace std {
           }
     };
 
+    template <>
+    struct equal_to<const EncAnyGram *> {
+     public: 
+            bool operator()(const EncAnyGram * anygram, const EncAnyGram * anygram2) const throw() {
+                if ((anygram == NULL) || (anygram2 == NULL)) return false;         
+                return (anygram->hash() == anygram2->hash());
+            }
+    };
+    
 
 }
 #endif

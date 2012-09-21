@@ -872,6 +872,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
         //iterate over source sentence word by word
         for (int sourceindex = 0; sourceindex < sentence_s2t.source->length(); sourceindex++) {
             int count_s = 0;  
+            const EncAnyGram * prevsourcepatternwithcontext = NULL;
             //find source patterns valid at this position  
             if (sourcetokenrevindex.count(sourceindex)) {
                 for (vector<const EncAnyGram*>::iterator iter_s = sourcetokenrevindex[sourceindex].begin(); iter_s !=  sourcetokenrevindex[sourceindex].end(); iter_s++) {
@@ -885,14 +886,32 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                     bool sourcepatternused = false; 
                     if (leftsourcecontext || rightsourcecontext) {
                         //extract context
-                        sourcepatternwithcontext = addcontext(sentence_s2t.source, sourcepattern, sourceindex);
+                        /*
                         
-                        //make sure we re-use any previously used sourcepatternwithcontext rather than using this newly generated one. Keys will be in alignmatrix (not in sourcemodel nor sourcengrams/sourceskipgrams)
-                        t_alignmatrix::iterator keyiter = alignmatrix.find(sourcepatternwithcontext);                        
-                        if (keyiter != alignmatrix.end()) {                            
+                        if ((prevsourcepatternwithcontext != NULL) && (sourcepatternwithcontext->hash() == prevsourcepatternwithcontext->hash())) {
+                            cout << "CONTEXT EXISTS @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
                             delete sourcepatternwithcontext;
-                            sourcepatternwithcontext = &(*keyiter->first);;
+                            sourcepatternwithcontext = prevsourcepatternwithcontext;
+                        } else {
+                            cout << "CONTEXT NEW @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
                         }
+                        prevsourcepatternwithcontext = sourcepatternwithcontext;
+                        */
+                        
+                        
+                        
+                        //make sure we re-use any previously used sourcepatternwithcontext rather than using this newly generated one
+                        cout << endl; //DEBUG
+                        sourcepatternwithcontext = addcontext(sentence_s2t.source, sourcepattern, sourceindex);
+                        const EncAnyGram * key = getsourcekey(sourcepatternwithcontext, false); // allowfallback=false (do not fall back to sourcemodel, which doesn't know contexts)
+                        if (key != NULL) {
+                            delete sourcepatternwithcontext; //delete generated one
+                            sourcepatternwithcontext = key; //use existing key
+                            cout << "CONTEXT EXISTS @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
+                        } else {
+                            cout << "CONTEXT NEW @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
+                        }
+                        
                     }                    
                      
                     double bestscore = 0;             
@@ -1006,32 +1025,42 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                     
                     
                     if ((besttargetpattern != NULL) && (bestscore >= alignscorethreshold)) {
-                    
-                        const EncAnyGram * sp;
+                        
+                        //use pattern-in-context or without context as key in alignmatrix?
+                        const EncAnyGram * key;
                         if (sourcepatternwithcontext != NULL) {
-                            sp = sourcepatternwithcontext; 
+                            key = sourcepatternwithcontext;
+                            cout << "KEY=CONTEXT @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
+
                         } else {
-                            sp = sourcepattern;
+                            key = sourcepattern;
+                            cout << "KEY=NORMAL @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
                         }
-                    
-                    
+                                        
                         //add alignment
-                        if (alignmatrix[sp][besttargetpattern].empty()) {
-                            alignmatrix[sp][besttargetpattern].push_back(1);
+                        if (alignmatrix[key][besttargetpattern].empty()) {
+                            alignmatrix[key][besttargetpattern].push_back(1);
                         } else {
-                            alignmatrix[sp][besttargetpattern][0] += 1;
+                            alignmatrix[key][besttargetpattern][0] += 1;
                         }
+                        
+                        /* DEBUG: if ((sourcepatternwithcontext != NULL) && (getsourcekey(key) != key)) {
+                                cerr << "ERROR: CAN NOT RETRIEVE KEY" << endl;
+                        } */
+                        
                         sourcepatternused = true;
                         found++;
                         if ((sourcedecoder != NULL) && (targetdecoder != NULL)) {
-                            cout << sp->decode(*sourcedecoder) << " ||| " << besttargetpattern->decode(*targetdecoder) << " ||| " << bestscore << endl;
+                            cout << key->decode(*sourcedecoder) << " ||| " << besttargetpattern->decode(*targetdecoder) << " ||| " << bestscore << endl;
                         }
                     }
+                    
                     if (sourcepatternwithcontext != NULL) {
                         if (sourcepatternused) {
                             sourcecontexts[sourcepattern].insert(sourcepatternwithcontext);
                         } else {
                             delete sourcepatternwithcontext;
+                            //prevsourcepatternwithcontext = NULL;
                         }
                     }                                   
                 }
@@ -1738,13 +1767,14 @@ void AlignmentModel::save(const string & filename) {
 void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, ostream * OUT, bool mosesformat) {
     string delimiter = "\t";
     if (mosesformat) delimiter = " ||| ";
-    for (unordered_map<const EncAnyGram*,unordered_map<const EncAnyGram*, vector<double> > >::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+    for (t_alignmatrix::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
     	if (iter->first == NULLGRAM) continue;
         const EncAnyGram* sourcegram = iter->first;
-        for (unordered_map<const EncAnyGram*, vector<double>>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+        //cerr << "DEBUG: SIZE=" << iter->second.size() << " @" << (size_t) iter->first << " #" << iter->first->hash() << endl;         
+        for (t_aligntargets::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
             const EncAnyGram* targetgram = iter2->first;
             *OUT << sourcegram->decode(sourceclassdecoder) << delimiter;
-            *OUT << targetgram->decode(targetclassdecoder) << delimiter; 
+            *OUT << targetgram->decode(targetclassdecoder) << delimiter;            
             for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
                 *OUT << *iter3 << ' ';
             }
@@ -1753,13 +1783,16 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
     }
 }
 
-const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram* key) {
+const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram * key,  bool allowfallback) {
+    cout << "SEARCHING #" << (size_t) key->hash() << endl;
     t_alignmatrix::iterator keyiter = alignmatrix.find(key);
     if (keyiter != alignmatrix.end()) {
+        cout << "FOUND @" << (size_t) keyiter->first << endl;
         return keyiter->first;
-    } else if (sourcemodel != NULL) {    
+    } else if ((sourcemodel != NULL) && (allowfallback)) {    
         return sourcemodel->getkey(key);
     } else {
+        cout << "NOT FOUND" << endl;
         return NULL;
     }
     /*            

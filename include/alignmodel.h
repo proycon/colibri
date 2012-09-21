@@ -76,7 +76,7 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     
     void enabledebug() { DEBUG = true; }
     
-    const EncAnyGram * getsourcekey(const EncAnyGram* key);
+    const EncAnyGram * getsourcekey(const EncAnyGram* key, bool allowfallback=true);
     const EncAnyGram * gettargetkey(const EncAnyGram* key);
     const EncAnyGram * getkey(const EncAnyGram* key) { return getsourcekey(key); } //alias for getsourcekey, needed by ModelQuerier
     
