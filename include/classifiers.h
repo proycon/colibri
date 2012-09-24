@@ -1,6 +1,6 @@
 #include <alignmodel.h>
 #include <TimblAPI.h>
-
+/*
 class Classifier {
   protected:
     ClassEncoder * targetclassencoder;        
@@ -10,8 +10,9 @@ class Classifier {
     ~Classifier();    
     TranslationTable * classify(const EncAnyGram * sourcegram, vector<const std::string> featurevector);         
 };
+*/
 
-class BuildClassifier {
+class Classifier {
   private:
     int featurevectorsize; //nr of unigram features (each feature is a single word) in the feature vector
     bool exemplarweights;
@@ -20,13 +21,18 @@ class BuildClassifier {
     std::string ID;
     bool opened;
     bool append;
+    ClassDecoder * sourceclassdecoder;
+    ClassDecoder * targetclassdecoder;
   public:
-    BuildClassifier(const std::string & id, bool append = false, bool examplarweights = false);        
-    ~BuildClassifier();
-    void addinstance(vector<const std::string> featurevector, const std::string & label, double exemplarweight = 1);
+    Classifier(const std::string & id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool append = false, bool examplarweights = false); //for building        
+    ~Classifier();
+    void addinstance(vector<const EncAnyGram *> featurevector, const EncAnyGram * label, double exemplarweight = 1);
+    void addinstance(vector<const std::string> & featurevector, const std::string & label, double exemplarweight = 1);
     void train(const std::string & timbloptions);
     const std::string id() { return ID; };
+    TranslationTable * classify(const EncAnyGram * sourcegram, vector<const std::string> featurevector);     
 };
+
 
 
 class ClassifierInterface {
@@ -47,6 +53,7 @@ class NClassifierArray: public ClassifierInterface {
         int leftcontextsize;
         int rightcontextsize;
     public:
+        map<int, Classifier*> classifierarray;    
         NClassifierArray(const std::string & id, int leftcontextsize, int rightcontextsize): ClassifierInterface(id) {};
         void build(const string & enctraincorpusfile, const TranslationTable * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);        
         void load();        

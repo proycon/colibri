@@ -14,8 +14,6 @@ AlignmentModel::AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePat
     this->rightsourcecontext = rightsourcecontext;     
 }
 
-//TODO: Can conserve space by removing sourcengrams/sourceskipgrams, they are all in alignmatrix anyhow.
-
 
 void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthreshold, int bestn) {
 	 //Compute intersection with reverse model
