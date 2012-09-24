@@ -72,7 +72,7 @@ NClassifierArray::NClassifierArray(const string & id, int maxn, int leftcontexts
     this->maxn = maxn;
 }
 
-NClassifierArray::build(const TranslationTable * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights) {
+NClassifierArray::build(const AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights) {
     if (ttable->leftcontextsize != leftcontextsize) {
         cerr << "Translation table has left context size: " << ttable->leftcontextsize << ", not " << leftcontextsize << endl;
         exit(3); 
