@@ -1,5 +1,6 @@
 #include <alignmodel.h>
-#include <TimblAPI.h>
+#include "timbl/TimblAPI.h"
+
 /*
 class Classifier {
   protected:
