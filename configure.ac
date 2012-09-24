@@ -39,6 +39,19 @@ AC_LANG([C++])
 if test $prefix = "NONE"; then
    prefix="$ac_default_prefix"
 fi
+
+AC_ARG_WITH(timbl,
+       [  --with-timbl=DIR       use timbl installed in <DIR>; 
+               note that you can install timbl in a non-default directory with
+               ./configure --prefix=<DIR> in the timbl installation directory],
+       [PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$withval/lib/pkgconfig"],
+       [PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$prefix/lib/pkgconfig"])
+#  AC_MSG_NOTICE( [pkg-config search path: $PKG_CONFIG_PATH] )
+PKG_CHECK_MODULES([timbl], [timbl >= 6.4.2] )
+CXXFLAGS="$CXXFLAGS $timbl_CFLAGS"
+LIBS="$LIBS $timbl_LIBS"
+
+
 #useICU=;
 # inspired by feh-1.3.4/configure.ac.  Tnx Tom Gilbert and feh hackers.
 #AC_ARG_WITH(icu,

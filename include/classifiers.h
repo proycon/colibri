@@ -39,8 +39,8 @@ class ClassifierInterface {
     protected:
         std::string ID;
     public:
-        ClassifierInterface(const std::string & id) {
-            ID = id;
+        ClassifierInterface(const std::string & _id) {
+            ID = _id;
         }
         const std::string id() { return ID; };
         virtual void build(const string & traincorpusfile, const TranslationTable * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) =0;
@@ -60,6 +60,6 @@ class NClassifierArray: public ClassifierInterface {
         void train();        
 };
 
-class ConstructionExperts: public ClassifierInterface {
+/*class ConstructionExperts: public ClassifierInterface {
         
-};
+};*/

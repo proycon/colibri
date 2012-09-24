@@ -3,9 +3,9 @@
 using namespace std;
 using namespace Timbl;
 
-Classifier::Classifier(const std::string & id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool appendmode = false, bool exemplarweights = false) {
-    ID = id;
-    trainfile = string(id + ".train");
+Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool appendmode = false, bool exemplarweights = false) {
+    ID = _id;
+    trainfile = string(_id + ".train");
     opened = false;        
     featurevectorsize = 0;    
     this->appendmode = appendmode;
@@ -56,12 +56,15 @@ void Classifier::addinstance(vector<const string> & featurevector, const string 
 }
 
 void Classifier::train(const string & timbloptions) {
-    ibasefile = string(id + ".ibase");
+    ibasefile = string(id() + ".ibase");
     TimblAPI * timbltrainexp = new TimblAPI( timbloptions , ID );
     timbltrainexp->Learn(trainfile);   
-    timblexp->WriteInstanceBase( ibasefile );
+    timbltrainexp->WriteInstanceBase( ibasefile );
     delete timbltrainexp;    
 }
+
+
+
 
 NClassifierArray::NClassifierArray(const string & id, int maxn, int leftcontextsize, int rightcontextsize) {
     this->leftcontextsize = leftcontextsize;
@@ -81,7 +84,7 @@ NClassifierArray::build(const TranslationTable * ttable, ClassDecoder * sourcecl
         const EncAnyGram * focus = iter->first;
         const int n = focus->n();
         stringstream newid;
-        newid << this->id << ".n" << n;
+        newid << this->id() << ".n" << n;
         if (!classifierarray.count(n) {
             classifierarray[n] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder);
             vector<const EncAnyGram *> featurevector;
@@ -103,78 +106,7 @@ NClassifierArray::build(const TranslationTable * ttable, ClassDecoder * sourcecl
     
 }
 
-NClassifierArray::build(const string & enctraincorpusfile, const TranslationTable * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights) {
-    vector<Classifier*> buildarray;
-    ifstream IN;
-    IN.open(enctraincorpusfile);
-    if (!IN.good()) {
-        cerr << "Training corpus not found: " << enctraincorpusfile << endl;
-        exit(2);
-    }
-    buildarray.push_back(NULL);    
-    for (int n = 1; n <= 9; n++) {
-        buildarray.push_back( new BuildClassifier(String(id + ".n." + n), false, exemplarweights) ); 
-    }
-    const int BUFFERSIZE = 65536;
-    unsigned char line[BUFFERSIZE];
-	uint32_t linenum = 0;
-    while (IN.good()) {
-        const int linesize = readline(IN, line, BUFFERSIZE);
-		vector<pair<const EncAnyGram*, CorpusReference> > patterns = getpatterns(buffer,buffersize, true, linenum,1,maxn);
-		for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = patterns.begin(); iter != patterns.end(); iter++) {
-			const EncAnyGram * anygram = iter->first;
-			const CorpusReference ref = iter->second;
-			
-			//check if pattern occurs in phrasetable
-			if (ttable->getsourcekey(anygram) != NULL) {
-			     //yes
-			     
-			     vector<const string> featurevector;
-			     //obtain left context
-			     knowledge-based
-			     
-			     //obtain focus part			    
-                 const int n = anygram->n();			     			        
-			     for (int i = 0; i < n; i++) {
-			        const EncNGram * unigram = anygram->gettoken(i);
-			        featurevector.push_back(unigram->decode(sourceclassdecoder) )
-			        delete unigram;
-			     }			      
-			     
-			     //obtain right context
-			     
-			     //compose feature vector
-			     const string label = 
-			}
-			
-		}         
-    }
-    
-    
-    
-    
-    do {
-    	linenum++; 
-    	getline(&fin,line);    	
-    	if (!line.empty()) {
-			int buffersize = encoder.encodestring(line, buffer, allowunknown); //last bool is
-			if (exact) {
-				//TODO
-			} else {    	
-				vector<pair<const EncAnyGram*, CorpusReference> > patterns = getpatterns(buffer,buffersize, true, linenum,minn,maxn);
-				for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = patterns.begin(); iter != patterns.end(); iter++) {
-					const EncAnyGram * anygram = iter->first;
-					const CorpusReference ref = iter->second;
-					outputinstance(anygram, ref, decoder);
-				} 
-			}
-		}
-    } while (!cin.eof() && (repeat));	  
-    
-    for (int n = 1; n <= 9; n++) {
-        delete buildarray[n];
-    }    
-}
+
 
 
 

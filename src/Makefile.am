@@ -5,7 +5,7 @@ bin_PROGRAMS = classdecode classencode patternfinder grapher aligner querier giz
 lib_LTLIBRARIES = libcolibri.la
 
 libcolibri_la_CXXFLAGS = -Wall -std=c++0x
-libcolibri_la_SOURCES = classdecoder.cpp classencoder.cpp ngram.cpp algorithms.cpp patternmodel.cpp alignmodel.cpp gizamodel.cpp lm.cpp common.cpp
+libcolibri_la_SOURCES = classdecoder.cpp classencoder.cpp ngram.cpp algorithms.cpp patternmodel.cpp alignmodel.cpp gizamodel.cpp lm.cpp common.cpp classifiers.cpp
 
 classdecode_CXXFLAGS = -Wall -std=c++0x
 classdecode_LDADD = libcolibri.la
