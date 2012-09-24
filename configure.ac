@@ -40,6 +40,16 @@ if test $prefix = "NONE"; then
    prefix="$ac_default_prefix"
 fi
 
+
+PKG_PROG_PKG_CONFIG
+# Checks for timbl library.
+# inspired by feh-1.3.4/configure.ac.  Tnx Tom Gilbert and feh hackers.
+
+# ugly hack when PKG_CONFIG_PATH isn't defined.
+# couldn't get it to work otherwise
+if test "x$PKG_CONFIG_PATH" = x; then
+     export PKG_CONFIG_PATH=""
+fi
 AC_ARG_WITH(timbl,
        [  --with-timbl=DIR       use timbl installed in <DIR>; 
                note that you can install timbl in a non-default directory with
