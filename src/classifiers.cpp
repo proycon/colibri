@@ -3,7 +3,7 @@
 using namespace std;
 using namespace Timbl;
 
-Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool appendmode = false, bool exemplarweights = false) {
+Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool appendmode, bool exemplarweights ) {
     ID = _id;
     trainfile = string(_id + ".train");
     opened = false;        
@@ -19,16 +19,16 @@ Classifier::~Classifier() {
 }
 
 void Classifier::addinstance(vector<const EncAnyGram *> featurevector, const EncAnyGram * label, double exemplarweight) {
-    vector<const string> featurevector_s;
+    vector<string> featurevector_s;
     for (vector<const EncAnyGram *>::const_iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         const EncAnyGram * anygram;
-        featurevector_s.push_back(anygram->decode(sourceclassdecoder));        
+        featurevector_s.push_back(anygram->decode(*sourceclassdecoder));        
     }
-    const string label_s = label->decoder(targetclassdecoder);
+    const string label_s = label->decode(*targetclassdecoder);
     addinstance(featurevector_s, label_s, exemplarweight);
 }
 
-void Classifier::addinstance(vector<const string> & featurevector, const string & label, double exemplarweight) {
+void Classifier::addinstance(vector<string> & featurevector, const string & label, double exemplarweight) {
     if (!opened) {
         if (appendmode) {
             outputfile.open(trainfile, ios::app);
@@ -44,19 +44,19 @@ void Classifier::addinstance(vector<const string> & featurevector, const string 
         exit(6); 
     } 
     
-    for (vector<const string>::const_iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {    
+    for (vector<string>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {    
         const string feature = *iter;
         outputfile << feature << ' ';  
     } 
     outputfile << label;
-    if (examplarweights) {
+    if (exemplarweights) {
         outputfile << ' ' << exemplarweight;
     }
     outputfile << endl;
 }
 
 void Classifier::train(const string & timbloptions) {
-    ibasefile = string(id() + ".ibase");
+    const string ibasefile = string(id() + ".ibase");
     TimblAPI * timbltrainexp = new TimblAPI( timbloptions , ID );
     timbltrainexp->Learn(trainfile);   
     timbltrainexp->WriteInstanceBase( ibasefile );
@@ -66,40 +66,42 @@ void Classifier::train(const string & timbloptions) {
 
 
 
-NClassifierArray::NClassifierArray(const string & id, int maxn, int leftcontextsize, int rightcontextsize) {
+NClassifierArray::NClassifierArray(const string & id, int leftcontextsize, int rightcontextsize): ClassifierInterface(id) {
     this->leftcontextsize = leftcontextsize;
     this->rightcontextsize = rightcontextsize;
-    this->maxn = maxn;
 }
 
-NClassifierArray::build(const AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights) {
-    if (ttable->leftcontextsize != leftcontextsize) {
-        cerr << "Translation table has left context size: " << ttable->leftcontextsize << ", not " << leftcontextsize << endl;
+void NClassifierArray::build(const std::string & enctraincorpusfile, AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights) {
+    //enctraincorpusfile is ignored
+    if (ttable->leftsourcecontext != leftcontextsize) {
+        cerr << "Translation table has left context size: " << ttable->leftsourcecontext << ", not " << leftcontextsize << endl;
         exit(3); 
-    } else {
-        cerr << "Translation table has right context size: " << ttable->rightcontextsize << ", not " << rightcontextsize << endl;
+    } else if (ttable->rightsourcecontext != rightcontextsize)  {
+        cerr << "Translation table has right context size: " << ttable->rightsourcecontext << ", not " << rightcontextsize << endl;
         exit(3);
     } 
-    for (t_contexts::iterator iter = ttable->sourcecontexts.begin(); ttable->sourcecontexts.end(); iter++) {
+    for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
         const EncAnyGram * focus = iter->first;
-        const int n = focus->n();
-        stringstream newid;
-        newid << this->id() << ".n" << n;
-        if (!classifierarray.count(n) {
-            classifierarray[n] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder);
-            vector<const EncAnyGram *> featurevector;
-            for (int i = 0; i < n; i++) {
-                const EncNGram * unigram = gettoken(i);
-                featurevector.push_back(unigram);
-            }
-            for (t_aligntargets::iterator iter = alignmatrix[focus].begin(); alignmatrix[focus].end(); iter++) {
-                const EncAnyGram * label = iter->first;
-                //TODO: add exemplar weight iter->second
-                classifierarray[n]->addinstance(featurevector, label);
-            }            
-            //cleanup
-            for (int i = 0; i < n; i++) {
-                delete featurevector[i];
+        if (iter->second.size() > 1) {
+            const int n = focus->n();
+            stringstream newid;
+            newid << this->id() << ".n" << n;
+            if (!classifierarray.count(n)) {
+                classifierarray[n] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder);
+                vector<const EncAnyGram *> featurevector;
+                for (int i = 0; i < n; i++) {
+                    const EncAnyGram * unigram = (const EncAnyGram *) focus->slice(i,1);
+                    featurevector.push_back(unigram);                    
+                }
+                for (t_aligntargets::const_iterator iter2 = ttable->alignmatrix[focus].begin(); iter2 != ttable->alignmatrix[focus].end(); iter2++) {
+                    const EncAnyGram * label = iter2->first;
+                    //TODO: add exemplar weight iter2->second
+                    classifierarray[n]->addinstance(featurevector, label);
+                }            
+                //cleanup
+                for (int i = 0; i < n; i++) {
+                    delete featurevector[i];
+                }
             }
         }
     }

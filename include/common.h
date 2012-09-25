@@ -1,5 +1,5 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef COLIBRICOMMON_H
+#define COLIBRICOMMON_H
 
 #include <string>
 #include <list>
