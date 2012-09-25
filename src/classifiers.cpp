@@ -4,9 +4,9 @@ using namespace std;
 using namespace Timbl;
 
 Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool appendmode, bool exemplarweights ) {
+    //for training
     ID = _id;
-    trainfile = string(_id + ".train");
-    opened = false;        
+    trainfile = string(_id + ".train");        
     featurevectorsize = 0;    
     this->appendmode = appendmode;
     this->exemplarweights = exemplarweights;
@@ -14,8 +14,17 @@ Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecode
     this->targetclassdecoder = targetclassdecoder;
 }        
 
+Classifier::Classifier(const std::string & _id, const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder) {
+    //for testing
+    ID = _id;
+    ibasefile = string(_id + ".ibase");        
+    this->sourceclassdecoder = sourceclassdecoder;
+    this->targetclassencoder = targetclassencoder;
+    testexp = new TimblAPI( timbloptions , ID );
+}
+
 Classifier::~Classifier() {
-    if (opened) outputfile.close();    
+    if (outputfile.is_open()) outputfile.close();    
 }
 
 void Classifier::addinstance(vector<const EncAnyGram *> featurevector, const EncAnyGram * label, double exemplarweight) {
@@ -29,7 +38,7 @@ void Classifier::addinstance(vector<const EncAnyGram *> featurevector, const Enc
 }
 
 void Classifier::addinstance(vector<string> & featurevector, const string & label, double exemplarweight) {
-    if (!opened) {
+    if (!outputfile.is_open()) {
         if (appendmode) {
             outputfile.open(trainfile, ios::app);
         } else {
@@ -46,11 +55,11 @@ void Classifier::addinstance(vector<string> & featurevector, const string & labe
     
     for (vector<string>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {    
         const string feature = *iter;
-        outputfile << feature << ' ';  
+        outputfile << feature << '\t';  
     } 
     outputfile << label;
     if (exemplarweights) {
-        outputfile << ' ' << exemplarweight;
+        outputfile << '\t' << exemplarweight;
     }
     outputfile << endl;
 }
@@ -63,7 +72,26 @@ void Classifier::train(const string & timbloptions) {
     delete timbltrainexp;    
 }
 
+t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> featurevector) {
+    vector<string> featurevector_s;
+    for (vector<const EncAnyGram *>::const_iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
+        const EncAnyGram * anygram;
+        featurevector_s.push_back(anygram->decode(*sourceclassdecoder));        
+    }
+    return classify(featurevector_s);
+}
 
+t_aligntargets Classifier::classify(std::vector<string> featurevector) {
+    stringstream features_ss;
+    for (vector<string>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
+        features_ss << *iter << "\t";
+    }
+    features_ss << "?"; //class dummy    
+    const ValueDistribution * valuedistribution;
+    double distance;
+    const string features = features_ss.str();
+    testexp->Classify(features, valuedistribution, distance);
+}
 
 
 NClassifierArray::NClassifierArray(const string & id, int leftcontextsize, int rightcontextsize): ClassifierInterface(id) {
