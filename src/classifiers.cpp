@@ -219,3 +219,12 @@ void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel *
      }     
 }
 
+
+void NClassifierArray::train(const string & timbloptions) {
+    for (map<int,Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
+        cerr << "Training classifier n=" << iter->first << "..." << endl;
+        iter->second->train(timbloptions);
+    }
+
+    
+}

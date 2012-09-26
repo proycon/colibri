@@ -36,9 +36,8 @@ class ClassifierInterface {
             ID = _id;
         }
         const std::string id() { return ID; };
-        virtual void build(const AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) =0;
-        virtual void load() =0;
-        virtual void train() =0;
+        virtual void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,  bool exemplarweights = true) =0;
+        virtual void train(const std::string & timbloptions) =0;
         
         virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments sourcefragments) =0; //decoder will call this, sourcefragments and newtable will be filled for decoder  
 };
@@ -50,9 +49,8 @@ class NClassifierArray: public ClassifierInterface {
     public:
         std::map<int, Classifier*> classifierarray;    
         NClassifierArray(const std::string & id, int leftcontextsize, int rightcontextsize);
-        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true); 
-        void load();        
-        void train();     
+        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);       
+        void train(const std::string & timbloptions);     
 
         void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments sourcefragments); //decoder will call this, sourcefragments will be filled for decoder
         t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector);

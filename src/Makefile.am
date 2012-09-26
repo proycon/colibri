@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -I@top_srcdir@/include
 
-bin_PROGRAMS = classdecode classencode patternfinder grapher aligner querier giza2html decoder test
+bin_PROGRAMS = classdecode classencode patternfinder grapher aligner querier giza2html decoder trainclassifiers test
 
 lib_LTLIBRARIES = libcolibri.la
 
@@ -38,6 +38,12 @@ decoder_CXXFLAGS = -Wall -std=c++0x
 decoder_LDADD = libcolibri.la
 decoder_SOURCES = decoder.cpp
 decoder_LDFLAGS = -static
+
+
+trainclassifiers_CXXFLAGS = -Wall -std=c++0x
+trainclassifiers_LDADD = libcolibri.la
+trainclassifiers_SOURCES = trainclassifiers.cpp
+trainclassifiers_LDFLAGS = -static
 
 querier_CXXFLAGS = -Wall -std=c++0x
 querier_LDADD = libcolibri.la
