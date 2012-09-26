@@ -138,7 +138,7 @@ ModelQuerierBase::ModelQuerierBase() {
 }
 
 std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerierBase::getpatterns(const unsigned char * data, const unsigned char datasize, bool doskipgrams, uint32_t linenum, const int minn, const int maxn) {
-	
+
 	std::vector<pair<const EncAnyGram*, CorpusReference> > patterns;
 
 
@@ -152,11 +152,15 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerierBase::getpatt
 		for (int length = minn; (length <= maxn) && (begin+length <= l);  length++) {
 		    //cerr << "TRYING PATTERN " << begin << " " << length << endl;
 			EncNGram * ngram = getencngram(begin,length, data, datasize);
-			const EncAnyGram * anygram =  ngram;			
-			if (getkey(anygram) != NULL) {			
+			const EncAnyGram * anygram =  ngram;
+			
+				
+			const EncAnyGram * key = getfocuskey(anygram);
+
+			if (key != NULL) {			
 			//if (occurrencecount(anygram) > 0) {
 			    ///cerr << "FOUND" << endl;
-				patterns.push_back( make_pair<const EncAnyGram*,CorpusReference>(getkey(anygram), CorpusReference(linenum, (char) begin) ) ); //stores the actual pointer used by the model
+				patterns.push_back( make_pair(key, CorpusReference(linenum, (char) begin) ) ); //stores the actual pointer used by the model
 				if (doskipgrams) {
 					//TODO: make more efficient for complete models that are guaranteed not to prune sub-parts
 				
@@ -209,10 +213,11 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerierBase::getpatt
                         if (initialskip && finalskip && skipref.size() <= 1) docount = false; //the whole n-gram is a skip, discard
                         if (docount) {
                             EncSkipGram skipgram = EncSkipGram(subngrams, skipref, initialskip, finalskip);
-                            const EncAnyGram * anygram2 = &skipgram;			
+                            const EncAnyGram * anygram2 = &skipgram;	
+                            const EncAnyGram * key2 = getfocuskey(anygram2);		
 							//if (occurrencecount(anygram2) > 0) {
-							if (getkey(anygram2) != NULL) {
-								patterns.push_back( make_pair<const EncAnyGram*,CorpusReference>(getkey(anygram2), CorpusReference(linenum, (char) begin)) ); //stores the actual pointer used by the model
+							if (key2 != NULL) {
+								patterns.push_back( make_pair(key2, CorpusReference(linenum, (char) begin)) ); //stores the actual pointer used by the model
 							}
 							//}			
 						}

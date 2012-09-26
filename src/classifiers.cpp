@@ -72,7 +72,7 @@ void Classifier::train(const string & timbloptions) {
     delete timbltrainexp;    
 }
 
-t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> featurevector) {
+t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> & featurevector) {
     vector<string> featurevector_s;
     for (vector<const EncAnyGram *>::const_iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         const EncAnyGram * anygram;
@@ -81,7 +81,7 @@ t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> featurevecto
     return classify(featurevector_s);
 }
 
-t_aligntargets Classifier::classify(std::vector<string> featurevector) {
+t_aligntargets Classifier::classify(std::vector<string> & featurevector) {
     stringstream features_ss;
     for (vector<string>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         features_ss << *iter << "\t";
@@ -91,6 +91,16 @@ t_aligntargets Classifier::classify(std::vector<string> featurevector) {
     double distance;
     const string features = features_ss.str();
     testexp->Classify(features, valuedistribution, distance);
+    
+    //convert valuedistribution to t_aligntargets
+    t_aligntargets result;
+    for (ValueDistribution::dist_iterator iter = valuedistribution->begin(); iter != valuedistribution->end(); iter++) {
+        const string data = iter->second->Value()->Name();
+        const double weight = iter->second->Weight();
+        const EncAnyGram * target = targetclassencoder->input2anygram(data, false);
+        result[target].push_back(weight);         
+    }
+    return result;
 }
 
 
@@ -99,8 +109,7 @@ NClassifierArray::NClassifierArray(const string & id, int leftcontextsize, int r
     this->rightcontextsize = rightcontextsize;
 }
 
-void NClassifierArray::build(const std::string & enctraincorpusfile, AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights) {
-    //enctraincorpusfile is ignored
+void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights) {
     if (ttable->leftsourcecontext != leftcontextsize) {
         cerr << "Translation table has left context size: " << ttable->leftsourcecontext << ", not " << leftcontextsize << endl;
         exit(3); 
@@ -109,34 +118,104 @@ void NClassifierArray::build(const std::string & enctraincorpusfile, AlignmentMo
         exit(3);
     } 
     for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
-        const EncAnyGram * focus = iter->first;
+        const EncAnyGram * focus = iter->first;                
         if (iter->second.size() > 1) {
             const int n = focus->n();
             stringstream newid;
             newid << this->id() << ".n" << n;
             if (!classifierarray.count(n)) {
                 classifierarray[n] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder);
+            }
+            for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                const EncAnyGram * withcontext = *iter2;
+        
+                const int nwithcontext = withcontext->n();
                 vector<const EncAnyGram *> featurevector;
-                for (int i = 0; i < n; i++) {
-                    const EncAnyGram * unigram = (const EncAnyGram *) focus->slice(i,1);
+                for (int i = 0; i < nwithcontext; i++) {
+                    const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
                     featurevector.push_back(unigram);                    
-                }
-                for (t_aligntargets::const_iterator iter2 = ttable->alignmatrix[focus].begin(); iter2 != ttable->alignmatrix[focus].end(); iter2++) {
-                    const EncAnyGram * label = iter2->first;
-                    //TODO: add exemplar weight iter2->second
-                    classifierarray[n]->addinstance(featurevector, label);
-                }            
+                }                
+                for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[focus].begin(); iter3 != ttable->alignmatrix[focus].end(); iter3++) {
+                    const EncAnyGram * label = iter3->first;                                                            
+                    if (exemplarweights) {
+                        //add exemplar weight         
+                        double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
+                        classifierarray[n]->addinstance(featurevector, label, exemplarweight);
+                    } else {
+                        classifierarray[n]->addinstance(featurevector, label);
+                    }
+                }                        
                 //cleanup
-                for (int i = 0; i < n; i++) {
+                for (int i = 0; i < nwithcontext; i++) {
                     delete featurevector[i];
                 }
-            }
+            }        
         }
-    }
-    
+    }    
 }
 
 
 
+t_aligntargets NClassifierArray::classify(std::vector<const EncAnyGram *> & featurevector) {
+    const int n = featurevector.size() - 1 - leftcontextsize - rightcontextsize; // - 1 for dummy
+    if (classifierarray.count(n)) {
+        return classifierarray[n]->classify(featurevector);
+    } else {
+        cerr << "INTERNAL ERROR: NClassifierArray::classify invokes classifier " << n << ", but it does not exist" << endl;
+        exit(6);
+    } 
+}
 
+t_aligntargets NClassifierArray::classify(std::vector<string> & featurevector) {
+    const int n = featurevector.size() - 1 - leftcontextsize - rightcontextsize; // - 1 for dummy
+    if (classifierarray.count(n)) {
+        return classifierarray[n]->classify(featurevector);
+    } else {
+        cerr << "INTERNAL ERROR: NClassifierArray::classify invokes classifier " << n << ", but it does not exist" << endl;
+        exit(6);
+    } 
+}
+
+void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel * translationtable, t_sourcefragments sourcefragments) {    
+     //decoder will call this, sourcefragments and newttable will be filled for decoder
+     
+     const int maxn = 9; //TODO: make dynamic?
+     
+     vector<pair<const EncAnyGram*, CorpusReference> > tmpsourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn); //will work on context-informed alignment model, always returns patterns without context
+     for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = tmpsourcefragments.begin(); iter != tmpsourcefragments.end(); iter++) {
+        //returned anygram will be contextless:
+        const EncAnyGram * anygram = iter->first;
+        const CorpusReference ref = iter->second;
+        
+        t_aligntargets translationoptions;
+        
+        const int contextcount = translationtable->sourcecontexts[anygram].size(); //in how many different contexts does this occur?
+        const int n = anygram->n();
+        
+        if (contextcount == 1) {
+            //only one? no need for classifier, just copy from translation table
+            const EncAnyGram * anygramwithcontext = *(translationtable->sourcecontexts[anygram].begin());
+            translationoptions = translationtable->alignmatrix[anygramwithcontext]; 
+        } else {
+            //more context possible? classify!
+
+            //extract anygram in context for classifier test input
+            const EncAnyGram * withcontext = translationtable->addcontext(&input,anygram, (int) ref.token);
+            const int nwithcontext = withcontext->n();
+             
+            vector<const EncAnyGram *> featurevector;
+            for (int i = 0; i < nwithcontext; i++) {
+                const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                featurevector.push_back(unigram);                    
+            }
+            translationoptions = classify(featurevector);
+            //cleanup
+            for (int i = 0; i < nwithcontext; i++) {
+                delete featurevector[i];
+            }            
+        }
+
+        sourcefragments.push_back(SourceFragmentData(anygram, ref, translationoptions));
+     }     
+}
 

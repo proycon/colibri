@@ -13,7 +13,7 @@ unsigned char EOSCLASS = 4;
 
 const EncNGram UNKNOWNUNIGRAM = EncNGram(&UNKNOWNCLASS,1);
 
-StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool globalstats) {
+StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, ClassifierInterface * classifier, bool globalstats) {
         this->input = input;
         this->inputlength = input.length();
         this->translationtable = translationtable;
@@ -32,42 +32,64 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         }
 
         if (DEBUG >= 3) cerr << "Gathering source fragments:" << endl;        
-        sourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
+        
+        if (classifier != NULL) {
+            //Use classifier
+            classifier->classifyfragments(input, translationtable, sourcefragments);
+        } else {
+            //No clasifier, straight from translation table
+            vector<std::pair<const EncAnyGram*, CorpusReference> > tmpsourcefragments;  
+            tmpsourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
+            for (vector<std::pair<const EncAnyGram*, CorpusReference> >::iterator iter = tmpsourcefragments.begin(); iter != tmpsourcefragments.end(); iter++) {
+                //find and copy translation options from translation table
+                const EncAnyGram * sourcekey = iter->first;
+                t_aligntargets translationoptions;
+                for (t_aligntargets::iterator iter2 = translationtable->alignmatrix[sourcekey].begin(); iter2 != translationtable->alignmatrix[sourcekey].end(); iter2++) {
+                        const EncAnyGram * targetgram = iter2->first;
+                        translationoptions[targetgram] = iter2->second;  
+                }                
+                sourcefragments.push_back(SourceFragmentData(iter->first, iter->second, translationoptions));                 
+            }
+        }
+        
         
         //Build a coverage mask, this will be used to check if their are words uncoverable by translations, these will be added as unknown words 
         std::vector<bool> inputcoveragemask;
         inputcoveragemask.reserve(inputlength);
-        for (unsigned int i = 0; i < inputlength; i++) inputcoveragemask.push_back(false);                 
-        for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {           
-            const EncAnyGram * anygram = iter->first;
-            int n = anygram->n();
-            for (int j = iter->second.token; j < iter->second.token + n; j++) inputcoveragemask[j] = true;
-            
+        for (unsigned int i = 0; i < inputlength; i++) inputcoveragemask.push_back(false);
+        
+        
+                         
+        for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {           
+            const EncAnyGram * sourcekey = iter->sourcefragment;
+            int n = sourcekey->n();
+            for (int j = iter->ref.token; j < iter->ref.token + n; j++) inputcoveragemask[j] = true;
+                        
+                        
             //Output translation options
             if ((DEBUG >= 3) && (sourceclassdecoder != NULL) && (targetclassdecoder != NULL)) {
-                if (anygram->isskipgram()) {
-                    cerr << "\t" << (int) iter->second.token << ':' << n << " -- " << ((const EncSkipGram*) anygram)->decode(*sourceclassdecoder) << " ==> ";                    
+                if (sourcekey->isskipgram()) {
+                    cerr << "\t" << (int) iter->ref.token << ':' << n << " -- " << ((const EncSkipGram*) sourcekey)->decode(*sourceclassdecoder) << " ==> ";                    
                 } else {
-                    cerr << "\t" << (int) iter->second.token << ':' << n << " -- " << ((const EncNGram*) anygram)->decode(*sourceclassdecoder) << " ==> ";
+                    cerr << "\t" << (int) iter->ref.token << ':' << n << " -- " << ((const EncNGram*) sourcekey)->decode(*sourceclassdecoder) << " ==> ";
                 }
-                const EncAnyGram * sourcekey = translationtable->getsourcekey(anygram);
-                if (sourcekey == NULL) {
+                if (iter->translationoptions.empty()) {
                     cerr << endl;
                     cerr << "ERROR: No translation options found!!!!" << endl;
                     exit(6);
                 } else {
-                    for (std::unordered_map<const EncAnyGram*, std::vector<double> >::iterator iter2 = translationtable->alignmatrix[sourcekey].begin(); iter2 != translationtable->alignmatrix[sourcekey].end(); iter2++) {
-                        const EncAnyGram * anygram2 = iter2->first;
-                        if (anygram2->isskipgram()) {
-                            cerr << ((const EncSkipGram*) anygram2)->decode(*targetclassdecoder) << " [ ";                            
+                    for (t_aligntargets::iterator iter2 = iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
+                        const EncAnyGram * targetkey = iter2->first;
+                        if (targetkey->isskipgram()) {
+                            cerr << ((const EncSkipGram*) targetkey)->decode(*targetclassdecoder) << " [ ";                            
                         } else {
-                            cerr <<  ((const EncNGram*) anygram2)->decode(*targetclassdecoder) << " [ ";
+                            cerr <<  ((const EncNGram*) targetkey)->decode(*targetclassdecoder) << " [ ";
                         }                        
                         for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
                             cerr << *iter3 << " ";
                         }
-                        if (!anygram2->isskipgram()) {
-                           cerr << "LM=" << lm->score((const EncNGram*) anygram2) << " ";
+                        if (!targetkey->isskipgram()) {
+                           cerr << "LM=" << lm->score((const EncNGram*) targetkey) << " ";
                         }
                         cerr << "]; ";                        
                     }
@@ -76,7 +98,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
             }
         }
         
-        //Check for uncoverable words
+        //Check for uncoverable words               
         for (unsigned int i = 0; i < inputlength; i++) {
             if (!inputcoveragemask[i]) {
                 //found one
@@ -101,7 +123,6 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 if (sourcekey == NULL) {
                     translationtable->alignmatrix[(const EncAnyGram *) unigram];
                     keepunigram = true;
-                    //translationtable->sourcengrams.insert(*unigram);
                     sourcekey = translationtable->getsourcekey((const EncAnyGram *) unigram);
                 }
                 const EncAnyGram * targetkey = translationtable->gettargetkey((const EncAnyGram *) &targetunigram);
@@ -111,16 +132,18 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 }
                 vector<double> scores;
                 for (unsigned int j = 0; j < tweights.size(); j++) scores.push_back(1);                 
-                translationtable->alignmatrix[sourcekey][targetkey] = scores;
+                
+                t_aligntargets translationoptions;                
+                translationoptions[targetkey] = scores;
                                                 
-                sourcefragments.push_back(make_pair( sourcekey, CorpusReference(0,i) ));
+                sourcefragments.push_back(SourceFragmentData( sourcekey, CorpusReference(0,i), translationoptions) );
                 if (!keepunigram) delete unigram; 
                 
-                if (DEBUG >= 3) {
+               /* if (DEBUG >= 3) {
                     cerr << "\t" << i << ":1" << " -- " << sourcekey->decode(*sourceclassdecoder) << " ==> " << targetkey->decode(*targetclassdecoder) << " [ ";
                     for (unsigned int j = 0; j < tweights.size(); j++) cerr << translationtable->alignmatrix[sourcekey][targetkey][j] << " ";
                     cerr << "];" << endl;                     
-                }
+                }*/
             }
         }
         
@@ -140,24 +163,22 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
 void StackDecoder::computefuturecost() {
         map<pair<int,int>, double> sourcefragments_costbyspan;
         //reorder source fragments by span for more efficiency
-        for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
+        for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
             
-            const EncAnyGram * anygram = iter->first;
-            const CorpusReference ref = iter->second;
-            const int n = anygram->n();    
+            const EncAnyGram * candidate = iter->sourcefragment;
+            const CorpusReference ref = iter->ref;
+            const int n = candidate->n();    
             const pair<int,int> span = make_pair<int,int>((int) ref.token, (int) n);
              
-            //cerr << "DEBUG: " << span.first << ':' << span.second << endl;
-             
-            const EncAnyGram * candidate = translationtable->getsourcekey(anygram);
-            if (translationtable->alignmatrix[candidate].size() == 0) {
+            //cerr << "DEBUG: " << span.first << ':' << span.second << endl;             
+            if (iter->translationoptions.size() == 0) {
                     cerr << "INTERNAL ERROR: No translation options" << endl;
                     exit(6);  
             }
             
             //find cheapest translation option
             double bestscore = -INFINITY;            
-            for (std::unordered_map<const EncAnyGram*, std::vector<double> >::iterator iter2 = translationtable->alignmatrix[candidate].begin(); iter2 != translationtable->alignmatrix[candidate].end(); iter2++) {
+            for (t_aligntargets::iterator iter2 = iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
                 if (tweights.size() > iter2->second.size()) {
                     cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << tweights.size() << ", got " << iter2->second.size() << endl;
                     exit(6);  
@@ -929,17 +950,17 @@ unsigned int TranslationHypothesis::expand() {
     //expand directly in decoder.stack()
 
     //find new source fragment
-    for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = decoder->sourcefragments.begin(); iter != decoder->sourcefragments.end(); iter++) {
-        const EncAnyGram * sourcecandidate = iter->first;
-        const CorpusReference ref = iter->second; 
+    for (t_sourcefragments::iterator iter = decoder->sourcefragments.begin(); iter != decoder->sourcefragments.end(); iter++) {
+        const EncAnyGram * sourcecandidate = iter->sourcefragment;
+        const CorpusReference ref = iter->ref; 
         if (!conflicts(sourcecandidate, ref)) {
             //find target fragments for this source fragment
-            if (decoder->translationtable->alignmatrix.find(sourcecandidate) == decoder->translationtable->alignmatrix.end()) {
-                cerr << "ERROR: Source candidate not found in translation table. This should never happen!" << endl;
+            if (iter->translationoptions.empty()) {
+                cerr << "ERROR: Translation options are empty! This should never happen!" << endl;
                 exit(6);
             }
             int c = 0;                
-            for (std::unordered_map<const EncAnyGram*, vector<double> >::const_iterator iter2 =  decoder->translationtable->alignmatrix[sourcecandidate].begin(); iter2 != decoder->translationtable->alignmatrix[sourcecandidate].end(); iter2++) {
+            for (t_aligntargets::const_iterator iter2 =  iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
                 c++;
 
                 if ((decoder->dlimit >= 0) && (decoder->dlimit < 999)) {                             
@@ -1085,9 +1106,9 @@ bool TranslationHypothesis::fertile() {
             fertilitymask.push_back(0);
         }
     }
-    for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = decoder->sourcefragments.begin(); iter != decoder->sourcefragments.end(); iter++) {
-        const EncAnyGram * sourcecandidate = iter->first;
-        const CorpusReference ref = iter->second;
+    for (t_sourcefragments::iterator iter = decoder->sourcefragments.begin(); iter != decoder->sourcefragments.end(); iter++) {
+        const EncAnyGram * sourcecandidate = iter->sourcefragment;
+        const CorpusReference ref = iter->ref;
         
         size_t candidatehash = sourcecandidate->hash();
         bool alreadyused = false;
@@ -1505,7 +1526,8 @@ int main( int argc, char *argv[] ) {
             if (debug >= 1) cerr << "Processing unknown words" << endl; 
             addunknownwords(*transtable, lm, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
             if (debug >= 1) cerr << "Setting up decoder" << endl;
-            StackDecoder * decoder = new StackDecoder(*inputdata, transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder, (bool) GLOBALSTATS);
+            //TODO: add classifier support
+            StackDecoder * decoder = new StackDecoder(*inputdata, transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder, NULL, (bool) GLOBALSTATS);
             if (debug >= 1) cerr << "Decoding..." << endl;
             TranslationHypothesis * solution = decoder->decode();                    
             if (solution != NULL) {

@@ -6,6 +6,7 @@
 #include <lm.h>
 #include <math.h>
 #include <deque>
+#include <classifiers.h> 
 
 class StackDecoder;
 class Stack;
@@ -153,6 +154,12 @@ class Stack {
     TranslationHypothesis * pop();
 };
 
+
+
+
+//t_sourcefragments is defined in alignmodel.h
+
+
 class StackDecoder {
     private:
         int stacksize;
@@ -176,12 +183,12 @@ class StackDecoder {
         int dlimit; //distortion limit
         
                 
-        std::vector<std::pair<const EncAnyGram*, CorpusReference> >  sourcefragments;        
+        t_sourcefragments sourcefragments;        
         
         std::vector<Stack> stacks;
         std::vector<Stack> gappystacks;
                 
-        StackDecoder(const EncData & input, AlignmentModel * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder *, ClassDecoder *, bool globalstats = false);
+        StackDecoder(const EncData & input, AlignmentModel * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, std::vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder *, ClassDecoder *, ClassifierInterface * classifier = NULL, bool globalstats = false);
         ~StackDecoder();
         
         TranslationHypothesis * decodestack(Stack & stack); //returns fallback hypothesis if dead, NULL otherwise

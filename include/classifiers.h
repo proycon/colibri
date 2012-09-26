@@ -1,19 +1,6 @@
 #include <alignmodel.h>
 #include "timbl/TimblAPI.h"
 
-
-/*
-class Classifier {
-  protected:
-    ClassEncoder * targetclassencoder;        
-    TimblAPI * timblexp;
-  public:
-    Classifier(const std::string & id, ClassEncoder * targetclassencoder);
-    ~Classifier();    
-    TranslationTable * classify(const EncAnyGram * sourcegram, vector<const std::string> featurevector);         
-};
-*/
-
 class Classifier {
   private:
     int featurevectorsize; //nr of unigram features (each feature is a single word) in the feature vector
@@ -35,8 +22,8 @@ class Classifier {
     void addinstance(std::vector<std::string> & featurevector, const std::string & label, double exemplarweight = 1);
     void train(const std::string & timbloptions);
     const std::string id() { return ID; };
-    t_aligntargets classify(std::vector<const EncAnyGram *> featurevector);
-    t_aligntargets classify(std::vector<std::string> featurevector);     
+    t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector);
+    t_aligntargets classify(std::vector<std::string> & featurevector);     
 };
 
 
@@ -49,9 +36,11 @@ class ClassifierInterface {
             ID = _id;
         }
         const std::string id() { return ID; };
-        virtual void build(const std::string & traincorpusfile, const AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) =0;
+        virtual void build(const AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) =0;
         virtual void load() =0;
-        virtual void train() =0;    
+        virtual void train() =0;
+        
+        virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments sourcefragments) =0; //decoder will call this, sourcefragments and newtable will be filled for decoder  
 };
 
 class NClassifierArray: public ClassifierInterface {
@@ -61,10 +50,14 @@ class NClassifierArray: public ClassifierInterface {
     public:
         std::map<int, Classifier*> classifierarray;    
         NClassifierArray(const std::string & id, int leftcontextsize, int rightcontextsize);
-        void build(const std::string & enctraincorpusfile, AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);        
+        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true); 
         void load();        
         void train();     
-           
+
+        void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments sourcefragments); //decoder will call this, sourcefragments will be filled for decoder
+        t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector);
+        t_aligntargets classify(std::vector<std::string> & featurevector);          
+        AlignmentModel * classify(AlignmentModel * original);
 };
 
 /*class ConstructionExperts: public ClassifierInterface {

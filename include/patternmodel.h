@@ -23,7 +23,8 @@ class CorpusReference {
     /* Reference to a position in the corpus */
    public:
     uint32_t sentence;
-    unsigned char token;  
+    unsigned char token;
+    CorpusReference() { sentence=0; token = 0; } //needed this to fix a compiler error, but not sure why.. don't really want it   
     CorpusReference(uint32_t, unsigned char);  
     CorpusReference(std::istream * in);  
     CorpusReference(const CorpusReference& other) { //copy constructor
@@ -154,7 +155,8 @@ class ModelQuerierBase {
     std::map<int, std::vector< std::vector< std::pair<int,int> > > > gapconf;
    public:
     ModelQuerierBase();
-    virtual const EncAnyGram * getkey(const EncAnyGram * anygram) =0;
+    virtual const EncAnyGram * getfocuskey(const EncAnyGram * anygram) { return getkey(anygram); }; //without context, defaults to getkey (for models not supporting context). getpatterns uses only this! The extracted patterns will always be without context
+    virtual const EncAnyGram * getkey(const EncAnyGram * anygram) =0; //default, includes context if available
     std::vector<std::pair<const EncAnyGram*, CorpusReference> > getpatterns(const unsigned char * data, const unsigned char datasize, bool doskipgrams=true, uint32_t linenum=0, const int minn = 1, const int maxn = MAXN);
 };
 

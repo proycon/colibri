@@ -686,7 +686,7 @@ int AlignmentModel::prune(const double prunethreshold) {
     return pruned;
 }
 
-EncAnyGram * AlignmentModel::addcontext(EncData * sentence, const EncAnyGram * focus, int sourceindex) {
+EncAnyGram * AlignmentModel::addcontext(const EncData * sentence, const EncAnyGram * focus, int sourceindex) {
     
 
     EncNGram * leftcontext;
@@ -1767,16 +1767,26 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
     }
 }
 
+const EncAnyGram * AlignmentModel::getfocuskey(const EncAnyGram * key) {
+    t_contexts::iterator keyiter = sourcecontexts.find(key);
+    if (keyiter != sourcecontexts.end()) {
+        return keyiter->first;    
+    } else {
+        return NULL;
+    }    
+}
+    
+
 const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram * key,  bool allowfallback) {
-    cout << "SEARCHING #" << (size_t) key->hash() << endl;
+    //cout << "SEARCHING #" << (size_t) key->hash() << endl;
     t_alignmatrix::iterator keyiter = alignmatrix.find(key);
     if (keyiter != alignmatrix.end()) {
-        cout << "FOUND @" << (size_t) keyiter->first << endl;
+        //cout << "FOUND @" << (size_t) keyiter->first << endl;
         return keyiter->first;
     } else if ((sourcemodel != NULL) && (allowfallback)) {    
         return sourcemodel->getkey(key);
     } else {
-        cout << "NOT FOUND" << endl;
+        //cout << "NOT FOUND" << endl;
         return NULL;
     }
     /*            
