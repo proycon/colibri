@@ -33,7 +33,7 @@ void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthresho
 			if ((revtargetgram != NULL) &&  (reversemodel->alignmatrix.count(revtargetgram) > 0) && (reversemodel->alignmatrix[revtargetgram].count(revsourcegram) > 0) && (listproduct(reversemodel->alignmatrix[revtargetgram][revsourcegram]) * listproduct(targetiter->second) >= probthreshold)) {
 			    if (reversemodel->alignmatrix[revtargetgram][revsourcegram].size() != targetiter->second.size()) {
 			        cerr << "AlignmentModel::intersect: Unable to compute intersection with reverse model, score vectors are of different length " << targetiter->second.size() << "vs " << reversemodel->alignmatrix[revtargetgram][revsourcegram].size();
-			        exit(6);
+			        throw InternalError();
 			    }			    
 			    //score vector [a,b] * [x,y]  == [a*x,b*y]
 			    const int scores = targetiter->second.size();
@@ -1474,7 +1474,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
         	cerr << "ERROR processing " + filename + " at construction " << i << " of " << sourcecount << ". Expected check-byte, got " << (int) check << endl;
         	f.read(&gapcount, sizeof(char));
         	cerr << "DEBUG: next byte should be gapcount, value=" << (int) gapcount << endl; 
-        	exit(13);        	
+        	throw InternalError();
         }
         f.read(&gapcount, sizeof(char));	 
         
@@ -1488,7 +1488,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
                 //no
                 alignmatrix[(const EncAnyGram*) ngram];
                 sourcegram = getsourcekey((const EncAnyGram*) ngram);
-                if (sourcegram == NULL) { cerr << "INTERNAL ERROR: sourcegram still not found after insertion! Should never happen!"; exit(6); }
+                if (sourcegram == NULL) { cerr << "INTERNAL ERROR: sourcegram still not found after insertion! Should never happen!";throw InternalError(); }
             	//sourcengrams.insert(ngram);            	            
             } else {
                 //yes
@@ -1503,7 +1503,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
                     alignmatrix[(const EncAnyGram*) skipgram];
                 	//sourceskipgrams.insert(skipgram);
                 	sourcegram = getsourcekey((const EncAnyGram*) skipgram);
-                    if (sourcegram == NULL) { cerr << "INTERNAL ERROR: sourcegram still not found after insertion! Should never happen!"; exit(6); }             	
+                    if (sourcegram == NULL) { cerr << "INTERNAL ERROR: sourcegram still not found after insertion! Should never happen!"; throw InternalError(); }             	
                 } else {
                     delete skipgram;
                 }                 
@@ -1560,7 +1560,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
 		        if ((allowskipgrams) || ((!sourceisskipgram) && (!targetisskipgram))) {  
            		    if ((sourcegram == NULL) || (targetgram == NULL)) {
 		             	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
-		            	exit(6);
+		            	throw InternalError();
 		            }		 		      
 		            alignmatrix[sourcegram][targetgram].push_back(p);
 		        }		    
@@ -1723,7 +1723,7 @@ void AlignmentModel::save(const string & filename) {
         	const EncAnyGram* targetgram = gettargetkey(iter2->first);
         	if (targetgram == NULL) {
         	    cerr << "AlignmentModel::save(): Target key not found! This should not happen!";
-        	    exit(6); 
+        	    throw InternalError();
         	}        	        	
         	        	
         	if (targetgram->isskipgram()) {

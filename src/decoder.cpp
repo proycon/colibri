@@ -173,7 +173,7 @@ void StackDecoder::computefuturecost() {
             //cerr << "DEBUG: " << span.first << ':' << span.second << endl;             
             if (iter->translationoptions.size() == 0) {
                     cerr << "INTERNAL ERROR: No translation options" << endl;
-                    exit(6);  
+                    throw InternalError();
             }
             
             //find cheapest translation option
@@ -181,7 +181,7 @@ void StackDecoder::computefuturecost() {
             for (t_aligntargets::iterator iter2 = iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
                 if (tweights.size() > iter2->second.size()) {
                     cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << tweights.size() << ", got " << iter2->second.size() << endl;
-                    exit(6);  
+                    throw InternalError();
                 }
                 double score = 0; 
                 for (unsigned int i = 0; i < tweights.size(); i++) {
@@ -679,7 +679,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     //Precompute score
     if ((parent != NULL) && (decoder->tweights.size() > tscores.size())) {
         cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << decoder->tweights.size() << ", got " << tscores.size() << endl;
-        exit(6);  
+        throw InternalError();
     }
   
     this->tscores = tscores;
@@ -777,7 +777,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
             if (c == 0) {
                 cerr << "INTERNAL ERROR: Future cost for " << begin << ":" << i - begin << " is 0! Not possible!" << endl;
                 report();
-                exit(6);
+                throw InternalError();
             }           
             //cerr << "DEBUG: Adding futurecost for " << begin << ":" << i - begin << " = " <<c << endl;
             futurecost += c;
@@ -885,7 +885,7 @@ void TranslationHypothesis::cleanup() {
         cerr << "DEBUG: DELETING HYPOTHESIS " << (size_t) this << endl;
         if (deleted) {
              cerr << "INTERNAL ERROR: DELETING AN ALREADY DELETED HYPOTHESIS!!! THIS SHOULD NOT HAPPEN!!!!!" << (size_t) this << endl;
-             exit(6);
+             throw InternalError();
         }
         deleted = true;
     }
@@ -941,7 +941,7 @@ unsigned int TranslationHypothesis::expand() {
     if (deleted) { 
         //only in debug==99
         cerr << "ERROR: Expanding an already deleted hypothesis! This should never happen! " << (size_t) this << endl;
-        exit(6);        
+        throw InternalError();
     }
     
     
@@ -957,7 +957,7 @@ unsigned int TranslationHypothesis::expand() {
             //find target fragments for this source fragment
             if (iter->translationoptions.empty()) {
                 cerr << "ERROR: Translation options are empty! This should never happen!" << endl;
-                exit(6);
+                throw InternalError();
             }
             int c = 0;                
             for (t_aligntargets::const_iterator iter2 =  iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
@@ -1171,7 +1171,7 @@ EncNGram * TranslationHypothesis::getoutputtoken(int index) {
         index = index - targetoffset;
         if ((index < 0) || (index >= targetgram->n())) {
             cerr << "ERROR: TranslationHypothesis::getoutputtoken() with index " << index << " is out of bounds" << endl;
-            exit(6);
+            throw InternalError();
         }
         if (targetgram->isskipgram()) {
             const EncSkipGram * targetskipgram = (const EncSkipGram *) targetgram;
