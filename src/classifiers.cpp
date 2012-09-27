@@ -30,7 +30,7 @@ Classifier::~Classifier() {
 void Classifier::addinstance(vector<const EncAnyGram *> featurevector, const EncAnyGram * label, double exemplarweight) {
     vector<string> featurevector_s;
     for (vector<const EncAnyGram *>::const_iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
-        const EncAnyGram * anygram;
+        const EncAnyGram * anygram = *iter;
         featurevector_s.push_back(anygram->decode(*sourceclassdecoder));        
     }
     const string label_s = label->decode(*targetclassdecoder);
@@ -57,11 +57,11 @@ void Classifier::addinstance(vector<string> & featurevector, const string & labe
         const string feature = *iter;
         outputfile << feature << '\t';  
     } 
-    outputfile << label;
+    outputfile << label;    
     if (exemplarweights) {
         outputfile << '\t' << exemplarweight;
     }
-    outputfile << endl;
+    outputfile << endl;    
 }
 
 void Classifier::train(const string & timbloptions) {
@@ -124,7 +124,7 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
             stringstream newid;
             newid << this->id() << ".n" << n;
             if (!classifierarray.count(n)) {
-                classifierarray[n] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder);
+                classifierarray[n] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder, false, exemplarweights);
             }
             for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                 const EncAnyGram * withcontext = *iter2;
@@ -136,7 +136,8 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
                     featurevector.push_back(unigram);                    
                 }                
                 for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[focus].begin(); iter3 != ttable->alignmatrix[focus].end(); iter3++) {
-                    const EncAnyGram * label = iter3->first;                                                            
+                    const EncAnyGram * label = iter3->first;
+                    
                     if (exemplarweights) {
                         //add exemplar weight         
                         double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    

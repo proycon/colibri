@@ -59,7 +59,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         for (unsigned int i = 0; i < inputlength; i++) inputcoveragemask.push_back(false);
         
         
-                         
+                        
         for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {           
             const EncAnyGram * sourcekey = iter->sourcefragment;
             int n = sourcekey->n();

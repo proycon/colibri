@@ -19,7 +19,7 @@ class Classifier {
     ClassEncoder * targetclassencoder;
     Timbl::TimblAPI * testexp;
   public:
-    Classifier(const std::string & id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool append = false, bool examplarweights = false); //for building
+    Classifier(const std::string & id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool append = false, bool exemplarweights = true); //for building
     Classifier(const std::string & id, const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder); //for testing            
     ~Classifier();
     void addinstance(std::vector<const EncAnyGram *> featurevector, const EncAnyGram * label, double exemplarweight = 1);

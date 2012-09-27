@@ -29,9 +29,9 @@ int main( int argc, char *argv[] ) {
     
     string timbloptions;
     if (exemplarweights) {
-        timbloptions = "-a 1 -s";
+        timbloptions = "-a 1 -s -F Tabbed";
     } else {
-        timbloptions = "-a 1";
+        timbloptions = "-a 1 -F Tabbed";
     }
     
     
@@ -58,7 +58,11 @@ int main( int argc, char *argv[] ) {
             outputprefix = optarg;
             break;
         case 'O':
-            timbloptions = optarg;
+            if (exemplarweights) {
+                timbloptions = "-s -F Tabbed " + std::string(optarg);
+            } else {
+                timbloptions = "-F Tabbed " + std::string(optarg);
+            }
             break;
         case 'x':
             exemplarweights = false;
