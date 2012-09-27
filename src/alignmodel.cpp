@@ -886,7 +886,6 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                         //extract context
                         
                         //make sure we re-use any previously used sourcepatternwithcontext rather than using this newly generated one
-                        cout << endl; //DEBUG
                         sourcepatternwithcontext = addcontext(sentence_s2t.source, sourcepattern, sourceindex);
                         const EncAnyGram * key = getsourcekey(sourcepatternwithcontext, false); // allowfallback=false (do not fall back to sourcemodel, which doesn't know contexts)
                         if (key != NULL) {
