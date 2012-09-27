@@ -1431,6 +1431,8 @@ void AlignmentModel::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel, 
 
 AlignmentModel::AlignmentModel(const string & filename, bool logprobs, bool allowskipgrams, const int bestn, bool DEBUG) {
     this->DEBUG = DEBUG;
+    sourcemodel = NULL;
+    targetmodel = NULL; 
     load(filename,logprobs, allowskipgrams, bestn);
 }
 
@@ -1782,7 +1784,8 @@ const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram * key,  bool al
     if (keyiter != alignmatrix.end()) {
         //cout << "FOUND @" << (size_t) keyiter->first << endl;
         return keyiter->first;
-    } else if ((sourcemodel != NULL) && (allowfallback)) {    
+    } else if ((sourcemodel != NULL) && (allowfallback)) {
+        //cout << "Trying sourcemodel" << endl;    
         return sourcemodel->getkey(key);
     } else {
         //cout << "NOT FOUND" << endl;

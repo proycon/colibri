@@ -77,8 +77,8 @@ int main( int argc, char *argv[] ) {
 	cerr << "Loading target class decoder " << targetclassfile << endl;
 	ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);   
 		
-    cerr << "Loading Alignment Model " << modelfile << endl;
-    AlignmentModel alignmodel = AlignmentModel(modelfile);
+    cerr << "Loading alignment model " << modelfile << endl;
+    AlignmentModel alignmodel = AlignmentModel(modelfile,false,true,0, false);
     
     cerr << "Building classifiers" << endl;
     NClassifierArray classifiers = NClassifierArray(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext);    
