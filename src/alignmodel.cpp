@@ -1462,7 +1462,10 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
     if (model_id >= (unsigned int) ALIGNMENTMODEL + 4) { 
         f.read( (char*) &leftsourcecontext, sizeof(unsigned char));
         f.read( (char*) &rightsourcecontext, sizeof(unsigned char));
-    }        
+    } else {
+        leftsourcecontext = 0;
+        rightsourcecontext = 0;
+    }
     f.read( (char*) &sourcecount, sizeof(uint64_t));  
     
 
@@ -1503,7 +1506,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
                     alignmatrix[(const EncAnyGram*) skipgram];
                 	//sourceskipgrams.insert(skipgram);
                 	sourcegram = getsourcekey((const EncAnyGram*) skipgram);
-                    if (sourcegram == NULL) { cerr << "INTERNAL ERROR: sourcegram still not found after insertion! Should never happen!"; throw InternalError(); }             	
+                    if (sourcegram == NULL) { cerr << "INTERNAL ERROR: sourcegram still not found after insertion! Should never happen!"; throw InternalError(); }      	
                 } else {
                     delete skipgram;
                 }                 
