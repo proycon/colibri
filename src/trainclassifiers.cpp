@@ -7,8 +7,11 @@ using namespace std;
 void usage() {
     cerr << "Usage: trainclassifiers -d alignmentmodel -S source-class-file -T target-class-file" << endl;
     cerr << "Options:" << endl;
-    cerr << " -o [id]     output prefix" << endl;
-    cerr << " -x          disable exemplar weighting" << endl;
+    cerr << " -C [id]      Classifier output prefix" << endl;
+    cerr << " -x           disable exemplar weighting" << endl;
+    cerr << " -O [options] Timbl options" << endl;
+    //cerr << "\t-C number                 Classifier mode" << endl;
+    //cerr << "\t   1 - Local context with Classifier Array" << endl;
 }
 
 int main( int argc, char *argv[] ) {
@@ -34,7 +37,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:S:T:o:xt:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xt:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -51,10 +54,10 @@ int main( int argc, char *argv[] ) {
         case 'T':
             targetclassfile = optarg;
             break;    
-        case 'o':
+        case 'C':
             outputprefix = optarg;
             break;
-        case 't':
+        case 'O':
             timbloptions = optarg;
             break;
         case 'x':

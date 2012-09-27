@@ -1257,7 +1257,9 @@ void usage() {
     cerr << "\t-L weight                 Language model weight" << endl;
     cerr << "\t-D weight                 Distortion model weight" << endl;
     cerr << "\t-M distortion-limit       Distortion limit (max number of source words skipped, default: unlimited)" << endl;
-    cerr << "\t-N                        No skipgrams" << endl;            
+    cerr << "\t-N                        No skipgrams" << endl;
+    cerr << "\t-C id                     Use classifier" << endl;            
+    cerr << "\t-O options                Timbl options for classification" << endl;
     cerr << "\t--moses                   Translation table is in Moses format" << endl;
     cerr << "\t-v verbosity              Verbosity/debug level" << endl;
     cerr << "\t--stats                   Compute and output decoding statistics for each solution" << endl;
@@ -1393,6 +1395,7 @@ int main( int argc, char *argv[] ) {
     /* getopt_long stores the option index here. */
     int option_index = 0;
     bool DOSKIPGRAMS = true;
+    string classifierid = "";
     
     //temp:
     string raw;
@@ -1403,7 +1406,7 @@ int main( int argc, char *argv[] ) {
     
     int debug = 0;
     char c;    
-    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:v:M:N",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:v:M:NC:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -1447,6 +1450,9 @@ int main( int argc, char *argv[] ) {
             break;     
         case 'N':
             DOSKIPGRAMS = false;
+            break;
+        case 'C':
+            classifierid = optarg;
             break;
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
@@ -1498,6 +1504,8 @@ int main( int argc, char *argv[] ) {
     cerr << "Language model:       " << lmfile << endl;
     LanguageModel lm = LanguageModel(lmfile, targetclassencoder, &targetclassdecoder, (debug >= 4) );
     cerr << "   loaded " << lm.size() << " n-grams, order=" << lm.getorder() << endl;
+    
+    
     cerr << "Translation table:    " << transtablefile << endl;
     
     AlignmentModel * transtable;
@@ -1508,6 +1516,13 @@ int main( int argc, char *argv[] ) {
     }
      
     cerr << "   loaded translations for " << transtable->size() << " patterns" << endl;
+    
+    ClassifierInterface * classifier = NULL;
+    if (!classifierid.empty()) {
+        cerr << "Loading classifiers" << endl;
+        bool exemplarweights = true; //read from config
+        classifier = (ClassifierInterface*) new NClassifierArray(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext);
+    }   
         
     //const int firstunknownclass_source = sourceclassencoder.gethighestclass()+1;    
     //const int firstunknownclass_target = targetclassencoder.gethighestclass()+1;
@@ -1527,7 +1542,7 @@ int main( int argc, char *argv[] ) {
             addunknownwords(*transtable, lm, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
             if (debug >= 1) cerr << "Setting up decoder" << endl;
             //TODO: add classifier support
-            StackDecoder * decoder = new StackDecoder(*inputdata, transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder, NULL, (bool) GLOBALSTATS);
+            StackDecoder * decoder = new StackDecoder(*inputdata, transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder, classifier, (bool) GLOBALSTATS);
             if (debug >= 1) cerr << "Decoding..." << endl;
             TranslationHypothesis * solution = decoder->decode();                    
             if (solution != NULL) {

@@ -1,6 +1,10 @@
 #include <alignmodel.h>
 #include "timbl/TimblAPI.h"
 
+/*enum ClassifierMode {
+    LOCALCONTEXT_ARRAY = 1
+};*/
+
 class Classifier {
   private:
     int featurevectorsize; //nr of unigram features (each feature is a single word) in the feature vector
