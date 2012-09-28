@@ -13,7 +13,7 @@ unsigned char EOSCLASS = 4;
 
 const EncNGram UNKNOWNUNIGRAM = EncNGram(&UNKNOWNCLASS,1);
 
-StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, ClassifierInterface * classifier, bool globalstats) {
+StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, ClassifierInterface * classifier, ScoreHandling scorehandling, bool globalstats) {
         this->input = input;
         this->inputlength = input.length();
         this->translationtable = translationtable;
@@ -36,9 +36,9 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         if (classifier != NULL) {
             //Use classifier
             if (DEBUG >= 3) cerr << "  Calling classifier" << endl;
-            classifier->classifyfragments(input, translationtable, sourcefragments);
+            classifier->classifyfragments(input, translationtable, sourcefragments, scorehandling);
         } else {            
-            //No classifier, straight from translation table
+            //Collect source fragments and translation options straight from translation table
             vector<std::pair<const EncAnyGram*, CorpusReference> > tmpsourcefragments;  
             tmpsourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
             if (DEBUG >= 3) cerr << "  " << tmpsourcefragments.size() << " source-fragments found in translation table" << endl;
@@ -53,6 +53,8 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 sourcefragments.push_back(SourceFragmentData(iter->first, iter->second, translationoptions));                 
             }
         }
+        
+        
         
         
         //Build a coverage mask, this will be used to check if their are words uncoverable by translations, these will be added as unknown words 
@@ -1265,7 +1267,11 @@ void usage() {
     cerr << "\t--moses                   Translation table is in Moses format" << endl;
     cerr << "\t-v verbosity              Verbosity/debug level" << endl;
     cerr << "\t--stats                   Compute and output decoding statistics for each solution" << endl;
-    cerr << "\t--globalstats             Compute and output decoding statistics for all hypothesis accepted on a stack" << endl;    
+    cerr << "\t--globalstats             Compute and output decoding statistics for all hypothesis accepted on a stack" << endl;
+    cerr << "\t-x mode                   How to handle classifier scores? (Only with -C). Choose from:" << endl;
+    cerr << "\t       weighed            Apply classifier score as weight to original scores (default)" << endl;
+    cerr << "\t       append             Append classifier score to translation score vector (make sure to specify an extra weight using -W)" << endl;
+    cerr << "\t       replace            Use only classifier score, replacing translation table scores (make to specify only one weight using -W)" << endl;        
 }
 
 void addsentencemarkers(ClassDecoder & targetclassdecoder, ClassEncoder & targetclassencoder) {
@@ -1398,6 +1404,7 @@ int main( int argc, char *argv[] ) {
     int option_index = 0;
     bool DOSKIPGRAMS = true;
     string classifierid = "";
+    ScoreHandling scorehandling = SCOREHANDLING_WEIGHED;
     
     //temp:
     string raw;
@@ -1408,7 +1415,7 @@ int main( int argc, char *argv[] ) {
     
     int debug = 0;
     char c;    
-    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:v:M:NC:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:v:M:NC:x:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -1455,6 +1462,14 @@ int main( int argc, char *argv[] ) {
         case 'C':
             classifierid = optarg;
             break;
+        case 'x':
+            if (optarg == "weighed") {
+                scorehandling = SCOREHANDLING_WEIGHED;
+            } else if (optarg == "append") {
+                scorehandling = SCOREHANDLING_APPEND;
+            } else if (optarg == "replace") {
+                scorehandling = SCOREHANDLING_REPLACE;
+            }            
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
             abort ();
@@ -1544,7 +1559,7 @@ int main( int argc, char *argv[] ) {
             addunknownwords(*transtable, lm, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
             if (debug >= 1) cerr << "Setting up decoder" << endl;
             //TODO: add classifier support
-            StackDecoder * decoder = new StackDecoder(*inputdata, transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder, classifier, (bool) GLOBALSTATS);
+            StackDecoder * decoder = new StackDecoder(*inputdata, transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder, classifier, scorehandling, (bool) GLOBALSTATS);
             if (debug >= 1) cerr << "Decoding..." << endl;
             TranslationHypothesis * solution = decoder->decode();                    
             if (solution != NULL) {

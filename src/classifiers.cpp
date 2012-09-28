@@ -93,6 +93,8 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
     testexp->Classify(features, valuedistribution, distance);
     
     //convert valuedistribution to t_aligntargets
+
+    
     t_aligntargets result;
     for (ValueDistribution::dist_iterator iter = valuedistribution->begin(); iter != valuedistribution->end(); iter++) {
         const string data = iter->second->Value()->Name();
@@ -114,6 +116,9 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
             result[target].push_back(weight);
         }         
     }
+
+    //note: any targets not present in classifier output will be pruned!
+    
     return result;
 }
 
@@ -193,9 +198,13 @@ t_aligntargets NClassifierArray::classify(std::vector<string> & featurevector,  
 
 void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel * translationtable, t_sourcefragments & sourcefragments, ScoreHandling scorehandling) {    
      
-     //decoder will call this, sourcefragments will be filled for decoder
+          
+     //decoder will call this
+     t_sourcefragments newsourcefragments;
      
      const int maxn = 9; //TODO: make dynamic?
+     
+
      
      vector<pair<const EncAnyGram*, CorpusReference> > tmpsourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn); //will work on context-informed alignment model, always returns patterns without context
      for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = tmpsourcefragments.begin(); iter != tmpsourcefragments.end(); iter++) {
@@ -241,17 +250,40 @@ void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel *
              
         } else {
             //more context possible? classify!
-
+            
+            t_aligntargets reftranslationoptions;
+            
+            if (scorehandling != SCOREHANDLING_REPLACE) {                
+                //first aggregate original translation options for all training contexts and renormalize.                
+                for (unordered_set<const EncAnyGram *>::iterator iter = translationtable->sourcecontexts[anygram].begin(); iter != translationtable->sourcecontexts[anygram].end(); iter++) {
+                    const EncAnyGram * sourceincontext = *iter;
+                    for (t_aligntargets::iterator targetiter = translationtable->alignmatrix[sourceincontext].begin(); targetiter != translationtable->alignmatrix[sourceincontext].end(); targetiter++) {
+                        const EncAnyGram * target = targetiter->first;
+                        if (reftranslationoptions.count(target) == 0) {
+                            reftranslationoptions[target] = targetiter->second;
+                            for (int i = 0; i < targetiter->second.size(); i++) {
+                                reftranslationoptions[target][i] = reftranslationoptions[target][i] / contextcount;  
+                            } 
+                        } else {
+                            for (int i = 0; i < targetiter->second.size(); i++) {
+                                reftranslationoptions[target][i] += targetiter->second[i] / contextcount;  
+                            }
+                        }
+                    }
+                }
+            } 
+                        
             //extract anygram in context for classifier test input
             const EncAnyGram * withcontext = translationtable->addcontext(&input,anygram, (int) ref.token);
             const int nwithcontext = withcontext->n();
+            
              
             vector<const EncAnyGram *> featurevector;
             for (int i = 0; i < nwithcontext; i++) {
                 const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
                 featurevector.push_back(unigram);                    
             }
-            translationoptions = classify(featurevector, scorehandling, translationoptions);
+            translationoptions = classify(featurevector, scorehandling, reftranslationoptions);
             //cleanup
             for (int i = 0; i < nwithcontext; i++) {
                 delete featurevector[i];
