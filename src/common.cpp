@@ -29,6 +29,9 @@ bool strip_extension(std::string& filename, const std::string extension) {
 }
 
 
+
+
+
 double listproduct(const vector<double> & l) {
     double p = 1;
     for (vector<double>::const_iterator iter = l.begin(); iter != l.end(); iter++) {

@@ -141,7 +141,6 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerierBase::getpatt
 
 	std::vector<pair<const EncAnyGram*, CorpusReference> > patterns;
 
-
 	//extract all patterns in an input string
 	if (maxn > MAXN) {
        	cerr << "FATAL ERROR: Maximum n-gram size " << maxn << " exceeds the internal maximum MAXN="  << (int) MAXN << endl;

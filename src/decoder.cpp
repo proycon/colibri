@@ -35,11 +35,13 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         
         if (classifier != NULL) {
             //Use classifier
+            if (DEBUG >= 3) cerr << "  Calling classifier" << endl;
             classifier->classifyfragments(input, translationtable, sourcefragments);
-        } else {
-            //No clasifier, straight from translation table
+        } else {            
+            //No classifier, straight from translation table
             vector<std::pair<const EncAnyGram*, CorpusReference> > tmpsourcefragments;  
             tmpsourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
+            if (DEBUG >= 3) cerr << "  " << tmpsourcefragments.size() << " source-fragments found in translation table" << endl;
             for (vector<std::pair<const EncAnyGram*, CorpusReference> >::iterator iter = tmpsourcefragments.begin(); iter != tmpsourcefragments.end(); iter++) {
                 //find and copy translation options from translation table
                 const EncAnyGram * sourcekey = iter->first;
@@ -180,7 +182,7 @@ void StackDecoder::computefuturecost() {
             double bestscore = -INFINITY;            
             for (t_aligntargets::iterator iter2 = iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
                 if (tweights.size() > iter2->second.size()) {
-                    cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << tweights.size() << ", got " << iter2->second.size() << endl;
+                    cerr << "ERROR: Too few translation scores specified for an entry in the translation table. Expected at least "  << tweights.size() << ", but got " << iter2->second.size() << " instead. Did you set -W correctly for the specified translation table?" << endl;
                     throw InternalError();
                 }
                 double score = 0; 
@@ -678,7 +680,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     
     //Precompute score
     if ((parent != NULL) && (decoder->tweights.size() > tscores.size())) {
-        cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << decoder->tweights.size() << ", got " << tscores.size() << endl;
+        cerr << "Too few translation scores specified for an entry in the translation table. Expected at least "  << decoder->tweights.size() << ", but got " << tscores.size() << " instead. Did you set -W correctly for the specified translation table?" << endl;
         throw InternalError();
     }
   
@@ -1253,7 +1255,7 @@ void usage() {
     cerr << "\t-T targetclassfile        Target class file" << endl;
     cerr << "\t-s stacksize              Stacksize" << endl;
     cerr << "\t-p prune threshold        Prune threshold" << endl;
-    cerr << "\t-W w1,w2,w3               Translation model weights (comma seperated)" << endl;    
+    cerr << "\t-W weight                 Translation model weight (issue multiple times for multiple weights: -W 1 -W 1" << endl;    
     cerr << "\t-L weight                 Language model weight" << endl;
     cerr << "\t-D weight                 Distortion model weight" << endl;
     cerr << "\t-M distortion-limit       Distortion limit (max number of source words skipped, default: unlimited)" << endl;
@@ -1442,8 +1444,7 @@ int main( int argc, char *argv[] ) {
             prunethreshold = atof(optarg);
             break;            
         case 'W':
-            ws = optarg;
-            while (linestream >> w) tweights.push_back(w);
+            tweights.push_back(atof(optarg));
             break;       
         case 'v':
             debug = atoi(optarg);
@@ -1461,6 +1462,7 @@ int main( int argc, char *argv[] ) {
     }
     
     if (tweights.empty()) {
+        cerr << "WARNING: No translation weights specified, assuming default of 1.0,1.0. May clash with translation table!" << endl;
         tweights.push_back(1.0);
         tweights.push_back(1.0);        
     }

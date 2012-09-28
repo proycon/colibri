@@ -1772,6 +1772,7 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
 }
 
 const EncAnyGram * AlignmentModel::getfocuskey(const EncAnyGram * key) {
+    if (!leftsourcecontext && !rightsourcecontext) return getsourcekey(key); //no context 
     t_contexts::iterator keyiter = sourcecontexts.find(key);
     if (keyiter != sourcecontexts.end()) {
         return keyiter->first;    
