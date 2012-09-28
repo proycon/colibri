@@ -5,6 +5,12 @@
     LOCALCONTEXT_ARRAY = 1
 };*/
 
+enum ScoreHandling {
+    SCOREHANDLING_WEIGHED = 1, //add classifier output as weight to original translation model scores
+    SCOREHANDLING_APPEND = 2, //append additional score to score vector
+    SCOREHANDLING_REPLACE = 3 //completely replace translation score with classifier score
+};
+
 class Classifier {
   private:
     int featurevectorsize; //nr of unigram features (each feature is a single word) in the feature vector
@@ -26,8 +32,8 @@ class Classifier {
     void addinstance(std::vector<std::string> & featurevector, const std::string & label, double exemplarweight = 1);
     void train(const std::string & timbloptions);
     const std::string id() { return ID; };
-    t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector);
-    t_aligntargets classify(std::vector<std::string> & featurevector);     
+    t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions );
+    t_aligntargets classify(std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);     
 };
 
 
@@ -43,7 +49,7 @@ class ClassifierInterface {
         virtual void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,  bool exemplarweights = true) =0;
         virtual void train(const std::string & timbloptions) =0;
         
-        virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments sourcefragments) =0; //decoder will call this, sourcefragments and newtable will be filled for decoder  
+        virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling) =0; //decoder will call this, sourcefragments and newtable will be filled for decoder  
 };
 
 class NClassifierArray: public ClassifierInterface {
@@ -56,9 +62,9 @@ class NClassifierArray: public ClassifierInterface {
         void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);       
         void train(const std::string & timbloptions);     
 
-        void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments sourcefragments); //decoder will call this, sourcefragments will be filled for decoder
-        t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector);
-        t_aligntargets classify(std::vector<std::string> & featurevector);          
+        void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling); //decoder will call this, sourcefragments will be filled for decoder
+        t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);
+        t_aligntargets classify(std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);          
         AlignmentModel * classify(AlignmentModel * original);
 };
 

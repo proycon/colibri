@@ -72,16 +72,16 @@ void Classifier::train(const string & timbloptions) {
     delete timbltrainexp;    
 }
 
-t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> & featurevector) {
+t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
     vector<string> featurevector_s;
     for (vector<const EncAnyGram *>::const_iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         const EncAnyGram * anygram;
         featurevector_s.push_back(anygram->decode(*sourceclassdecoder));        
     }
-    return classify(featurevector_s);
+    return classify(featurevector_s, scorehandling, originaltranslationoptions);
 }
 
-t_aligntargets Classifier::classify(std::vector<string> & featurevector) {
+t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
     stringstream features_ss;
     for (vector<string>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         features_ss << *iter << "\t";
@@ -96,9 +96,23 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector) {
     t_aligntargets result;
     for (ValueDistribution::dist_iterator iter = valuedistribution->begin(); iter != valuedistribution->end(); iter++) {
         const string data = iter->second->Value()->Name();
-        const double weight = iter->second->Weight();
+        const double weight = log(iter->second->Weight()); //convert into logprob
         const EncAnyGram * target = targetclassencoder->input2anygram(data, false);
-        result[target].push_back(weight);         
+        if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND)) {
+            if (originaltranslationoptions.count(target) == 0) {
+                cerr << "INTERNAL ERROR: Classifier::classify: Original translation option not found" << endl; 
+                throw InternalError();
+            }
+            result[target] = originaltranslationoptions[target];          
+        } 
+        if (scorehandling == SCOREHANDLING_WEIGHED) {
+            for (int i = 0; i <= originaltranslationoptions[target].size(); i++) {
+                result[target][i] = originaltranslationoptions[target][i] + weight;
+            }                        
+        }
+        if ((scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_REPLACE)) {
+            result[target].push_back(weight);
+        }         
     }
     return result;
 }
@@ -157,28 +171,29 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
 
 
 
-t_aligntargets NClassifierArray::classify(std::vector<const EncAnyGram *> & featurevector) {
+t_aligntargets NClassifierArray::classify(std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
     const int n = featurevector.size() - 1 - leftcontextsize - rightcontextsize; // - 1 for dummy
     if (classifierarray.count(n)) {
-        return classifierarray[n]->classify(featurevector);
+        return classifierarray[n]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
         cerr << "INTERNAL ERROR: NClassifierArray::classify invokes classifier " << n << ", but it does not exist" << endl;
         exit(6);
     } 
 }
 
-t_aligntargets NClassifierArray::classify(std::vector<string> & featurevector) {
+t_aligntargets NClassifierArray::classify(std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
     const int n = featurevector.size() - 1 - leftcontextsize - rightcontextsize; // - 1 for dummy
     if (classifierarray.count(n)) {
-        return classifierarray[n]->classify(featurevector);
+        return classifierarray[n]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
         cerr << "INTERNAL ERROR: NClassifierArray::classify invokes classifier " << n << ", but it does not exist" << endl;
         exit(6);
     } 
 }
 
-void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel * translationtable, t_sourcefragments sourcefragments) {    
-     //decoder will call this, sourcefragments and newttable will be filled for decoder
+void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel * translationtable, t_sourcefragments & sourcefragments, ScoreHandling scorehandling) {    
+     
+     //decoder will call this, sourcefragments will be filled for decoder
      
      const int maxn = 9; //TODO: make dynamic?
      
@@ -193,10 +208,37 @@ void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel *
         const int contextcount = translationtable->sourcecontexts[anygram].size(); //in how many different contexts does this occur?
         const int n = anygram->n();
         
+
+        
         if (contextcount == 1) {
-            //only one? no need for classifier, just copy from translation table
-            const EncAnyGram * anygramwithcontext = *(translationtable->sourcecontexts[anygram].begin());
-            translationoptions = translationtable->alignmatrix[anygramwithcontext]; 
+            //only one? no need for classifier, just copy from translation table                
+
+            const EncAnyGram * anygramwithcontext = *(translationtable->sourcecontexts[anygram].begin());    
+            t_aligntargets originaltranslationoptions = translationtable->alignmatrix[anygramwithcontext];
+            
+            for (t_aligntargets::iterator iter = originaltranslationoptions.begin(); iter != originaltranslationoptions.end(); iter++) {
+                const EncAnyGram * target = iter->first;
+                const double weight = 0; //== log(1.0)
+                
+                if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND)) {
+                    if (originaltranslationoptions.count(target) == 0) {
+                        cerr << "INTERNAL ERROR: Classifier::classify: Original translation option not found" << endl; 
+                        throw InternalError();
+                    }
+                    translationoptions[target] = originaltranslationoptions[target];          
+                } 
+                if (scorehandling == SCOREHANDLING_WEIGHED) {
+                    for (int i = 0; i <= originaltranslationoptions[target].size(); i++) {
+                        translationoptions[target][i] = originaltranslationoptions[target][i] + weight;
+                    }                        
+                }
+                if ((scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_REPLACE)) {
+                    translationoptions[target].push_back(weight);
+                }
+                               
+                                
+            } 
+             
         } else {
             //more context possible? classify!
 
@@ -209,7 +251,7 @@ void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel *
                 const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
                 featurevector.push_back(unigram);                    
             }
-            translationoptions = classify(featurevector);
+            translationoptions = classify(featurevector, scorehandling, translationoptions);
             //cleanup
             for (int i = 0; i < nwithcontext; i++) {
                 delete featurevector[i];
