@@ -153,9 +153,9 @@ void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourcec
         
         //grab n
         stringstream nss;
-        for (int i = filename.size() - 6; i >= 0; i--) {
+        for (int i = filename.size() - 7; i >= 0; i--) {
             if (filename[i] == 'n') break;
-            nss << i;            
+            nss << filename[i];            
         }
         cerr << "DEBUG n=" << nss.str() << endl; 
         const int n = atoi(nss.str().c_str());
