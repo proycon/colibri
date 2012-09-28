@@ -1411,7 +1411,6 @@ int main( int argc, char *argv[] ) {
     
     string ws;
     stringstream linestream;
-    double w;
     
     int debug = 0;
     char c;    

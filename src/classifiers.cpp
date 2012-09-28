@@ -1,7 +1,21 @@
 #include <classifiers.h>
+#include <glob.h>
 
 using namespace std;
 using namespace Timbl;
+
+
+
+vector<string> globfiles(const string& pat){ //from http://stackoverflow.com/questions/8401777/simple-glob-in-c-on-unix-system
+    glob_t glob_result;
+    glob(pat.c_str(),GLOB_TILDE,NULL,&glob_result);
+    vector<string> ret;
+    for(unsigned int i=0;i<glob_result.gl_pathc;++i){
+        ret.push_back(string(glob_result.gl_pathv[i]));
+    }
+    globfree(&glob_result);
+    return ret;
+}
 
 Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool appendmode, bool exemplarweights ) {
     //for training
@@ -17,10 +31,13 @@ Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecode
 Classifier::Classifier(const std::string & _id, const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder) {
     //for testing
     ID = _id;
-    ibasefile = string(_id + ".ibase");        
+    ibasefile = string(_id + ".ibase");
+    wgtfile = string(_id + ".wgt");           
     this->sourceclassdecoder = sourceclassdecoder;
     this->targetclassencoder = targetclassencoder;
-    testexp = new TimblAPI( timbloptions , ID );
+    
+    const string moretimbloptions = " -I " + ibasefile + " -w " + wgtfile + " " + timbloptions;
+    testexp = new TimblAPI( moretimbloptions , ID );
 }
 
 Classifier::~Classifier() {
@@ -50,7 +67,7 @@ void Classifier::addinstance(vector<string> & featurevector, const string & labe
         featurevectorsize = featurevector.size();
     } else if (featurevector.size() != featurevectorsize) {
         cerr << "INTERNAL ERROR: Passed feature vector of size " << featurevector.size() << ", expected: " << featurevectorsize << endl;
-        exit(6); 
+        throw InternalError();
     } 
     
     for (vector<string>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {    
@@ -128,6 +145,26 @@ NClassifierArray::NClassifierArray(const string & id, int leftcontextsize, int r
     this->rightcontextsize = rightcontextsize;
 }
 
+void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder) {    
+    vector<string> files = globfiles(ID + ".n*.ibase");
+    for (vector<string>::iterator iter = files.begin(); iter != files.end(); iter++) {
+        const string filename = *iter;
+        
+        //grab n
+        stringstream nss;
+        for (int i = filename.size() - 6; i >= 0; i--) {
+            if (filename[i] == 'n') break;
+            nss << i;            
+        }
+        cerr << "DEBUG: n=" << nss.str() << endl; 
+        const int n = atoi(nss.str().c_str());
+        
+        const string nclassifierid = filename.substr(0, filename.size() - 6);
+        cerr << "DEBUG: nclassifierid=" << nclassifierid << endl;   
+        classifierarray[n] = new Classifier(nclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder);
+    }    
+}
+
 void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights) {
     if (ttable->leftsourcecontext != leftcontextsize) {
         cerr << "Translation table has left context size: " << ttable->leftsourcecontext << ", not " << leftcontextsize << endl;
@@ -182,7 +219,7 @@ t_aligntargets NClassifierArray::classify(std::vector<const EncAnyGram *> & feat
         return classifierarray[n]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
         cerr << "INTERNAL ERROR: NClassifierArray::classify invokes classifier " << n << ", but it does not exist" << endl;
-        exit(6);
+        throw InternalError();
     } 
 }
 
@@ -192,7 +229,7 @@ t_aligntargets NClassifierArray::classify(std::vector<string> & featurevector,  
         return classifierarray[n]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
         cerr << "INTERNAL ERROR: NClassifierArray::classify invokes classifier " << n << ", but it does not exist" << endl;
-        exit(6);
+        throw InternalError();
     } 
 }
 
@@ -301,5 +338,6 @@ void NClassifierArray::train(const string & timbloptions) {
         iter->second->train(timbloptions);
     }
 
-    
 }
+
+
