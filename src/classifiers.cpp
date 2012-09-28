@@ -148,6 +148,7 @@ NClassifierArray::NClassifierArray(const string & id, int leftcontextsize, int r
 void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder) {    
     vector<string> files = globfiles(ID + ".n*.ibase");
     for (vector<string>::iterator iter = files.begin(); iter != files.end(); iter++) {
+    
         const string filename = *iter;
         
         //grab n
@@ -156,11 +157,11 @@ void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourcec
             if (filename[i] == 'n') break;
             nss << i;            
         }
-        cerr << "DEBUG: n=" << nss.str() << endl; 
+        cerr << "DEBUG n=" << nss.str() << endl; 
         const int n = atoi(nss.str().c_str());
         
         const string nclassifierid = filename.substr(0, filename.size() - 6);
-        cerr << "DEBUG: nclassifierid=" << nclassifierid << endl;   
+        cerr << "   Loading classifier n=" << n << " id=" << nclassifierid << endl;   
         classifierarray[n] = new Classifier(nclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder);
     }    
 }
