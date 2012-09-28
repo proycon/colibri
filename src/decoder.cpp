@@ -1403,6 +1403,7 @@ int main( int argc, char *argv[] ) {
     /* getopt_long stores the option index here. */
     int option_index = 0;
     bool DOSKIPGRAMS = true;
+    string timbloptions = "-a 1";
     string classifierid = "";
     ScoreHandling scorehandling = SCOREHANDLING_WEIGHED;
     
@@ -1414,7 +1415,7 @@ int main( int argc, char *argv[] ) {
     
     int debug = 0;
     char c;    
-    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:v:M:NC:x:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "ht:S:T:s:p:l:W:L:D:v:M:NC:x:O:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -1461,6 +1462,9 @@ int main( int argc, char *argv[] ) {
         case 'C':
             classifierid = optarg;
             break;
+        case 'O':
+            timbloptions = optarg;
+            break;            
         case 'x':
             if (optarg == "weighed") {
                 scorehandling = SCOREHANDLING_WEIGHED;
@@ -1536,8 +1540,11 @@ int main( int argc, char *argv[] ) {
     ClassifierInterface * classifier = NULL;
     if (!classifierid.empty()) {
         cerr << "Loading classifiers" << endl;
+        cerr << "   ID: " << classifierid << endl;
+        cerr << "   Timbl options: " << timbloptions << endl;
         bool exemplarweights = true; //read from config
         classifier = (ClassifierInterface*) new NClassifierArray(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext);
+        classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder);        
     }   
         
     //const int firstunknownclass_source = sourceclassencoder.gethighestclass()+1;    
