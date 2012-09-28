@@ -26,9 +26,10 @@ class Classifier {
     ClassDecoder * targetclassdecoder;
     ClassEncoder * targetclassencoder;
     Timbl::TimblAPI * testexp;
+    bool DEBUG;
   public:
-    Classifier(const std::string & id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool append = false, bool exemplarweights = true); //for building
-    Classifier(const std::string & id, const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder); //for testing            
+    Classifier(const std::string & id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool append = false, bool exemplarweights = true, bool debug=false); //for building
+    Classifier(const std::string & id, const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, bool debug); //for testing            
     ~Classifier();
     void addinstance(std::vector<const EncAnyGram *> featurevector, const EncAnyGram * label, double exemplarweight = 1);
     void addinstance(std::vector<std::string> & featurevector, const std::string & label, double exemplarweight = 1);
@@ -50,7 +51,7 @@ class ClassifierInterface {
         const std::string id() { return ID; };
         virtual void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,  bool exemplarweights = true) =0;
         virtual void train(const std::string & timbloptions) =0;
-        virtual void load( const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder) =0;
+        virtual void load( const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG =0) =0;
         virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling) =0; //decoder will call this, sourcefragments and newtable will be filled for decoder  
 };
 
@@ -63,7 +64,7 @@ class NClassifierArray: public ClassifierInterface {
         NClassifierArray(const std::string & id, int leftcontextsize, int rightcontextsize);
         void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);       
         void train(const std::string & timbloptions);     
-        void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder);
+        void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG=0);
         void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling); //decoder will call this, sourcefragments will be filled for decoder
         t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);
         t_aligntargets classify(std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);          

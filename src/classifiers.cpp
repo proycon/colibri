@@ -17,7 +17,7 @@ vector<string> globfiles(const string& pat){ //from http://stackoverflow.com/que
     return ret;
 }
 
-Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool appendmode, bool exemplarweights ) {
+Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool appendmode, bool exemplarweights, bool debug ) {
     //for training
     ID = _id;
     trainfile = string(_id + ".train");        
@@ -26,17 +26,20 @@ Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecode
     this->exemplarweights = exemplarweights;
     this->sourceclassdecoder = sourceclassdecoder;
     this->targetclassdecoder = targetclassdecoder;
+    this->DEBUG = debug;
 }        
 
-Classifier::Classifier(const std::string & _id, const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder) {
+Classifier::Classifier(const std::string & _id, const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, bool debug) {
     //for testing
     ID = _id;
     ibasefile = string(_id + ".ibase");
     wgtfile = string(_id + ".wgt");           
     this->sourceclassdecoder = sourceclassdecoder;
     this->targetclassencoder = targetclassencoder;
+    this->DEBUG = debug;
     
     const string moretimbloptions = " -I " + ibasefile + " -w " + wgtfile + " " + timbloptions;
+    if (DEBUG) cerr << "    Instantiation Timbl API: "  << moretimbloptions << endl; 
     testexp = new TimblAPI( moretimbloptions , ID );
 }
 
@@ -99,10 +102,13 @@ t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> & featurevec
 }
 
 t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+    if (DEBUG) cerr << "\t\t\tClassifier input: ";
     stringstream features_ss;
     for (vector<string>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         features_ss << *iter << "\t";
+        if (DEBUG) cerr << *iter << "\t"; 
     }
+    if (DEBUG) cerr << endl;
     features_ss << "?"; //class dummy    
     const ValueDistribution * valuedistribution;
     double distance;
@@ -145,7 +151,7 @@ NClassifierArray::NClassifierArray(const string & id, int leftcontextsize, int r
     this->rightcontextsize = rightcontextsize;
 }
 
-void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder) {    
+void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG) {    
     vector<string> files = globfiles(ID + ".n*.ibase");
     for (vector<string>::iterator iter = files.begin(); iter != files.end(); iter++) {
     
@@ -157,12 +163,11 @@ void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourcec
             if (filename[i] == 'n') break;
             nss << filename[i];            
         }
-        cerr << "DEBUG n=" << nss.str() << endl; 
         const int n = atoi(nss.str().c_str());
         
         const string nclassifierid = filename.substr(0, filename.size() - 6);
         cerr << "   Loading classifier n=" << n << " id=" << nclassifierid << endl;   
-        classifierarray[n] = new Classifier(nclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder);
+        classifierarray[n] = new Classifier(nclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder, (DEBUG >= 3));
     }    
 }
 
