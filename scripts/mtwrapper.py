@@ -156,6 +156,7 @@ class MTWrapper(object):
             ('BUILD_COLIBRI_GIZA', False,'Base aligner on word-alignments using giza (do not manually specify -W -s -t in COLIBRI_ALIGNER_OPTIONS)'),
             ('BUILD_COLIBRI_TRANSTABLE', False,'Build a translation table using colibri'),
             ('BUILD_COLIBRI_MOSESPHRASETABLE', False,'Build a Moses-style phrasetable using colibri'),
+            ('BUILD_COLIBRI_CLASSIFIERS', False,'Build and use classifiers'),
             ('BUILD_COLIBRI_SKIPGRAMS', False,'Include support for skipgrams (automatically adds -s -B -E to patternfinder options, creates proper graph models if enabled, extracts skipgrams in alignment). If alignment is enabled, skipgrams will be extracted from the aligned models, do not use if skipgrams are already to be extracted during EM or Jaccard alignment.'),
             ('BUILD_COLIBRI', False,'Build for colibri decoder'),
             ('BUILD_PHRASAL', False,'Build phrasal configuration, necessary for decoding using phrasal'),
@@ -204,7 +205,8 @@ class MTWrapper(object):
             ('EXEC_COLIBRI_PATTERNFINDER','patternfinder',''),
             ('EXEC_COLIBRI_GRAPHER','grapher',''),
             ('EXEC_COLIBRI_ALIGNER','aligner',''),
-            ('EXEC_COLIBRI_DECODER','decoder',''),            
+            ('EXEC_COLIBRI_DECODER','decoder',''),
+            ('EXEC_COLIBRI_TRAINCLASSIFIERS','trainclassifiers',''),             
             ('MKCLS_OPTIONS','-m2 -c50',''),
             ('GIZA_OPTIONS','-p0 0.98 -m1 5 -m2 0 -m3 3 -m4 3 -nsmooth 4 -model4smoothfactor 0.4',''),
             ('SRILM_ORDER',3,'N-gram size for language model'),
@@ -223,10 +225,13 @@ class MTWrapper(object):
             ('PBMBMT_RIGHTCONTEXTSIZE',1,''),
             ('PBMBMT_DECODER_OPTIONS','','Options for PBMBMT Decoder (do not include --srilm=, will be added automatically if BUILD_SRILM_TARGETMODEL is enabled)'),
             ('PBMBMT_TIMBL_OPTIONS','-k 1 -a4','Timbl options (+v+db+di is added automatically). See Timbl -h'),
+            ('COLIBRI_TIMBL_OPTIONS', '-k 1 -a4','Timbl options. See Timbl -h'),
             ('COLIBRI_GRAPHER_OPTIONS','-P -X -r','Options for the Graphmodel, if empty, no graph model will be constructed for the aligner, see graphmodel -h'),
             ('COLIBRI_PATTERNFINDER_OPTIONS','-t 10', 'Options for the pattern finder, see patternfinder -h'),
             ('COLIBRI_ALIGNER_OPTIONS','-J -p 0.1','Options for the colibri aligner, see aligner -h'),
             ('COLIBRI_DECODER_OPTIONS','','Options for the colibri decoder, see decoder -h'),
+            ('COLIBRI_LEFTCONTEXTSIZE',1,'For use with BUILD_COLIBRI_CLASSIFIERS=True'),
+            ('COLIBRI_RIGHTCONTEXTSIZE',1,'For use with BUILD_COLIBRI_CLASSIFIERS=True'),
             ('PHRASAL_MAXMEM', '4g', 'Memory allocated for word alignment, phrase extraction and decoding using phrasal (java)'),
             ('PHRASAL_WITHGAPS', True, 'Consider gaps if using Phrasal?'),
             ('PHRASAL_MAXSOURCEPHRASESPAN', 15, 'Maximum span for a source-side phrase with gaps (phrasal)'),
@@ -315,6 +320,7 @@ class MTWrapper(object):
         self.EXEC_COLIBRI_GRAPHER = self.findpath(self.EXEC_COLIBRI_GRAPHER , self.PATH_COLIBRI)
         self.EXEC_COLIBRI_ALIGNER = self.findpath(self.EXEC_COLIBRI_ALIGNER , self.PATH_COLIBRI)
         self.EXEC_COLIBRI_DECODER = self.findpath(self.EXEC_COLIBRI_DECODER , self.PATH_COLIBRI)
+        self.EXEC_COLIBRI_TRAINCLASSIFIERS = self.findpath(self.EXEC_COLIBRI_TRAINCLASSIFIERS , self.PATH_COLIBRI)
         
         self.EXEC_PBMBMT_DECODER = self.findpath(self.EXEC_PBMBMT_DECODER, self.PATH_PBMBMT)
         self.EXEC_PBMBMT_INSTANCEGENERATOR = self.findpath(self.EXEC_PBMBMT_INSTANCEGENERATOR, self.PATH_PBMBMT)
@@ -438,7 +444,6 @@ class MTWrapper(object):
         if (self.TOKENIZE_SOURCECORPUS or self.TOKENIZE_TARGETCORPUS) and (not self.EXEC_UCTO or not os.path.isfile(self.EXEC_UCTO)):
             self.log("Dependency error: ucto not found (EXEC_UCTO=" + self.EXEC_UCTO + ")",red)
             sane = False
-
 
 
         if self.BUILD_COLIBRI_GIZA:   
@@ -1435,10 +1440,16 @@ class MTWrapper(object):
 
         if not self.runcmd(self.EXEC_COLIBRI_GRAPHER + ' -f ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHER_OPTIONS + grapher_extraoptions, "Building target-side graph model",self.gettargetfilename('graphpatternmodel.colibri') ): return False
         
+        aligner_extraoptions = ''
+        if self.BUILD_COLIBRI_CLASSIFIERS:        
+            aligner_extraoptions = ' -l ' + str(self.COLIBRI_LEFTCONTEXTSIZE) + ' -r ' + str(self.COLIBRI_RIGHTCONTEXTSIZE)
+            
         if self.BUILD_COLIBRI_GIZA:
-            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -t ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -I 2 -N ' + self.COLIBRI_ALIGNER_OPTIONS + ' -W ' + self.gets2tfilename('A3.final') + ':' + self.gett2sfilename('A3.final') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls'), "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
+            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -t ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -I 2 -N ' + self.COLIBRI_ALIGNER_OPTIONS + ' ' + aligner_extraoptions + ' -W ' + self.gets2tfilename('A3.final') + ':' + self.gett2sfilename('A3.final') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls'), "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
             #if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -t ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -s ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gett2sfilename('alignmodel.colibri') + ' -N ' + self.COLIBRI_ALIGNER_OPTIONS + ' -W ' + self.gett2sfilename('A3.final') + ':' + self.gets2tfilename('A3.final') + ' -T ' + self.getsourcefilename('cls') + ' -S ' + self.gettargetfilename('cls'), "Building alignment model",self.gett2sfilename('alignmodel.colibri') ): return False #TODO: This step can be computed from the previous rather than from scratch as done here
         else:  
+            if self.BUILD_COLIBRI_CLASSIFIERS:
+                self.log("WARNING: No classifiers will be built! Only possible with Giza extraction method!",red)
             if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -t ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -I 2 ' + self.COLIBRI_ALIGNER_OPTIONS, "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
             #if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -t ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -s ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gett2sfilename('alignmodel.colibri') + ' -N ' + self.COLIBRI_ALIGNER_OPTIONS, "Building reverse alignment model",self.gett2sfilename('alignmodel.colibri') ): return False
         
@@ -1453,6 +1464,10 @@ class MTWrapper(object):
                 if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -d ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' > ' + self.gets2tfilename('phrasetable'), "Outputting moses-style phrasetable from colibri",   self.gets2tfilename('phrasetable') ): return False
                 
         
+        if self.BUILD_COLIBRI_CLASSIFIERS and self.BUILD_COLIBRI_GIZA:
+            if not self.runcmd(self.EXEC_COLIBRI_TRAINCLASSIFIERS + ' -C timbl -d ' + self.gets2tfilename('alignmodel.colibri') + ' -O "' + self.COLIBRI_TIMBL_OPTIONS + '"', "Building and training classifiers"): return False   
+            
+        
         #if self.BUILD_COLIBRI_TRANSTABLE:            
         #    extra = ''
         #    if self.BUILD_COLIBRI_MOSESPHRASETABLE:
@@ -1463,9 +1478,7 @@ class MTWrapper(object):
         #        if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -d ' + self.gets2tfilename('alignmodelS.colibri') + ' -i ' + self.gett2sfilename('alignmodelS.colibri') + ' -o ' + self.gets2tfilename('translationtable.colibri') + ' -I 2 ' + extra + ' > ' + self.gets2tfilename('phrasetable') , "Building Translation Table", self.gets2tfilename('translationtable.colibri') ): return False
         #    else:
         #        if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -d ' + self.gets2tfilename('alignmodel.colibri') + ' -i ' + self.gett2sfilename('alignmodel.colibri') + ' -o ' + self.gets2tfilename('translationtable.colibri') + ' -I 2 ' + extra + ' > ' + self.gets2tfilename('phrasetable') , "Building Translation Table", self.gets2tfilename('translationtable.colibri') ): return False
-                
-        
-
+                        
         return True
         
     def build_giza_wordalignment(self):
@@ -1849,11 +1862,16 @@ WordPenalty: -0.5\n""")
         return True
     
     def run_colibri(self):
+        decoder_extraoptions = ''
+        if self.BUILD_COLIBRI_CLASSIFIERS:
+            decoder_extraoptions = '-C timbl'                                
         if os.path.exists(self.gets2tfilename('alignmodelS.colibri')):
-            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodelS.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' < input.txt > output.txt','Colibri Decoder'): return False            
-        elif os.path.exists(self.gets2tfilename('alignmodel.colibri')):
-            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' < input.txt > output.txt','Colibri Decoder'): return False
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodelS.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + '  < input.txt > output.txt','Colibri Decoder'): return False            
+        elif os.path.exists(self.gets2tfilename('alignmodel.colibri')):            
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' ' + decoder_extraoptions + ' < input.txt > output.txt','Colibri Decoder'): return False
         elif os.path.exists(self.gets2tfilename('phrasetable')):
+            if self.BUILD_COLIBRI_CLASSIFIERS:
+                self.log("WARNING: No classifiers will be used! Not possible with Moses phrasetable!",red)
             #moses-style phrase-table
             if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('phrasetable') + ' --moses -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' < input.txt > output.txt','Colibri Decoder'): return False
         else:
