@@ -197,7 +197,7 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
                     const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
                     featurevector.push_back(unigram);                    
                 }                
-                for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[focus].begin(); iter3 != ttable->alignmatrix[focus].end(); iter3++) {
+                for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
                     const EncAnyGram * label = iter3->first;
                     
                     if (exemplarweights) {
@@ -221,6 +221,7 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
 
 t_aligntargets NClassifierArray::classify(std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
     const int n = featurevector.size() - 1 - leftcontextsize - rightcontextsize; // - 1 for dummy
+    cerr << "DEBUG: " << n << " " << featurevector.size() << endl;
     if (classifierarray.count(n)) {
         return classifierarray[n]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
@@ -259,8 +260,6 @@ void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel *
         
         const int contextcount = translationtable->sourcecontexts[anygram].size(); //in how many different contexts does this occur?
         const int n = anygram->n();
-        
-
         
         if (contextcount == 1) {
             //only one? no need for classifier, just copy from translation table                
@@ -319,7 +318,7 @@ void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel *
             //extract anygram in context for classifier test input
             const EncAnyGram * withcontext = translationtable->addcontext(&input,anygram, (int) ref.token);
             const int nwithcontext = withcontext->n();
-            
+
              
             vector<const EncAnyGram *> featurevector;
             for (int i = 0; i < nwithcontext; i++) {
