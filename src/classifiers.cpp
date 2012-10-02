@@ -37,7 +37,7 @@ Classifier::Classifier(const std::string & _id, const string & timbloptions, Cla
     wgtfile = string(_id + ".ibase.wgt");           
     this->sourceclassdecoder = sourceclassdecoder;
     this->targetclassencoder = targetclassencoder;
-    this->DEBUG = true;
+    this->DEBUG = debug;
     
     //const string moretimbloptions = "-F Tabbed -i " + ibasefile + " -w " + wgtfile + " " + timbloptions + " +D +vdb";
     const string moretimbloptions = "-F Tabbed " + timbloptions + " +D +vdb -G 0";
@@ -257,7 +257,6 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
 t_aligntargets NClassifierArray::classify(std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
     const int n = featurevector.size() - leftcontextsize - rightcontextsize;  
     if ((classifierarray.count(n)) && (classifierarray[n] != NULL)) {
-        cerr << "Invoking classifier " << n << endl;
         return classifierarray[n]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
         cerr << "INTERNAL ERROR: NClassifierArray::classify invokes classifier " << n << ", but it does not exist" << endl;
@@ -268,7 +267,6 @@ t_aligntargets NClassifierArray::classify(std::vector<const EncAnyGram *> & feat
 t_aligntargets NClassifierArray::classify(std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
     const int n = featurevector.size() - leftcontextsize - rightcontextsize; 
     if ((classifierarray.count(n)) && (classifierarray[n] != NULL)) {
-        cerr << "Invoking classifier " << n << endl;
         return classifierarray[n]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
         cerr << "INTERNAL ERROR: NClassifierArray::classify invokes classifier " << n << ", but it does not exist" << endl;
