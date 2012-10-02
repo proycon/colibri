@@ -210,7 +210,7 @@ class MTWrapper(object):
             ('MKCLS_OPTIONS','-m2 -c50',''),
             ('GIZA_OPTIONS','-p0 0.98 -m1 5 -m2 0 -m3 3 -m4 3 -nsmooth 4 -model4smoothfactor 0.4',''),
             ('SRILM_ORDER',3,'N-gram size for language model'),
-            ('SRILM_OPTIONS','-interpolate -kndiscount','Further SRILM options (do not use -order here, use SRILM_ORDER instead)'),
+            ('SRILM_OPTIONS','-interpolate -kndiscount -unk','Further SRILM options (do not use -order here, use SRILM_ORDER instead)'),
             ('UCTO_OPTIONS','-m -n',''),
             ('SYMAL_OPTIONS','-alignment=grow -diagonal=yes -final=yes -both=no',''), #-hmmiterations 5 -hmmdumpfrequency -5'
             ('MOSES_MERT_OPTIONS','','See http://www.statmt.org/moses/?n=FactoredTraining.Tuning'),
