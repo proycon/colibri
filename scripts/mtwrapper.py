@@ -1469,7 +1469,7 @@ class MTWrapper(object):
                 
         
         if self.BUILD_COLIBRI_CLASSIFIERS and self.BUILD_COLIBRI_GIZA:
-            if not self.runcmd(self.EXEC_COLIBRI_TRAINCLASSIFIERS + ' -C timbl -d ' + self.gets2tfilename('alignmodel.colibri') + ' -O "' + self.COLIBRI_TIMBL_OPTIONS + '"', "Building and training classifiers"): return False   
+            if not self.runcmd(self.EXEC_COLIBRI_TRAINCLASSIFIERS + ' -C timbl -d ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls')  + ' -O "' + self.COLIBRI_TIMBL_OPTIONS + '"', "Building and training classifiers"): return False   
             
         
         #if self.BUILD_COLIBRI_TRANSTABLE:            
