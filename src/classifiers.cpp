@@ -108,7 +108,7 @@ void Classifier::train(const string & timbloptions) {
 }
 
 t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
-    if (DEBUG) cerr << "\t\t\tConverting classifier input to strings...";
+    if (DEBUG) cerr << "\t\t\tConverting classifier input to strings..." << endl;
     vector<string> featurevector_s;
     for (vector<const EncAnyGram *>::const_iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         const EncAnyGram * anygram = *iter;
@@ -118,8 +118,7 @@ t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> & featurevec
 }
 
 t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
-    DEBUG = true;
-    if (DEBUG) cerr << "\t\t\tClassifier input: ";
+    if (DEBUG) cerr << "\t\t\tClassifier input: " << endl;
     stringstream features_ss;
     for (vector<string>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         features_ss << *iter << "\t";
@@ -154,7 +153,7 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
     for (ValueDistribution::dist_iterator iter = valuedistribution->begin(); iter != valuedistribution->end(); iter++) {
         const string data = CodeToStr(iter->second->Value()->Name());        
         const double weight = log(iter->second->Weight()); //convert into logprob
-        if (DEBUG) cerr << "Got solution \"" << data << "\" with weight " << iter->second->Weight() << endl;
+        if (DEBUG) cerr << "\t\t\tGot solution \"" << data << "\" with weight " << iter->second->Weight() << endl;
         const EncAnyGram * target = targetclassencoder->input2anygram(data, false);
         if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND)) {
             if (originaltranslationoptions.count(target)) {
@@ -177,7 +176,7 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
     }
 
     //note: any targets not present in classifier output will be pruned!
-    
+        
     return result;
 }
 

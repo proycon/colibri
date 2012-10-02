@@ -1544,7 +1544,7 @@ int main( int argc, char *argv[] ) {
         cerr << "   Timbl options: " << timbloptions << endl;
         bool exemplarweights = true; //read from config
         classifier = (ClassifierInterface*) new NClassifierArray(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext);
-        classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder);        
+        classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);        
     }   
         
     //const int firstunknownclass_source = sourceclassencoder.gethighestclass()+1;    
