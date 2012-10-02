@@ -40,7 +40,7 @@ Classifier::Classifier(const std::string & _id, const string & timbloptions, Cla
     this->DEBUG = debug;
     
     //const string moretimbloptions = "-F Tabbed -i " + ibasefile + " -w " + wgtfile + " " + timbloptions + " +D +vdb";
-    const string moretimbloptions = "-F Tabbed " + timbloptions + " +D +vdb -G 0";
+    const string moretimbloptions = "-F Tabbed " + timbloptions + " +D +vdb -G 0 +vS";
     if (DEBUG) cerr << "    Instantiating Timbl API: "  << moretimbloptions << endl; 
     testexp = new TimblAPI( moretimbloptions , ID );
     if (!testexp->Valid()) {
