@@ -1,5 +1,6 @@
 #include <classifiers.h>
 #include <glob.h>
+#include "timbl/StringOps.h"
 
 using namespace std;
 using namespace Timbl;
@@ -33,16 +34,25 @@ Classifier::Classifier(const std::string & _id, const string & timbloptions, Cla
     //for testing
     ID = _id;
     ibasefile = string(_id + ".ibase");
-    wgtfile = string(_id + ".wgt");           
+    wgtfile = string(_id + ".ibase.wgt");           
     this->sourceclassdecoder = sourceclassdecoder;
     this->targetclassencoder = targetclassencoder;
     this->DEBUG = true;
     
-    const string moretimbloptions = " -F Tabbed -i " + ibasefile + " -w " + wgtfile + " " + timbloptions + " +D +vdb";
+    //const string moretimbloptions = "-F Tabbed -i " + ibasefile + " -w " + wgtfile + " " + timbloptions + " +D +vdb";
+    const string moretimbloptions = "-F Tabbed " + timbloptions + " +D +vdb -G 0";
     if (DEBUG) cerr << "    Instantiating Timbl API: "  << moretimbloptions << endl; 
     testexp = new TimblAPI( moretimbloptions , ID );
     if (!testexp->Valid()) {
         cerr << "Error Instantiating Timbl API: "  << moretimbloptions << endl;
+        throw InternalError();
+    }
+    if (!testexp->GetInstanceBase(ibasefile)) {
+        cerr << "Error getting instance base " << ibasefile << endl;
+        throw InternalError();
+    }
+    if (!testexp->GetWeights(wgtfile)) {
+        cerr << "Error getting weights " << wgtfile << endl;
         throw InternalError();
     }
 }
@@ -132,21 +142,32 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
             throw InternalError();
     }
      
+    
+    //get amount of scores:
+    const double epsilon = -500;
+    t_aligntargets::iterator tmpiter1 = originaltranslationoptions.begin();    
+    const int scorecount = tmpiter1->second.size();   
+   
+    
     //convert valuedistribution to t_aligntargets    
     t_aligntargets result;
     for (ValueDistribution::dist_iterator iter = valuedistribution->begin(); iter != valuedistribution->end(); iter++) {
-        const string data = iter->second->Value()->Name();
+        const string data = CodeToStr(iter->second->Value()->Name());        
         const double weight = log(iter->second->Weight()); //convert into logprob
+        if (DEBUG) cerr << "Got solution \"" << data << "\" with weight " << iter->second->Weight() << endl;
         const EncAnyGram * target = targetclassencoder->input2anygram(data, false);
         if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND)) {
-            if (originaltranslationoptions.count(target) == 0) {
-                cerr << "INTERNAL ERROR: Classifier::classify: Original translation option not found" << endl; 
-                throw InternalError();
-            }
-            result[target] = originaltranslationoptions[target];          
+            if (originaltranslationoptions.count(target)) {
+                result[target] = originaltranslationoptions[target];               
+            } else {
+                //translation option did not exist yet:
+                for (int i = 0; i < scorecount; i++) {
+                        result[target].push_back(epsilon);
+                }
+            }          
         } 
         if (scorehandling == SCOREHANDLING_WEIGHED) {
-            for (int i = 0; i <= originaltranslationoptions[target].size(); i++) {
+            for (int i = 0; i < originaltranslationoptions[target].size(); i++) {
                 result[target][i] = originaltranslationoptions[target][i] + weight;
             }                        
         }
