@@ -691,7 +691,7 @@ class MTWrapper(object):
         print >>sys.stderr,"\rresource [sourcecorpus] [targetcorpus] [trainsize] [testsize] [devsize]    Regenerate training/test/dev sets from specified sources, trainsize may be '*' for all remaining data. Will automatically issue a 'clean all' as well"
 
     def start(self):        
-        print " ".join(sys.argv)
+        print >>sys.stderr, repr(sys.argv)
         
         os.chdir(self.WORKDIR)
         try:
