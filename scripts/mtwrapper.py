@@ -695,8 +695,10 @@ class MTWrapper(object):
         try:
             cmd = sys.argv[1]
         except:
+            print >>sys.stderr, "Please specify a command..."
             self.usage()
             sys.exit(2)
+            
         if cmd == 'train':
             self.initlog('train')
             if os.path.isfile(self.WORKDIR + '/.frozen'):
