@@ -1032,10 +1032,10 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                         }
                         
                         if (computereverse) {
-                            if (alignmatrix[besttargetpattern][key].empty()) {
-                                alignmatrix[besttargetpattern][key].push_back(1);
+                            if (reversealignmatrix[besttargetpattern][key].empty()) {
+                                reversealignmatrix[besttargetpattern][key].push_back(1);
                             } else {
-                                alignmatrix[besttargetpattern][key][0] += 1;
+                                reversealignmatrix[besttargetpattern][key][0] += 1;
                             }
                         }
                         
@@ -1083,6 +1083,7 @@ int AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & g
       //normalize alignment matrix
       normalize();
       if (computereverse) {
+            cerr << "Integrating reverse model" << endl;
             normalize(&reversealignmatrix);
         
             //add reversealignmodel to normal model and delete reversemodel
@@ -1107,7 +1108,7 @@ int AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & g
                 reversealignmatrix.erase(target); //make space whilst processing
             }
             
-            reversealignmatrix.clear();
+            //reversealignmatrix.clear();
       }
       
       return totalfound;      
