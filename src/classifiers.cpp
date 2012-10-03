@@ -104,6 +104,7 @@ void Classifier::train(const string & timbloptions) {
     TimblAPI * timbltrainexp = new TimblAPI( moretimbloptions , ID );
     timbltrainexp->Learn(trainfile);   
     timbltrainexp->WriteInstanceBase( ibasefile );
+    timbltrainexp->SaveWeights( ibasefile + ".wgt");
     delete timbltrainexp;    
 }
 
