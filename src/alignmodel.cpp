@@ -1506,6 +1506,10 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
         leftsourcecontext = 0;
         rightsourcecontext = 0;
     }
+    if (DEBUG) {
+        cerr << "leftsourcecontext=" << leftsourcecontext << endl;
+        cerr << "rightsourcecontext=" << rightsourcecontext << endl;
+    }    
     f.read( (char*) &sourcecount, sizeof(uint64_t));  
     
 
@@ -1558,7 +1562,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
         if ( (leftsourcecontext || rightsourcecontext) && ( !(sourceisskipgram && !allowskipgrams) ) ) {
             //deal with source-side context
             if (sourcegram->n() - leftsourcecontext - rightsourcecontext <= 0) {
-                cerr << "INTERNAL ERROR: unable to remove context from n-gram, nothing left! nwithcontext=" << sourcegram->n() << " leftcontextsize=" << leftsourcecontext << " rightcontextsize=" << rightsourcecontext <<  endl;
+                cerr << "INTERNAL ERROR: unable to remove context from n-gram, nothing left! nwithcontext=" << (int) sourcegram->n() << " leftcontextsize=" << (int) leftsourcecontext << " rightcontextsize=" << (int) rightsourcecontext <<  endl;
                 cerr << sourcegram->out() << endl;
                 throw InternalError();
             }
