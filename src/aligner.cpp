@@ -5,7 +5,7 @@
 using namespace std;
 
 void usage() {
-    cerr << "Usage: aligner [-J|-D|-E] -s source-model -t target-model [-S source-class-file -T target-class-file]" << endl;
+    cerr << "Usage: aligner [-J|-E] -s source-model -t target-model [-S source-class-file -T target-class-file]" << endl;
     cerr << " Input:" << endl;
     cerr << "\t-s sourcemodelfile        Source model file (patternmodel/graphmodel)" << endl;    
     cerr << "\t-t targetmodelfile        Target model file (patternmodel/graphmodel)"  << endl;
@@ -98,7 +98,6 @@ int main( int argc, char *argv[] ) {
     int MOSESFORMAT = 0;
     
     int bestn = 0;
-    bool DEBUG = false;
     
     bool DOPARENTS = false;
     bool DOCHILDREN = false;
@@ -173,9 +172,6 @@ int main( int argc, char *argv[] ) {
         case 'J':
             COOCMODE = JACCARD;
             break;
-        case 'D':
-        	DEBUG = true;
-        	break;
         /*case 'D':
             COOCMODE = DICE;
             break;*/            
@@ -288,7 +284,7 @@ int main( int argc, char *argv[] ) {
     
     if (!sourcemodelfile.empty()) {
 	    cerr << "Loading source model " << sourcemodelfile << endl;   
-	    sourcemodel = new SelectivePatternModel(sourcemodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false, DEBUG);
+	    sourcemodel = new SelectivePatternModel(sourcemodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false, DODEBUG);
 	    cerr << "  Loaded " << sourcemodel->types() << " types, " << sourcemodel->tokens() << " tokens" << endl;
      	cerr << "  Ignored " << sourcemodel->ignoredtypes << " types, " << sourcemodel->ignoredoccurrences << " occurrences due to set thresholds" << endl;
 	    if (sourcemodel->has_xcount()) {
@@ -308,7 +304,7 @@ int main( int argc, char *argv[] ) {
 	}
 	if (!targetmodelfile.empty()) {
 	    cerr << "Loading target model " << targetmodelfile << endl; 		
-	    targetmodel = new SelectivePatternModel(targetmodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false, DEBUG);
+	    targetmodel = new SelectivePatternModel(targetmodelfile, filter, true, true, COUNTTHRESHOLD, FREQTHRESHOLD, XCOUNTRATIOTHRESHOLD, XCOUNTTHRESHOLD, DOSKIPGRAMS || EXTRACTSKIPGRAMS, MINLENGTH, MAXLENGTH, NULL,false, DODEBUG);
 	    cerr << "  Loaded " << targetmodel->types() << " types, " << targetmodel->tokens() << " tokens" << endl;
 	    cerr << "  Ignored " << targetmodel->ignoredtypes << " types, " << targetmodel->ignoredoccurrences << " occurrences due to set thresholds" << endl;
 	    if (targetmodel->has_xcount()) {
