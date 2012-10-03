@@ -1869,10 +1869,13 @@ WordPenalty: -0.5\n""")
         decoder_extraoptions = ''
         if self.BUILD_COLIBRI_CLASSIFIERS:
             decoder_extraoptions = '-C timbl'
+            if self.COLIBRI_TIMBL_OPTIONS:
+                decoder_extraoptions += ' -O "' + self.COLIBRI_TIMBL_OPTIONS + '"'
+                
         if os.path.exists(self.gets2tfilename('transtable.colibri')): #backward compatibility
             if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('transtable.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + '  < input.txt > output.txt','Colibri Decoder'): return False                                
         elif os.path.exists(self.gets2tfilename('alignmodelS.colibri')):
-            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodelS.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + '  < input.txt > output.txt','Colibri Decoder'): return False            
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodelS.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + ' < input.txt > output.txt','Colibri Decoder'): return False            
         elif os.path.exists(self.gets2tfilename('alignmodel.colibri')):            
             if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' ' + decoder_extraoptions + ' < input.txt > output.txt','Colibri Decoder'): return False
         elif os.path.exists(self.gets2tfilename('phrasetable')):
