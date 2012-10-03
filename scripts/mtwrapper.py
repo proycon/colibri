@@ -418,7 +418,7 @@ class MTWrapper(object):
             if not self.EXEC_COLIBRI_DECODER or not os.path.isfile(self.EXEC_COLIBRI_DECODER):
                 self.log("Error: Colibri decoder not found! (" + self.EXEC_COLIBRI_DECODER+")",red,True)
                 return False                
-            elif (not os.path.exists(self.gets2tfilename('translationtable.colibri'))) and (not os.path.exists(self.gets2tfilename('phrasetable'))):
+            elif (not os.path.exists(self.gets2tfilename('translationtable.colibri'))) and (not os.path.exists(self.gets2tfilename('alignmodel.colibri'))) and (not os.path.exists(self.gets2tfilename('alignmodelS.colibri')))  and (not os.path.exists(self.gets2tfilename('phrasetable'))):
                 self.log("Error: No translation table found. Did you forget to train the system first?",red,True)
                 return False        
         else:
@@ -1868,8 +1868,10 @@ WordPenalty: -0.5\n""")
     def run_colibri(self):
         decoder_extraoptions = ''
         if self.BUILD_COLIBRI_CLASSIFIERS:
-            decoder_extraoptions = '-C timbl'                                
-        if os.path.exists(self.gets2tfilename('alignmodelS.colibri')):
+            decoder_extraoptions = '-C timbl'
+        if os.path.exists(self.gets2tfilename('transtable.colibri')): #backward compatibility
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('transtable.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + '  < input.txt > output.txt','Colibri Decoder'): return False                                
+        elif os.path.exists(self.gets2tfilename('alignmodelS.colibri')):
             if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodelS.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + '  < input.txt > output.txt','Colibri Decoder'): return False            
         elif os.path.exists(self.gets2tfilename('alignmodel.colibri')):            
             if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' ' + decoder_extraoptions + ' < input.txt > output.txt','Colibri Decoder'): return False

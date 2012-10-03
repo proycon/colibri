@@ -1507,8 +1507,8 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
         rightsourcecontext = 0;
     }
     if (DEBUG) {
-        cerr << "leftsourcecontext=" << leftsourcecontext << endl;
-        cerr << "rightsourcecontext=" << rightsourcecontext << endl;
+        cerr << "leftsourcecontext=" << (int) leftsourcecontext << endl;
+        cerr << "rightsourcecontext=" << (int) rightsourcecontext << endl;
     }    
     f.read( (char*) &sourcecount, sizeof(uint64_t));  
     
