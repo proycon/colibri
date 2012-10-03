@@ -154,7 +154,7 @@ int main( int argc, char *argv[] ) {
         	exit(0);
         case 'I':
             DOBIDIRECTIONAL = atoi(optarg);
-            if ((DOBIDIRECTIONAL != 1) && (DOBIDIRECTIONAL !=2 )) {
+            if ((DOBIDIRECTIONAL != 1) && (DOBIDIRECTIONAL != 2 )) {
                 cerr << "Value for -I must be 1 or 2" << endl;
             }
             break;  	
@@ -465,17 +465,17 @@ int main( int argc, char *argv[] ) {
 		        GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
 		        		    
 		        cerr << "Extracting phrases based on GIZA++ Word Alignments" << endl;
-		        int found = alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold);
+		        int found = alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold, DOBIDIRECTIONAL);
 		        cerr << "\tFound " << found << " pairs, " << alignmodel->size()  << " source patterns." << endl;
 		    }
 		    
-		    if (DOBIDIRECTIONAL) {
+		    /*if (DOBIDIRECTIONAL) {
 		        GizaModel gizamodels2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);
 		        GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
 		        cerr << "Extracting phrases based on GIZA++ Word Alignments (reverse)" << endl;
-		        int found = reversealignmodel->extractgizapatterns(gizamodelt2s, gizamodels2t, pairthreshold, coocprunevalue, alignthreshold);
+		        int found = reversealignmodel->extractgizapatterns(gizamodelt2s, gizamodels2t, pairthreshold, coocprunevalue, alignthreshold, DOBIDIRECTIONAL);
 		        cerr << "\tFound " << found << " pairs, " << reversealignmodel->size()  << " source patterns." << endl;
-		    }
+		    }*/
 		    
 		    		  
 		}
@@ -522,8 +522,8 @@ int main( int argc, char *argv[] ) {
     }
 				
 				
-	if (DOBIDIRECTIONAL) {
-	    //************ INTERSECTION OF MODELS ****************		    
+	if ((DOBIDIRECTIONAL) && (!DOGIZA)) {
+	    //************ INTERSECTION OF MODELS for other methods than giza ****************		    
 					
 		
 		if (DOBIDIRECTIONAL == 1) {

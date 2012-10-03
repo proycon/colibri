@@ -68,7 +68,8 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     
     t_alignmatrix alignmatrix;
     t_contexts sourcecontexts; //focus pattern -> [patterns_in_context]     
-    //std::unordered_map<const EncAnyGram*, std::vector<EncNGram> > sourcekeywords;    
+    
+    t_alignmatrix reversealignmatrix; //for computation of 2nd score    
         
     
     void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT, bool mosesformat = false);
@@ -99,7 +100,7 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 	
 	
 	int prune(const double prunethreshold);
-	void normalize();
+	void normalize(t_alignmatrix * matrix = NULL);
 	
 	unsigned int trainCooc(CoocMode mode, const int bestn = 0, const double absthreshold = 0,  const double relthreshold = 0);
 	unsigned int trainCooc(CoocMode mode, const EncAnyGram * sourcegram, const std::multiset<uint32_t> & sourceindex, SelectivePatternModel * targetmodel, const int bestn = 0, const double absthreshold = 0,  const double relthreshold = 0, const bool normalize = false);
@@ -108,8 +109,9 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 	void trainEM2(const int MAXROUNDS=10000, const double CONVERGEDTHRESHOLD=0.001, double threshold = 0.0, const int bestn = 0, const bool DONULL = true, const bool INIT=true);	
 	
 
-	int extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold=0, const double coocthreshold=0, const double alignscorethreshold = 0.5, ClassDecoder * sourcedecoder = NULL, ClassDecoder * targetdecoder = NULL); //classdecoders only for verbose output
-	int extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold=0, const double coocthreshold=0, const double alignscorethreshold=0.5,  ClassDecoder * sourcedecoder = NULL, ClassDecoder * targetdecoder = NULL);
+	int extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold=0, const double coocthreshold=0, const double alignscorethreshold = 0.5, int computereverse = 2, ClassDecoder * sourcedecoder = NULL, ClassDecoder * targetdecoder = NULL); //classdecoders only for verbose output
+	int extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold=0, const double coocthreshold=0, const double alignscorethreshold=0.5,  int computereverse = 2, ClassDecoder * sourcedecoder = NULL, ClassDecoder * targetdecoder = NULL);
+	
 	int extractskipgrams(const int absolutecoocthreshold = 2);
 	
 	EncAnyGram * addcontext(const EncData * sentence, const EncAnyGram * focus, int sourceindex);

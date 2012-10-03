@@ -376,8 +376,9 @@ void AlignmentModel::trainEM(const int MAXROUNDS, const double CONVERGEDTHRESHOL
     }
 }
 
-void AlignmentModel::normalize() {
-	for (t_alignmatrix::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
+void AlignmentModel::normalize(t_alignmatrix * matrix) {
+    if (matrix == NULL) matrix = &alignmatrix;
+	for (t_alignmatrix::const_iterator sourceiter = matrix->begin(); sourceiter != matrix->end(); sourceiter++) {
 		const EncAnyGram * sourcegram = sourceiter->first;
 		//compute sum
 		vector<double> sum;		
@@ -391,11 +392,13 @@ void AlignmentModel::normalize() {
 		for (t_aligntargets::const_iterator targetiter = sourceiter->second.begin(); targetiter != sourceiter->second.end(); targetiter++) {
 			const EncAnyGram * targetgram = targetiter->first;
 			for (unsigned int i = 0; i < targetiter->second.size(); i++) {
-			    alignmatrix[sourcegram][targetgram][i] = alignmatrix[sourcegram][targetgram][i] / sum[i];
+			    (*matrix)[sourcegram][targetgram][i] = (*matrix)[sourcegram][targetgram][i] / sum[i];
 			 } 
 		}
 	}
 }
+
+
 
 int AlignmentModel::graphalign(SelectivePatternModel & sourcemodel, SelectivePatternModel & targetmodel, double impactfactor) {
 	int adjustments = 0;
@@ -766,7 +769,7 @@ EncAnyGram * AlignmentModel::addcontext(const EncData * sentence, const EncAnyGr
 }
 
 
-int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
+int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold, int computereverse, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
         GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
         GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
         
@@ -1028,6 +1031,14 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                             alignmatrix[key][besttargetpattern][0] += 1;
                         }
                         
+                        if (computereverse) {
+                            if (alignmatrix[besttargetpattern][key].empty()) {
+                                alignmatrix[besttargetpattern][key].push_back(1);
+                            } else {
+                                alignmatrix[besttargetpattern][key][0] += 1;
+                            }
+                        }
+                        
                         /* DEBUG: if ((sourcepatternwithcontext != NULL) && (getsourcekey(key) != key)) {
                                 cerr << "ERROR: CAN NOT RETRIEVE KEY" << endl;
                         } */
@@ -1054,14 +1065,14 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
 
 
 
-int AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold,ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
+int AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold, int computereverse, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
     unsigned int totalfound = 0;
     while (!gizamodel_s2t.eof() && !gizamodel_t2s.eof()) {         
         GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
         GizaSentenceAlignment sentence_t2s = gizamodel_t2s.readsentence();    
         const int i = gizamodel_s2t.index();
         cerr << " @" << i << endl;
-        int found = extractgizapatterns(sentence_s2t, sentence_t2s, i, pairoccurrencethreshold, coocthreshold, alignscorethreshold, sourcedecoder,targetdecoder);
+        int found = extractgizapatterns(sentence_s2t, sentence_t2s, i, pairoccurrencethreshold, coocthreshold, alignscorethreshold, computereverse, sourcedecoder,targetdecoder);
         totalfound += found;
         cerr << "   found " << found << endl;
       } //alignment read        
@@ -1071,6 +1082,34 @@ int AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & g
             
       //normalize alignment matrix
       normalize();
+      if (computereverse) {
+            normalize(&reversealignmatrix);
+        
+            //add reversealignmodel to normal model and delete reversemodel
+            for (t_alignmatrix::iterator iter = reversealignmatrix.begin(); iter != reversealignmatrix.end(); iter++) {
+                const EncAnyGram * target = iter->first;
+                for (t_aligntargets::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                    const EncAnyGram * source = iter2->first;
+                    if (iter2->second.size() != 1) {
+                        cerr << "INTERNAL ERROR: Expected one score for pair in reverse matrix, got " << iter2->second.size() << endl;
+                        throw InternalError();
+                    }
+                    if ( alignmatrix[source][target].size() != 1) {
+                        cerr << "INTERNAL ERROR: Expected one score for pair in alignmatrix, got " <<alignmatrix[source][target].size() << endl;
+                        throw InternalError();
+                    }
+                    if (computereverse == 1) {
+                        alignmatrix[source][target][0] = alignmatrix[source][target][0] * iter2->second[0];
+                    } else if (computereverse == 2) {
+                        alignmatrix[source][target].push_back(iter2->second[0]);
+                    }
+                }
+                reversealignmatrix.erase(target); //make space whilst processing
+            }
+            
+            reversealignmatrix.clear();
+      }
+      
       return totalfound;      
 }
 

@@ -155,7 +155,7 @@ int main( int argc, char *argv[] ) {
                         }
                         cout << "</div>" << endl;
                         cout << "<pre>" << endl;
-                        alignmentmodel.extractgizapatterns(sentence_s2t, sentence_t2s, sentence, 0,0,alignthreshold, &sourceclassdecoder, &targetclassdecoder);
+                        alignmentmodel.extractgizapatterns(sentence_s2t, sentence_t2s, sentence, 0,0,alignthreshold, 0, &sourceclassdecoder, &targetclassdecoder);
                         alignmentmodel.alignmatrix.clear(); //no need to retain matrix in memory
                         cout << "</pre>" << endl;  
                         cout << "<hr />" << endl;
