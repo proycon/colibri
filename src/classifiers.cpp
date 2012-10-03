@@ -154,7 +154,7 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
     for (ValueDistribution::dist_iterator iter = valuedistribution->begin(); iter != valuedistribution->end(); iter++) {
         const string data = CodeToStr(iter->second->Value()->Name());        
         const double weight = log(iter->second->Weight()); //convert into logprob
-        if (DEBUG) cerr << "\t\t\tGot solution \"" << data << "\" with weight " << iter->second->Weight() << endl;
+        if (DEBUG) cerr << "\t\t\tGot solution \"" << data << "\" with weight " << iter->second->Weight();
         const EncAnyGram * target = targetclassencoder->input2anygram(data, false);
         if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND)) {
             if (originaltranslationoptions.count(target)) {
@@ -168,12 +168,14 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
         } 
         if (scorehandling == SCOREHANDLING_WEIGHED) {
             for (int i = 0; i < originaltranslationoptions[target].size(); i++) {
-                result[target][i] = originaltranslationoptions[target][i] + weight;
+                if (DEBUG) cerr << " " << result[target][i] << "+" << weight << "=" << originaltranslationoptions[target][i] + weight << endl; 
+                result[target][i] = originaltranslationoptions[target][i] + weight;                
             }                        
         }
         if ((scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_REPLACE)) {
             result[target].push_back(weight);
         }         
+        if (DEBUG) cerr << endl; 
     }
 
     //note: any targets not present in classifier output will be pruned!
