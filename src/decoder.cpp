@@ -1472,7 +1472,10 @@ int main( int argc, char *argv[] ) {
                 scorehandling = SCOREHANDLING_APPEND;
             } else if (optarg == "replace") {
                 scorehandling = SCOREHANDLING_REPLACE;
-            }    
+            } else {
+                cerr << "Invalid value for -x: " << optarg << endl;
+                exit(2);    
+            }
             break;        
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
