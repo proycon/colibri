@@ -1557,6 +1557,11 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
         }        
         if ( (leftsourcecontext || rightsourcecontext) && ( !(sourceisskipgram && !allowskipgrams) ) ) {
             //deal with source-side context
+            if (sourcegram->n() - leftsourcecontext - rightsourcecontext <= 0) {
+                cerr << "INTERNAL ERROR: unable to remove context from n-gram, nothing left! nwithcontext=" << sourcegram->n() << " leftcontextsize=" << leftsourcecontext << " rightcontextsize=" << rightsourcecontext <<  endl;
+                cerr << sourcegram->out() << endl;
+                throw InternalError();
+            }
             const EncAnyGram * sourcegramfocus = sourcegram->slice(leftsourcecontext, sourcegram->n() - leftsourcecontext - rightsourcecontext);
             sourcecontexts[sourcegramfocus].insert(sourcegram);
         }                                                   
