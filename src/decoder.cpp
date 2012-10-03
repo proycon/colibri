@@ -1546,6 +1546,14 @@ int main( int argc, char *argv[] ) {
         cerr << "Loading classifiers" << endl;
         cerr << "   ID: " << classifierid << endl;
         cerr << "   Timbl options: " << timbloptions << endl;
+        cerr << "   Score handling: ";
+        if (scorehandling == SCOREHANDLING_WEIGHED) {
+            cerr << "weighed" << endl;
+        } else if (scorehandling == SCOREHANDLING_APPEND) {
+            cerr << "append" << endl;
+        } else if (scorehandling == SCOREHANDLING_REPLACE) {
+            cerr << "replace" << endl;
+        }
         bool exemplarweights = true; //read from config
         classifier = (ClassifierInterface*) new NClassifierArray(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext);
         classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);        
