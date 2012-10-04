@@ -1885,9 +1885,48 @@ const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key) {
 }
 
 
+void AlignmentModel::computereverse() {
+    reversealignmatrix.clear();
+    for (t_alignmatrix::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+        const EncAnyGram * source = iter->first;        
+        for (t_aligntargets::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+            const EncAnyGram * target = iter2->first;            
+            reversealignmatrix[target][source] = alignmatrix[source][target];            
+        }
+    }
+}
 
 
-
+t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefocus) {
+        //compute translate options, aggregating context-data into non-context based scores
+        t_aligntargets translationoptions;
+        for (unordered_set<const EncAnyGram*>::const_iterator iter = sourcecontexts[sourcefocus].begin(); iter != sourcecontexts[sourcefocus].end(); iter++) {
+            const EncAnyGram * sourcekey = *iter;
+            for (t_aligntargets::iterator iter2 = alignmatrix[sourcekey].begin(); iter2 != alignmatrix[sourcekey].end(); iter2++) {
+                const EncAnyGram * targetgram = iter2->first;                
+                if (translationoptions.count(targetgram) == 0) {
+                    //targetgram does not exit yet
+                    for (int i = 0; i < iter2->second.size(); i++) {
+                        translationoptions[targetgram].push_back( pow(exp(1), iter2->second[i])  );
+                    }
+                } else {
+                    //targetgram exists, sum
+                    for (int i = 0; i < iter2->second.size(); i++) {
+                        translationoptions[targetgram][i] += pow(exp(1), iter2->second[i]);
+                    }
+                }            
+            }
+        }
+        
+        //convert computed scores back to logprobs
+        for (t_aligntargets::iterator iter2 = translationoptions.begin(); iter2 != translationoptions.end(); iter2++) {
+            const EncAnyGram * targetgram = iter2->first;
+            for (int i = 0; i < iter2->second.size(); i++) {
+                translationoptions[targetgram][i] = log(translationoptions[targetgram][i]);
+            }
+        }
+        return translationoptions;
+}
 
 /**************************** EXPERIMENTAL EM MODEL **********************************/
 

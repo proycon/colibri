@@ -39,19 +39,27 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
             classifier->classifyfragments(input, translationtable, sourcefragments, scorehandling);
         } else {            
             //Collect source fragments and translation options straight from translation table
-            vector<std::pair<const EncAnyGram*, CorpusReference> > tmpsourcefragments;  
+            
+            vector<pair<const EncAnyGram*, CorpusReference> > tmpsourcefragments;  
             tmpsourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
             if (DEBUG >= 3) cerr << "  " << tmpsourcefragments.size() << " source-fragments found in translation table" << endl;
-            for (vector<std::pair<const EncAnyGram*, CorpusReference> >::iterator iter = tmpsourcefragments.begin(); iter != tmpsourcefragments.end(); iter++) {
-                //find and copy translation options from translation table
+            for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = tmpsourcefragments.begin(); iter != tmpsourcefragments.end(); iter++) {
                 const EncAnyGram * sourcekey = iter->first;
-                t_aligntargets translationoptions;
-                for (t_aligntargets::iterator iter2 = translationtable->alignmatrix[sourcekey].begin(); iter2 != translationtable->alignmatrix[sourcekey].end(); iter2++) {
-                        const EncAnyGram * targetgram = iter2->first;
-                        translationoptions[targetgram] = iter2->second;  
-                }                
-                sourcefragments.push_back(SourceFragmentData(iter->first, iter->second, translationoptions));                 
+                if (translationtable->leftsourcecontext || translationtable->rightsourcecontext) {
+                    //translation table context information, aggregate scores  
+                    t_aligntargets translationoptions = translationtable->sumtranslationoptions(sourcekey); 
+                    sourcefragments.push_back(SourceFragmentData(iter->first, iter->second, translationoptions));
+                } else {
+                    //no context information, do simply copy:
+                    t_aligntargets translationoptions;
+                    for (t_aligntargets::iterator iter2 = translationtable->alignmatrix[sourcekey].begin(); iter2 != translationtable->alignmatrix[sourcekey].end(); iter2++) {
+                            const EncAnyGram * targetgram = iter2->first;
+                            translationoptions[targetgram] = iter2->second;
+                    }
+                    sourcefragments.push_back(SourceFragmentData(iter->first, iter->second, translationoptions)); 
+                }
             }
+            if (DEBUG >= 3) cerr << "  " << sourcefragments.size() << " source-fragments registered" << endl;
         }
         
         
@@ -1542,11 +1550,13 @@ int main( int argc, char *argv[] ) {
     } else {
         transtable = new AlignmentModel(transtablefile, true, DOSKIPGRAMS);        
     }
-     
+    
     cerr << "   loaded translations for " << transtable->size() << " patterns" << endl;
     
     ClassifierInterface * classifier = NULL;
     if (!classifierid.empty()) {
+        //cerr << "Computing reverse index for translation table" << endl;
+        //transtable->computereverse(); //not necessary 
         cerr << "Loading classifiers" << endl;
         cerr << "   ID: " << classifierid << endl;
         cerr << "   Timbl options: " << timbloptions << endl;

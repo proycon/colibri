@@ -5,6 +5,7 @@
 using namespace std;
 using namespace Timbl;
 
+const int CONTEXTSTHRESHOLD = 1;
 
 
 vector<string> globfiles(const string& pat){ //from http://stackoverflow.com/questions/8401777/simple-glob-in-c-on-unix-system
@@ -219,7 +220,7 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
     } 
     for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
         const EncAnyGram * focus = iter->first;                
-        if (iter->second.size() > 1) {
+        if (iter->second.size() >= CONTEXTSTHRESHOLD) { //only use classifier if contextssthreshold is met (by default 1, so it always is)
             const int n = focus->n();
             stringstream newid;
             newid << this->id() << ".n" << n;
@@ -298,58 +299,14 @@ void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel *
         const int contextcount = translationtable->sourcecontexts[anygram].size(); //in how many different contexts does this occur?
         const int n = anygram->n();
         
-        if (contextcount == 1) {
-            //only one? no need for classifier, just copy from translation table                
-
-            const EncAnyGram * anygramwithcontext = *(translationtable->sourcecontexts[anygram].begin());    
-            t_aligntargets originaltranslationoptions = translationtable->alignmatrix[anygramwithcontext];
-            
-            for (t_aligntargets::iterator iter = originaltranslationoptions.begin(); iter != originaltranslationoptions.end(); iter++) {
-                const EncAnyGram * target = iter->first;
-                const double weight = 0; //== log(1.0)
-                
-                if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_IGNORE) ) {
-                    if (originaltranslationoptions.count(target) == 0) {
-                        cerr << "INTERNAL ERROR: Classifier::classify: Original translation option not found" << endl; 
-                        throw InternalError();
-                    }
-                    translationoptions[target] = originaltranslationoptions[target];          
-                } 
-                if (scorehandling == SCOREHANDLING_WEIGHED) {
-                    for (int i = 0; i <= originaltranslationoptions[target].size(); i++) {
-                        translationoptions[target][i] = originaltranslationoptions[target][i] + weight;
-                    }                        
-                }
-                if ((scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_REPLACE)) {
-                    translationoptions[target].push_back(weight);
-                }
-                               
-                                
-            } 
-             
-        } else {
-            //more context possible? classify!
-            
+        
+        if (contextcount >= CONTEXTSTHRESHOLD) {
+            //classify!
             t_aligntargets reftranslationoptions;
             
-            if (scorehandling != SCOREHANDLING_REPLACE) {                
-                //first aggregate original translation options for all training contexts and renormalize.                
-                for (unordered_set<const EncAnyGram *>::iterator iter = translationtable->sourcecontexts[anygram].begin(); iter != translationtable->sourcecontexts[anygram].end(); iter++) {
-                    const EncAnyGram * sourceincontext = *iter;
-                    for (t_aligntargets::iterator targetiter = translationtable->alignmatrix[sourceincontext].begin(); targetiter != translationtable->alignmatrix[sourceincontext].end(); targetiter++) {
-                        const EncAnyGram * target = targetiter->first;
-                        if (reftranslationoptions.count(target) == 0) {
-                            reftranslationoptions[target] = targetiter->second;
-                            for (int i = 0; i < targetiter->second.size(); i++) {
-                                reftranslationoptions[target][i] = reftranslationoptions[target][i] / contextcount;  
-                            } 
-                        } else {
-                            for (int i = 0; i < targetiter->second.size(); i++) {
-                                reftranslationoptions[target][i] += targetiter->second[i] / contextcount;  
-                            }
-                        }
-                    }
-                }
+            if (scorehandling != SCOREHANDLING_REPLACE) {                            
+                //first aggregate original translation options for all training contexts and renormalize.    
+                reftranslationoptions = translationtable->sumtranslationoptions(anygram);
             } 
                         
             //extract anygram in context for classifier test input
@@ -366,9 +323,31 @@ void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel *
             //cleanup
             for (int i = 0; i < nwithcontext; i++) {
                 delete featurevector[i];
-            }            
-        }
+            }          
+        } else {
+            //bypass classifier copy from translation table      
+            //TODO, may be a bit fishy still          
 
+            const EncAnyGram * anygramwithcontext = *(translationtable->sourcecontexts[anygram].begin());    
+            t_aligntargets originaltranslationoptions = translationtable->alignmatrix[anygramwithcontext];
+            
+            for (t_aligntargets::iterator iter = originaltranslationoptions.begin(); iter != originaltranslationoptions.end(); iter++) {
+                const EncAnyGram * target = iter->first;
+                const double weight = 0; //== log(1.0)
+                
+                if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_IGNORE) ) {
+                    if (originaltranslationoptions.count(target) == 0) {
+                        cerr << "INTERNAL ERROR: Classifier::classify: Original translation option not found" << endl; 
+                        throw InternalError();
+                    }
+                    translationoptions[target] = originaltranslationoptions[target];          
+                }                 
+                if ((scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_REPLACE)) {
+                    translationoptions[target].push_back(weight);
+                }                  
+            } 
+             
+        }
         sourcefragments.push_back(SourceFragmentData(anygram, ref, translationoptions));
      }     
 }

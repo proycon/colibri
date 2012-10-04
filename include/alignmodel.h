@@ -69,6 +69,7 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     t_alignmatrix alignmatrix;
     t_contexts sourcecontexts; //focus pattern -> [patterns_in_context]     
     
+    void computereverse();
     t_alignmatrix reversealignmatrix; //for computation of 2nd score    
         
     
@@ -118,7 +119,9 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 	
 	unsigned int prunepatternmodel(IndexedPatternModel & patternmodel, double threshold);
 	
-	void save(const std::string & filename);	
+	void save(const std::string & filename);
+	
+	t_aligntargets sumtranslationoptions(const EncAnyGram * sourcefocus);	
 };
 
 class SourceFragmentData {
