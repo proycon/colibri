@@ -1412,6 +1412,7 @@ int main( int argc, char *argv[] ) {
     
     string ws;
     stringstream linestream;
+    string s;
     
     int debug = 0;
     char c;    
@@ -1466,14 +1467,17 @@ int main( int argc, char *argv[] ) {
             timbloptions = optarg;
             break;            
         case 'x':
-            if (optarg == "weighed") {
+            s = optarg;
+            if (s == "weighed") {
                 scorehandling = SCOREHANDLING_WEIGHED;
-            } else if (optarg == "append") {
+            } else if (s == "append") {
                 scorehandling = SCOREHANDLING_APPEND;
-            } else if (optarg == "replace") {
+            } else if (s == "replace") {
                 scorehandling = SCOREHANDLING_REPLACE;
+            } else if (s == "ignore") {
+                scorehandling = SCOREHANDLING_IGNORE;                
             } else {
-                cerr << "Invalid value for -x: " << optarg << endl;
+                cerr << "Invalid value for -x: '" << s << "'" << endl;
                 exit(2);    
             }
             break;        

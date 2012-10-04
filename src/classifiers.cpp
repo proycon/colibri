@@ -154,9 +154,9 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
     for (ValueDistribution::dist_iterator iter = valuedistribution->begin(); iter != valuedistribution->end(); iter++) {
         const string data = CodeToStr(iter->second->Value()->Name());        
         const double weight = log(iter->second->Weight()); //convert into logprob
-        if (DEBUG) cerr << "\t\t\tGot solution \"" << data << "\" with weight " << iter->second->Weight();
+        if (DEBUG) cerr << "\t\t\tGot solution \"" << data << "\" with weight " << iter->second->Weight() << " (log=" << weight << ") ";
         const EncAnyGram * target = targetclassencoder->input2anygram(data, false);
-        if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND)) {
+        if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_IGNORE)) {
             if (originaltranslationoptions.count(target)) {
                 result[target] = originaltranslationoptions[target];               
             } else {
@@ -168,7 +168,7 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
         } 
         if (scorehandling == SCOREHANDLING_WEIGHED) {
             for (int i = 0; i < originaltranslationoptions[target].size(); i++) {
-                if (DEBUG) cerr << " " << result[target][i] << "+" << weight << "=" << originaltranslationoptions[target][i] + weight << endl; 
+                if (DEBUG) cerr << " [" << result[target][i] << "+" << weight << "=" << originaltranslationoptions[target][i] + weight << "] "; 
                 result[target][i] = originaltranslationoptions[target][i] + weight;                
             }                        
         }
@@ -308,7 +308,7 @@ void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel *
                 const EncAnyGram * target = iter->first;
                 const double weight = 0; //== log(1.0)
                 
-                if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND)) {
+                if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_IGNORE) ) {
                     if (originaltranslationoptions.count(target) == 0) {
                         cerr << "INTERNAL ERROR: Classifier::classify: Original translation option not found" << endl; 
                         throw InternalError();

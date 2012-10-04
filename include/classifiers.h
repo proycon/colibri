@@ -7,6 +7,7 @@
 };*/
 
 enum ScoreHandling {
+    SCOREHANDLING_IGNORE = 0, //ignore classifier score
     SCOREHANDLING_WEIGHED = 1, //add classifier output as weight to original translation model scores
     SCOREHANDLING_APPEND = 2, //append additional score to score vector
     SCOREHANDLING_REPLACE = 3 //completely replace translation score with classifier score
