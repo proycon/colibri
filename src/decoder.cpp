@@ -56,7 +56,8 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                             const EncAnyGram * targetgram = iter2->first;
                             translationoptions[targetgram] = iter2->second;
                     }
-                    sourcefragments.push_back(SourceFragmentData(iter->first, iter->second, translationoptions)); 
+                    cerr << "ADDING SOURCEFRAGMENT: " << sourcekey->decode(*sourceclassdecoder) << " " << (int) sourcekey->isskipgram() << endl;
+                    sourcefragments.push_back(SourceFragmentData(sourcekey, iter->second, translationoptions)); 
                 }
             }
             if (DEBUG >= 3) cerr << "  " << sourcefragments.size() << " source-fragments registered" << endl;
@@ -148,7 +149,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 t_aligntargets translationoptions;                
                 translationoptions[targetkey] = scores;
                                                 
-                cerr << "ADDING SOURCEFRAGMENT: " << sourcekey->decode(*sourceclassdecoder) << endl;
+                cerr << "ADDING SOURCEFRAGMENT: " << sourcekey->decode(sourceclassdecoder) << " " << (int) sourcekey->isskipgram() << endl;
                 sourcefragments.push_back(SourceFragmentData( sourcekey, CorpusReference(0,i), translationoptions) );
                 if (!keepunigram) delete unigram; 
                 
