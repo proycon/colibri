@@ -200,6 +200,7 @@ void StackDecoder::computefuturecost() {
                 }
                 double score = 0; 
                 for (unsigned int i = 0; i < tweights.size(); i++) {
+                    if (DEBUG) cerr << "debug2a" << endl;
                     double p = iter2->second[i];
                     if (p > 0) p = log(p); //turn into logprob, base e 
                     score += tweights[i] * p;
@@ -209,13 +210,16 @@ void StackDecoder::computefuturecost() {
                     vector<EncNGram*> parts;
                     (*((const EncSkipGram *) translationoption)).parts(parts);
                     for (vector<EncNGram*>::iterator iter3 = parts.begin(); iter3 != parts.end(); iter3++) {
+                        if (DEBUG) cerr << "debug2b" << endl;
                         EncNGram * part = *iter3; 
                         score += lweight * lm->score(part);
                         delete part;
                     }  
                 } else {
                     const EncNGram * ngram = (const EncNGram *) translationoption;
+                    if (DEBUG) cerr << "debug2c" << endl;
                     score += lweight * lm->score(ngram);
+                    if (DEBUG) cerr << "debug2d" << endl;
                 }
                 if (score > bestscore) {
                     bestscore = score;
@@ -223,7 +227,7 @@ void StackDecoder::computefuturecost() {
             } 
             sourcefragments_costbyspan[span] = bestscore; 
         }   
-        
+        if (DEBUG) cerr << "debug2e" << endl;
         //compute future cost
         for (unsigned int length = 1; length <= inputlength; length++) {
             if (DEBUG) cerr << "debug3" << endl;
