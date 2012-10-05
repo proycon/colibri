@@ -48,7 +48,8 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 const EncAnyGram * sourcekey = iter->first;
                 if (translationtable->leftsourcecontext || translationtable->rightsourcecontext) {
                     //translation table context information, aggregate scores  
-                    t_aligntargets translationoptions = translationtable->sumtranslationoptions(sourcekey); 
+                    t_aligntargets translationoptions = translationtable->sumtranslationoptions(sourcekey);
+                    if (DEBUG >=3) cerr << "ADDING SOURCEFRAGMENT: " << sourcekey->decode(*sourceclassdecoder) << " " << (int) sourcekey->isskipgram() << endl; 
                     sourcefragments.push_back(SourceFragmentData(iter->first, iter->second, translationoptions));
                 } else {
                     //no context information, do simply copy:
