@@ -208,14 +208,14 @@ void StackDecoder::computefuturecost() {
                     (*((const EncSkipGram *) translationoption)).parts(parts);
                     for (vector<EncNGram*>::iterator iter3 = parts.begin(); iter3 != parts.end(); iter3++) {                        
                         EncNGram * part = *iter3;
-                        if (DEBUG) cerr << "debug1 n=" << (int) part->n() << endl; 
                         score += lweight * lm->score(part);
                         delete part;
                     }  
                 } else {
                     const EncNGram * ngram = (const EncNGram *) translationoption;
-                    if (DEBUG) cerr << "debug2 n=" << (int) ngram->n() << endl;
+                    if (DEBUG) cerr << "debug beginscore" << endl;
                     score += lweight * lm->score(ngram);
+                    if (DEBUG) cerr << "debug endscore" << endl;
                 }
                 if (score > bestscore) {
                     bestscore = score;
