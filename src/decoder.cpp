@@ -93,6 +93,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                     for (t_aligntargets::iterator iter2 = iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
                         const EncAnyGram * targetkey = iter2->first;
                         if (targetkey->isskipgram()) {
+                            cerr << " SKIPGRAM!!! "; //debug
                             cerr << ((const EncSkipGram*) targetkey)->decode(*targetclassdecoder) << " [ ";                            
                         } else {
                             cerr <<  ((const EncNGram*) targetkey)->decode(*targetclassdecoder) << " [ ";

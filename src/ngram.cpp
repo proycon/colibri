@@ -344,7 +344,7 @@ std::string EncAnyGram::decode(ClassDecoder& classdecoder) const {
     //cout << "DECODING NGRAM size=" << (int) _size << " n=" << n() << " data=" << data << endl;    
     if (isskipgram()) {
         const EncSkipGram * skipgram = (const EncSkipGram *) this;
-        return skipgram->decode(classdecoder);
+        return skipgram->decode(classdecoder); //TODO: seems not to work?
     } else {
         std::string result = ""; 
         int begin = 0;
