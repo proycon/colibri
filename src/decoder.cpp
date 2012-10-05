@@ -165,6 +165,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         this->lweight = lweight;
         this->dlimit = dlimit;
         
+        cerr << "\tComputing future cost:" << endl;
         computefuturecost();
         
         
@@ -205,8 +206,8 @@ void StackDecoder::computefuturecost() {
                 if (translationoption->isskipgram()) {
                     vector<EncNGram*> parts;
                     (*((const EncSkipGram *) translationoption)).parts(parts);
-                    for (vector<EncNGram*>::iterator iter = parts.begin(); iter != parts.end(); iter++) {
-                        EncNGram * part = *iter; 
+                    for (vector<EncNGram*>::iterator iter3 = parts.begin(); iter3 != parts.end(); iter3++) {
+                        EncNGram * part = *iter3; 
                         score += lweight * lm->score(part);
                         delete part;
                     }  
