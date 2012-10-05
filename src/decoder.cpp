@@ -124,7 +124,10 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 cerr << "NOTICE: UNTRANSLATABLE WORD: '" << word << "' (adding)" << endl;  
                 
                 
-                const unsigned int targetcls = targetclassdecoder->gethighestclass() + 1;             
+                unsigned int targetcls;
+                do {
+                    targetcls = targetclassdecoder->gethighestclass() + 1;
+                } while (!validclass(targetcls));             
                 targetclassdecoder->add(targetcls, word);
                 
                 //try to make do without an explicit encoder
@@ -150,8 +153,11 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 
                 t_aligntargets translationoptions;                
                 translationoptions[targetkey] = scores;
+                /*if (targetkey->isskipgram()) {
+                    cerr << "DEBUG: ADDING SKIPGRAM" << endl;
+                }*/
                                                 
-                if (DEBUG >= 3) cerr << "ADDING UNKNOWN SOURCEFRAGMENT: " << sourcekey->decode(*sourceclassdecoder) << " " << (int) sourcekey->isskipgram() << endl;
+                if (DEBUG >= 3) cerr << "ADDING UNKNOWN SOURCEFRAGMENT: " << sourcekey->decode(*sourceclassdecoder) << endl;
                 sourcefragments.push_back(SourceFragmentData( sourcekey, CorpusReference(0,i), translationoptions) );
                 if (!keepunigram) delete unigram; 
                 
@@ -170,6 +176,22 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         this->dlimit = dlimit;
         
         if (DEBUG >= 3) cerr << "\tComputing future cost:" << endl;
+
+        //sanity check:
+        /*for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
+            for (t_aligntargets::iterator iter2 = iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
+                const EncAnyGram * translationoption = iter2->first;
+                if (translationoption->isskipgram()) {
+                    if (DEBUG >= 3) cerr << "TRANSLATIONOPTION IS SKIPGRAM" << endl;
+                    cerr << iter->sourcefragment->decode(*sourceclassdecoder) << " => ?" << endl;
+                    translationoption->out();
+                } else {
+                    if (DEBUG >= 3) cerr << "TRANSLATIONOPTION IS NGRAM: " << endl;
+                    cerr << iter->sourcefragment->decode(*sourceclassdecoder) << " => " << translationoption->decode(*targetclassdecoder) << endl; 
+                }
+            }
+        }*/
+        
         computefuturecost();
         
         
@@ -178,6 +200,8 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
 
 
 void StackDecoder::computefuturecost() {
+
+    
         map<pair<int,int>, double> sourcefragments_costbyspan;
         //reorder source fragments by span for more efficiency
         for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
@@ -209,14 +233,14 @@ void StackDecoder::computefuturecost() {
                 }
                 const EncAnyGram * translationoption = iter2->first;
                 if (translationoption->isskipgram()) {
-                    /*if (DEBUG) cerr << "debug mark" << endl;
+                    //if (DEBUG) cerr << "debug mark" << endl;
                     vector<EncNGram*> parts;
                     (*((const EncSkipGram *) translationoption)).parts(parts);
                     for (vector<EncNGram*>::iterator iter3 = parts.begin(); iter3 != parts.end(); iter3++) {                        
                         EncNGram * part = *iter3;
                         score += lweight * lm->score(part);
                         delete part;
-                    } */ 
+                    } 
                 } else {
                     const EncNGram * ngram = (const EncNGram *) translationoption;
                     score += lweight * lm->score(ngram);

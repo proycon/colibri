@@ -32,7 +32,9 @@ class ClassDecoder {
     
     void add( unsigned int, std::string); 
     unsigned int gethighestclass() { return highestclass; }
-    bool hasclass(unsigned int key) const { return (classes.count(key) > 0); } 
+    bool hasclass(unsigned int key) const { return (classes.count(key) > 0); }
+    
+    unsigned int newclass(); 
 };
 
 unsigned int bytestoint(const unsigned char* a, const int l);
