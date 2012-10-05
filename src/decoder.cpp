@@ -124,9 +124,9 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 cerr << "NOTICE: UNTRANSLATABLE WORD: '" << word << "' (adding)" << endl;  
                 
                 
-                unsigned int targetcls;
+                unsigned int targetcls = targetclassdecoder->gethighestclass();
                 do {
-                    targetcls = targetclassdecoder->gethighestclass() + 1;
+                    targetcls++; //not most efficient, may take quite some iterations
                 } while (!validclass(targetcls));             
                 targetclassdecoder->add(targetcls, word);
                 
@@ -153,9 +153,9 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 
                 t_aligntargets translationoptions;                
                 translationoptions[targetkey] = scores;
-                /*if (targetkey->isskipgram()) {
+                if (targetkey->isskipgram()) {
                     cerr << "DEBUG: ADDING SKIPGRAM" << endl;
-                }*/
+                }
                                                 
                 if (DEBUG >= 3) cerr << "ADDING UNKNOWN SOURCEFRAGMENT: " << sourcekey->decode(*sourceclassdecoder) << endl;
                 sourcefragments.push_back(SourceFragmentData( sourcekey, CorpusReference(0,i), translationoptions) );
@@ -178,7 +178,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         if (DEBUG >= 3) cerr << "\tComputing future cost:" << endl;
 
         //sanity check:
-        /*for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
+        for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
             for (t_aligntargets::iterator iter2 = iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
                 const EncAnyGram * translationoption = iter2->first;
                 if (translationoption->isskipgram()) {
@@ -190,7 +190,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                     cerr << iter->sourcefragment->decode(*sourceclassdecoder) << " => " << translationoption->decode(*targetclassdecoder) << endl; 
                 }
             }
-        }*/
+        }
         
         computefuturecost();
         
