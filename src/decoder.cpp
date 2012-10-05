@@ -165,7 +165,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         this->lweight = lweight;
         this->dlimit = dlimit;
         
-        cerr << "\tComputing future cost:" << endl;
+        if (DEBUG >= 3) cerr << "\tComputing future cost:" << endl;
         computefuturecost();
         
         
@@ -226,12 +226,10 @@ void StackDecoder::computefuturecost() {
         for (unsigned int length = 1; length <= inputlength; length++) {
             for (unsigned int start = 0; start < inputlength - length + 1; start++) {
                 const pair<int,int> span = make_pair((int) start,(int) length);
-                bool found = false;
-                for (map<pair<int,int>, double>::iterator iter = sourcefragments_costbyspan.find(span); iter != sourcefragments_costbyspan.end(); iter++) {
-                    found = true;
+                map<pair<int,int>, double>::iterator iter = sourcefragments_costbyspan.find(span);
+                if (iter != sourcefragments_costbyspan.end()) {
                     futurecost[span] = sourcefragments_costbyspan[span];
-                }
-                if (!found) {
+                } else {
                     /*if (length == 1){                       
                         cerr << "INTERNAL ERROR: No sourcefragment covers " << span.first << ":" << span.second << " ! Unable to compute future cost!" << endl;
                         exit(6);
