@@ -31,15 +31,16 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
             gappystacks.push_back( Stack(this, i, stacksize, prunethreshold) );
         }
 
-        if (DEBUG >= 3) cerr << "Gathering source fragments:" << endl;        
+                
         
         if (classifier != NULL) {
             //Use classifier
+            if (DEBUG >= 3) cerr << "Gathering source fragments from classifier:" << endl;
             if (DEBUG >= 3) cerr << "  Calling classifier" << endl;
             classifier->classifyfragments(input, translationtable, sourcefragments, scorehandling);
         } else {            
             //Collect source fragments and translation options straight from translation table
-            
+            if (DEBUG >= 3) cerr << "Gathering source fragments from translation table:" << endl;
             vector<pair<const EncAnyGram*, CorpusReference> > tmpsourcefragments;  
             tmpsourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
             if (DEBUG >= 3) cerr << "  " << tmpsourcefragments.size() << " source-fragments found in translation table" << endl;
