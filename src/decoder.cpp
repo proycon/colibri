@@ -196,6 +196,7 @@ void StackDecoder::computefuturecost() {
             //find cheapest translation option
             double bestscore = -INFINITY;            
             for (t_aligntargets::iterator iter2 = iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
+                
                 if (tweights.size() > iter2->second.size()) {
                     cerr << "ERROR: Too few translation scores specified for an entry in the translation table. Expected at least "  << tweights.size() << ", but got " << iter2->second.size() << " instead. Did you set -W correctly for the specified translation table?" << endl;
                     throw InternalError();
@@ -208,14 +209,14 @@ void StackDecoder::computefuturecost() {
                 }
                 const EncAnyGram * translationoption = iter2->first;
                 if (translationoption->isskipgram()) {
-                    if (DEBUG) cerr << "debug mark" << endl;
+                    /*if (DEBUG) cerr << "debug mark" << endl;
                     vector<EncNGram*> parts;
                     (*((const EncSkipGram *) translationoption)).parts(parts);
                     for (vector<EncNGram*>::iterator iter3 = parts.begin(); iter3 != parts.end(); iter3++) {                        
                         EncNGram * part = *iter3;
                         score += lweight * lm->score(part);
                         delete part;
-                    }  
+                    } */ 
                 } else {
                     const EncNGram * ngram = (const EncNGram *) translationoption;
                     score += lweight * lm->score(ngram);
