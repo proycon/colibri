@@ -343,7 +343,8 @@ int EncNGram::getclass(const int index) const {
 std::string EncAnyGram::decode(ClassDecoder& classdecoder) const {
     //cout << "DECODING NGRAM size=" << (int) _size << " n=" << n() << " data=" << data << endl;    
     if (isskipgram()) {
-        return ((const EncSkipGram*) this)->decode(classdecoder);
+        const EncSkipGram * skipgram = (const EncSkipGram *) this;
+        return skipgram->decode(classdecoder);
     } else {
         std::string result = ""; 
         int begin = 0;

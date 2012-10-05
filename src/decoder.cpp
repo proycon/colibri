@@ -204,6 +204,7 @@ void StackDecoder::computefuturecost() {
                 }
                 const EncAnyGram * translationoption = iter2->first;
                 if (translationoption->isskipgram()) {
+                    if (DEBUG) cerr << "debug mark" << endl;
                     vector<EncNGram*> parts;
                     (*((const EncSkipGram *) translationoption)).parts(parts);
                     for (vector<EncNGram*>::iterator iter3 = parts.begin(); iter3 != parts.end(); iter3++) {                        
@@ -213,9 +214,7 @@ void StackDecoder::computefuturecost() {
                     }  
                 } else {
                     const EncNGram * ngram = (const EncNGram *) translationoption;
-                    if (DEBUG) cerr << "debug beginscore" << endl;
                     score += lweight * lm->score(ngram);
-                    if (DEBUG) cerr << "debug endscore" << endl;
                 }
                 if (score > bestscore) {
                     bestscore = score;
