@@ -93,7 +93,6 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                     for (t_aligntargets::iterator iter2 = iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
                         const EncAnyGram * targetkey = iter2->first;
                         if (targetkey->isskipgram()) {
-                            cerr << " SKIPGRAM!!! "; //debug
                             cerr << ((const EncSkipGram*) targetkey)->decode(*targetclassdecoder) << " [ ";                            
                         } else {
                             cerr <<  ((const EncNGram*) targetkey)->decode(*targetclassdecoder) << " [ ";
@@ -149,6 +148,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 t_aligntargets translationoptions;                
                 translationoptions[targetkey] = scores;
                                                 
+                cerr << "ADDING SOURCEFRAGMENT: " << sourcekey->decode(*sourceclassdecoder) << endl;
                 sourcefragments.push_back(SourceFragmentData( sourcekey, CorpusReference(0,i), translationoptions) );
                 if (!keepunigram) delete unigram; 
                 
