@@ -177,6 +177,7 @@ void StackDecoder::computefuturecost() {
         map<pair<int,int>, double> sourcefragments_costbyspan;
         //reorder source fragments by span for more efficiency
         for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
+            if (DEBUG) cerr << "debug1" << endl;
             
             const EncAnyGram * candidate = iter->sourcefragment;
             const CorpusReference ref = iter->ref;
@@ -192,6 +193,7 @@ void StackDecoder::computefuturecost() {
             //find cheapest translation option
             double bestscore = -INFINITY;            
             for (t_aligntargets::iterator iter2 = iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
+                if (DEBUG) cerr << "debug2" << endl;
                 if (tweights.size() > iter2->second.size()) {
                     cerr << "ERROR: Too few translation scores specified for an entry in the translation table. Expected at least "  << tweights.size() << ", but got " << iter2->second.size() << " instead. Did you set -W correctly for the specified translation table?" << endl;
                     throw InternalError();
@@ -224,6 +226,7 @@ void StackDecoder::computefuturecost() {
         
         //compute future cost
         for (unsigned int length = 1; length <= inputlength; length++) {
+            if (DEBUG) cerr << "debug3" << endl;
             for (unsigned int start = 0; start < inputlength - length + 1; start++) {
                 const pair<int,int> span = make_pair((int) start,(int) length);
                 map<pair<int,int>, double>::iterator iter = sourcefragments_costbyspan.find(span);
