@@ -81,7 +81,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
             //Output translation options
             if ((DEBUG >= 3) && (sourceclassdecoder != NULL) && (targetclassdecoder != NULL)) {
                 if (sourcekey->isskipgram()) {
-                    cerr << "\t" << (int) iter->ref.token << ':' << n << " -- " << ((const EncSkipGram*) sourcekey)->decode(*sourceclassdecoder) << " ==> ";                    
+                    cerr << "\t" << (int) iter->ref.token << ':' << n << " -- " << ((const EncSkipGram*) sourcekey)->decode(*sourceclassdecoder) << " ==> ";
                 } else {
                     cerr << "\t" << (int) iter->ref.token << ':' << n << " -- " << ((const EncNGram*) sourcekey)->decode(*sourceclassdecoder) << " ==> ";
                 }
