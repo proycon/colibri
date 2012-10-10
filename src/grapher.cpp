@@ -149,10 +149,7 @@ int main( int argc, char *argv[] ) {
     }*/
 
     
-    
-
-    
-    
+    if ((!querystring.empty()) && (!DOGRAPHVIZ)) DOOUTPUTRELATIONS = true;    
     
     if (modelfile.empty()) {
         if (outputprefix.empty()) {
