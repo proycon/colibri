@@ -18,7 +18,7 @@ Contents
 Introduction
 ===================
 
-Colibri is a collection of software developed for the Ph.D. research project **Constructions as Linguistic Bridges**. This research examines the identification and extraction of aligned constructions or patterns across natural languages, and the usage of such constructions in Machine Translation. The aligned constructions are not identified on the basis of an extensive and explicitly defined grammar or expert database of linguistic knowledge, but rather are **implicitly** distilled from large amounts of example data. Our notion of constructions is broad and transcends the idea of words or variable-length phrases. We for instance seek to incorporate also constructions with one or more gaps. We investigate what methods lead to constructions that prove beneficial in a Machine Translation setting.
+Colibri is a collection of software developed for the Ph.D. research project **Constructions as Linguistic Bridges**. This research examines the identification and extraction of aligned constructions or patterns across natural languages, and the usage of such constructions in Machine Translation. The aligned constructions are not identified on the basis of an extensive and explicitly defined grammar or expert database of linguistic knowledge, but rather are *implicitly* distilled from large amounts of example data. Our notion of constructions is broad and transcends the idea of words or variable-length phrases. We for instance seek to incorporate also constructions with one or more gaps. We investigate what methods lead to constructions that prove beneficial in a Machine Translation setting.
 
 The software consists out of various tools, each of which will be discussed in this documentation. Because of the computational complexity and need to have the software deal as efficiently as possible with time and space constraints, almost everything is written in C++. The exception is the experiment framework surrounding the actual core software; this is written in Python. Depending on the size of your input corpus, certain tasks may take considerable memory. We recommend a Linux machine with at least 8GB RAM. 
 
@@ -91,7 +91,7 @@ The above sample is for English, several other languages are also supported.
 Class-decoding your corpus
 ---------------------------
 
-Given these an encoded corpus and a class file, the original corpus can always be reconstructed. This we call **class decoding** and is done using the ``classdecode`` program::
+Given these an encoded corpus and a class file, the original corpus can always be reconstructed. This we call *class decoding* and is done using the ``classdecode`` program::
    
  $ classdecode -f yourcorpus.clsenc -c yourcorpus.cls
  
@@ -107,7 +107,7 @@ You can encode a dataset, here named ``testset`` using an existing class file, `
 
    $ classencode -f testset -c trainset.cls 
 
-This will result in an encoded corpus testset.clsenc and an **extended** class file testset.cls, which is a superset of the original trainset.cls, adding only those classes that did not yet exist in the training data.
+This will result in an encoded corpus testset.clsenc and an *extended* class file testset.cls, which is a superset of the original trainset.cls, adding only those classes that did not yet exist in the training data.
 
 
 Pattern Finder
@@ -217,7 +217,7 @@ This results in a model ``testset.colibri.indexedpatternmodel``. This model can 
 	 8-skipgram coverage:          81042    0.0130  20363     0.2513   1639985    0.0690
 
 
-The coverage report shows the number of tokens covered by n-grams or skipgrams, split down in different categories for each n. The **coverage** column shows this value as a fraction of the total number of tokens in the corpus. It shows how much of the test set is covered by the training set. The **types** column shows how many unique patterns exist in the category. The **count** columns shows their absolute occurrence count and the **frequency** column shows their over-all frequency. The fact that the occurrence count can be higher than the absolute number of tokens covered is due to the fact that n-grams and skipgrams inherently show considerable overlap when grouped together.
+The coverage report shows the number of tokens covered by n-grams or skipgrams, split down in different categories for each n. The *coverage* column shows this value as a fraction of the total number of tokens in the corpus. It shows how much of the test set is covered by the training set. The **types** column shows how many unique patterns exist in the category. The *count* columns shows their absolute occurrence count and the *frequency* column shows their over-all frequency. The fact that the occurrence count can be higher than the absolute number of tokens covered is due to the fact that n-grams and skipgrams inherently show considerable overlap when grouped together.
 
 
 A coverage report can be generated for any **indexed** pattern model; including models not generated on a separate test set.
@@ -255,12 +255,12 @@ Introduction
 
 A pattern model contains a wide variety of patterns; a graph model goes a step further by making explicit relationships between the various patterns in this model. These relationships can be visualised as a directed graph, in which the nodes represent the various patterns (n-grams and skipgrams), and the edges represent the relations. The following relations are distinguished; note that as the graph is directed relations often come in pairs; one relationship for each direction: 
 
-* *Subsumption relations* - Patterns that are subsumed by larger patterns are called **children**, the larger patterns are called **parents**. These are the two subsumption relations that can be extracted from an indexed pattern model.
-* *Successor relations*  - If a pattern A and a pattern B form part of a combined pattern A B, then the two patterns are in a successor/predecessor relationship.
-* *Template relations* - Template relations indicate abstraction and go from n-grams to skipgrams. An example of a template relation is ``to be or not to be`` to ``to be {*1*} not {*1*} be``. The reverse direction is called the instance-relationship, as an specific n-gram is an instance of a more abstract template.
-* *Skip content relations* - Relations between patterns that can be used to fill the gaps of higher patterns are called skip content relations. These can go in two directions; skipgram to skip content and skip content to skipgram. Example: ``to`` is a in a skip-content to skipgram relationship with  ``to be {*1*} not {*1*} be``.
+* **Subsumption relations** - Patterns that are subsumed by larger patterns are called *children*, the larger patterns are called *parents*. These are the two subsumption relations that can be extracted from an indexed pattern model.
+* **Successor relations**  - If a pattern A and a pattern B form part of a combined pattern A B, then the two patterns are in a successor/predecessor relationship.
+* **Template relations** - Template relations indicate abstraction and go from n-grams to skipgrams. An example of a template relation is ``to be or not to be`` to ``to be {*1*} not {*1*} be``. The reverse direction is called the instance-relationship, as an specific n-gram is an instance of a more abstract template.
+* **Skip content relations** - Relations between patterns that can be used to fill the gaps of higher patterns are called skip content relations. These can go in two directions; skipgram to skip content and skip content to skipgram. Example: ``to`` is a in a skip-content to skipgram relationship with  ``to be {*1*} not {*1*} be``.
 
-In addition to the relations, a graph model can also compute a so-called **exclusivity count** and **exclusivity ratio** for each pattern. The exclusivity count of a pattern is the number of times the pattern occurs in the data **without** being subsumed by a larger found pattern. This exclusivity ratio is the exclusity count as a fraction of the total occurrence count for the pattern. An exclusivity ratio of one indicates that the pattern is fully exclusive, meaning it is not subsumed by higher-order patterns. This notion of exclusivity may be of use in assessing compositionality of patterns. 
+In addition to the relations, a graph model can also compute a so-called *exclusivity count* and *exclusivity ratio* for each pattern. The exclusivity count of a pattern is the number of times the pattern occurs in the data *without* being subsumed by a larger found pattern. This exclusivity ratio is the exclusity count as a fraction of the total occurrence count for the pattern. An exclusivity ratio of one indicates that the pattern is fully exclusive, meaning it is not subsumed by higher-order patterns. This notion of exclusivity may be of use in assessing compositionality of patterns. 
 
 
 Computing a graph model
@@ -365,7 +365,7 @@ Graphviz will do the actual conversion to an image file, such as png::
  
 	$ dot -Tpng summer.dot -o summer.png
  
-This generated the following image::
+This generated the following image:
 
 .. image:: summer.png
 
@@ -379,20 +379,20 @@ Introduction
 
 An alignment model establishes a translation from patterns in one model to patterns in another. Each alignment has an associated score, or a vector of multiple scores. Alignments can currently be computed in three ways, all of which are unsupervised, and the of which the last method is the superior one:
 
-# Co-occurrence (Jaccard) - Alignments are established according to simple Jaccard co-occurrence
-# Expectation Maximisation - Alignments between patterns are computed in a fashion similar to IBM Model 1, using Expectation Maximisation. Computation proceeds over the matrix of all patterns, rather than a matrix of mere words as in IBM Model 1. 
-# GIZA Word Alignments - Alignments are established on the basis of word-alignments computed with ``GIZA++``.
+* **Co-occurrence (Jaccard)** - Alignments are established according to simple Jaccard co-occurrence
+* **Expectation Maximisation** - Alignments between patterns are computed in a fashion similar to IBM Model 1, using Expectation Maximisation. Computation proceeds over the matrix of all patterns, rather than a matrix of mere words as in IBM Model 1. 
+* **GIZA Word Alignments** - Alignments are established on the basis of word-alignments computed with ``GIZA++``.
 
 The pattern models have to be generated on the basis of a parallel corpus. In order to compute an alignment model you need to start with the right input; a parallel corpus. For colibri a parallel corpus consists of two corpus files, each for one language. The sentence on the n-th line of the both corpus files correspond and should be translations of eachother. Pattern and graph models can then be generated separately on both of these corpora. An indexed pattern model, or derived graph model, is required as input for the ``aligner`` program.
 
 Co-occurrence
 ---------------------
 
-Alignments computed solely on the basis of sentence co-occurrence are fairly weak. For all patterns that co-occur in at least one sentence, a Jaccard co-occurence score is computed as :math:`\fraction{|s \cap t|}{|s \cup t|}`, where *s* and *t* are sets of sentence numbers in which the pattern occurs. 
+Alignments computed solely on the basis of sentence co-occurrence are fairly weak. For all patterns that co-occur in at least one sentence, a Jaccard co-occurence score is computed as :math:`\frac{|s \cap t|}{|s \cup t|}`, where *s* and *t* are sets of sentence numbers in which the pattern occurs. 
 
-In the following example we translate French to English and assume pattern models have been computed already. Invoke the ``aligner`` program as follows, the ``-J`` flag chooses Jaccard co-occurrence:
+In the following example we translate French to English and assume pattern models have been computed already. Invoke the ``aligner`` program as follows, the ``-J`` flag chooses Jaccard co-occurrence::
 
- $ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -J
+	$ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -J
  
 This will result in an output file ``alignmodel.colibri``, which is in a binary format. If you want an alternative output filename you can specify it using the ``-o`` parameter.
 
@@ -426,9 +426,9 @@ This is an experimental method for computing alignments *directly* on the basis 
      	for all t
            t(t|s) = count(t|s) / total(s)
 
-In the following example we translate French to English and assume pattern models have been computed already. Invoke the ``aligner`` program as follows, the ``-E`` flag chooses Expectation Maximisation:
+In the following example we translate French to English and assume pattern models have been computed already. Invoke the ``aligner`` program as follows, the ``-E`` flag chooses Expectation Maximisation::
 
- $ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -E
+	$ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -E
 
 This will result in an output file ``alignmodel.colibri``, which is in a binary format. If you want an alternative output filename you can specify it using the ``-o`` parameter. 
 
