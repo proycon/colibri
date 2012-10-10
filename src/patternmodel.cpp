@@ -3548,8 +3548,7 @@ void SelectivePatternModel::computestats() {
 
 
 void SelectivePatternModel::outputinstance(const EncAnyGram * anygram, CorpusReference ref, ClassDecoder & decoder) {
-	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << occurrencecount(anygram) << "\t";	
-	cout << "\t" << setprecision(numeric_limits<double>::digits10 + 1) << coverage(anygram);
+	cout << ref.sentence << ':' << (int) ref.token << "\t" << anygram->decode(decoder) << "\t" << occurrencecount(anygram) << "\t" << coverage(anygram);
 	if (DOXCOUNT) cout << "\t" << xcount(anygram) << "\t" << xcountratio(anygram) << endl;
 	cout << endl;	
 }
