@@ -367,7 +367,7 @@ Graphviz will do the actual conversion to an image file, such as png::
  
 This generated the following image::
 
-[INSERT IMAGE]
+.. image:: summer.png
 
 .. TODO: Coverage report
 
