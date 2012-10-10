@@ -390,7 +390,9 @@ int main( int argc, char *argv[] ) {
 		cerr << endl;
 	
 		
-
+        if (outputprefix.empty()) {
+            outputprefix = "alignmodel.colibri";
+        }
 		
 		
 		alignmodel = new AlignmentModel(sourcemodel,targetmodel, LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE, DODEBUG);

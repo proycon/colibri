@@ -12,7 +12,7 @@ Contents
 ===========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
 
 
@@ -373,10 +373,73 @@ This generated the following image:
 [INSERT IMAGE]
 
 
+.. TODO: Coverage report
+
 Alignment Models
 =====================
 
-An alignment model establishes a translation from pattern in one model to patterns in another.  
+Introduction
+--------------
+
+An alignment model establishes a translation from patterns in one model to patterns in another. Each alignment has an associated score, or a vector of multiple scores. Alignments can currently be computed in three ways, of which the last method is the superior one:
+
+# Co-occurrence (Jaccard) - Alignments are established according to simple Jaccard co-occurrence
+# Expectation Maximisation - Alignments between patterns are computed in a fashion similar to IBM Model 1, using Expectation Maximisation. Computation proceeds over the matrix of all patterns, rather than a matrix of mere words as in IBM Model 1. 
+# GIZA Word Alignments - Alignments are established on the basis of word-alignments computed with ``GIZA++``.
+
+The pattern models have to be generated on the basis of a parallel corpus. In order to compute an alignment model you need to start with the right input; a parallel corpus. For colibri a parallel corpus consists of two corpus files, each for one language. The sentence on the n-th line of the both corpus files correspond and should be translations of eachother. Pattern and graph models can then be generated separately on both of these corpora. An indexed pattern model, or derived graph model, is required as input for the ``aligner`` program.
+
+Co-occurrence
+---------------------
+
+Alignments computed solely on the basis of sentence co-occurrence are fairly weak. For all patterns that co-occur in at least one sentence, a Jaccard co-occurence score is computed as :math:`\fraction{|s \cap t|}{|s \cup t|}`, where *s* and *t* are sets of sentence numbers in which the pattern occurs. 
+
+In the following example we translate French to English and assume pattern models have been computed already. Invoke the ``aligner`` program as follows, the ``-J`` flag chooses Jaccard co-occurrence:
+
+ $ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -J
+ 
+This will result in an output file ``alignmodel.colibri``, which is in a binary format. If you want an alternative output filename you can specify it using the ``-o`` parameter.
+
+Several other parameters adjust the behaviour of the alignment algorithm and output:
+
+* ``-p [n]`` - Pruning value. Alignments with co-occurrence scores lower than *n* will be pruned (prior to any normalisation)
+* ``-z`` - Disable normalisation. By default, the aligner will normalise all scores, if you want to retain the exact co-occurrence scores, pass this flag
+* ``-b [n]`` - Best alignments only. Only the best *n* target alignments for a source pattern will be retained, others are pruned.
+* ``-N`` - Do not attempt to directly align any skipgrams
+ 
+Expectation Maximisation
+----------------------------
+
+
+
+(yet to write)
+
+
+
+Viewing an alignment model
+----------------------------
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+
+ 
+
+ 
+
+
+
+
+
+
+ 
 
 
 
