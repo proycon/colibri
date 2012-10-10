@@ -312,7 +312,7 @@ int EncNGram::subngrams(vector<EncNGram*> & container) const {
 int EncNGram::splits(vector<pair<EncNGram*, EncNGram*> > & container) const {
 	int count = 0;
 	const int N = n();
-	container.reserve(N-2);
+	//container.reserve(N-2);
     for (int begin = 1; begin < N - 1; begin++) {
     	int length = N-begin;
     	count++;
