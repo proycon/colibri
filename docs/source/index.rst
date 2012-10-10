@@ -381,7 +381,7 @@ Alignment Models
 Introduction
 --------------
 
-An alignment model establishes a translation from patterns in one model to patterns in another. Each alignment has an associated score, or a vector of multiple scores. Alignments can currently be computed in three ways, of which the last method is the superior one:
+An alignment model establishes a translation from patterns in one model to patterns in another. Each alignment has an associated score, or a vector of multiple scores. Alignments can currently be computed in three ways, all of which are unsupervised, and the of which the last method is the superior one:
 
 # Co-occurrence (Jaccard) - Alignments are established according to simple Jaccard co-occurrence
 # Expectation Maximisation - Alignments between patterns are computed in a fashion similar to IBM Model 1, using Expectation Maximisation. Computation proceeds over the matrix of all patterns, rather than a matrix of mere words as in IBM Model 1. 
@@ -410,20 +410,118 @@ Several other parameters adjust the behaviour of the alignment algorithm and out
 Expectation Maximisation
 ----------------------------
 
+This is an experimental method for computing alignments *directly* on the basis of the patterns. It is modelled after IBM Model 1 and uses the Expectation Maximisation algorithm to iteratively optimise the model's parameters.  The pseudo-code for the EM algorithm applied to this model is as follows::
 
 
-(yet to write)
+   initialize t(t|s) uniformly
+   do until convergence
+   	  set count(t|s) to 0 for all t,s
+  	  set total(s) to 0 for all s
+      for all sentence pairs (t_s,s_s)
+         set total_s(t) = 0 for all t
+         for all patterns t in t_s
+            for all patterns s in s_s
+              total_s(t) += t(t|s)
+         for all patterns t in t_s
+             for all patterns s in s_s
+                count(t|s) += t(t|s) / total_s(t)
+                total(s)   += t(t|s) / total_s(t)
+      for all s
+     	for all t
+           t(t|s) = count(t|s) / total(s)
+
+In the following example we translate French to English and assume pattern models have been computed already. Invoke the ``aligner`` program as follows, the ``-E`` flag chooses Expectation Maximisation:
+
+ $ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -E
+
+This will result in an output file ``alignmodel.colibri``, which is in a binary format. If you want an alternative output filename you can specify it using the ``-o`` parameter. 
+
+Several other parameters adjust the behaviour of the EM alignment algorithm and output:
+
+* ``-P [n]`` - Probability pruning value. Alignments with a probability lower than *n* will be pruned
+* ``-M [n]`` - Maximum number of iterations (default: 10000)
+* ``-v [n]`` - Minimum delta-value when convergence is considered to have been reached (default: 0.001)
+* ``-z`` - Disable normalisation. By default, the aligner will normalise all scores, if you want to retain the exact co-occurrence scores, pass this flag
+* ``-b [n]`` - Best alignments only. Only the best *n* target alignments for a source pattern will be retained, others are pruned.
+* ``-N`` - Do not attempt to directly align any skipgrams, skipgrams tend to worsen alignment quality significantly.
+* ``--null`` - Take into account zero-fertility words in EM
+* ``-I 1`` - Compute bi-directional alignments and use one joint score. This will run the algorithm twice, once for each direction, and compute the intersection of the results.
+* ``-I 2`` - Compute bi-directional alignments and use two separate scores, representing p(t|s) and p(s|t). This will run the algorithm twice, once for each direction, and compute the intersection of the results.
+
+Instead of uniform initiatisation, this method can also be initialised using the co-occurrence method laid out in the previous section. Simply add the ``-J`` parameter to achieve this.
+
+GIZA Alignment
+-----------------
+
+``GIZA++`` is open-source software for the computation of word alignment models according to the IBM Models and HMM models. The ``aligner`` program can use the models produced by GIZA++ and extract aligned pairs of phrases. Two GIZA models (``*.A3.final``) are required, one for each translation direction. This extraction algorithm is implemented as follows::
+
+
+		function giza_extract(sentence_s,sentence_t, patterns_s, pattern_s):
+            patterns_t = all patterns in sentence_t           
+            for all word_s in sentence_s:
+                patterns_s = find patterns BEGINNING WITH word_s
+                for all pattern_s in patterns_s:
+                    bestscore = 0
+                    for all pattern_t in patterns_t:
+                        aligned = 0
+                        halfaligned = 0
+                        unaligned = 0
+                        firstsourcealigned = false
+                        lastsourcealigned = false
+                        firsttargetaligned = false
+                        lasttargetaligned = false
+                        for alignedsourceindex, alignedtargetindex in intersection:
+                            if alignedsourceindex not in pattern_s or alignedtargetindex not in pattern_t:
+                                aligned--; break;
+                            else:
+                                aligned++;
+                                if alignedsourceindex == sourceindex: firstsourcealigned = true
+                                if alignedsourceindex == sourceindex + patternsize_s: lastsourcealigned = true
+                                if alignedtargetindex == targetindex: firstsourcealigned = true
+                                if alignedtargetindex == targetindex + patternsize_t: lastsourcealigned = true
+                            else:
+                                unaligned++;                                
+                        if ((aligned < 0) || (!firstaligned) || (!lastaligned)) break;
+                        for alignedsourceindex, alignedtargetindex in union:                            
+                            if (alignedsourceindex in pattern_s and alignedtargetindex not in pattern_t) or (alignedsourceindex not in pattern_s and alignedtargetindex in pattern_t):
+                                halfaligned++;
+                            else if not (alignedsourceindex in pattern_s and alignedtargetindex not in pattern_t):
+                                halfaligned--;
+                                        
+                       if score > 0
+                            bestscore = score
+                            bestpattern_t = pattern_t                            
+               
+In the following example we translate French to English and assume pattern models have been computed already. Invoke the ``aligner`` program as follows, the ``-W`` flag chooses GIZA extraction and takes as parameters the two GIZA ``A3.final`` models (order matters!) separated by a colon. It is also necessary to pass the class the class file for both source (``-S``) and target language (``-T``), as the GIZA models do not use the colibri class encodings and thus need to be inpreted on the fly:
+
+ $ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -W fr-en.A3.final:en-fr.A3.final -S fr.cls -T en.cls
+
+Several other parameters adjust the behaviour of the EM alignment algorithm and output:
+
+* ``-a [n]`` - Alignment strength, value between 0 and 1. Determines how strong word alignments have to be if phrases are to be extracted, weak alignments will not be considered.
+* ``-p [n]``-  Prune all alignments with a jaccard co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be
+* ``-c [n]`` - Prune phrase pairs that occur less than specified, here *n* is an integer representing the absolute count required for the phrase pair as a whole.
+* ``-I 1`` - Compute bi-directional alignments and use one joint score. This does *not* run the algorithm twice, but is directly integrated.
+* ``-I 2`` - Compute bi-directional alignments and use two separate scores, representing p(t|s) and p(s|t). This does *not* run the algorithm twice, but is directly integrated. 
+
+Skipgram alignment
+----------------------
 
 
 
 Viewing an alignment model
 ----------------------------
 
+An alignment model can be viewed by decoding it using the -d option and by passing it the class file for both source (``-S``) and target language (``-T``):
+
+ $ aligner -d alignmodel.colibri -S fr.cls -T en.cls
 
  
  
+MT Decoder
+=====================
  
- 
+
  
  
  

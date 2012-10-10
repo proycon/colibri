@@ -907,7 +907,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                     
                     multiset<uint32_t> * sourcesentenceindex = NULL; //used only if coocthreshold > 0                         
                     if (coocthreshold > 0) {
-                        if (sourcepattern->isskipgram()) {
+                        if (sourcepattern->isskipgram()) {                            
                             sourcesentenceindex = &sourcemodel->skipgrams[*( (EncSkipGram*) sourcepattern)].sentences;    
                         } else {
                             sourcesentenceindex = &sourcemodel->ngrams[*( (EncNGram*) sourcepattern)].sentences;
