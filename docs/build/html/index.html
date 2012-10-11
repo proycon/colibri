@@ -61,7 +61,7 @@
 <p>Colibri is hosted on github and should be retrieved through the versioning control system <tt class="docutils literal"><span class="pre">git</span></tt>. This is done as follows:</p>
 <div class="highlight-python"><pre>$ git clone git://github.com/proycon/colibri.git</pre>
 </div>
-<p>You need to compile the software, but in order to do so you must first install the dependency <tt class="docutils literal"><span class="pre">Timbl</span></tt> [Daelemans et al. 2010]; a tarball is obtainable from <a class="reference external" href="http://ilk.uvt.nl/timbl/">the Timbl website</a> , follow the instructions included with Timbl.</p>
+<p>You need to compile the software, but in order to do so you must first install the dependency <tt class="docutils literal"><span class="pre">Timbl</span></tt> [Daelemans2010] ; a tarball is obtainable from <a class="reference external" href="http://ilk.uvt.nl/timbl/">the Timbl website</a> , follow the instructions included with Timbl.</p>
 <p>In addition to the compiler (<tt class="docutils literal"><span class="pre">gcc</span></tt>), colibri uses <tt class="docutils literal"><span class="pre">autoconf</span></tt> and <tt class="docutils literal"><span class="pre">automake</span></tt>, so make sure these are installed on your system. Also install the package <tt class="docutils literal"><span class="pre">autoconf-archive</span></tt> if available on your distribution. Colibri can now be compiled and installed:</p>
 <div class="highlight-python"><pre>$ cd colibri
 $ bash bootstrap
@@ -86,8 +86,8 @@ $ make install</pre>
 </div>
 <div class="section" id="corpus-class-encoding">
 <h1>Corpus Class Encoding<a class="headerlink" href="#corpus-class-encoding" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id1">
-<h2>Introduction<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id2">
+<h2>Introduction<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <p>Computation on large datasets begs for solutions to keep memory consumption manageable. Colibri requires that input corpora are converted into a compressed binary form. In this form each word-type in the corpus is represented by a numeric class. Highly frequent word-types get assigned low class numbers and less frequent word-types get higher class numbers. The class is represented in a dynamic-width byte-array, rather than a fixed-width integer. The null byte has special significance and is used as delimiter between tokens. This implies that a class number may never contain a null byte in its representation.</p>
 <p>All internal computations of all tools in colibri proceed on this internal representation rather than actual textual strings, keeping running time shorter and memory footprint significantly smaller.</p>
 </div>
@@ -126,8 +126,8 @@ $ make install</pre>
 </div>
 <div class="section" id="pattern-finder">
 <h1>Pattern Finder<a class="headerlink" href="#pattern-finder" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id2">
-<h2>Introduction<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h2>Introduction<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <p>The <tt class="docutils literal"><span class="pre">patternfinder</span></tt> program is used to extract recurring patterns from a monolingual corpus. This results in a pattern model. The extracted patterns are n-grams or skip-grams, where a skip-gram is like an n-gram with one or more gaps of a predefined size. The representation consists of a byte-array where a null byte separates words, each represented by a class number. Gaps are expressed by two consecutive null bytes, the configuration of the gap sizes is stored in a separate byte-array.</p>
 <p>The pattern finding algorithm is iterative in nature and it guaranteed to find all n-grams above a specified occurrence threshold and given a maximum size for n. It does so by iterating over the corpus n times, iterating over all possible values for n in ascending order. At each iteration, a sliding window extracts all n-grams in the corpus for the size is question. An n-gram is counted in a hashmap data structure only if both n-1-grams it by definition contains are found during the previous iteration with an occurrence above the set threshold. The exception are unigrams, which are all by definition counted if they reach the threshold, as they are already atomic in nature. At the end of each iteration, n-grams not making it to the occurrence threshold are pruned. This simple iterative technique reduces the memory footprint compared to the more naive approach of immediately storing all in a hashmap, as it prevents the storing of lots of patterns not making the threshold by discarding them at an earlier stage.</p>
 <p>At the beginning of each iteration of n, all possible ways in which any n-gram of size n can contain gaps is computed. When an n-gram is found, various skip-grams are tried in accordance with these gap configurations. This is accomplished by &#8216;punching holes&#8217; in the n-gram, resulting in a skip-gram. If all consecutive parts of this skip-gram were counted during previous iterations and thus made the threshold, then the skip-gram as a whole is counted, otherwise it is discarded. After each iteration, pruning again takes places to prune skip-grams that are not frequent enough.</p>
@@ -243,8 +243,8 @@ Starting query mode:
 </div>
 <div class="section" id="graph-models">
 <h1>Graph Models<a class="headerlink" href="#graph-models" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id3">
-<h2>Introduction<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h2>Introduction<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
 <p>A pattern model contains a wide variety of patterns; a graph model goes a step further by making explicit relationships between the various patterns in this model. These relationships can be visualised as a directed graph, in which the nodes represent the various patterns (n-grams and skipgrams), and the edges represent the relations. The following relations are distinguished; note that as the graph is directed relations often come in pairs; one relationship for each direction:</p>
 <ul class="simple">
 <li><strong>Subsumption relations</strong> - Patterns that are subsumed by larger patterns are called <em>children</em>, the larger patterns are called <em>parents</em>. These are the two subsumption relations that can be extracted from an indexed pattern model.</li>
@@ -352,8 +352,8 @@ Skipusage - 3
 </div>
 <div class="section" id="alignment-models">
 <h1>Alignment Models<a class="headerlink" href="#alignment-models" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id4">
-<h2>Introduction<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id5">
+<h2>Introduction<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
 <p>An alignment model establishes a translation from patterns in one model to patterns in another. Each alignment has an associated score, or a vector of multiple scores. Alignments can currently be computed in three ways, all of which are unsupervised, and the of which the last method is the superior one:</p>
 <ul class="simple">
 <li><strong>Co-occurrence (Jaccard)</strong> - Alignments are established according to simple Jaccard co-occurrence</li>
@@ -417,7 +417,7 @@ do until convergence
 </div>
 <div class="section" id="giza-alignment">
 <h2>GIZA Alignment<a class="headerlink" href="#giza-alignment" title="Permalink to this headline">¶</a></h2>
-<p><tt class="docutils literal"><span class="pre">GIZA++</span></tt> is open-source software for the computation of word alignment models according to the IBM Models and HMM models (see <a class="reference external" href="http://code.google.com/p/giza-pp/">GIZA++</a>) [Och &amp; Ney 2003] . The <tt class="docutils literal"><span class="pre">aligner</span></tt> program can use the models produced by GIZA++ and extract aligned pairs of phrases. Two GIZA models (<tt class="docutils literal"><span class="pre">*.A3.final</span></tt>) are required, one for each translation direction. The extraction algorithm iterates over all sentence pairs in the GIZA models, these sentence pairs contain information in the form of what word-index of the source sentence is aligned to what word-index of the target sentence, and vice versa for the reverse model. Given such a bidirectional pair of alignments, the algorithm first collects all relevant patterns and for each possible combination it computes whether the word-alignment indices from the GIZA models support the alignment of the patterns.  The criteria for whether an alignment between patterns is supported by the word alignments are:</p>
+<p><tt class="docutils literal"><span class="pre">GIZA++</span></tt> is open-source software for the computation of word alignment models according to the IBM Models and HMM models (see <a class="reference external" href="http://code.google.com/p/giza-pp/">GIZA++</a>) <a class="reference internal" href="#ochney2003">[OchNey2003]</a> . The <tt class="docutils literal"><span class="pre">aligner</span></tt> program can use the models produced by GIZA++ and extract aligned pairs of phrases. Two GIZA models (<tt class="docutils literal"><span class="pre">*.A3.final</span></tt>) are required, one for each translation direction. The extraction algorithm iterates over all sentence pairs in the GIZA models, these sentence pairs contain information in the form of what word-index of the source sentence is aligned to what word-index of the target sentence, and vice versa for the reverse model. Given such a bidirectional pair of alignments, the algorithm first collects all relevant patterns and for each possible combination it computes whether the word-alignment indices from the GIZA models support the alignment of the patterns.  The criteria for whether an alignment between patterns is supported by the word alignments are:</p>
 <ul class="simple">
 <li>Is the first word of the source pattern properly aligned according to the bidirectional intersection of the word alignments?</li>
 <li>Is the last word of the source pattern properly aligned according to the bidirectional intersection of the word alignments?</li>
@@ -526,19 +526,19 @@ for skipgram_s in submatrix: //conflict resolution
 <div class="highlight-python"><pre>$ aligner -d alignmodel.colibri -S fr.cls -T en.cls</pre>
 </div>
 <p>The output format is a simple tab-delimited format.</p>
-<p>An alignment model can also be outputted in a format suitable for the MT decoder <em>moses</em> [Koehn et al. 2007]:</p>
+<p>An alignment model can also be outputted in a format suitable for the MT decoder <em>moses</em> <a class="reference internal" href="#koehn2007">[Koehn2007]</a>:</p>
 <div class="highlight-python"><pre>$ aligner -d alignmodel.colibri -S fr.cls -T en.cls --moses</pre>
 </div>
 </div>
 </div>
 <div class="section" id="mt-decoder">
 <h1>MT Decoder<a class="headerlink" href="#mt-decoder" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="id5">
-<h2>Introduction<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id8">
+<h2>Introduction<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
 <p>A good translation should faithfully convey the meaning of the original, and it should be rendered in fluent natural language. In statistical machine translation, these two aspects are represented by two distinct statistical models. The translation model is used to compute the likelihood of a sentence being faithful to the original meaning, and the target language model imposes a maximally fluent natural word order on the resulting translation in the target language by scoring typical, predictable word order as more probable than uncommon or malformed combinations. The central processing component of an SMT system is the decoder, which computes probabilities according to at least these two models for a huge number of possible translation hypotheses. This constitutes a vast search problem in which countless hypotheses are tested and compete against one another for the best probability score according to the joint statistical models. The translation chosen is the hypothesis found to attain the best score. Due to the size and complexity of the search problem, and the need to keep time and memory requirements manageable, considerable pruning of the search takes place. It is quite possible that the selected translation is found in a local maximum.</p>
-<p>Colibri features a custom-tailored MT decoder modelled after the stack-based decoding principle used in Moses [Koehn et al. 2003]. This algorithm employs a beam search as a means to constrain the search space. The alignment model as discussed in the previous chapter provide the translation model. The mandatory language model can be computed with third-party software such as <a class="reference external" href="http://www.speech.sri.com/projects/srilm/">SRILM</a> [Stolcke 2002] .</p>
+<p>Colibri features a custom-tailored MT decoder modelled after the stack-based decoding principle used in Moses <a class="reference internal" href="#koehn2003">[Koehn2003]</a>. This algorithm employs a beam search as a means to constrain the search space. The alignment model as discussed in the previous chapter provide the translation model. The mandatory language model can be computed with third-party software such as <a class="reference external" href="http://www.speech.sri.com/projects/srilm/">SRILM</a> <a class="reference internal" href="#stolcke2002">[Stolcke2002]</a> .</p>
 <p>The stack decoder maintains <em>n</em> separate stacks, the number of stacks equals the number of words in the <em>source</em> sentence. Each stack contains translation hypotheses that cover an arbitrary <em>n</em> words of the source sentence. Only a fixed number of the best translation hypotheses are retained, this is the <em>stack size</em>. In the decoding process proceeds iteratively, starting with an <em>empty hypothesis</em> for which no source words have been covered and thus no target words have been generated. This initial hypotheses is <em>expanded</em> by choosing each input pattern matching the source sentence, at any position, and translating it according to the translation model. The translations are added left-to-right, but the selected source are from any location. This makes reorderings possible. This expansions in turn results in a larger number of new translation hypotheses which are added to the appropriate stacks. After the initial hypothesis, the first stack is processed top to bottom, expanding in turn each of the hypotheses in it, resulting in more hypotheses to be added to the higher stacks. When a stack is processed, the algorithm moves on to the next. The final stack will be the stack in which all source words are covered and thus in which the hypotheses represent translations of the whole sentence. The best one is selected as the translation.</p>
-<p>The pseudo-code for the algorithm is as follows (from <a class="reference external" href="http://www.statmt.org/moses/?n=Moses.Background">Moses Background</a>) [Koehn et al. 2007]:</p>
+<p>The pseudo-code for the algorithm is as follows (from <a class="reference external" href="http://www.statmt.org/moses/?n=Moses.Background">Moses Background</a>) <a class="reference internal" href="#koehn2007">[Koehn2007]</a>:</p>
 <div class="highlight-python"><pre>initialize hypothesisStack[0 .. nf];
 create initial hypothesis hyp_init;
 add to stack hypothesisStack[0];
@@ -557,7 +557,7 @@ output best path that leads to best_hyp;</pre>
 </div>
 <div class="section" id="language-model">
 <h2>Language Model<a class="headerlink" href="#language-model" title="Permalink to this headline">¶</a></h2>
-<p>As a Language Model is a vital component of a machine translation system, here are instructions on how to generate a language model using <a class="reference external" href="http://www.speech.sri.com/projects/srilm/">SRILM</a> [Stolcke 2002]. The language model should be generated for only the target language corpus:</p>
+<p>As a Language Model is a vital component of a machine translation system, here are instructions on how to generate a language model using <a class="reference external" href="http://www.speech.sri.com/projects/srilm/">SRILM</a> [Stolcke 2002]_. The language model should be generated for only the target language corpus:</p>
 <div class="highlight-python"><pre>$ ngram-count -kndiscount -order 3 -unk -text yourtargetcorpus.txt -lm yourtargetcorpus.lm</pre>
 </div>
 <p>The above command generates a trigram model (<tt class="docutils literal"><span class="pre">-order</span> <span class="pre">3</span></tt>) with (modified) Knesser Ney discounting (<tt class="docutils literal"><span class="pre">-kndiscount</span></tt>), it includes supports for unknown words (<tt class="docutils literal"><span class="pre">-unk</span></tt>). Support for unknown words and back-off are requirements for the colibri decoder. The final argument specifies the output file for the language model, this can in turn be read by the colibri decoder.</p>
@@ -597,6 +597,39 @@ output best path that leads to best_hyp;</pre>
 </div>
 <div class="section" id="references">
 <h1>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h1>
+<table class="docutils citation" frame="void" id="koehn2003" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id9">[Koehn2003]</a></td><td><ol class="first last upperalpha simple" start="16">
+<li>Koehn, F.J Och, D. Marcu, <em>Statistical phrase-based translation</em>, NAACL &#8216;03 Proceedings of the 2003. Conference of the North American Chapter of the Association for Computational Linguistics on Human Language Technology - Volume 1 (2003) pp. 48-54.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="koehn2007" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[Koehn2007]</td><td><em>(<a class="fn-backref" href="#id7">1</a>, <a class="fn-backref" href="#id11">2</a>)</em> <ol class="last upperalpha simple" start="16">
+<li>Koehn, H. Hoang, A. Birch, C. Callison-Burch, M. Federico, N. Bertoldi, B. Cowan, W. Shen, C. Moran, R. Zens, C. Dyer, O. Bojar, A. Constantin and E. Herbst, <em>Moses: Open source toolkit for statistical machine translation</em>, ACL &#8216;07 Proceedings of the 45th Annual Meeting of the ACL on Interactive Poster and Demonstration Sessions. (2007) pp. 177-180.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="ochney2003" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id6">[OchNey2003]</a></td><td>F.J Och and H. Ney, <em>A Systematic Comparison of Various Statistical Alignment Models</em>, Computational Linguistics, (2003) volume 29, number 1, pp. 19-51</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="stolcke2002" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id10">[Stolcke2002]</a></td><td><ol class="first last upperalpha simple">
+<li>Stolcke, <em>SRILM — an extensible language modeling toolkit</em>, in J. H. L. Hansen and B. Pellom, editors, Proc. ICSLP, vol. 2, pp. 901–904, Denver, Sep. 2002.</li>
+</ol>
+</td></tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
@@ -625,27 +658,27 @@ output best path that leads to best_hyp;</pre>
 </ul>
 </li>
 <li><a class="reference internal" href="#corpus-class-encoding">Corpus Class Encoding</a><ul>
-<li><a class="reference internal" href="#id1">Introduction</a></li>
+<li><a class="reference internal" href="#id2">Introduction</a></li>
 <li><a class="reference internal" href="#class-encoding-your-corpus">Class-encoding your corpus</a></li>
 <li><a class="reference internal" href="#class-decoding-your-corpus">Class-decoding your corpus</a></li>
 <li><a class="reference internal" href="#class-encoding-with-existing-classes">Class-encoding with existing classes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#pattern-finder">Pattern Finder</a><ul>
-<li><a class="reference internal" href="#id2">Introduction</a></li>
+<li><a class="reference internal" href="#id3">Introduction</a></li>
 <li><a class="reference internal" href="#creating-a-pattern-model">Creating a pattern model</a></li>
 <li><a class="reference internal" href="#training-and-testing-coverage">Training and testing coverage</a></li>
 <li><a class="reference internal" href="#query-mode">Query mode</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#graph-models">Graph Models</a><ul>
-<li><a class="reference internal" href="#id3">Introduction</a></li>
+<li><a class="reference internal" href="#id4">Introduction</a></li>
 <li><a class="reference internal" href="#computing-a-graph-model">Computing a graph model</a></li>
 <li><a class="reference internal" href="#viewing-and-querying-a-graph-model">Viewing and querying a graph model</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#alignment-models">Alignment Models</a><ul>
-<li><a class="reference internal" href="#id4">Introduction</a></li>
+<li><a class="reference internal" href="#id5">Introduction</a></li>
 <li><a class="reference internal" href="#co-occurrence">Co-occurrence</a></li>
 <li><a class="reference internal" href="#expectation-maximisation">Expectation Maximisation</a></li>
 <li><a class="reference internal" href="#giza-alignment">GIZA Alignment</a></li>
@@ -654,7 +687,7 @@ output best path that leads to best_hyp;</pre>
 </ul>
 </li>
 <li><a class="reference internal" href="#mt-decoder">MT Decoder</a><ul>
-<li><a class="reference internal" href="#id5">Introduction</a></li>
+<li><a class="reference internal" href="#id8">Introduction</a></li>
 <li><a class="reference internal" href="#language-model">Language Model</a></li>
 <li><a class="reference internal" href="#decoder-usage">Decoder Usage</a></li>
 </ul>

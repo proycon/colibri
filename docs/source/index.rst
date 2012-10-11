@@ -31,7 +31,7 @@ Colibri is hosted on github and should be retrieved through the versioning contr
 
 	$ git clone git://github.com/proycon/colibri.git
 	
-You need to compile the software, but in order to do so you must first install the dependency ``Timbl`` [Daelemans et al. 2010]; a tarball is obtainable from `the Timbl website <http://ilk.uvt.nl/timbl/>`_ , follow the instructions included with Timbl.
+You need to compile the software, but in order to do so you must first install the dependency ``Timbl`` [Daelemans2010]_ ; a tarball is obtainable from `the Timbl website <http://ilk.uvt.nl/timbl/>`_ , follow the instructions included with Timbl.
 
 In addition to the compiler (``gcc``), colibri uses ``autoconf`` and ``automake``, so make sure these are installed on your system. Also install the package ``autoconf-archive`` if available on your distribution. Colibri can now be compiled and installed::
 
@@ -449,7 +449,7 @@ Instead of uniform initiatisation, this method can also be initialised using the
 GIZA Alignment
 -----------------
 
-``GIZA++`` is open-source software for the computation of word alignment models according to the IBM Models and HMM models (see `GIZA++ <http://code.google.com/p/giza-pp/>`_) [Och & Ney 2003] . The ``aligner`` program can use the models produced by GIZA++ and extract aligned pairs of phrases. Two GIZA models (``*.A3.final``) are required, one for each translation direction. The extraction algorithm iterates over all sentence pairs in the GIZA models, these sentence pairs contain information in the form of what word-index of the source sentence is aligned to what word-index of the target sentence, and vice versa for the reverse model. Given such a bidirectional pair of alignments, the algorithm first collects all relevant patterns and for each possible combination it computes whether the word-alignment indices from the GIZA models support the alignment of the patterns.  The criteria for whether an alignment between patterns is supported by the word alignments are:
+``GIZA++`` is open-source software for the computation of word alignment models according to the IBM Models and HMM models (see `GIZA++ <http://code.google.com/p/giza-pp/>`_) [OchNey2003]_ . The ``aligner`` program can use the models produced by GIZA++ and extract aligned pairs of phrases. Two GIZA models (``*.A3.final``) are required, one for each translation direction. The extraction algorithm iterates over all sentence pairs in the GIZA models, these sentence pairs contain information in the form of what word-index of the source sentence is aligned to what word-index of the target sentence, and vice versa for the reverse model. Given such a bidirectional pair of alignments, the algorithm first collects all relevant patterns and for each possible combination it computes whether the word-alignment indices from the GIZA models support the alignment of the patterns.  The criteria for whether an alignment between patterns is supported by the word alignments are:
 
 * Is the first word of the source pattern properly aligned according to the bidirectional intersection of the word alignments?
 * Is the last word of the source pattern properly aligned according to the bidirectional intersection of the word alignments?
@@ -567,7 +567,7 @@ An alignment model can be viewed by decoding it using the ``-d`` option and by p
  
 The output format is a simple tab-delimited format.
 
-An alignment model can also be outputted in a format suitable for the MT decoder *moses* [Koehn et al. 2007]::
+An alignment model can also be outputted in a format suitable for the MT decoder *moses* [Koehn2007]_::
 
 	$ aligner -d alignmodel.colibri -S fr.cls -T en.cls --moses
 
@@ -579,11 +579,11 @@ Introduction
 
 A good translation should faithfully convey the meaning of the original, and it should be rendered in fluent natural language. In statistical machine translation, these two aspects are represented by two distinct statistical models. The translation model is used to compute the likelihood of a sentence being faithful to the original meaning, and the target language model imposes a maximally fluent natural word order on the resulting translation in the target language by scoring typical, predictable word order as more probable than uncommon or malformed combinations. The central processing component of an SMT system is the decoder, which computes probabilities according to at least these two models for a huge number of possible translation hypotheses. This constitutes a vast search problem in which countless hypotheses are tested and compete against one another for the best probability score according to the joint statistical models. The translation chosen is the hypothesis found to attain the best score. Due to the size and complexity of the search problem, and the need to keep time and memory requirements manageable, considerable pruning of the search takes place. It is quite possible that the selected translation is found in a local maximum.
 
-Colibri features a custom-tailored MT decoder modelled after the stack-based decoding principle used in Moses [Koehn et al. 2003]. This algorithm employs a beam search as a means to constrain the search space. The alignment model as discussed in the previous chapter provide the translation model. The mandatory language model can be computed with third-party software such as `SRILM <http://www.speech.sri.com/projects/srilm/>`_ [Stolcke 2002] .
+Colibri features a custom-tailored MT decoder modelled after the stack-based decoding principle used in Moses [Koehn2003]_. This algorithm employs a beam search as a means to constrain the search space. The alignment model as discussed in the previous chapter provide the translation model. The mandatory language model can be computed with third-party software such as `SRILM <http://www.speech.sri.com/projects/srilm/>`_ [Stolcke2002]_ .
 
 The stack decoder maintains *n* separate stacks, the number of stacks equals the number of words in the *source* sentence. Each stack contains translation hypotheses that cover an arbitrary *n* words of the source sentence. Only a fixed number of the best translation hypotheses are retained, this is the *stack size*. In the decoding process proceeds iteratively, starting with an *empty hypothesis* for which no source words have been covered and thus no target words have been generated. This initial hypotheses is *expanded* by choosing each input pattern matching the source sentence, at any position, and translating it according to the translation model. The translations are added left-to-right, but the selected source are from any location. This makes reorderings possible. This expansions in turn results in a larger number of new translation hypotheses which are added to the appropriate stacks. After the initial hypothesis, the first stack is processed top to bottom, expanding in turn each of the hypotheses in it, resulting in more hypotheses to be added to the higher stacks. When a stack is processed, the algorithm moves on to the next. The final stack will be the stack in which all source words are covered and thus in which the hypotheses represent translations of the whole sentence. The best one is selected as the translation. 
 
-The pseudo-code for the algorithm is as follows (from `Moses Background <http://www.statmt.org/moses/?n=Moses.Background>`_) [Koehn et al. 2007]::
+The pseudo-code for the algorithm is as follows (from `Moses Background <http://www.statmt.org/moses/?n=Moses.Background>`_) [Koehn2007]_::
 
 	 initialize hypothesisStack[0 .. nf];
 	 create initial hypothesis hyp_init;
@@ -606,7 +606,7 @@ Unlike Moses, the colibri decoder also integrates support for classifiers. This 
 Language Model
 -----------------
 
-As a Language Model is a vital component of a machine translation system, here are instructions on how to generate a language model using `SRILM <http://www.speech.sri.com/projects/srilm/>`_ [Stolcke 2002]. The language model should be generated for only the target language corpus::
+As a Language Model is a vital component of a machine translation system, here are instructions on how to generate a language model using `SRILM <http://www.speech.sri.com/projects/srilm/>`_ [Stolcke 2002]_. The language model should be generated for only the target language corpus::
 
 	$ ngram-count -kndiscount -order 3 -unk -text yourtargetcorpus.txt -lm yourtargetcorpus.lm
 
@@ -653,15 +653,15 @@ MT Experiment Framework
 References
 ==================
 
-.. [Daelemans et al. 2010] Daelemans, W., Zavrel, J., Van der Sloot, K., and Van den Bosch, A. (2010). TiMBL: Tilburg Memory Based Learner, version 6.3, Reference Guide. ILK Research Group Technical Report Series no. 10-01.
+.. [Daelemans_et_al._2010] Daelemans, W., Zavrel, J., Van der Sloot, K., and Van den Bosch, A. (2010). TiMBL: Tilburg Memory Based Learner, version 6.3, Reference Guide. ILK Research Group Technical Report Series no. 10-01.
 
-.. [Koehn et al. 2003] P. Koehn, F.J Och, D. Marcu, *Statistical phrase-based translation*, NAACL '03 Proceedings of the 2003. Conference of the North American Chapter of the Association for Computational Linguistics on Human Language Technology - Volume 1 (2003) pp. 48-54.
+.. [Koehn2003] P. Koehn, F.J Och, D. Marcu, *Statistical phrase-based translation*, NAACL '03 Proceedings of the 2003. Conference of the North American Chapter of the Association for Computational Linguistics on Human Language Technology - Volume 1 (2003) pp. 48-54.
 
-.. [Koehn et al. 2007] P. Koehn, H. Hoang, A. Birch, C. Callison-Burch, M. Federico, N. Bertoldi, B. Cowan, W. Shen, C. Moran, R. Zens, C. Dyer, O. Bojar, A. Constantin and E. Herbst, *Moses: Open source toolkit for statistical machine translation*, ACL '07 Proceedings of the 45th Annual Meeting of the ACL on Interactive Poster and Demonstration Sessions. (2007) pp. 177-180.
+.. [Koehn2007] P. Koehn, H. Hoang, A. Birch, C. Callison-Burch, M. Federico, N. Bertoldi, B. Cowan, W. Shen, C. Moran, R. Zens, C. Dyer, O. Bojar, A. Constantin and E. Herbst, *Moses: Open source toolkit for statistical machine translation*, ACL '07 Proceedings of the 45th Annual Meeting of the ACL on Interactive Poster and Demonstration Sessions. (2007) pp. 177-180.
 
-.. [Och & Ney 2003] F.J Och and H. Ney, *A Systematic Comparison of Various Statistical Alignment Models*, Computational Linguistics, (2003) volume 29, number 1, pp. 19-51
+.. [OchNey2003] F.J Och and H. Ney, *A Systematic Comparison of Various Statistical Alignment Models*, Computational Linguistics, (2003) volume 29, number 1, pp. 19-51
 
-.. [Stolcke 2002] A. Stolcke, *SRILM — an extensible language modeling toolkit*, in J. H. L. Hansen and B. Pellom, editors, Proc. ICSLP, vol. 2, pp. 901–904, Denver, Sep. 2002.
+.. [Stolcke2002] A. Stolcke, *SRILM — an extensible language modeling toolkit*, in J. H. L. Hansen and B. Pellom, editors, Proc. ICSLP, vol. 2, pp. 901–904, Denver, Sep. 2002.
 
 Indices and tables
 ==================
