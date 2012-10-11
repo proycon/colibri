@@ -449,48 +449,64 @@ Instead of uniform initiatisation, this method can also be initialised using the
 GIZA Alignment
 -----------------
 
-``GIZA++`` is open-source software for the computation of word alignment models according to the IBM Models and HMM models. The ``aligner`` program can use the models produced by GIZA++ and extract aligned pairs of phrases. Two GIZA models (``*.A3.final``) are required, one for each translation direction. This extraction algorithm is implemented as follows::
+``GIZA++`` is open-source software for the computation of word alignment models according to the IBM Models and HMM models (see `GIZA++ <http://code.google.com/p/giza-pp/>`_) . The ``aligner`` program can use the models produced by GIZA++ and extract aligned pairs of phrases. Two GIZA models (``*.A3.final``) are required, one for each translation direction. The extraction algorithm iterates over all sentence pairs in the GIZA models, these sentence pairs contain information in the form of what word-index of the source sentence is aligned to what word-index of the target sentence, and vice versa for the reverse model. Given such a bidirectional pair of alignments, the algorithm first collects all relevant patterns and for each possible combination it computes whether the word-alignment indices from the GIZA models support the alignment of the patterns.  The criteria for whether an alignment between patterns is supported by the word alignments are:
 
+* Is the first word of the source pattern properly aligned according to the bidirectional intersection of the word alignments?
+* Is the last word of the source pattern properly aligned according to the bidirectional intersection of the word alignments?
+* Is the first word of the target pattern properly aligned according to the bidirectional intersection of the word alignments?
+* Is the last word of the target pattern properly aligned according to the bidirectional intersection of the word alignments?
+* Are none of the source words aligned to target words outside the target pattern?
+* Are none of the target words aligned to source words outside the source pattern?
 
-		function giza_extract(sentence_s,sentence_t, patterns_s, pattern_s):
-            patterns_t = all patterns in sentence_t           
-            for all word_s in sentence_s:
-                patterns_s = find patterns BEGINNING WITH word_s
-                for all pattern_s in patterns_s:
-                    bestscore = 0
-                    for all pattern_t in patterns_t:
-                        aligned = 0
-                        halfaligned = 0
-                        unaligned = 0
-                        firstsourcealigned = false
-                        lastsourcealigned = false
-                        firsttargetaligned = false
-                        lasttargetaligned = false
-                        for alignedsourceindex, alignedtargetindex in intersection:
-                            if alignedsourceindex not in pattern_s or alignedtargetindex not in pattern_t:
-                                aligned--; break;
-                            else:
-                                aligned++;
-                                if alignedsourceindex == sourceindex: firstsourcealigned = true
-                                if alignedsourceindex == sourceindex + patternsize_s: lastsourcealigned = true
-                                if alignedtargetindex == targetindex: firstsourcealigned = true
-                                if alignedtargetindex == targetindex + patternsize_t: lastsourcealigned = true
-                            else:
-                                unaligned++;                                
-                        if ((aligned < 0) || (!firstaligned) || (!lastaligned)) break;
-                        for alignedsourceindex, alignedtargetindex in union:                            
-                            if (alignedsourceindex in pattern_s and alignedtargetindex not in pattern_t) or (alignedsourceindex not in pattern_s and alignedtargetindex in pattern_t):
-                                halfaligned++;
-                            else if not (alignedsourceindex in pattern_s and alignedtargetindex not in pattern_t):
-                                halfaligned--;
-                                        
-                       if score > 0
-                            bestscore = score
-                            bestpattern_t = pattern_t                            
+Of all target patterns (if any) meeting this criteria for a given source pattern, only the strongest one is chosen. An alignment strength score is computed to represent how well an alignment is supported by word alignments. This is not to be confused with the actual alignment probability. This score is the number of words that aligns properly, as a fraction of the longest pattern size of the pair. Only alignments that reach a certain threshold will be aligned. If the score is not perfect (< 0), points from the union of the two word alignment directions will be considered and added to the score as well, however, these alignments carry less weight than intersection alignments (four times less by default). 
+
+This extraction algorithm is implemented as follows, given word alignments for source-to-target (``sentence_s``) and target-to-source (``sentence_t``)::
+
+	function giza_extract(sentence_s from giza,sentence_t from giza):
+	
+        patterns_t = all patterns in sentence_t           
+        for all words word_s in sentence_s:
+            patterns_s = find patterns BEGINNING WITH word_s
+            for all patterns pattern_s in patterns_s:
+                bestscore = 0
+                for all patterns pattern_t in patterns_t:
+                    aligned = 0
+                    halfaligned = 0
+                    firstsourcealigned = false
+                    lastsourcealigned = false
+                    firsttargetaligned = false
+                    lasttargetaligned = false
+                    for for all indices (alignedsourceindex, alignedtargetindex) in intersection:
+                        if alignedsourceindex not in pattern_s or alignedtargetindex not in pattern_t:
+                            aligned--; break;
+                        else:
+                            aligned++;
+                            if alignedsourceindex == sourceindex: firstsourcealigned = true
+                            if alignedsourceindex == sourceindex + patternsize_s: lastsourcealigned = true
+                            if alignedtargetindex == targetindex: firstsourcealigned = true
+                            if alignedtargetindex == targetindex + patternsize_t: lastsourcealigned = true
+                                                      
+                            
+                    if ((aligned < 0) || (!firstaligned) || (!lastaligned)) break;
+                    
+                    maxpatternsize = max(|pattern_s|,|pattern_t|)
+                    score = aligned / maxpatternsize
+                    
+                    if (score < 1):
+		                for alignedsourceindex, alignedtargetindex in union:                            
+		                    if (alignedsourceindex in pattern_s and alignedtargetindex not in pattern_t) or (alignedsourceindex not in pattern_s and alignedtargetindex in pattern_t):
+		                        halfaligned++;
+						if halfaligned:
+							score = score + halfaligned / (maxpatternsize*4)
+                        	if (score > 1) score = 1
+                     				                                     
+                   if score > bestscore:
+                        bestscore = score
+                        bestpattern_t = pattern_t                            
                
-In the following example we translate French to English and assume pattern models have been computed already. Invoke the ``aligner`` program as follows, the ``-W`` flag chooses GIZA extraction and takes as parameters the two GIZA ``A3.final`` models (order matters!) separated by a colon. It is also necessary to pass the class the class file for both source (``-S``) and target language (``-T``), as the GIZA models do not use the colibri class encodings and thus need to be inpreted on the fly:
+In the following example we translate French to English and assume pattern models have been computed already. Invoke the ``aligner`` program as follows, the ``-W`` flag chooses GIZA extraction and takes as parameters the two GIZA ``A3.final`` models (order matters!) separated by a colon. It is also necessary to pass the class the class file for both source (``-S``) and target language (``-T``), as the GIZA models do not use the colibri class encodings and thus need to be inpreted on the fly::
 
- $ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -W fr-en.A3.final:en-fr.A3.final -S fr.cls -T en.cls
+	$ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -W fr-en.A3.final:en-fr.A3.final -S fr.cls -T en.cls
 
 Several other parameters adjust the behaviour of the EM alignment algorithm and output:
 

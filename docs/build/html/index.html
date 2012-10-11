@@ -417,22 +417,32 @@ do until convergence
 </div>
 <div class="section" id="giza-alignment">
 <h2>GIZA Alignment<a class="headerlink" href="#giza-alignment" title="Permalink to this headline">¶</a></h2>
-<p><tt class="docutils literal"><span class="pre">GIZA++</span></tt> is open-source software for the computation of word alignment models according to the IBM Models and HMM models. The <tt class="docutils literal"><span class="pre">aligner</span></tt> program can use the models produced by GIZA++ and extract aligned pairs of phrases. Two GIZA models (<tt class="docutils literal"><span class="pre">*.A3.final</span></tt>) are required, one for each translation direction. This extraction algorithm is implemented as follows:</p>
-<div class="highlight-python"><pre>    function giza_extract(sentence_s,sentence_t, patterns_s, pattern_s):
+<p><tt class="docutils literal"><span class="pre">GIZA++</span></tt> is open-source software for the computation of word alignment models according to the IBM Models and HMM models (see <a class="reference external" href="http://code.google.com/p/giza-pp/">GIZA++</a>) . The <tt class="docutils literal"><span class="pre">aligner</span></tt> program can use the models produced by GIZA++ and extract aligned pairs of phrases. Two GIZA models (<tt class="docutils literal"><span class="pre">*.A3.final</span></tt>) are required, one for each translation direction. The extraction algorithm iterates over all sentence pairs in the GIZA models, these sentence pairs contain information in the form of what word-index of the source sentence is aligned to what word-index of the target sentence, and vice versa for the reverse model. Given such a bidirectional pair of alignments, the algorithm first collects all relevant patterns and for each possible combination it computes whether the word-alignment indices from the GIZA models support the alignment of the patterns.  The criteria for whether an alignment between patterns is supported by the word alignments are:</p>
+<ul class="simple">
+<li>Is the first word of the source pattern properly aligned according to the bidirectional intersection of the word alignments?</li>
+<li>Is the last word of the source pattern properly aligned according to the bidirectional intersection of the word alignments?</li>
+<li>Is the first word of the target pattern properly aligned according to the bidirectional intersection of the word alignments?</li>
+<li>Is the last word of the target pattern properly aligned according to the bidirectional intersection of the word alignments?</li>
+<li>Are none of the source words aligned to target words outside the target pattern?</li>
+<li>Are none of the target words aligned to source words outside the source pattern?</li>
+</ul>
+<p>Of all target patterns (if any) meeting this criteria for a given source pattern, only the strongest one is chosen. An alignment strength score is computed to represent how well an alignment is supported by word alignments. This is not to be confused with the actual alignment probability. This score is the number of words that aligns properly, as a fraction of the longest pattern size of the pair. Only alignments that reach a certain threshold will be aligned. If the score is not perfect (&lt; 0), points from the union of the two word alignment directions will be considered and added to the score as well, however, these alignments carry less weight than intersection alignments (four times less by default).</p>
+<p>This extraction algorithm is implemented as follows, given word alignments for source-to-target (<tt class="docutils literal"><span class="pre">sentence_s</span></tt>) and target-to-source (<tt class="docutils literal"><span class="pre">sentence_t</span></tt>):</p>
+<div class="highlight-python"><pre>function giza_extract(sentence_s from giza,sentence_t from giza):
+
 patterns_t = all patterns in sentence_t
-for all word_s in sentence_s:
+for all words word_s in sentence_s:
     patterns_s = find patterns BEGINNING WITH word_s
-    for all pattern_s in patterns_s:
+    for all patterns pattern_s in patterns_s:
         bestscore = 0
-        for all pattern_t in patterns_t:
+        for all patterns pattern_t in patterns_t:
             aligned = 0
             halfaligned = 0
-            unaligned = 0
             firstsourcealigned = false
             lastsourcealigned = false
             firsttargetaligned = false
             lasttargetaligned = false
-            for alignedsourceindex, alignedtargetindex in intersection:
+            for for all indices (alignedsourceindex, alignedtargetindex) in intersection:
                 if alignedsourceindex not in pattern_s or alignedtargetindex not in pattern_t:
                     aligned--; break;
                 else:
@@ -441,22 +451,28 @@ for all word_s in sentence_s:
                     if alignedsourceindex == sourceindex + patternsize_s: lastsourcealigned = true
                     if alignedtargetindex == targetindex: firstsourcealigned = true
                     if alignedtargetindex == targetindex + patternsize_t: lastsourcealigned = true
-                else:
-                    unaligned++;
-            if ((aligned &lt; 0) || (!firstaligned) || (!lastaligned)) break;
-            for alignedsourceindex, alignedtargetindex in union:
-                if (alignedsourceindex in pattern_s and alignedtargetindex not in pattern_t) or (alignedsourceindex not in pattern_s and alignedtargetindex in pattern_t):
-                    halfaligned++;
-                else if not (alignedsourceindex in pattern_s and alignedtargetindex not in pattern_t):
-                    halfaligned--;
 
-           if score &gt; 0
+
+            if ((aligned &lt; 0) || (!firstaligned) || (!lastaligned)) break;
+
+            maxpatternsize = max(|pattern_s|,|pattern_t|)
+            score = aligned / maxpatternsize
+
+            if (score &lt; 1):
+                        for alignedsourceindex, alignedtargetindex in union:
+                            if (alignedsourceindex in pattern_s and alignedtargetindex not in pattern_t) or (alignedsourceindex not in pattern_s and alignedtargetindex in pattern_t):
+                                halfaligned++;
+                                        if halfaligned:
+                                                score = score + halfaligned / (maxpatternsize*4)
+                        if (score &gt; 1) score = 1
+
+           if score &gt; bestscore:
                 bestscore = score
                 bestpattern_t = pattern_t</pre>
 </div>
 <p>In the following example we translate French to English and assume pattern models have been computed already. Invoke the <tt class="docutils literal"><span class="pre">aligner</span></tt> program as follows, the <tt class="docutils literal"><span class="pre">-W</span></tt> flag chooses GIZA extraction and takes as parameters the two GIZA <tt class="docutils literal"><span class="pre">A3.final</span></tt> models (order matters!) separated by a colon. It is also necessary to pass the class the class file for both source (<tt class="docutils literal"><span class="pre">-S</span></tt>) and target language (<tt class="docutils literal"><span class="pre">-T</span></tt>), as the GIZA models do not use the colibri class encodings and thus need to be inpreted on the fly:</p>
-<blockquote>
-<div>$ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -W fr-en.A3.final:en-fr.A3.final -S fr.cls -T en.cls</div></blockquote>
+<div class="highlight-python"><pre>$ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -W fr-en.A3.final:en-fr.A3.final -S fr.cls -T en.cls</pre>
+</div>
 <p>Several other parameters adjust the behaviour of the EM alignment algorithm and output:</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">-a</span> <span class="pre">[n]</span></tt> - Alignment strength, value between 0 and 1. Determines how strong word alignments have to be if phrases are to be extracted, weak alignments will not be considered.</li>

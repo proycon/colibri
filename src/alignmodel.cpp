@@ -827,7 +827,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                         firsttargetaligned = false
                         lasttargetaligned = false
                         for alignedsourceindex, alignedtargetindex in intersection:
-                            if alignedsourceindex not in pattern_s or alignedtargetindex not in pattern_t:
+                            if alignedsourceindex not in pattern_s or alignedtarqgetindex not in pattern_t:
                                 aligned--; break;
                             else:
                                 aligned++;
@@ -843,6 +843,9 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                                 halfaligned++;
                             else if not (alignedsourceindex in pattern_s and alignedtargetindex not in pattern_t):
                                 halfaligned--;
+
+                       maxpatternsize = max(|pattern_s|,|pattern_t|)
+                       
                                         
                        if score > 0
                             bestscore = score
