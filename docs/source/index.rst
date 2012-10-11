@@ -653,7 +653,7 @@ MT Experiment Framework
 References
 ==================
 
-.. [Daelemans_et_al._2010] Daelemans, W., Zavrel, J., Van der Sloot, K., and Van den Bosch, A. (2010). TiMBL: Tilburg Memory Based Learner, version 6.3, Reference Guide. ILK Research Group Technical Report Series no. 10-01.
+.. [Daelemans2010] Daelemans, W., Zavrel, J., Van der Sloot, K., and Van den Bosch, A. (2010). TiMBL: Tilburg Memory Based Learner, version 6.3, Reference Guide. ILK Research Group Technical Report Series no. 10-01.
 
 .. [Koehn2003] P. Koehn, F.J Och, D. Marcu, *Statistical phrase-based translation*, NAACL '03 Proceedings of the 2003. Conference of the North American Chapter of the Association for Computational Linguistics on Human Language Technology - Volume 1 (2003) pp. 48-54.
 
