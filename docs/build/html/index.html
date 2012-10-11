@@ -555,9 +555,41 @@ output best path that leads to best_hyp;</pre>
 <p>The colibri decoder has been enhanced to be able to handle skipgrams. Source-side skipgrams need no special handling due to the stack-based nature that already supports it; translations with gaps however do need special attention. The colibri decoder solves this by introducing a second set of another <em>n</em> stacks for hypotheses containing gaps. The expansion operation for hypotheses in these stacks attempts explicitly seeks to fill one of gaps first, the expanded hypotheses will again form part of the normal <em>gapless</em> stacks once all gaps are filled.</p>
 <p>Unlike Moses, the colibri decoder also integrates support for classifiers. This will be introduced in the next chapter.</p>
 </div>
+<div class="section" id="language-model">
+<h2>Language Model<a class="headerlink" href="#language-model" title="Permalink to this headline">¶</a></h2>
+<p>As a Language Model is a vital component of a machine translation system, here are instructions on how to generate a language model using <a class="reference external" href="http://www.speech.sri.com/projects/srilm/">SRILM</a> [Stolcke 2002]. The language model should be generated for only the target language corpus:</p>
+<div class="highlight-python"><pre>$ ngram-count -kndiscount -order 3 -unk -text yourtargetcorpus.txt -lm yourtargetcorpus.lm</pre>
+</div>
+<p>The above command generates a trigram model (<tt class="docutils literal"><span class="pre">-order</span> <span class="pre">3</span></tt>) with (modified) Knesser Ney discounting (<tt class="docutils literal"><span class="pre">-kndiscount</span></tt>), it includes supports for unknown words (<tt class="docutils literal"><span class="pre">-unk</span></tt>). Support for unknown words and back-off are requirements for the colibri decoder. The final argument specifies the output file for the language model, this can in turn be read by the colibri decoder.</p>
+<p>Note that as this is external softare, you need to pass the <em>tokenised</em> corpus in plain-text format, not the class-encoded binary variant used by colibri. But do make sure both are generated on exactly the same data.</p>
+</div>
+<div class="section" id="decoder-usage">
+<h2>Decoder Usage<a class="headerlink" href="#decoder-usage" title="Permalink to this headline">¶</a></h2>
+<p>The colibri decoder requires at least an alignment model (also known as translation model), and a language model. The translation model may contain multiple scores. The final score for an hypothesis is a weighted log-linear combination of all components model, in which each model carries a weight. These weights are passed as parameters to the decoder. The <tt class="docutils literal"><span class="pre">-W</span></tt> argument specifies weights for the scores in the alignment model, it should be repeated for the amount of scores in a model. The <tt class="docutils literal"><span class="pre">-L</span></tt> argument sets the weight for the language model, <tt class="docutils literal"><span class="pre">-D</span></tt> does the same for the distortion model (both default to one). The following example shows how to invoke the decoder given a translation model (<tt class="docutils literal"><span class="pre">-t</span></tt>) and language model (<tt class="docutils literal"><span class="pre">-l</span></tt>). It is also necessary to specify the class file for both source (<tt class="docutils literal"><span class="pre">-S</span></tt>) and (<tt class="docutils literal"><span class="pre">-T</span></tt>) target:</p>
+<div class="highlight-python"><pre>$ decoder -t alignmodel.colibri -l yourtargetcorpus.lm -S yoursourcecorpus.cls -T yourtargetcorpus.cls -W 1 -W 1 &lt; inputfile.txt</pre>
+</div>
+<p>The decoder reads its input from <tt class="docutils literal"><span class="pre">stdin</span></tt>, hence the `` &lt; inputfile.txt``. The input should consist of tokenised sentences in the source language, one sentence per line. It will output the translation to <tt class="docutils literal"><span class="pre">stdout</span></tt>, again one sentence per line. Extra information will be written to <tt class="docutils literal"><span class="pre">stderr</span></tt>, the verbosity of which can be adjusted with the <tt class="docutils literal"><span class="pre">-v</span></tt> parameter.</p>
+<p>The decoder takes the following extra parameters:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">-s</span></tt> - The stacksize (defaults to 100)</li>
+<li><tt class="docutils literal"><span class="pre">-p</span></tt> - The prune threshold. The pruning threshold is a number between 0 and 1. It determines how much of a stack to prune based on the highest scoring hypothesis in the stack. If the prune threshold is set to for instance <em>0.8</em> then all hypotheses having a score of less than <em>80%</em> of the highest scoring hypothesis are pruned.</li>
+<li><tt class="docutils literal"><span class="pre">-W</span> <span class="pre">n</span></tt> - Translation model weight. Issue this parameter multiple times if there are multiple scores in your alignment model (<tt class="docutils literal"><span class="pre">-W</span> <span class="pre">1</span> <span class="pre">-W</span> <span class="pre">1</span></tt>). Alignment models generated with <tt class="docutils literal"><span class="pre">aligner</span> <span class="pre">-I</span> <span class="pre">2</span></tt> generate two scores. If there is a mismatch between the number of scores specified here and in the alignment model, then an error will be raised.</li>
+<li><tt class="docutils literal"><span class="pre">-L</span> <span class="pre">n</span></tt> - Language model weight.</li>
+<li><tt class="docutils literal"><span class="pre">-D</span> <span class="pre">n</span></tt> - Distortion model weight.</li>
+<li><tt class="docutils literal"><span class="pre">-N</span></tt> - Ignore and do not use skipgrams</li>
+<li><tt class="docutils literal"><span class="pre">-M</span> <span class="pre">n</span></tt> -   Distortion limit. This corresponds to the maximum number of words a reordering displacement occurs over (default: unlimited).</li>
+</ul>
+<p>In addition, the following parameters control output and verbosity:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">-v</span> <span class="pre">n</span></tt> - Sets the verbosity value. <em>n</em> is a number from 0 to 5. High level will very explicitly show what the decoder is doing, be aware that this generates a huge amount of output to <tt class="docutils literal"><span class="pre">stderr</span></tt>.</li>
+<li><tt class="docutils literal"><span class="pre">--stats</span></tt> - Compute and output decoding statistics for each solution.</li>
+<li><tt class="docutils literal"><span class="pre">--globalstats</span></tt> - Compute and output decoding statistics for all hypothesis accepted on a stack.</li>
+</ul>
+</div>
 </div>
 <div class="section" id="machine-learning">
 <h1>Machine Learning<a class="headerlink" href="#machine-learning" title="Permalink to this headline">¶</a></h1>
+<p>(yet to be written)</p>
 </div>
 <div class="section" id="mt-experiment-framework">
 <h1>MT Experiment Framework<a class="headerlink" href="#mt-experiment-framework" title="Permalink to this headline">¶</a></h1>
@@ -623,6 +655,8 @@ output best path that leads to best_hyp;</pre>
 </li>
 <li><a class="reference internal" href="#mt-decoder">MT Decoder</a><ul>
 <li><a class="reference internal" href="#id5">Introduction</a></li>
+<li><a class="reference internal" href="#language-model">Language Model</a></li>
+<li><a class="reference internal" href="#decoder-usage">Decoder Usage</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#machine-learning">Machine Learning</a></li>

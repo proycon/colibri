@@ -603,12 +603,46 @@ The colibri decoder has been enhanced to be able to handle skipgrams. Source-sid
 
 Unlike Moses, the colibri decoder also integrates support for classifiers. This will be introduced in the next chapter.
 
+Language Model
+-----------------
 
+As a Language Model is a vital component of a machine translation system, here are instructions on how to generate a language model using `SRILM <http://www.speech.sri.com/projects/srilm/>`_ [Stolcke 2002]. The language model should be generated for only the target language corpus::
+
+	$ ngram-count -kndiscount -order 3 -unk -text yourtargetcorpus.txt -lm yourtargetcorpus.lm
+
+The above command generates a trigram model (``-order 3``) with (modified) Knesser Ney discounting (``-kndiscount``), it includes supports for unknown words (``-unk``). Support for unknown words and back-off are requirements for the colibri decoder. The final argument specifies the output file for the language model, this can in turn be read by the colibri decoder.
+
+Note that as this is external softare, you need to pass the *tokenised* corpus in plain-text format, not the class-encoded binary variant used by colibri. But do make sure both are generated on exactly the same data. 
+
+Decoder Usage
+-----------------
+
+The colibri decoder requires at least an alignment model (also known as translation model), and a language model. The translation model may contain multiple scores. The final score for an hypothesis is a weighted log-linear combination of all components model, in which each model carries a weight. These weights are passed as parameters to the decoder. The ``-W`` argument specifies weights for the scores in the alignment model, it should be repeated for the amount of scores in a model. The ``-L`` argument sets the weight for the language model, ``-D`` does the same for the distortion model (both default to one). The following example shows how to invoke the decoder given a translation model (``-t``) and language model (``-l``). It is also necessary to specify the class file for both source (``-S``) and (``-T``) target::
+
+	$ decoder -t alignmodel.colibri -l yourtargetcorpus.lm -S yoursourcecorpus.cls -T yourtargetcorpus.cls -W 1 -W 1 < inputfile.txt
+	
+The decoder reads its input from ``stdin``, hence the `` < inputfile.txt``. The input should consist of tokenised sentences in the source language, one sentence per line. It will output the translation to ``stdout``, again one sentence per line. Extra information will be written to ``stderr``, the verbosity of which can be adjusted with the ``-v`` parameter.	 
+
+The decoder takes the following extra parameters:
+
+* ``-s`` - The stacksize (defaults to 100)
+* ``-p`` - The prune threshold. The pruning threshold is a number between 0 and 1. It determines how much of a stack to prune based on the highest scoring hypothesis in the stack. If the prune threshold is set to for instance *0.8* then all hypotheses having a score of less than *80%* of the highest scoring hypothesis are pruned.
+* ``-W n`` - Translation model weight. Issue this parameter multiple times if there are multiple scores in your alignment model (``-W 1 -W 1``). Alignment models generated with ``aligner -I 2`` generate two scores. If there is a mismatch between the number of scores specified here and in the alignment model, then an error will be raised.
+* ``-L n`` - Language model weight.
+* ``-D n`` - Distortion model weight.
+* ``-N`` - Ignore and do not use skipgrams
+* ``-M n`` -   Distortion limit. This corresponds to the maximum number of words a reordering displacement occurs over (default: unlimited). 
+
+In addition, the following parameters control output and verbosity:
+
+* ``-v n`` - Sets the verbosity value. *n* is a number from 0 to 5. High level will very explicitly show what the decoder is doing, be aware that this generates a huge amount of output to ``stderr``.
+* ``--stats`` - Compute and output decoding statistics for each solution.
+* ``--globalstats`` - Compute and output decoding statistics for all hypothesis accepted on a stack.
 
 Machine Learning
 =================
 
- 
+(yet to be written)
 
  
 MT Experiment Framework
