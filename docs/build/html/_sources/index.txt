@@ -519,8 +519,45 @@ Several other parameters adjust the behaviour of the EM alignment algorithm and 
 Skipgram alignment
 ----------------------
 
+The alignment of skipgrams poses extra challenges. The three above alignment methods function much worse as soon as skipgrams are included. Therefore, an experimental alignment algorithm has been implemented to extract skipgrams on the basis of a graph model with instance and template relations. The algorithm starts with the n-grams that have been aligned by any of the three aforementioned algorithms, it then determines whether multiple target n-grams for a given source n-gram share a common template (i.e. a skip-gram that is an abstraction of a pattern). The template relation is a transitive relation, so recursion is applied to collect all possible templates, these can subsequently be clustered in one or more clusters, each cluster being completely independent of the other, not sharing any template or instance relationships. From each cluster only the best match, according to Jaccard co-occurrence is selected and aligned to the template(s) of the source pattern. This results in skipgram to skipgram alignments. N-gram to skipgram or skipgram to n-gram alignments are not supported by this method.
 
+The algorithm is implemented as illustrated by the following pseudo-code::
 
+     for ngram_s in alignmatrix:
+        if |alignmatrix[ngram_s]| > 1: (nothing to generalise otherwise)
+            skipgrams_s = get_templates_recursively(rel_templates_s[ngram_s])
+            if skipgrams_s:            
+                for ngram_t in alignmatrix[ngram_s]
+                    skipgrams_t = get_templates_recursively(rel_templates_t[ngram_t])
+                    if skipgrams_t:
+                        for skipgram_s in skipgrams_s:
+                            for skipgram_t in skipgrams_t:
+                                submatrix[skipgram_s][skipgram_t]++
+    prune 1-values from submatrix                     
+       
+    for skipgram_s in submatrix: //conflict resolution
+        if |submatrix[skipgram_s]| == 1:
+            skipgram_t = first and only
+            alignmatrix[skipgram_s][skipgram_t] = submatrix[skipgram_s][skipgram_t]
+        else:                                
+            clusters = get_independent_cluster(skipgrams_t) //complete subgraphs
+            for cluster in clusters:
+              maxcooc = 0
+              for skipgram_t in cluster:
+                if cooc(skipgram_s, skipgram_t) > maxcooc:
+                    maxcooc = _
+                    best = skipgram_t
+                elseif   == maxcooc:
+                   if skipgram_t more abstract than best:
+                        best = skipgram_t
+              if best:
+                 alignmatrix[skipgram_s][best] = submatrix[skipgram_s][best]                      
+ 
+
+The following example takes an alignment model computed with only n-grams according to one of the three methods outlined earlier. It outputs a new alignment model, a superset of the original one, that adds the skipgram relations. The ``-U`` flag activates the skipgram extraction algorithm. Make sure to use the ``-o`` parameter to output a new model to a new file::
+    
+	$ aligner -U -d europarl25k-nl-en.alignmodel.colibri -o europarl25k-nl-en-withskipgrams.alignmodel.colibri 
+ 
 Viewing an alignment model
 ----------------------------
 
