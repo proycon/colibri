@@ -61,7 +61,7 @@
 <p>Colibri is hosted on github and should be retrieved through the versioning control system <tt class="docutils literal"><span class="pre">git</span></tt>. This is done as follows:</p>
 <div class="highlight-python"><pre>$ git clone git://github.com/proycon/colibri.git</pre>
 </div>
-<p>You need to compile the software, but in order to do so you must first install the dependency <tt class="docutils literal"><span class="pre">Timbl</span></tt>, a tarball is obtainable from <a class="reference external" href="http://ilk.uvt.nl/timbl/">http://ilk.uvt.nl/timbl/</a> , follow the instructions included with Timbl.</p>
+<p>You need to compile the software, but in order to do so you must first install the dependency <tt class="docutils literal"><span class="pre">Timbl</span></tt> [Daelemans et al. 2010]; a tarball is obtainable from <a class="reference external" href="http://ilk.uvt.nl/timbl/">the Timbl website</a> , follow the instructions included with Timbl.</p>
 <p>In addition to the compiler (<tt class="docutils literal"><span class="pre">gcc</span></tt>), colibri uses <tt class="docutils literal"><span class="pre">autoconf</span></tt> and <tt class="docutils literal"><span class="pre">automake</span></tt>, so make sure these are installed on your system. Also install the package <tt class="docutils literal"><span class="pre">autoconf-archive</span></tt> if available on your distribution. Colibri can now be compiled and installed:</p>
 <div class="highlight-python"><pre>$ cd colibri
 $ bash bootstrap
@@ -417,7 +417,7 @@ do until convergence
 </div>
 <div class="section" id="giza-alignment">
 <h2>GIZA Alignment<a class="headerlink" href="#giza-alignment" title="Permalink to this headline">¶</a></h2>
-<p><tt class="docutils literal"><span class="pre">GIZA++</span></tt> is open-source software for the computation of word alignment models according to the IBM Models and HMM models (see <a class="reference external" href="http://code.google.com/p/giza-pp/">GIZA++</a>) . The <tt class="docutils literal"><span class="pre">aligner</span></tt> program can use the models produced by GIZA++ and extract aligned pairs of phrases. Two GIZA models (<tt class="docutils literal"><span class="pre">*.A3.final</span></tt>) are required, one for each translation direction. The extraction algorithm iterates over all sentence pairs in the GIZA models, these sentence pairs contain information in the form of what word-index of the source sentence is aligned to what word-index of the target sentence, and vice versa for the reverse model. Given such a bidirectional pair of alignments, the algorithm first collects all relevant patterns and for each possible combination it computes whether the word-alignment indices from the GIZA models support the alignment of the patterns.  The criteria for whether an alignment between patterns is supported by the word alignments are:</p>
+<p><tt class="docutils literal"><span class="pre">GIZA++</span></tt> is open-source software for the computation of word alignment models according to the IBM Models and HMM models (see <a class="reference external" href="http://code.google.com/p/giza-pp/">GIZA++</a>) [Och &amp; Ney 2003] . The <tt class="docutils literal"><span class="pre">aligner</span></tt> program can use the models produced by GIZA++ and extract aligned pairs of phrases. Two GIZA models (<tt class="docutils literal"><span class="pre">*.A3.final</span></tt>) are required, one for each translation direction. The extraction algorithm iterates over all sentence pairs in the GIZA models, these sentence pairs contain information in the form of what word-index of the source sentence is aligned to what word-index of the target sentence, and vice versa for the reverse model. Given such a bidirectional pair of alignments, the algorithm first collects all relevant patterns and for each possible combination it computes whether the word-alignment indices from the GIZA models support the alignment of the patterns.  The criteria for whether an alignment between patterns is supported by the word alignments are:</p>
 <ul class="simple">
 <li>Is the first word of the source pattern properly aligned according to the bidirectional intersection of the word alignments?</li>
 <li>Is the last word of the source pattern properly aligned according to the bidirectional intersection of the word alignments?</li>
@@ -522,19 +522,49 @@ for skipgram_s in submatrix: //conflict resolution
 </div>
 <div class="section" id="viewing-an-alignment-model">
 <h2>Viewing an alignment model<a class="headerlink" href="#viewing-an-alignment-model" title="Permalink to this headline">¶</a></h2>
-<p>An alignment model can be viewed by decoding it using the -d option and by passing it the class file for both source (<tt class="docutils literal"><span class="pre">-S</span></tt>) and target language (<tt class="docutils literal"><span class="pre">-T</span></tt>):</p>
+<p>An alignment model can be viewed by decoding it using the <tt class="docutils literal"><span class="pre">-d</span></tt> option and by passing it the class file for both source (<tt class="docutils literal"><span class="pre">-S</span></tt>) and target language (<tt class="docutils literal"><span class="pre">-T</span></tt>):</p>
 <div class="highlight-python"><pre>$ aligner -d alignmodel.colibri -S fr.cls -T en.cls</pre>
 </div>
-<p>The output format is simple tab-delimited format.</p>
+<p>The output format is a simple tab-delimited format.</p>
+<p>An alignment model can also be outputted in a format suitable for the MT decoder <em>moses</em> [Koehn et al. 2007]:</p>
+<div class="highlight-python"><pre>$ aligner -d alignmodel.colibri -S fr.cls -T en.cls --moses</pre>
+</div>
 </div>
 </div>
 <div class="section" id="mt-decoder">
 <h1>MT Decoder<a class="headerlink" href="#mt-decoder" title="Permalink to this headline">¶</a></h1>
-<p>(yet to be written)</p>
+<div class="section" id="id5">
+<h2>Introduction<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<p>A good translation should faithfully convey the meaning of the original, and it should be rendered in fluent natural language. In statistical machine translation, these two aspects are represented by two distinct statistical models. The translation model is used to compute the likelihood of a sentence being faithful to the original meaning, and the target language model imposes a maximally fluent natural word order on the resulting translation in the target language by scoring typical, predictable word order as more probable than uncommon or malformed combinations. The central processing component of an SMT system is the decoder, which computes probabilities according to at least these two models for a huge number of possible translation hypotheses. This constitutes a vast search problem in which countless hypotheses are tested and compete against one another for the best probability score according to the joint statistical models. The translation chosen is the hypothesis found to attain the best score. Due to the size and complexity of the search problem, and the need to keep time and memory requirements manageable, considerable pruning of the search takes place. It is quite possible that the selected translation is found in a local maximum.</p>
+<p>Colibri features a custom-tailored MT decoder modelled after the stack-based decoding principle used in Moses [Koehn et al. 2003]. This algorithm employs a beam search as a means to constrain the search space. The alignment model as discussed in the previous chapter provide the translation model. The mandatory language model can be computed with third-party software such as <a class="reference external" href="http://www.speech.sri.com/projects/srilm/">SRILM</a> [Stolcke 2002] .</p>
+<p>The stack decoder maintains <em>n</em> separate stacks, the number of stacks equals the number of words in the <em>source</em> sentence. Each stack contains translation hypotheses that cover an arbitrary <em>n</em> words of the source sentence. Only a fixed number of the best translation hypotheses are retained, this is the <em>stack size</em>. In the decoding process proceeds iteratively, starting with an <em>empty hypothesis</em> for which no source words have been covered and thus no target words have been generated. This initial hypotheses is <em>expanded</em> by choosing each input pattern matching the source sentence, at any position, and translating it according to the translation model. The translations are added left-to-right, but the selected source are from any location. This makes reorderings possible. This expansions in turn results in a larger number of new translation hypotheses which are added to the appropriate stacks. After the initial hypothesis, the first stack is processed top to bottom, expanding in turn each of the hypotheses in it, resulting in more hypotheses to be added to the higher stacks. When a stack is processed, the algorithm moves on to the next. The final stack will be the stack in which all source words are covered and thus in which the hypotheses represent translations of the whole sentence. The best one is selected as the translation.</p>
+<p>The pseudo-code for the algorithm is as follows (from <a class="reference external" href="http://www.statmt.org/moses/?n=Moses.Background">Moses Background</a>) [Koehn et al. 2007]:</p>
+<div class="highlight-python"><pre>initialize hypothesisStack[0 .. nf];
+create initial hypothesis hyp_init;
+add to stack hypothesisStack[0];
+for i=0 to nf-1:
+  for each hyp in hypothesisStack[i]:
+        for each new_hyp that can be derived from hyp:
+          nf[new_hyp] = number of foreign words covered by new_hyp;
+          add new_hyp to hypothesisStack[nf[new_hyp]];
+          prune hypothesisStack[nf[new_hyp]];
+find best hypothesis best_hyp in hypothesisStack[nf];
+output best path that leads to best_hyp;</pre>
+</div>
+<p>The website <a class="reference external" href="http://www.statmt.org/moses/?n=Moses.Background">Moses Background</a> provides more detail about this algorithm. The algorithm implemented in colibri is identical, although hypothesis recombination is not implemented yet in the Colibi decoder.</p>
+<p>The colibri decoder has been enhanced to be able to handle skipgrams. Source-side skipgrams need no special handling due to the stack-based nature that already supports it; translations with gaps however do need special attention. The colibri decoder solves this by introducing a second set of another <em>n</em> stacks for hypotheses containing gaps. The expansion operation for hypotheses in these stacks attempts explicitly seeks to fill one of gaps first, the expanded hypotheses will again form part of the normal <em>gapless</em> stacks once all gaps are filled.</p>
+<p>Unlike Moses, the colibri decoder also integrates support for classifiers. This will be introduced in the next chapter.</p>
+</div>
+</div>
+<div class="section" id="machine-learning">
+<h1>Machine Learning<a class="headerlink" href="#machine-learning" title="Permalink to this headline">¶</a></h1>
 </div>
 <div class="section" id="mt-experiment-framework">
 <h1>MT Experiment Framework<a class="headerlink" href="#mt-experiment-framework" title="Permalink to this headline">¶</a></h1>
 <p>(yet to be written)</p>
+</div>
+<div class="section" id="references">
+<h1>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h1>
 </div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
@@ -591,8 +621,13 @@ for skipgram_s in submatrix: //conflict resolution
 <li><a class="reference internal" href="#viewing-an-alignment-model">Viewing an alignment model</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#mt-decoder">MT Decoder</a></li>
+<li><a class="reference internal" href="#mt-decoder">MT Decoder</a><ul>
+<li><a class="reference internal" href="#id5">Introduction</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#machine-learning">Machine Learning</a></li>
 <li><a class="reference internal" href="#mt-experiment-framework">MT Experiment Framework</a></li>
+<li><a class="reference internal" href="#references">References</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 
