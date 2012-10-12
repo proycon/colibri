@@ -643,7 +643,7 @@ The decoder takes the following extra parameters:
 
 In addition, the following parameters control output and verbosity:
 
-* ``-v n`` - Sets the verbosity value. *n* is a number from 0 to 5. High level will very explicitly show what the decoder is doing, be aware that this generates a huge amount of output to ``stderr``.
+* ``-v n`` - Sets the verbosity value. *n* is a number from 0 to 5. Setting a high level will very explicitly show what the decoder is doing, be aware that this generates a huge amount of output to ``stderr``.
 * ``--stats`` - Compute and output decoding statistics for each solution.
 * ``--globalstats`` - Compute and output decoding statistics for all hypothesis accepted on a stack.
 
