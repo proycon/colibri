@@ -18,7 +18,7 @@ Contents
 Introduction
 ===================
 
-Colibri is a collection of software developed for the Ph.D. research project **Constructions as Linguistic Bridges**. This research examines the identification and extraction of aligned constructions or patterns across natural languages, and the usage of such constructions in Machine Translation. The aligned constructions are not identified on the basis of an extensive and explicitly defined grammar or expert database of linguistic knowledge, but rather are *implicitly* distilled from large amounts of example data. Our notion of constructions is broad and transcends the idea of words or variable-length phrases. We for instance seek to incorporate also constructions with one or more gaps. We investigate what methods lead to constructions that prove beneficial in a Machine Translation setting.
+Colibri is a collection of software developed for the Ph.D. research project **Constructions as Linguistic Bridges**. This research examines the identification and extraction of aligned constructions or patterns across natural languages, and the usage of such constructions in Machine Translation. The aligned constructions are not identified on the basis of an extensive and explicitly defined grammar or expert database of linguistic knowledge, but rather are *implicitly* distilled from large amounts of example data. Our notion of constructions is broad and transcends the idea of words or variable-length phrases. We also consider constructions with one or more gaps, as well as context-sensitive machine learning techniques. Our aim is to find new methods that prove beneficial in a Machine Translation setting.
 
 The software consists out of various tools, each of which will be discussed in this documentation. Because of the computational complexity and need to have the software deal as efficiently as possible with time and space constraints, almost everything is written in C++. The exception is the experiment framework surrounding the actual core software; this is written in Python. Depending on the size of your input corpus, certain tasks may take considerable memory. We recommend a Linux machine with at least 8GB RAM. 
 
@@ -44,6 +44,12 @@ In addition to the compiler (``gcc``), colibri uses ``autoconf`` and ``automake`
 You can optionally pass a prefix if you want to install colibri in a different location::
 
   $ ./configure --prefix=/usr/local/
+  
+If you want to make use of the MT experiment framework included as a part of Colibri, you also need the Python Natural Language Processing library (pynlpl) installed. This can be done as follows::
+
+	$ sudo easy_install pynlpl
+ 
+If ``easy_install`` is not available, then first install the ``python-setuptools`` package. 
  
 Keeping colibri up to date
 -------------------------
@@ -57,7 +63,7 @@ And then recompile as per the above instructions.
 General usage instructions
 --------------------
 
-Colibri consist of various programs, each of which will output an extensive overview of available parameters if the parameter ``-h`` is passed. Each program is designed for a specialised purpose, takes specific files for input and in turns outputs specific files. It is often needed to call multiple programs in succession to obtain the final analysis or model you desire. 
+Colibri consist of various programs, each of which will output an extensive overview of available parameters if the parameter ``-h`` is passed. Each program is designed for a specialised purpose, with specific input and output formats. It is often needed to call multiple programs in succession to obtain the final analysis or model you desire. 
 
 Corpus Class Encoding
 ================================
@@ -82,16 +88,16 @@ This results in two files:
  * ``yourcorpus.clsenc`` - This is the corpus is encoded binary form. It is a lossless compression that is roughly half the size of the original  
 
 
-If your corpus is not tokenised yet, you can use ucto (not part of colibri, see http://ilk.uvt.nl/ucto), this will also do sentence detection and output one line per sentence::
+If your corpus is not tokenised yet, you can consider using the tokeniser `ucto <http://ilk.uvt.nl/ucto>`_ (not part of colibri), this will also do sentence detection and output one line per sentence::
 
 	$ ucto -L en -n untokenisedcorpus.txt > tokenisedcorpus.txt
 	
-The above sample is for English, several other languages are also supported.
+The above sample is for English (``-L en``), several other languages are also supported.
 
 Class-decoding your corpus
 ---------------------------
 
-Given these an encoded corpus and a class file, the original corpus can always be reconstructed. This we call *class decoding* and is done using the ``classdecode`` program::
+Given an encoded corpus and a class file, the original corpus can always be reconstructed. This we call *class decoding* and is done using the ``classdecode`` program::
    
  $ classdecode -f yourcorpus.clsenc -c yourcorpus.cls
  
@@ -101,7 +107,7 @@ Output will be to ``stdout``.
 Class-encoding with existing classes
 ----------------------------------------
 
-Sometimes you want to encode new data using the same classes already used for another data set.When comparing corpora, it is vital that the same classes are used, i.e. that identical words are assigned identical numerical classes. This occurs also when you are working with a training set and a separate test set, or are otherwise interested in a comparative analysis between two comparable datasets. The initial class file is built on the training set, and it can be reused to encode the test set:
+Sometimes you want to encode new data using the same classes already used for another data set. For instance when comparing corpora, it is vital that the same classes are used, i.e. that identical words are assigned identical numerical classes. This also applies when you are working with a training set and a separate test set, or are otherwise interested in a comparative analysis between two comparable datasets. The initial class file is built on the training set, and it can be reused to encode the test set:
 
 You can encode a dataset, here named ``testset`` using an existing class file, ``trainset.cls``, as follows::
 
@@ -116,7 +122,7 @@ Pattern Finder
 Introduction
 -----------------------
 
-The ``patternfinder`` program is used to extract recurring patterns from a monolingual corpus. This results in a pattern model. The extracted patterns are n-grams or skip-grams, where a skip-gram is like an n-gram with one or more gaps of a predefined size. The representation consists of a byte-array where a null byte separates words, each represented by a class number. Gaps are expressed by two consecutive null bytes, the configuration of the gap sizes is stored in a separate byte-array.
+The ``patternfinder`` program is used to extract recurring patterns from a monolingual corpus. This results in a pattern model. The extracted patterns are n-grams or skip-grams, where a skip-gram an n-gram with one or more gaps of a predefined size, thus containing unspecified or wildcard tokens. The internal data representation consists of a byte-array where a null byte separates words, each represented by a class number. Gaps are expressed by two consecutive null bytes, the configuration of the gap sizes is stored in a separate byte-array.
 
 The pattern finding algorithm is iterative in nature and it guaranteed to find all n-grams above a specified occurrence threshold and given a maximum size for n. It does so by iterating over the corpus n times, iterating over all possible values for n in ascending order. At each iteration, a sliding window extracts all n-grams in the corpus for the size is question. An n-gram is counted in a hashmap data structure only if both n-1-grams it by definition contains are found during the previous iteration with an occurrence above the set threshold. The exception are unigrams, which are all by definition counted if they reach the threshold, as they are already atomic in nature. At the end of each iteration, n-grams not making it to the occurrence threshold are pruned. This simple iterative technique reduces the memory footprint compared to the more naive approach of immediately storing all in a hashmap, as it prevents the storing of lots of patterns not making the threshold by discarding them at an earlier stage. 
 
@@ -127,7 +133,7 @@ The pattern finder can create either indexed or unindexed models. For indexed mo
 Creating a pattern model
 ---------------------------
 
-First make sure to have class encoded your corpus. Given this encoded corpus, ``patternfinder`` can be invoked as follows to produce an indexed pattern model. The occurrence threshold is specified with parameter ``-t``, patterns occuring less will not be counted. The default value is two.  The maximum value for n, i.e. the maximum n-gram/skipgram size, is set using the parameter ``-l``, it defaults to 9:: 
+First make sure to have class encoded your corpus. Given this encoded corpus, ``patternfinder`` can be invoked to produce an indexed pattern model. The occurrence threshold is specified with parameter ``-t``, patterns occuring less will not be counted. The default value is two.  The maximum value for n, i.e. the maximum n-gram/skipgram size, is set using the parameter ``-l``, it defaults to 9:: 
 
 	$ patternfinder -f yourcorpus.clsenc -t 10 
 	
@@ -135,7 +141,7 @@ This will result in a pattern model ``yourcorpus.indexedpatternmodel.colibri``. 
 
 	$ patternfinder -d yourcorpus.indexedpatternmodel.colibri -c yourcorpus.cls
 	
-Output will be to stdout in a tab delimited format, facilitating easy parsing. An excerpt follows::
+Output will be to ``stdout`` in a tab delimited format, facilitating easy parsing. An excerpt follows::
 
 	#TYPES=89126;TOTALTOKENS=681047
 	#N      CLASS   OCC.COUNT       TOKENS  COVERAGE        FREQ-ALL        FREQ-G  FREQ-N  SKIPTYPES       ENTROPY REFERENCES
@@ -169,7 +175,7 @@ Here is an example of generating an indexed pattern model including skipgrams::
 
 	$ patternfinder -f yourcorpus.clsenc -t 10 -s -S 3 -B -E
 
-If you want to generated unindexed models, simply add the flag ``-u``. Do note that for unindexed models the parameter ``-S`` is set unchangeably to two and and ``-T`` is set fixed to the same value as ``-t``. When decoding an unindexed model, also add the ``-u`` flag, as shown in the next example.  Note that indexed models can be always read (and decoded) in an unindexed way (with the ``-u`` flag), but unindexed models can not be read in an indexed way, as they simply lack indices::
+If you want to generate unindexed models, simply add the flag ``-u``. Do note that for unindexed models the parameter ``-S`` is set unchangeably to two and and ``-T`` is set fixed to the same value as ``-t``. When decoding an unindexed model, you explicitly need to add the ``-u`` flag, as shown in the next example.  Note that indexed models can also be read (and decoded) in an unindexed way (with the ``-u`` flag); but unindexed models can not be read in an indexed way, as they simply lack indices::
 
 	$ patternfinder -d yourcorpus.unindexedpatternmodel.colibri -c yourcorpus.cls -u 
 	$ patternfinder -d yourcorpus.indexedpatternmodel.colibri -c yourcorpus.cls -u 
@@ -177,7 +183,7 @@ If you want to generated unindexed models, simply add the flag ``-u``. Do note t
 Training and testing coverage
 --------------------------------
 
-An important characteric of pattern models lies in the fact that pattern models can be compared. More specifically, you can train a pattern model on a corpus and test it on another corpus, which yields another pattern model containing only those patterns that occur in both training and test data. The difference in count, frequency and coverage can then be easily be compared.
+An important quality of pattern models lies in the fact that pattern models can be compared. More specifically, you can train a pattern model on a corpus and test it on another corpus, which yields another pattern model containing only those patterns that occur in both training and test data. The difference in count, frequency and coverage can then be easily be compared.
 
 Make sure to use the same class file for all datasets you are comparing. Instructions for this were given in :ref:`classencodetraintest`::
   
@@ -217,16 +223,16 @@ This results in a model ``testset.colibri.indexedpatternmodel``. This model can 
 	 8-skipgram coverage:          81042    0.0130  20363     0.2513   1639985    0.0690
 
 
-The coverage report shows the number of tokens covered by n-grams or skipgrams, split down in different categories for each n. The *coverage* column shows this value as a fraction of the total number of tokens in the corpus. It shows how much of the test set is covered by the training set. The **types** column shows how many unique patterns exist in the category. The *count* columns shows their absolute occurrence count and the *frequency* column shows their over-all frequency. The fact that the occurrence count can be higher than the absolute number of tokens covered is due to the fact that n-grams and skipgrams inherently show considerable overlap when grouped together.
+The coverage report shows the number of tokens covered by n-grams or skipgrams, split down in different categories for each *n*. The *coverage* column expresses this value as a fraction of the total number of tokens in the corpus. It shows how much of the test set is covered by the training set. The *types* column expresses how many unique patterns exist in the category. The *count* columns expresses the absolute occurrence count and the *frequency* column expresses the over-all frequency. The fact that the occurrence count can be higher than the absolute number of tokens covered is due to the fact that n-grams and skipgrams inherently show considerable overlap when grouped together. 
 
 
-A coverage report can be generated for any **indexed** pattern model; including models not generated on a separate test set.
+A coverage report can be generated for any *indexed* pattern model; including models not generated on a separate test set.
 
 
 Query mode
 --------------
 
-The pattern finder has query mode which allows you to quickly extract patterns from test sentences or fragments thereof. The query mode is invoked by loading a pattern model (``-d``), a class file (``-c``) and the ``-Q`` flag. The query mode can be run interactively as it takes input from ``stdin``, one **tokenised** sentence per line. The following example illustrates this, the sentence "This is a test ." was typed as input::
+The pattern finder has query mode which allows you to quickly extract patterns from test sentences or fragments thereof. The query mode is invoked by loading a pattern model (``-d``), a class file (``-c``) and the ``-Q`` flag. The query mode can be run interactively as it takes input from ``stdin``, one *tokenised* sentence per line. The following example illustrates this, the sentence *"This is a test ."* was typed as input::
 
 	$ patternfinder -d europarl25k-en.indexedpatternmodel.colibri -c europarl25k-en.cls -Q                                                        
 	Loading model
@@ -245,7 +251,7 @@ The pattern finder has query mode which allows you to quickly extract patterns f
 	1:3	test	30	4.404982328679225e-05
 	1:4	.	23775	0.03490948495478285
 
-The output starts with an index in the format ``sentence:token``, the pattern found, and the two values are the absolute occurrence count and the coverage ratio.
+The output starts with an index in the format ``sentence:token``, the pattern found, and the next two values are the absolute occurrence count and the coverage ratio.
 
 Graph Models
 ===================

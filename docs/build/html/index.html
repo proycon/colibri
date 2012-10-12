@@ -52,7 +52,7 @@
 </div>
 <div class="section" id="introduction">
 <h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
-<p>Colibri is a collection of software developed for the Ph.D. research project <strong>Constructions as Linguistic Bridges</strong>. This research examines the identification and extraction of aligned constructions or patterns across natural languages, and the usage of such constructions in Machine Translation. The aligned constructions are not identified on the basis of an extensive and explicitly defined grammar or expert database of linguistic knowledge, but rather are <em>implicitly</em> distilled from large amounts of example data. Our notion of constructions is broad and transcends the idea of words or variable-length phrases. We for instance seek to incorporate also constructions with one or more gaps. We investigate what methods lead to constructions that prove beneficial in a Machine Translation setting.</p>
+<p>Colibri is a collection of software developed for the Ph.D. research project <strong>Constructions as Linguistic Bridges</strong>. This research examines the identification and extraction of aligned constructions or patterns across natural languages, and the usage of such constructions in Machine Translation. The aligned constructions are not identified on the basis of an extensive and explicitly defined grammar or expert database of linguistic knowledge, but rather are <em>implicitly</em> distilled from large amounts of example data. Our notion of constructions is broad and transcends the idea of words or variable-length phrases. We also consider constructions with one or more gaps, as well as context-sensitive machine learning techniques. Our aim is to find new methods that prove beneficial in a Machine Translation setting.</p>
 <p>The software consists out of various tools, each of which will be discussed in this documentation. Because of the computational complexity and need to have the software deal as efficiently as possible with time and space constraints, almost everything is written in C++. The exception is the experiment framework surrounding the actual core software; this is written in Python. Depending on the size of your input corpus, certain tasks may take considerable memory. We recommend a Linux machine with at least 8GB RAM.</p>
 <p>This documentation will illustrate how to work with the various tools of colibri, as well as elaborate on the implementation of certain key aspects of the software.</p>
 </div>
@@ -72,6 +72,10 @@ $ make install</pre>
 <p>You can optionally pass a prefix if you want to install colibri in a different location:</p>
 <div class="highlight-python"><pre>$ ./configure --prefix=/usr/local/</pre>
 </div>
+<p>If you want to make use of the MT experiment framework included as a part of Colibri, you also need the Python Natural Language Processing library (pynlpl) installed. This can be done as follows:</p>
+<div class="highlight-python"><pre>$ sudo easy_install pynlpl</pre>
+</div>
+<p>If <tt class="docutils literal"><span class="pre">easy_install</span></tt> is not available, then first install the <tt class="docutils literal"><span class="pre">python-setuptools</span></tt> package.</p>
 <div class="section" id="keeping-colibri-up-to-date">
 <h2>Keeping colibri up to date<a class="headerlink" href="#keeping-colibri-up-to-date" title="Permalink to this headline">¶</a></h2>
 <p>Colibri is always under heavy development. Update your colibri copy by issuing a git pull:</p>
@@ -81,7 +85,7 @@ $ make install</pre>
 </div>
 <div class="section" id="general-usage-instructions">
 <h2>General usage instructions<a class="headerlink" href="#general-usage-instructions" title="Permalink to this headline">¶</a></h2>
-<p>Colibri consist of various programs, each of which will output an extensive overview of available parameters if the parameter <tt class="docutils literal"><span class="pre">-h</span></tt> is passed. Each program is designed for a specialised purpose, takes specific files for input and in turns outputs specific files. It is often needed to call multiple programs in succession to obtain the final analysis or model you desire.</p>
+<p>Colibri consist of various programs, each of which will output an extensive overview of available parameters if the parameter <tt class="docutils literal"><span class="pre">-h</span></tt> is passed. Each program is designed for a specialised purpose, with specific input and output formats. It is often needed to call multiple programs in succession to obtain the final analysis or model you desire.</p>
 </div>
 </div>
 <div class="section" id="corpus-class-encoding">
@@ -103,21 +107,21 @@ $ make install</pre>
 <li><tt class="docutils literal"><span class="pre">yourcorpus.clsenc</span></tt> - This is the corpus is encoded binary form. It is a lossless compression that is roughly half the size of the original</li>
 </ul>
 </div></blockquote>
-<p>If your corpus is not tokenised yet, you can use ucto (not part of colibri, see <a class="reference external" href="http://ilk.uvt.nl/ucto">http://ilk.uvt.nl/ucto</a>), this will also do sentence detection and output one line per sentence:</p>
+<p>If your corpus is not tokenised yet, you can consider using the tokeniser <a class="reference external" href="http://ilk.uvt.nl/ucto">ucto</a> (not part of colibri), this will also do sentence detection and output one line per sentence:</p>
 <div class="highlight-python"><pre>$ ucto -L en -n untokenisedcorpus.txt &gt; tokenisedcorpus.txt</pre>
 </div>
-<p>The above sample is for English, several other languages are also supported.</p>
+<p>The above sample is for English (<tt class="docutils literal"><span class="pre">-L</span> <span class="pre">en</span></tt>), several other languages are also supported.</p>
 </div>
 <div class="section" id="class-decoding-your-corpus">
 <h2>Class-decoding your corpus<a class="headerlink" href="#class-decoding-your-corpus" title="Permalink to this headline">¶</a></h2>
-<p>Given these an encoded corpus and a class file, the original corpus can always be reconstructed. This we call <em>class decoding</em> and is done using the <tt class="docutils literal"><span class="pre">classdecode</span></tt> program:</p>
+<p>Given an encoded corpus and a class file, the original corpus can always be reconstructed. This we call <em>class decoding</em> and is done using the <tt class="docutils literal"><span class="pre">classdecode</span></tt> program:</p>
 <div class="highlight-python"><pre>$ classdecode -f yourcorpus.clsenc -c yourcorpus.cls</pre>
 </div>
 <p>Output will be to <tt class="docutils literal"><span class="pre">stdout</span></tt>.</p>
 </div>
 <div class="section" id="class-encoding-with-existing-classes">
 <h2>Class-encoding with existing classes<a class="headerlink" href="#class-encoding-with-existing-classes" title="Permalink to this headline">¶</a></h2>
-<p>Sometimes you want to encode new data using the same classes already used for another data set.When comparing corpora, it is vital that the same classes are used, i.e. that identical words are assigned identical numerical classes. This occurs also when you are working with a training set and a separate test set, or are otherwise interested in a comparative analysis between two comparable datasets. The initial class file is built on the training set, and it can be reused to encode the test set:</p>
+<p>Sometimes you want to encode new data using the same classes already used for another data set. For instance when comparing corpora, it is vital that the same classes are used, i.e. that identical words are assigned identical numerical classes. This also applies when you are working with a training set and a separate test set, or are otherwise interested in a comparative analysis between two comparable datasets. The initial class file is built on the training set, and it can be reused to encode the test set:</p>
 <p>You can encode a dataset, here named <tt class="docutils literal"><span class="pre">testset</span></tt> using an existing class file, <tt class="docutils literal"><span class="pre">trainset.cls</span></tt>, as follows:</p>
 <div class="highlight-python"><pre>$ classencode -f testset -c trainset.cls</pre>
 </div>
@@ -128,20 +132,20 @@ $ make install</pre>
 <h1>Pattern Finder<a class="headerlink" href="#pattern-finder" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="id3">
 <h2>Introduction<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
-<p>The <tt class="docutils literal"><span class="pre">patternfinder</span></tt> program is used to extract recurring patterns from a monolingual corpus. This results in a pattern model. The extracted patterns are n-grams or skip-grams, where a skip-gram is like an n-gram with one or more gaps of a predefined size. The representation consists of a byte-array where a null byte separates words, each represented by a class number. Gaps are expressed by two consecutive null bytes, the configuration of the gap sizes is stored in a separate byte-array.</p>
+<p>The <tt class="docutils literal"><span class="pre">patternfinder</span></tt> program is used to extract recurring patterns from a monolingual corpus. This results in a pattern model. The extracted patterns are n-grams or skip-grams, where a skip-gram an n-gram with one or more gaps of a predefined size, thus containing unspecified or wildcard tokens. The internal data representation consists of a byte-array where a null byte separates words, each represented by a class number. Gaps are expressed by two consecutive null bytes, the configuration of the gap sizes is stored in a separate byte-array.</p>
 <p>The pattern finding algorithm is iterative in nature and it guaranteed to find all n-grams above a specified occurrence threshold and given a maximum size for n. It does so by iterating over the corpus n times, iterating over all possible values for n in ascending order. At each iteration, a sliding window extracts all n-grams in the corpus for the size is question. An n-gram is counted in a hashmap data structure only if both n-1-grams it by definition contains are found during the previous iteration with an occurrence above the set threshold. The exception are unigrams, which are all by definition counted if they reach the threshold, as they are already atomic in nature. At the end of each iteration, n-grams not making it to the occurrence threshold are pruned. This simple iterative technique reduces the memory footprint compared to the more naive approach of immediately storing all in a hashmap, as it prevents the storing of lots of patterns not making the threshold by discarding them at an earlier stage.</p>
 <p>At the beginning of each iteration of n, all possible ways in which any n-gram of size n can contain gaps is computed. When an n-gram is found, various skip-grams are tried in accordance with these gap configurations. This is accomplished by &#8216;punching holes&#8217; in the n-gram, resulting in a skip-gram. If all consecutive parts of this skip-gram were counted during previous iterations and thus made the threshold, then the skip-gram as a whole is counted, otherwise it is discarded. After each iteration, pruning again takes places to prune skip-grams that are not frequent enough.</p>
 <p>The pattern finder can create either indexed or unindexed models. For indexed models, the precise location of where an n-gram or skipgram instance was found in the corpus is recorded. This comes at the cost of much higher memory usage. Other colibri tools such as the <tt class="docutils literal"><span class="pre">grapher</span></tt> and <tt class="docutils literal"><span class="pre">aligner</span></tt> demand an indexed pattern model as input. For skipgrams in indexed models, the various fillings for the gaps are recorded explicitly. If you are only interested in simple n-gram or simple skip-gram counts, then an unindexed model may suffice.</p>
 </div>
 <div class="section" id="creating-a-pattern-model">
 <h2>Creating a pattern model<a class="headerlink" href="#creating-a-pattern-model" title="Permalink to this headline">¶</a></h2>
-<p>First make sure to have class encoded your corpus. Given this encoded corpus, <tt class="docutils literal"><span class="pre">patternfinder</span></tt> can be invoked as follows to produce an indexed pattern model. The occurrence threshold is specified with parameter <tt class="docutils literal"><span class="pre">-t</span></tt>, patterns occuring less will not be counted. The default value is two.  The maximum value for n, i.e. the maximum n-gram/skipgram size, is set using the parameter <tt class="docutils literal"><span class="pre">-l</span></tt>, it defaults to 9:</p>
+<p>First make sure to have class encoded your corpus. Given this encoded corpus, <tt class="docutils literal"><span class="pre">patternfinder</span></tt> can be invoked to produce an indexed pattern model. The occurrence threshold is specified with parameter <tt class="docutils literal"><span class="pre">-t</span></tt>, patterns occuring less will not be counted. The default value is two.  The maximum value for n, i.e. the maximum n-gram/skipgram size, is set using the parameter <tt class="docutils literal"><span class="pre">-l</span></tt>, it defaults to 9:</p>
 <div class="highlight-python"><pre>$ patternfinder -f yourcorpus.clsenc -t 10</pre>
 </div>
 <p>This will result in a pattern model <tt class="docutils literal"><span class="pre">yourcorpus.indexedpatternmodel.colibri</span></tt>. This model is stored in a binary format. To turn it into a human readable presentation it needs to be decoded. The <tt class="docutils literal"><span class="pre">patternfinder</span></tt> program can do this by loading the model using the <tt class="docutils literal"><span class="pre">-d</span></tt> flag, provided you also pass the class file needed for class decoding using <tt class="docutils literal"><span class="pre">-c</span></tt> parameter:</p>
 <div class="highlight-python"><pre>$ patternfinder -d yourcorpus.indexedpatternmodel.colibri -c yourcorpus.cls</pre>
 </div>
-<p>Output will be to stdout in a tab delimited format, facilitating easy parsing. An excerpt follows:</p>
+<p>Output will be to <tt class="docutils literal"><span class="pre">stdout</span></tt> in a tab delimited format, facilitating easy parsing. An excerpt follows:</p>
 <div class="highlight-python"><pre>#TYPES=89126;TOTALTOKENS=681047
 #N      CLASS   OCC.COUNT       TOKENS  COVERAGE        FREQ-ALL        FREQ-G  FREQ-N  SKIPTYPES       ENTROPY REFERENCES
 3       the criteria of 3       9       1.321494698603767e-05   2.054269696851421e-06   2.054269696851421e-06   1.43282213423633e-05    0       -       1028:15 4342:43 14772:15
@@ -172,14 +176,14 @@ $ make install</pre>
 <p>Here is an example of generating an indexed pattern model including skipgrams:</p>
 <div class="highlight-python"><pre>$ patternfinder -f yourcorpus.clsenc -t 10 -s -S 3 -B -E</pre>
 </div>
-<p>If you want to generated unindexed models, simply add the flag <tt class="docutils literal"><span class="pre">-u</span></tt>. Do note that for unindexed models the parameter <tt class="docutils literal"><span class="pre">-S</span></tt> is set unchangeably to two and and <tt class="docutils literal"><span class="pre">-T</span></tt> is set fixed to the same value as <tt class="docutils literal"><span class="pre">-t</span></tt>. When decoding an unindexed model, also add the <tt class="docutils literal"><span class="pre">-u</span></tt> flag, as shown in the next example.  Note that indexed models can be always read (and decoded) in an unindexed way (with the <tt class="docutils literal"><span class="pre">-u</span></tt> flag), but unindexed models can not be read in an indexed way, as they simply lack indices:</p>
+<p>If you want to generate unindexed models, simply add the flag <tt class="docutils literal"><span class="pre">-u</span></tt>. Do note that for unindexed models the parameter <tt class="docutils literal"><span class="pre">-S</span></tt> is set unchangeably to two and and <tt class="docutils literal"><span class="pre">-T</span></tt> is set fixed to the same value as <tt class="docutils literal"><span class="pre">-t</span></tt>. When decoding an unindexed model, you explicitly need to add the <tt class="docutils literal"><span class="pre">-u</span></tt> flag, as shown in the next example.  Note that indexed models can also be read (and decoded) in an unindexed way (with the <tt class="docutils literal"><span class="pre">-u</span></tt> flag); but unindexed models can not be read in an indexed way, as they simply lack indices:</p>
 <div class="highlight-python"><pre>$ patternfinder -d yourcorpus.unindexedpatternmodel.colibri -c yourcorpus.cls -u
 $ patternfinder -d yourcorpus.indexedpatternmodel.colibri -c yourcorpus.cls -u</pre>
 </div>
 </div>
 <div class="section" id="training-and-testing-coverage">
 <h2>Training and testing coverage<a class="headerlink" href="#training-and-testing-coverage" title="Permalink to this headline">¶</a></h2>
-<p>An important characteric of pattern models lies in the fact that pattern models can be compared. More specifically, you can train a pattern model on a corpus and test it on another corpus, which yields another pattern model containing only those patterns that occur in both training and test data. The difference in count, frequency and coverage can then be easily be compared.</p>
+<p>An important quality of pattern models lies in the fact that pattern models can be compared. More specifically, you can train a pattern model on a corpus and test it on another corpus, which yields another pattern model containing only those patterns that occur in both training and test data. The difference in count, frequency and coverage can then be easily be compared.</p>
 <p>Make sure to use the same class file for all datasets you are comparing. Instructions for this were given in <em class="xref std std-ref">classencodetraintest</em>:</p>
 <div class="highlight-python"><pre>$ patternfinder -f trainset.clsenc -t 10 -s -B -E
 $ patternfinder -d trainset.indexedpatternmodel.colibri -f testset.clsenc -t 10 -s -B -E</pre>
@@ -215,12 +219,12 @@ $ patternfinder -d trainset.indexedpatternmodel.colibri -f testset.clsenc -t 10 
       7-skipgram coverage:         137551    0.0220  18281     0.1329   1525863    0.0642
       8-skipgram coverage:          81042    0.0130  20363     0.2513   1639985    0.0690</pre>
 </div>
-<p>The coverage report shows the number of tokens covered by n-grams or skipgrams, split down in different categories for each n. The <em>coverage</em> column shows this value as a fraction of the total number of tokens in the corpus. It shows how much of the test set is covered by the training set. The <strong>types</strong> column shows how many unique patterns exist in the category. The <em>count</em> columns shows their absolute occurrence count and the <em>frequency</em> column shows their over-all frequency. The fact that the occurrence count can be higher than the absolute number of tokens covered is due to the fact that n-grams and skipgrams inherently show considerable overlap when grouped together.</p>
-<p>A coverage report can be generated for any <strong>indexed</strong> pattern model; including models not generated on a separate test set.</p>
+<p>The coverage report shows the number of tokens covered by n-grams or skipgrams, split down in different categories for each <em>n</em>. The <em>coverage</em> column expresses this value as a fraction of the total number of tokens in the corpus. It shows how much of the test set is covered by the training set. The <em>types</em> column expresses how many unique patterns exist in the category. The <em>count</em> columns expresses the absolute occurrence count and the <em>frequency</em> column expresses the over-all frequency. The fact that the occurrence count can be higher than the absolute number of tokens covered is due to the fact that n-grams and skipgrams inherently show considerable overlap when grouped together.</p>
+<p>A coverage report can be generated for any <em>indexed</em> pattern model; including models not generated on a separate test set.</p>
 </div>
 <div class="section" id="query-mode">
 <h2>Query mode<a class="headerlink" href="#query-mode" title="Permalink to this headline">¶</a></h2>
-<p>The pattern finder has query mode which allows you to quickly extract patterns from test sentences or fragments thereof. The query mode is invoked by loading a pattern model (<tt class="docutils literal"><span class="pre">-d</span></tt>), a class file (<tt class="docutils literal"><span class="pre">-c</span></tt>) and the <tt class="docutils literal"><span class="pre">-Q</span></tt> flag. The query mode can be run interactively as it takes input from <tt class="docutils literal"><span class="pre">stdin</span></tt>, one <strong>tokenised</strong> sentence per line. The following example illustrates this, the sentence &#8220;This is a test .&#8221; was typed as input:</p>
+<p>The pattern finder has query mode which allows you to quickly extract patterns from test sentences or fragments thereof. The query mode is invoked by loading a pattern model (<tt class="docutils literal"><span class="pre">-d</span></tt>), a class file (<tt class="docutils literal"><span class="pre">-c</span></tt>) and the <tt class="docutils literal"><span class="pre">-Q</span></tt> flag. The query mode can be run interactively as it takes input from <tt class="docutils literal"><span class="pre">stdin</span></tt>, one <em>tokenised</em> sentence per line. The following example illustrates this, the sentence <em>&#8220;This is a test .&#8221;</em> was typed as input:</p>
 <div class="highlight-python"><pre>$ patternfinder -d europarl25k-en.indexedpatternmodel.colibri -c europarl25k-en.cls -Q
 Loading model
 Loading class decoder europarl25k-en.cls
@@ -238,7 +242,7 @@ Starting query mode:
 1:3     test    30      4.404982328679225e-05
 1:4     .       23775   0.03490948495478285</pre>
 </div>
-<p>The output starts with an index in the format <tt class="docutils literal"><span class="pre">sentence:token</span></tt>, the pattern found, and the two values are the absolute occurrence count and the coverage ratio.</p>
+<p>The output starts with an index in the format <tt class="docutils literal"><span class="pre">sentence:token</span></tt>, the pattern found, and the next two values are the absolute occurrence count and the coverage ratio.</p>
 </div>
 </div>
 <div class="section" id="graph-models">
