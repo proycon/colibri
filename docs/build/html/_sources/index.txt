@@ -48,7 +48,7 @@ You can optionally pass a prefix if you want to install colibri in a different l
 Keeping colibri up to date
 -------------------------
 
-Colibri is always under heavy development. Update your colibri copy by issueing a git pull::
+Colibri is always under heavy development. Update your colibri copy by issuing a git pull::
 
  $ git pull
  
@@ -260,13 +260,13 @@ A pattern model contains a wide variety of patterns; a graph model goes a step f
 * **Template relations** - Template relations indicate abstraction and go from n-grams to skipgrams. An example of a template relation is ``to be or not to be`` to ``to be {*1*} not {*1*} be``. The reverse direction is called the instance-relationship, as an specific n-gram is an instance of a more abstract template.
 * **Skip content relations** - Relations between patterns that can be used to fill the gaps of higher patterns are called skip content relations. These can go in two directions; skipgram to skip content and skip content to skipgram. Example: ``to`` is a in a skip-content to skipgram relationship with  ``to be {*1*} not {*1*} be``.
 
-In addition to the relations, a graph model can also compute a so-called *exclusivity count* and *exclusivity ratio* for each pattern. The exclusivity count of a pattern is the number of times the pattern occurs in the data *without* being subsumed by a larger found pattern. This exclusivity ratio is the exclusity count as a fraction of the total occurrence count for the pattern. An exclusivity ratio of one indicates that the pattern is fully exclusive, meaning it is not subsumed by higher-order patterns. This notion of exclusivity may be of use in assessing compositionality of patterns. 
+In addition to the relations, a graph model can also compute a so-called *exclusivity count* and *exclusivity ratio* for each pattern. The exclusivity count of a pattern is the number of times the pattern occurs in the data *without* being subsumed by a larger found pattern. This exclusivity ratio is the exclusivity count as a fraction of the total occurrence count for the pattern. An exclusivity ratio of one indicates that the pattern is fully exclusive, meaning it is not subsumed by higher-order patterns. This notion of exclusivity may be of use in assessing compositionality of patterns. 
 
 
 Computing a graph model
 ------------------------
 
-The ``grapher`` program computes a graph model on the basis of an **indexed** pattern model created with ``patterfinder``. When computing a model, you need to explicitly specify which relations you desire to extract and include in your model. The more relations you include, the more memory will be required. To keep the models as small as possible, it is recommended to include only the relations you need. The following flags are available:
+The ``grapher`` program computes a graph model on the basis of an **indexed** pattern model created with ``patternfinder``. When computing a model, you need to explicitly specify which relations you desire to extract and include in your model. The more relations you include, the more memory will be required. To keep the models as small as possible, it is recommended to include only the relations you need. The following flags are available:
 
 *	``-P`` - Compute/load subsumption relations from children to parents (reverse of -C)
 *	``-C`` - Compute/load subsumption relations from parents to children (reverse of -P)
@@ -383,12 +383,12 @@ An alignment model establishes a translation from patterns in one model to patte
 * **Expectation Maximisation** - Alignments between patterns are computed in a fashion similar to IBM Model 1, using Expectation Maximisation. Computation proceeds over the matrix of all patterns, rather than a matrix of mere words as in IBM Model 1. 
 * **GIZA Word Alignments** - Alignments are established on the basis of word-alignments computed with ``GIZA++``.
 
-The pattern models have to be generated on the basis of a parallel corpus. In order to compute an alignment model you need to start with the right input; a parallel corpus. For colibri a parallel corpus consists of two corpus files, each for one language. The sentence on the n-th line of the both corpus files correspond and should be translations of eachother. Pattern and graph models can then be generated separately on both of these corpora. An indexed pattern model, or derived graph model, is required as input for the ``aligner`` program.
+The pattern models have to be generated on the basis of a parallel corpus. In order to compute an alignment model you need to start with the right input; a parallel corpus. For colibri a parallel corpus consists of two corpus files, each for one language. The sentence on the n-th line of the both corpus files correspond and should be translations of each other. Pattern and graph models can then be generated separately on both of these corpora. An indexed pattern model, or derived graph model, is required as input for the ``aligner`` program.
 
 Co-occurrence
 ---------------------
 
-Alignments computed solely on the basis of sentence co-occurrence are fairly weak. For all patterns that co-occur in at least one sentence, a Jaccard co-occurence score is computed as :math:`\frac{|s \cap t|}{|s \cup t|}`, where *s* and *t* are sets of sentence numbers in which the pattern occurs. 
+Alignments computed solely on the basis of sentence co-occurrence are fairly weak. For all patterns that co-occur in at least one sentence, a Jaccard co-occurrence score is computed as :math:`\frac{|s \cap t|}{|s \cup t|}`, where *s* and *t* are sets of sentence numbers in which the pattern occurs. 
 
 In the following example we translate French to English and assume pattern models have been computed already. Invoke the ``aligner`` program as follows, the ``-J`` flag chooses Jaccard co-occurrence::
 
@@ -504,7 +504,7 @@ This extraction algorithm is implemented as follows, given word alignments for s
                         bestscore = score
                         bestpattern_t = pattern_t                            
                
-In the following example we translate French to English and assume pattern models have been computed already. Invoke the ``aligner`` program as follows, the ``-W`` flag chooses GIZA extraction and takes as parameters the two GIZA ``A3.final`` models (order matters!) separated by a colon. It is also necessary to pass the class the class file for both source (``-S``) and target language (``-T``), as the GIZA models do not use the colibri class encodings and thus need to be inpreted on the fly::
+In the following example we translate French to English and assume pattern models have been computed already. Invoke the ``aligner`` program as follows, the ``-W`` flag chooses GIZA extraction and takes as parameters the two GIZA ``A3.final`` models (order matters!) separated by a colon. It is also necessary to pass the class the class file for both source (``-S``) and target language (``-T``), as the GIZA models do not use the colibri class encodings and thus need to be interpreted on the fly::
 
 	$ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -W fr-en.A3.final:en-fr.A3.final -S fr.cls -T en.cls
 
@@ -581,7 +581,7 @@ A good translation should faithfully convey the meaning of the original, and it 
 
 Colibri features a custom-tailored MT decoder modelled after the stack-based decoding principle used in Moses [Koehn2003]_. This algorithm employs a beam search as a means to constrain the search space. The alignment model as discussed in the previous chapter provide the translation model. The mandatory language model can be computed with third-party software such as `SRILM <http://www.speech.sri.com/projects/srilm/>`_ [Stolcke2002]_ .
 
-The stack decoder maintains *n* separate stacks, the number of stacks equals the number of words in the *source* sentence. Each stack contains translation hypotheses that cover an arbitrary *n* words of the source sentence. Only a fixed number of the best translation hypotheses are retained, this is the *stack size*. In the decoding process proceeds iteratively, starting with an *empty hypothesis* for which no source words have been covered and thus no target words have been generated. This initial hypotheses is *expanded* by choosing each input pattern matching the source sentence, at any position, and translating it according to the translation model. The translations are added left-to-right, but the selected source are from any location. This makes reorderings possible. This expansions in turn results in a larger number of new translation hypotheses which are added to the appropriate stacks. After the initial hypothesis, the first stack is processed top to bottom, expanding in turn each of the hypotheses in it, resulting in more hypotheses to be added to the higher stacks. When a stack is processed, the algorithm moves on to the next. The final stack will be the stack in which all source words are covered and thus in which the hypotheses represent translations of the whole sentence. The best one is selected as the translation. 
+The stack decoder maintains *n* separate stacks, the number of stacks equals the number of words in the *source* sentence. Each stack contains translation hypotheses that cover an arbitrary *n* words of the source sentence. Only a fixed number of the best translation hypotheses are retained, this is the *stack size*. In the decoding process proceeds iteratively, starting with an *empty hypothesis* for which no source words have been covered and thus no target words have been generated. This initial hypotheses is *expanded* by choosing each input pattern matching the source sentence, at any position, and translating it according to the translation model. The translations are added left-to-right, but the selected source are from any location. This makes reordering possible. This expansions in turn results in a larger number of new translation hypotheses which are added to the appropriate stacks. After the initial hypothesis, the first stack is processed top to bottom, expanding in turn each of the hypotheses in it, resulting in more hypotheses to be added to the higher stacks. When a stack is processed, the algorithm moves on to the next. The final stack will be the stack in which all source words are covered and thus in which the hypotheses represent translations of the whole sentence. The best one is selected as the translation. 
 
 The pseudo-code for the algorithm is as follows (from `Moses Background <http://www.statmt.org/moses/?n=Moses.Background>`_) [Koehn2007]_::
 
@@ -643,7 +643,6 @@ Machine Learning
 =================
 
 (yet to be written)
-
  
 MT Experiment Framework
 =======================
