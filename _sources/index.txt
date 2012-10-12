@@ -6,7 +6,7 @@
 
 ****************************
 Colibri Documentation 
-***************************
+****************************
 
 .. toctree::
    :maxdepth: 3
@@ -410,8 +410,9 @@ Several other parameters adjust the behaviour of the alignment algorithm and out
 Expectation Maximisation
 ----------------------------
 
-This is an experimental method for computing alignments *directly* on the basis of the patterns. It is modelled after IBM Model 1 and uses the Expectation Maximisation algorithm to iteratively optimise the model's parameters.  The pseudo-code for the EM algorithm applied to this model is as follows::
+This is an experimental method for computing alignments *directly* on the basis of the patterns. It is modelled after IBM Model 1 and uses the Expectation Maximisation algorithm to iteratively optimise the model's parameters.  The pseudo-code for the EM algorithm applied to this model is as follows:
 
+.. code-block:: python
 
    initialize t(t|s) uniformly
    do until convergence
@@ -464,50 +465,51 @@ GIZA Alignment
 
 Of all target patterns (if any) meeting this criteria for a given source pattern, only the strongest one is chosen. An alignment strength score is computed to represent how well an alignment is supported by word alignments. This is not to be confused with the actual alignment probability. This score is the number of words that aligns properly, as a fraction of the longest pattern size of the pair. Only alignments that reach a certain threshold will be aligned. If the score is not perfect (< 0), points from the union of the two word alignment directions will be considered and added to the score as well, however, these alignments carry less weight than intersection alignments (four times less by default). 
 
-This extraction algorithm is implemented as follows, given word alignments for source-to-target (``sentence_s``) and target-to-source (``sentence_t``)::
+This extraction algorithm is implemented as follows, given word alignments for source-to-target (``sentence_s``) and target-to-source (``sentence_t``):
 
-	function giza_extract(sentence_s from giza,sentence_t from giza):
-	
-        patterns_t = all patterns in sentence_t           
-        for all words word_s in sentence_s:
-            patterns_s = find patterns BEGINNING WITH word_s
-            for all patterns pattern_s in patterns_s:
-                bestscore = 0
-                for all patterns pattern_t in patterns_t:
-                    aligned = 0
-                    halfaligned = 0
-                    firstsourcealigned = false
-                    lastsourcealigned = false
-                    firsttargetaligned = false
-                    lasttargetaligned = false
-                    for for all indices (alignedsourceindex, alignedtargetindex) in intersection:
-                        if alignedsourceindex not in pattern_s or alignedtargetindex not in pattern_t:
-                            aligned--; break;
-                        else:
-                            aligned++;
-                            if alignedsourceindex == sourceindex: firstsourcealigned = true
-                            if alignedsourceindex == sourceindex + patternsize_s: lastsourcealigned = true
-                            if alignedtargetindex == targetindex: firstsourcealigned = true
-                            if alignedtargetindex == targetindex + patternsize_t: lastsourcealigned = true
-                                                      
-                            
-                    if ((aligned < 0) || (!firstaligned) || (!lastaligned)) break;
-                    
-                    maxpatternsize = max(|pattern_s|,|pattern_t|)
-                    score = aligned / maxpatternsize
-                    
-                    if (score < 1):
-		                for alignedsourceindex, alignedtargetindex in union:                            
-		                    if (alignedsourceindex in pattern_s and alignedtargetindex not in pattern_t) or (alignedsourceindex not in pattern_s and alignedtargetindex in pattern_t):
-		                        halfaligned++;
-						if halfaligned:
-							score = score + halfaligned / (maxpatternsize*4)
-                        	if (score > 1) score = 1
-                     				                                     
-                   if score > bestscore:
-                        bestscore = score
-                        bestpattern_t = pattern_t                            
-               
+.. code-block:: python
+
+    patterns_t = all patterns in sentence_t           
+    for all words word_s in sentence_s:
+        patterns_s = find patterns BEGINNING WITH word_s
+        for all patterns pattern_s in patterns_s:
+            bestscore = 0
+            for all patterns pattern_t in patterns_t:
+                aligned = 0
+                halfaligned = 0
+                firstsourcealigned = false
+                lastsourcealigned = false
+                firsttargetaligned = false
+                lasttargetaligned = false
+                for for all indices (alignedsourceindex, alignedtargetindex) in intersection:
+                    if alignedsourceindex not in pattern_s or alignedtargetindex not in pattern_t:
+                        aligned--; break;
+                    else:
+                        aligned++;
+                        if alignedsourceindex == sourceindex: firstsourcealigned = true
+                        if alignedsourceindex == sourceindex + patternsize_s: lastsourcealigned = true
+                        if alignedtargetindex == targetindex: firstsourcealigned = true
+                        if alignedtargetindex == targetindex + patternsize_t: lastsourcealigned = true
+                                                  
+                        
+                if ((aligned < 0) || (!firstaligned) || (!lastaligned)) break;
+                
+                maxpatternsize = max(|pattern_s|,|pattern_t|)
+                score = aligned / maxpatternsize
+                
+                if (score < 1):
+                    for alignedsourceindex, alignedtargetindex in union:                            
+                        if (alignedsourceindex in pattern_s and alignedtargetindex not in pattern_t) or (alignedsourceindex not in pattern_s and alignedtargetindex in pattern_t):
+                            halfaligned++;
+                    if halfaligned:
+                        score = score + halfaligned / (maxpatternsize*4)
+                        if (score > 1) score = 1
+
+               if score > bestscore:
+                    bestscore = score
+                    bestpattern_t = pattern_t                            
+           
+           
 In the following example we translate French to English and assume pattern models have been computed already. Invoke the ``aligner`` program as follows, the ``-W`` flag chooses GIZA extraction and takes as parameters the two GIZA ``A3.final`` models (order matters!) separated by a colon. It is also necessary to pass the class the class file for both source (``-S``) and target language (``-T``), as the GIZA models do not use the colibri class encodings and thus need to be interpreted on the fly::
 
 	$ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -W fr-en.A3.final:en-fr.A3.final -S fr.cls -T en.cls
@@ -527,10 +529,12 @@ Skipgram alignment
 
 The alignment of skipgrams poses extra challenges. The three above alignment methods function much worse as soon as skipgrams are included. Therefore, an experimental alignment algorithm has been implemented to extract skipgrams on the basis of a graph model with instance and template relations. The algorithm starts with the n-grams that have been aligned by any of the three aforementioned algorithms, it then determines whether multiple target n-grams for a given source n-gram share a common template (i.e. a skip-gram that is an abstraction of a pattern). The template relation is a transitive relation, so recursion is applied to collect all possible templates, these can subsequently be clustered in one or more clusters, each cluster being completely independent of the other, not sharing any template or instance relationships. From each cluster only the best match, according to Jaccard co-occurrence is selected and aligned to the template(s) of the source pattern. This results in skipgram to skipgram alignments. N-gram to skipgram or skipgram to n-gram alignments are not supported by this method.
 
-The algorithm is implemented as illustrated by the following pseudo-code::
+The algorithm is implemented as illustrated by the following pseudo-code:
+
+.. code-block:: python
 
      for ngram_s in alignmatrix:
-        if |alignmatrix[ngram_s]| > 1: (nothing to generalise otherwise)
+        if |alignmatrix[ngram_s]| > 1: #(nothing to generalise otherwise)
             skipgrams_s = get_templates_recursively(rel_templates_s[ngram_s])
             if skipgrams_s:            
                 for ngram_t in alignmatrix[ngram_s]
@@ -539,21 +543,21 @@ The algorithm is implemented as illustrated by the following pseudo-code::
                         for skipgram_s in skipgrams_s:
                             for skipgram_t in skipgrams_t:
                                 submatrix[skipgram_s][skipgram_t]++
-    prune 1-values from submatrix                     
+    prune all 1-values in submatrix                     
        
-    for skipgram_s in submatrix: //conflict resolution
+    for skipgram_s in submatrix: #conflict resolution
         if |submatrix[skipgram_s]| == 1:
             skipgram_t = first and only
             alignmatrix[skipgram_s][skipgram_t] = submatrix[skipgram_s][skipgram_t]
         else:                                
-            clusters = get_independent_cluster(skipgrams_t) //complete subgraphs
+            clusters = get_independent_cluster(skipgrams_t) #complete subgraphs
             for cluster in clusters:
               maxcooc = 0
               for skipgram_t in cluster:
                 if cooc(skipgram_s, skipgram_t) > maxcooc:
                     maxcooc = _
                     best = skipgram_t
-                elseif   == maxcooc:
+                elif   == maxcooc:
                    if skipgram_t more abstract than best:
                         best = skipgram_t
               if best:
