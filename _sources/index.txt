@@ -49,7 +49,7 @@ If you want to make use of the MT experiment framework included as a part of Col
 
 	$ sudo easy_install pynlpl
  
-If ``easy_install`` is not available, then first install the ``python-setuptools`` package. Or obtain pynlpl manually through ``git``:
+If ``easy_install`` is not available, then first install the ``python-setuptools`` package. Or obtain pynlpl manually through ``git``::
 
 	$ git clone git://github.com/proycon/pynlpl.git
  
