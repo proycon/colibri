@@ -363,7 +363,7 @@ Outputting the whole graph may however produce a lot of unwanted output. Often y
 		this {*1*} .	537	1611	0.00236548	537	1
 		the {*1*} .	1496	4488	0.00658985	1496	1
 
-It is possible to actually visualise the graph, ``grapher`` can output to the so-called dot-format used by the open-source graph visualisation software ``graphviz``. You can output in this format by specifying the ``-G`` flag. This works both with and without ``-q``, but if you do not specify a query the graph may turn out to be too huge to visualise::
+It is possible to actually visualise the graph, ``grapher`` can output to the so-called dot-format used by the open-source graph visualisation software `graphviz <http://www.graphviz.org>`_. You can output to this format by specifying the ``-G`` flag. This works both with and without ``-q``, but if you do not specify a query the graph may turn out to be too huge to visualise::
 
 	$ grapher -d yourcorpus.graphpatternmodel.colibri -c yourcorpus.cls -a -q "summer" -G > summer.dot
  
@@ -383,13 +383,13 @@ Alignment Models
 Introduction
 --------------
 
-An alignment model establishes a translation from patterns in one model to patterns in another. Each alignment has an associated score, or a vector of multiple scores. Alignments can currently be computed in three ways, all of which are unsupervised, and the of which the last method is the superior one:
+An alignment model establishes a translation from patterns in one model to patterns in another. Each alignment has an associated score, or a vector of multiple scores, expressing the quality of the alignment. Alignments can currently be computed in three ways, all of which are unsupervised methods, and the of which the last method is the superior one:
 
 * **Co-occurrence (Jaccard)** - Alignments are established according to simple Jaccard co-occurrence
 * **Expectation Maximisation** - Alignments between patterns are computed in a fashion similar to IBM Model 1, using Expectation Maximisation. Computation proceeds over the matrix of all patterns, rather than a matrix of mere words as in IBM Model 1. 
 * **GIZA Word Alignments** - Alignments are established on the basis of word-alignments computed with ``GIZA++``.
 
-The pattern models have to be generated on the basis of a parallel corpus. In order to compute an alignment model you need to start with the right input; a parallel corpus. For colibri a parallel corpus consists of two corpus files, each for one language. The sentence on the n-th line of the both corpus files correspond and should be translations of each other. Pattern and graph models can then be generated separately on both of these corpora. An indexed pattern model, or derived graph model, is required as input for the ``aligner`` program.
+The pattern models have to be generated on the basis of a parallel corpus. For colibri a parallel corpus consists of two corpus files, one for each language. The sentences on the n-th line of each of the  corpus files corresponds and should be translations of each other. Pattern and graph models can then be generated separately on both of these corpora. An indexed pattern model, or derived graph model, is required as input for the ``aligner`` program.
 
 Co-occurrence
 ---------------------
@@ -520,7 +520,9 @@ Several other parameters adjust the behaviour of the EM alignment algorithm and 
 * ``-p [n]``-  Prune all alignments with a jaccard co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be
 * ``-c [n]`` - Prune phrase pairs that occur less than specified, here *n* is an integer representing the absolute count required for the phrase pair as a whole.
 * ``-I 1`` - Compute bi-directional alignments and use one joint score. This does *not* run the algorithm twice, but is directly integrated.
-* ``-I 2`` - Compute bi-directional alignments and use two separate scores, representing p(t|s) and p(s|t). This does *not* run the algorithm twice, but is directly integrated. 
+* ``-I 2`` - Compute bi-directional alignments and use two separate scores, representing p(t|s) and p(s|t). This does *not* run the algorithm twice, but is directly integrated.
+
+This alignment method replaces unsupervised word alignment symmetrisations heuristics like ``grow-diag``, ``grow-diag-final`` [OchNey2003].  
 
 Skipgram alignment
 ----------------------

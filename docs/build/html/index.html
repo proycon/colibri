@@ -344,7 +344,7 @@ Skipusage - 3
         this {*1*} .    537     1611    0.00236548      537     1
         the {*1*} .     1496    4488    0.00658985      1496    1</pre>
 </div>
-<p>It is possible to actually visualise the graph, <tt class="docutils literal"><span class="pre">grapher</span></tt> can output to the so-called dot-format used by the open-source graph visualisation software <tt class="docutils literal"><span class="pre">graphviz</span></tt>. You can output in this format by specifying the <tt class="docutils literal"><span class="pre">-G</span></tt> flag. This works both with and without <tt class="docutils literal"><span class="pre">-q</span></tt>, but if you do not specify a query the graph may turn out to be too huge to visualise:</p>
+<p>It is possible to actually visualise the graph, <tt class="docutils literal"><span class="pre">grapher</span></tt> can output to the so-called dot-format used by the open-source graph visualisation software <a class="reference external" href="http://www.graphviz.org">graphviz</a>. You can output to this format by specifying the <tt class="docutils literal"><span class="pre">-G</span></tt> flag. This works both with and without <tt class="docutils literal"><span class="pre">-q</span></tt>, but if you do not specify a query the graph may turn out to be too huge to visualise:</p>
 <div class="highlight-python"><pre>$ grapher -d yourcorpus.graphpatternmodel.colibri -c yourcorpus.cls -a -q "summer" -G &gt; summer.dot</pre>
 </div>
 <p>Graphviz will do the actual conversion to an image file, such as png:</p>
@@ -358,13 +358,13 @@ Skipusage - 3
 <h1>Alignment Models<a class="headerlink" href="#alignment-models" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="id5">
 <h2>Introduction<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
-<p>An alignment model establishes a translation from patterns in one model to patterns in another. Each alignment has an associated score, or a vector of multiple scores. Alignments can currently be computed in three ways, all of which are unsupervised, and the of which the last method is the superior one:</p>
+<p>An alignment model establishes a translation from patterns in one model to patterns in another. Each alignment has an associated score, or a vector of multiple scores, expressing the quality of the alignment. Alignments can currently be computed in three ways, all of which are unsupervised methods, and the of which the last method is the superior one:</p>
 <ul class="simple">
 <li><strong>Co-occurrence (Jaccard)</strong> - Alignments are established according to simple Jaccard co-occurrence</li>
 <li><strong>Expectation Maximisation</strong> - Alignments between patterns are computed in a fashion similar to IBM Model 1, using Expectation Maximisation. Computation proceeds over the matrix of all patterns, rather than a matrix of mere words as in IBM Model 1.</li>
 <li><strong>GIZA Word Alignments</strong> - Alignments are established on the basis of word-alignments computed with <tt class="docutils literal"><span class="pre">GIZA++</span></tt>.</li>
 </ul>
-<p>The pattern models have to be generated on the basis of a parallel corpus. In order to compute an alignment model you need to start with the right input; a parallel corpus. For colibri a parallel corpus consists of two corpus files, each for one language. The sentence on the n-th line of the both corpus files correspond and should be translations of each other. Pattern and graph models can then be generated separately on both of these corpora. An indexed pattern model, or derived graph model, is required as input for the <tt class="docutils literal"><span class="pre">aligner</span></tt> program.</p>
+<p>The pattern models have to be generated on the basis of a parallel corpus. For colibri a parallel corpus consists of two corpus files, one for each language. The sentences on the n-th line of each of the  corpus files corresponds and should be translations of each other. Pattern and graph models can then be generated separately on both of these corpora. An indexed pattern model, or derived graph model, is required as input for the <tt class="docutils literal"><span class="pre">aligner</span></tt> program.</p>
 </div>
 <div class="section" id="co-occurrence">
 <h2>Co-occurrence<a class="headerlink" href="#co-occurrence" title="Permalink to this headline">¶</a></h2>
@@ -485,6 +485,7 @@ for all words word_s in sentence_s:
 <li><tt class="docutils literal"><span class="pre">-I</span> <span class="pre">1</span></tt> - Compute bi-directional alignments and use one joint score. This does <em>not</em> run the algorithm twice, but is directly integrated.</li>
 <li><tt class="docutils literal"><span class="pre">-I</span> <span class="pre">2</span></tt> - Compute bi-directional alignments and use two separate scores, representing p(t|s) and p(s|t). This does <em>not</em> run the algorithm twice, but is directly integrated.</li>
 </ul>
+<p>This alignment method replaces unsupervised word alignment symmetrisations heuristics like <tt class="docutils literal"><span class="pre">grow-diag</span></tt>, <tt class="docutils literal"><span class="pre">grow-diag-final</span></tt> [OchNey2003].</p>
 </div>
 <div class="section" id="skipgram-alignment">
 <h2>Skipgram alignment<a class="headerlink" href="#skipgram-alignment" title="Permalink to this headline">¶</a></h2>
