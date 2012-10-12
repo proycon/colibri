@@ -60,7 +60,7 @@
 <p>Colibri is hosted on <a class="reference external" href="http://github.com/proycon/colibri/">github</a> and should be retrieved through the versioning control system <tt class="docutils literal"><span class="pre">git</span></tt>. Provided git is installed on your system, this is done as follows:</p>
 <div class="highlight-python"><pre>$ git clone git://github.com/proycon/colibri.git</pre>
 </div>
-<p>You need to compile the software, but in order to do so you must first install the dependency <tt class="docutils literal"><span class="pre">Timbl</span></tt> <a class="reference internal" href="#daelemans2010">[Daelemans2010]</a> ; a tarball is obtainable from <a class="reference external" href="http://ilk.uvt.nl/timbl/">the Timbl website</a> , follow the instructions included with Timbl to install it.</p>
+<p>You need to compile the software, but in order to do so you must first install the dependency <strong>Timbl</strong> <a class="reference internal" href="#daelemans2010">[Daelemans2010]</a> ; a tarball is obtainable from <a class="reference external" href="http://ilk.uvt.nl/timbl/">the Timbl website</a> , follow the instructions included with Timbl to install it.</p>
 <p>In addition to the C/C++ compiler (<tt class="docutils literal"><span class="pre">gcc</span></tt>), the build process for colibri makes use of <tt class="docutils literal"><span class="pre">autoconf</span></tt> and <tt class="docutils literal"><span class="pre">automake</span></tt>. Make sure these are installed on your system. Also install the package <tt class="docutils literal"><span class="pre">autoconf-archive</span></tt> if available on your distribution. Colibri can now be compiled and installed:</p>
 <div class="highlight-python"><pre>$ cd colibri
 $ bash bootstrap
@@ -265,14 +265,14 @@ Starting query mode:
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">-P</span></tt> - Compute/load subsumption relations from children to parents (reverse of -C)</li>
 <li><tt class="docutils literal"><span class="pre">-C</span></tt> - Compute/load subsumption relations from parents to children (reverse of -P)</li>
-<li><tt class="docutils literal"><span class="pre">-S</span></tt> - Compute/load subsumption skipgram to skipcontent relations</li>
-<li><tt class="docutils literal"><span class="pre">-s</span></tt> - Compute/load subsumption skip-content to skipgram relations (reverse of -S)</li>
-<li><tt class="docutils literal"><span class="pre">-L</span></tt> - Compute/load subsumption predecessor relations (constructions to the left)</li>
-<li><tt class="docutils literal"><span class="pre">-R</span></tt> - Compute/load subsumption sucessor relations (constructions to the right)</li>
-<li><tt class="docutils literal"><span class="pre">-T</span></tt> - Compute/load subsumption template relations</li>
-<li><tt class="docutils literal"><span class="pre">-I</span></tt> - Compute/load subsumption instance relations (reverse of -T)</li>
-<li><tt class="docutils literal"><span class="pre">-a</span></tt> - Compute/load subsumption all relations</li>
-<li><tt class="docutils literal"><span class="pre">-X</span></tt> - Compute/load exclusivity count/ratios</li>
+<li><tt class="docutils literal"><span class="pre">-S</span></tt> - Compute/load skipgram to skipcontent relations</li>
+<li><tt class="docutils literal"><span class="pre">-s</span></tt> - Compute/load skip-content to skipgram relations (reverse of -S)</li>
+<li><tt class="docutils literal"><span class="pre">-L</span></tt> - Compute/load predecessor relations (constructions to the left)</li>
+<li><tt class="docutils literal"><span class="pre">-R</span></tt> - Compute/load sucessor relations (constructions to the right)</li>
+<li><tt class="docutils literal"><span class="pre">-T</span></tt> - Compute/load template relations</li>
+<li><tt class="docutils literal"><span class="pre">-I</span></tt> - Compute/load instance relations (reverse of -T)</li>
+<li><tt class="docutils literal"><span class="pre">-a</span></tt> - Compute/load all relations</li>
+<li><tt class="docutils literal"><span class="pre">-X</span></tt> - Compute/load count/ratios</li>
 </ul>
 <p>The indexed pattern model that acts as input is specified using the <tt class="docutils literal"><span class="pre">-f</span></tt> flag. The following example generates a graph model with all relations:</p>
 <div class="highlight-python"><pre>$ grapher -f yourcorpus.indexedpatternmodel.colibri -a</pre>

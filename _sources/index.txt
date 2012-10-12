@@ -27,7 +27,7 @@ Colibri is hosted on `github <http://github.com/proycon/colibri/>`_ and should b
 
 	$ git clone git://github.com/proycon/colibri.git
 	
-You need to compile the software, but in order to do so you must first install the dependency ``Timbl`` [Daelemans2010]_ ; a tarball is obtainable from `the Timbl website <http://ilk.uvt.nl/timbl/>`_ , follow the instructions included with Timbl to install it.
+You need to compile the software, but in order to do so you must first install the dependency **Timbl** [Daelemans2010]_ ; a tarball is obtainable from `the Timbl website <http://ilk.uvt.nl/timbl/>`_ , follow the instructions included with Timbl to install it.
 
 In addition to the C/C++ compiler (``gcc``), the build process for colibri makes use of ``autoconf`` and ``automake``. Make sure these are installed on your system. Also install the package ``autoconf-archive`` if available on your distribution. Colibri can now be compiled and installed::
 
@@ -274,14 +274,14 @@ The ``grapher`` program computes a graph model on the basis of an **indexed** pa
 
 *	``-P`` - Compute/load subsumption relations from children to parents (reverse of -C)
 *	``-C`` - Compute/load subsumption relations from parents to children (reverse of -P)
-*	``-S`` - Compute/load subsumption skipgram to skipcontent relations
-*	``-s`` - Compute/load subsumption skip-content to skipgram relations (reverse of -S)
-*	``-L`` - Compute/load subsumption predecessor relations (constructions to the left)
-*	``-R`` - Compute/load subsumption sucessor relations (constructions to the right)
-*	``-T`` - Compute/load subsumption template relations
-*	``-I`` - Compute/load subsumption instance relations (reverse of -T)
-*	``-a`` - Compute/load subsumption all relations
-*   ``-X`` - Compute/load exclusivity count/ratios
+*	``-S`` - Compute/load skipgram to skipcontent relations
+*	``-s`` - Compute/load skip-content to skipgram relations (reverse of -S)
+*	``-L`` - Compute/load predecessor relations (constructions to the left)
+*	``-R`` - Compute/load sucessor relations (constructions to the right)
+*	``-T`` - Compute/load template relations
+*	``-I`` - Compute/load instance relations (reverse of -T)
+*	``-a`` - Compute/load all relations
+*   ``-X`` - Compute/load count/ratios
 
 The indexed pattern model that acts as input is specified using the ``-f`` flag. The following example generates a graph model with all relations::
 
