@@ -58,11 +58,11 @@
 </div>
 <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<p>Colibri is hosted on github and should be retrieved through the versioning control system <tt class="docutils literal"><span class="pre">git</span></tt>. This is done as follows:</p>
+<p>Colibri is hosted on <a class="reference external" href="http://github.com/proycon/colibri/">github</a> and should be retrieved through the versioning control system <tt class="docutils literal"><span class="pre">git</span></tt>. Provided git is installed on your system, this is done as follows:</p>
 <div class="highlight-python"><pre>$ git clone git://github.com/proycon/colibri.git</pre>
 </div>
-<p>You need to compile the software, but in order to do so you must first install the dependency <tt class="docutils literal"><span class="pre">Timbl</span></tt> <a class="reference internal" href="#daelemans2010">[Daelemans2010]</a> ; a tarball is obtainable from <a class="reference external" href="http://ilk.uvt.nl/timbl/">the Timbl website</a> , follow the instructions included with Timbl.</p>
-<p>In addition to the compiler (<tt class="docutils literal"><span class="pre">gcc</span></tt>), colibri uses <tt class="docutils literal"><span class="pre">autoconf</span></tt> and <tt class="docutils literal"><span class="pre">automake</span></tt>, so make sure these are installed on your system. Also install the package <tt class="docutils literal"><span class="pre">autoconf-archive</span></tt> if available on your distribution. Colibri can now be compiled and installed:</p>
+<p>You need to compile the software, but in order to do so you must first install the dependency <tt class="docutils literal"><span class="pre">Timbl</span></tt> <a class="reference internal" href="#daelemans2010">[Daelemans2010]</a> ; a tarball is obtainable from <a class="reference external" href="http://ilk.uvt.nl/timbl/">the Timbl website</a> , follow the instructions included with Timbl to install it.</p>
+<p>In addition to the C/C++ compiler (<tt class="docutils literal"><span class="pre">gcc</span></tt>), the build process for colibri makes use of <tt class="docutils literal"><span class="pre">autoconf</span></tt> and <tt class="docutils literal"><span class="pre">automake</span></tt>. Make sure these are installed on your system. Also install the package <tt class="docutils literal"><span class="pre">autoconf-archive</span></tt> if available on your distribution. Colibri can now be compiled and installed:</p>
 <div class="highlight-python"><pre>$ cd colibri
 $ bash bootstrap
 $ ./configure
@@ -75,7 +75,9 @@ $ make install</pre>
 <p>If you want to make use of the MT experiment framework included as a part of Colibri, you also need the Python Natural Language Processing library (pynlpl) installed. This can be done as follows:</p>
 <div class="highlight-python"><pre>$ sudo easy_install pynlpl</pre>
 </div>
-<p>If <tt class="docutils literal"><span class="pre">easy_install</span></tt> is not available, then first install the <tt class="docutils literal"><span class="pre">python-setuptools</span></tt> package.</p>
+<p>If <tt class="docutils literal"><span class="pre">easy_install</span></tt> is not available, then first install the <tt class="docutils literal"><span class="pre">python-setuptools</span></tt> package. Or obtain pynlpl manually through <tt class="docutils literal"><span class="pre">git</span></tt>:</p>
+<blockquote>
+<div>$ git clone git://github.com/proycon/pynlpl.git</div></blockquote>
 <div class="section" id="keeping-colibri-up-to-date">
 <h2>Keeping colibri up to date<a class="headerlink" href="#keeping-colibri-up-to-date" title="Permalink to this headline">¶</a></h2>
 <p>Colibri is always under heavy development. Update your colibri copy by issuing a git pull:</p>
@@ -642,14 +644,6 @@ output best path that leads to best_hyp;</pre>
 </tbody>
 </table>
 </div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
-<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
-<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
-</ul>
-</div>
 
 
           </div>
@@ -706,7 +700,6 @@ output best path that leads to best_hyp;</pre>
 <li><a class="reference internal" href="#machine-learning">Machine Learning</a></li>
 <li><a class="reference internal" href="#mt-experiment-framework">MT Experiment Framework</a></li>
 <li><a class="reference internal" href="#references">References</a></li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 
   <h3>This Page</h3>

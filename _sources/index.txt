@@ -27,13 +27,13 @@ This documentation will illustrate how to work with the various tools of colibri
 Installation
 ===============
 
-Colibri is hosted on github and should be retrieved through the versioning control system ``git``. This is done as follows::
+Colibri is hosted on `github <http://github.com/proycon/colibri/>`_ and should be retrieved through the versioning control system ``git``. Provided git is installed on your system, this is done as follows::
 
 	$ git clone git://github.com/proycon/colibri.git
 	
-You need to compile the software, but in order to do so you must first install the dependency ``Timbl`` [Daelemans2010]_ ; a tarball is obtainable from `the Timbl website <http://ilk.uvt.nl/timbl/>`_ , follow the instructions included with Timbl.
+You need to compile the software, but in order to do so you must first install the dependency ``Timbl`` [Daelemans2010]_ ; a tarball is obtainable from `the Timbl website <http://ilk.uvt.nl/timbl/>`_ , follow the instructions included with Timbl to install it.
 
-In addition to the compiler (``gcc``), colibri uses ``autoconf`` and ``automake``, so make sure these are installed on your system. Also install the package ``autoconf-archive`` if available on your distribution. Colibri can now be compiled and installed::
+In addition to the C/C++ compiler (``gcc``), the build process for colibri makes use of ``autoconf`` and ``automake``. Make sure these are installed on your system. Also install the package ``autoconf-archive`` if available on your distribution. Colibri can now be compiled and installed::
 
   $ cd colibri
   $ bash bootstrap
@@ -49,10 +49,12 @@ If you want to make use of the MT experiment framework included as a part of Col
 
 	$ sudo easy_install pynlpl
  
-If ``easy_install`` is not available, then first install the ``python-setuptools`` package. 
+If ``easy_install`` is not available, then first install the ``python-setuptools`` package. Or obtain pynlpl manually through ``git``:
+
+	$ git clone git://github.com/proycon/pynlpl.git
  
 Keeping colibri up to date
--------------------------
+-----------------------------
 
 Colibri is always under heavy development. Update your colibri copy by issuing a git pull::
 
@@ -61,7 +63,7 @@ Colibri is always under heavy development. Update your colibri copy by issuing a
 And then recompile as per the above instructions.
 
 General usage instructions
---------------------
+---------------------------------
 
 Colibri consist of various programs, each of which will output an extensive overview of available parameters if the parameter ``-h`` is passed. Each program is designed for a specialised purpose, with specific input and output formats. It is often needed to call multiple programs in succession to obtain the final analysis or model you desire. 
 
@@ -95,7 +97,7 @@ If your corpus is not tokenised yet, you can consider using the tokeniser `ucto 
 The above sample is for English (``-L en``), several other languages are also supported.
 
 Class-decoding your corpus
----------------------------
+------------------------------
 
 Given an encoded corpus and a class file, the original corpus can always be reconstructed. This we call *class decoding* and is done using the ``classdecode`` program::
    
@@ -131,7 +133,7 @@ At the beginning of each iteration of n, all possible ways in which any n-gram o
 The pattern finder can create either indexed or unindexed models. For indexed models, the precise location of where an n-gram or skipgram instance was found in the corpus is recorded. This comes at the cost of much higher memory usage. Other colibri tools such as the ``grapher`` and ``aligner`` demand an indexed pattern model as input. For skipgrams in indexed models, the various fillings for the gaps are recorded explicitly. If you are only interested in simple n-gram or simple skip-gram counts, then an unindexed model may suffice. 
 
 Creating a pattern model
----------------------------
+----------------------------
 
 First make sure to have class encoded your corpus. Given this encoded corpus, ``patternfinder`` can be invoked to produce an indexed pattern model. The occurrence threshold is specified with parameter ``-t``, patterns occuring less will not be counted. The default value is two.  The maximum value for n, i.e. the maximum n-gram/skipgram size, is set using the parameter ``-l``, it defaults to 9:: 
 
@@ -292,7 +294,7 @@ The indexed pattern model that acts as input is specified using the ``-f`` flag.
 The graph model will be stored in binary form, in the file ``yourcorpus.graphpatternmodel.colibri``. 
 
 Viewing and querying a graph model
-----------------------------------
+------------------------------------
 
 To decode this binary graph model into human readable form, read it in using the ``-d`` flag and pass a class file. In addition, you again need to pass what relations you want to load, as it is also possible to only load a subset of the relations. Simply use the ``-a`` flag if you want to load and output relations existing in the model::
 
@@ -670,10 +672,11 @@ References
 
 .. [Stolcke2002] A. Stolcke, *SRILM — an extensible language modeling toolkit*, in J. H. L. Hansen and B. Pellom, editors, Proc. ICSLP, vol. 2, pp. 901–904, Denver, Sep. 2002.
 
-Indices and tables
-==================
+.. 
+	Indices and tables
+	==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+	* :ref:`genindex`
+	* :ref:`modindex`
+	* :ref:`search`
 
