@@ -10,8 +10,8 @@
     
     <title>Colibri Documentation &mdash; Colibri 0.1 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="static/default.css" type="text/css" />
+    <link rel="stylesheet" href="static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -22,9 +22,9 @@
         HAS_SOURCE:  true
       };
     </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="static/jquery.js"></script>
+    <script type="text/javascript" src="static/underscore.js"></script>
+    <script type="text/javascript" src="static/doctools.js"></script>
     <link rel="top" title="Colibri 0.1 documentation" href="#" /> 
   </head>
   <body>
@@ -352,7 +352,7 @@ Skipusage - 3
 <div class="highlight-python"><pre>$ dot -Tpng summer.dot -o summer.png</pre>
 </div>
 <p>This generated the following image:</p>
-<img alt="_images/summer.png" src="_images/summer.png" />
+<img alt="images/summer.png" src="images/summer.png" />
 </div>
 </div>
 <div class="section" id="alignment-models">
@@ -369,7 +369,7 @@ Skipusage - 3
 </div>
 <div class="section" id="co-occurrence">
 <h3>Co-occurrence<a class="headerlink" href="#co-occurrence" title="Permalink to this headline">¶</a></h3>
-<p>Alignments computed solely on the basis of sentence co-occurrence are fairly weak. For all patterns that co-occur in at least one sentence, a Jaccard co-occurrence score is computed as <img class="math" src="_images/math/68a10b058e13dc75b5a82d15c24b224ee0cd135e.png" alt="\frac{|s \cap t|}{|s \cup t|}"/>, where <em>s</em> and <em>t</em> are sets of sentence numbers in which the pattern occurs.</p>
+<p>Alignments computed solely on the basis of sentence co-occurrence are fairly weak. For all patterns that co-occur in at least one sentence, a Jaccard co-occurrence score is computed as <img class="math" src="images/math/68a10b058e13dc75b5a82d15c24b224ee0cd135e.png" alt="\frac{|s \cap t|}{|s \cup t|}"/>, where <em>s</em> and <em>t</em> are sets of sentence numbers in which the pattern occurs.</p>
 <p>In the following example we translate French to English and assume pattern models have been computed already. Invoke the <tt class="docutils literal"><span class="pre">aligner</span></tt> program as follows, the <tt class="docutils literal"><span class="pre">-J</span></tt> flag chooses Jaccard co-occurrence:</p>
 <div class="highlight-python"><pre>$ aligner -s fr.indexedpatternmodel.colibri -t en.indexedpatternmodel.colibri -J</pre>
 </div>
@@ -704,7 +704,7 @@ output best path that leads to best_hyp;</pre>
 
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="_sources/index.txt"
+    <li><a href="sources/index.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
