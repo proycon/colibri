@@ -35,6 +35,8 @@ class ClassDecoder {
     bool hasclass(unsigned int key) const { return (classes.count(key) > 0); }
     
     unsigned int newclass(); 
+    
+    void prune(unsigned int threshold);    
 };
 
 unsigned int bytestoint(const unsigned char* a, const int l);

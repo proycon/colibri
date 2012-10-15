@@ -165,6 +165,7 @@ class StackDecoder {
     private:
         int stacksize;
         double prunethreshold;
+        int highesttargetclass;
     public:
         int DEBUG;
         std::map<std::pair<int, int>, double> futurecost; //(start, end) => cost    

@@ -225,3 +225,9 @@ pair<int,int> getwords(const unsigned char* data, const int datasize, const int 
         return pair<int,int>(0,0); //fragment too small
     }
 }
+
+void ClassDecoder::prune(unsigned int threshold) {
+    for (unsigned int i = threshold; i <= highestclass; i++) {
+        classes.erase(i);
+    } 
+}

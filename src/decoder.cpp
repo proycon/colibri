@@ -130,6 +130,8 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
             }
         }
         
+        highesttargetclass = targetclassdecoder->gethighestclass();
+        
         //Check for uncoverable words               
         for (unsigned int i = 0; i < inputlength; i++) {
             if (!inputcoveragemask[i]) {
@@ -441,6 +443,7 @@ StackDecoder::~StackDecoder() {
     for (int i = inputlength; i >= 0; i--) {
         stacks[i].clear();
     }
+    targetclassdecoder->prune(highesttargetclass+1);
 }
 
 /*
