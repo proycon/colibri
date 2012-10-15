@@ -24,6 +24,7 @@ const int ALIGNMENTMODEL = 100;
 typedef std::unordered_map<const EncAnyGram*, std::vector<double> > t_aligntargets;
 typedef std::unordered_map<const EncAnyGram*, t_aligntargets > t_alignmatrix;
 
+
 typedef std::unordered_map<const EncAnyGram*, std::unordered_set<const EncAnyGram *> > t_contexts;
 
 class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
@@ -121,7 +122,7 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 	
 	void save(const std::string & filename);
 	
-	t_aligntargets sumtranslationoptions(const EncAnyGram * sourcefocus);	
+	t_aligntargets sumtranslationoptions(const EncAnyGram * sourcefocus, bool debug = false);	
 };
 
 class SourceFragmentData {

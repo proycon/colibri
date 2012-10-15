@@ -48,8 +48,9 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 const EncAnyGram * sourcekey = iter->first;
                 if (translationtable->leftsourcecontext || translationtable->rightsourcecontext) {
                     //translation table context information, aggregate scores  
+                    if (DEBUG >=3) cerr << "Computing sum for translation options: " << sourcekey->decode(*sourceclassdecoder) << endl;
                     t_aligntargets translationoptions = translationtable->sumtranslationoptions(sourcekey);
-                    if (DEBUG >=3) cerr << "ADDING SOURCEFRAGMENT: " << sourcekey->decode(*sourceclassdecoder) << " " << (int) sourcekey->isskipgram() << endl; 
+                    if (DEBUG >=3) cerr << "ADDING SOURCEFRAGMENT AFTER REMOVING CONTEXT: " << sourcekey->decode(*sourceclassdecoder) << endl; 
                     sourcefragments.push_back(SourceFragmentData(iter->first, iter->second, translationoptions));
                 } else {
                     //no context information, do simply copy:
@@ -58,7 +59,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                             const EncAnyGram * targetgram = iter2->first;
                             translationoptions[targetgram] = iter2->second;
                     }
-                    if (DEBUG >=3 )cerr << "ADDING SOURCEFRAGMENT: " << sourcekey->decode(*sourceclassdecoder) << " " << (int) sourcekey->isskipgram() << endl;
+                    if (DEBUG >=3 ) cerr << "ADDING SOURCEFRAGMENT: " << sourcekey->decode(*sourceclassdecoder) << endl;
                     sourcefragments.push_back(SourceFragmentData(sourcekey, iter->second, translationoptions)); 
                 }
             }

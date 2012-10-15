@@ -827,7 +827,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                         firsttargetaligned = false
                         lasttargetaligned = false
                         for alignedsourceindex, alignedtargetindex in intersection:
-                            if alignedsourceindex not in pattern_s or alignedtarqgetindex not in pattern_t:
+                            if alignedsourceindex not in pattern_s or alignedtargetindex not in pattern_t:
                                 aligned--; break;
                             else:
                                 aligned++;
@@ -1900,34 +1900,64 @@ void AlignmentModel::computereverse() {
 }
 
 
-t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefocus) {
+t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefocus, bool debug) {
         //compute translate options, aggregating context-data into non-context based scores
+        double total = 0;
+        
+        int scorevectorsize = 0;
+                
         t_aligntargets translationoptions;
         for (unordered_set<const EncAnyGram*>::const_iterator iter = sourcecontexts[sourcefocus].begin(); iter != sourcecontexts[sourcefocus].end(); iter++) {
             const EncAnyGram * sourcekey = *iter;
             for (t_aligntargets::iterator iter2 = alignmatrix[sourcekey].begin(); iter2 != alignmatrix[sourcekey].end(); iter2++) {
+                if (scorevectorsize == 0) {
+                    scorevectorsize = iter2->second.size();
+                     if (scorevectorsize > 2) {
+                        cerr << "ERROR: Score vector contains more than two scores. Unknown how to interpret these in sumtranslationoptions() (due to model having context)" << endl; 
+                        throw InternalError();
+                     }
+                }               
                 const EncAnyGram * targetgram = iter2->first;                
                 if (translationoptions.count(targetgram) == 0) {
-                    //targetgram does not exit yet
+                    //targetgram does not exist yet
                     for (int i = 0; i < iter2->second.size(); i++) {
                         translationoptions[targetgram].push_back( pow(exp(1), iter2->second[i])  );
-                    }
+                        if (i == 0) total += iter2->second[i]; 
+                    }                    
                 } else {
                     //targetgram exists, sum
                     for (int i = 0; i < iter2->second.size(); i++) {
                         translationoptions[targetgram][i] += pow(exp(1), iter2->second[i]);
+                        if (i == 0) total += iter2->second[i];
                     }
                 }            
             }
         }
+
+        if ((scorevectorsize == 2) && (reversealignmatrix.empty())) computereverse();
         
         //convert computed scores back to logprobs
-        for (t_aligntargets::iterator iter2 = translationoptions.begin(); iter2 != translationoptions.end(); iter2++) {
-            const EncAnyGram * targetgram = iter2->first;
-            for (int i = 0; i < iter2->second.size(); i++) {
-                translationoptions[targetgram][i] = log(translationoptions[targetgram][i]);
+        for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
+            const EncAnyGram * targetgram = iter->first;
+            
+            translationoptions[targetgram][0] = log(translationoptions[targetgram][0] / total);
+                                
+            if (scorevectorsize == 2) {
+                double revtotal = 0;
+                //normalize reverse probability
+                for (t_aligntargets::iterator iter2 = reversealignmatrix[targetgram].begin(); iter2 != reversealignmatrix[targetgram].end(); iter2++) {
+                    revtotal += iter2->second[1];
+                }                  
+                translationoptions[targetgram][1] = log(translationoptions[targetgram][1] / revtotal);
+            }
+            
+            if (debug) {
+                for (int i = 0; i < iter->second.size(); i++) {
+                    cerr << translationoptions[targetgram][i] << " log=" << log(translationoptions[targetgram][i]) << endl;
+                }
             }
         }
+                
         return translationoptions;
 }
 
