@@ -50,7 +50,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                     //translation table context information, aggregate scores  
                     //if (DEBUG >=3) cerr << "Computing sum for translation options: " << sourcekey->decode(*sourceclassdecoder) << endl;
                     t_aligntargets translationoptions = translationtable->sumtranslationoptions(sourcekey);
-                    if (DEBUG >=3) cerr << "ADDING SOURCEFRAGMENT AFTER REMOVING CONTEXT: " << sourcekey->decode(*sourceclassdecoder) << endl; 
+                    if (DEBUG >=3) cerr << "\tAdding sourcefragment after removing context: " << sourcekey->decode(*sourceclassdecoder) << endl; 
                     sourcefragments.push_back(SourceFragmentData(iter->first, iter->second, translationoptions));
                 } else {
                     //no context information, do simply copy:
@@ -59,7 +59,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                             const EncAnyGram * targetgram = iter2->first;
                             translationoptions[targetgram] = iter2->second;
                     }
-                    if (DEBUG >=3 ) cerr << "ADDING SOURCEFRAGMENT: " << sourcekey->decode(*sourceclassdecoder) << endl;
+                    if (DEBUG >=3 ) cerr << "\tAdding sourcefragment from translation table: " << sourcekey->decode(*sourceclassdecoder) << endl;
                     sourcefragments.push_back(SourceFragmentData(sourcekey, iter->second, translationoptions)); 
                 }
             }
@@ -94,27 +94,36 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                     cerr << "ERROR: No translation options found!!!!" << endl;
                     exit(6);
                 } else {
+                    multimap<double,string> ordered;
+                
                     for (t_aligntargets::iterator iter2 = iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
+                        stringstream optionsout;
                         const EncAnyGram * targetkey = iter2->first;
                         if (targetkey->isskipgram()) {
-                            cerr << ((const EncSkipGram*) targetkey)->decode(*targetclassdecoder) << " [ ";                            
+                            optionsout << ((const EncSkipGram*) targetkey)->decode(*targetclassdecoder) << " [ ";                            
                         } else {
-                            cerr <<  ((const EncNGram*) targetkey)->decode(*targetclassdecoder) << " [ ";
+                            optionsout <<  ((const EncNGram*) targetkey)->decode(*targetclassdecoder) << " [ ";
                         }                        
                         for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
-                            cerr << *iter3 << " ";
+                            optionsout << *iter3 << " ";
                         }
+                        double totalscore = 0;
                         if (!targetkey->isskipgram()) {
                            double lmscore = lm->score((const EncNGram*) targetkey);
-                           cerr << "LM=" << lmscore << " ";
-                           double totalscore=0;
+                           optionsout << "LM=" << lmscore << " ";
                            for (int i = 0;  i < iter2->second.size(); i++) {
                                 totalscore += tweights[i] * iter2->second[i]; 
                            }
                            totalscore += lweight * lmscore;
-                           cerr << "wsum=" << totalscore << " ";
+                           optionsout << "wsum=" << totalscore << " ";
                         }                        
-                        cerr << "]; ";                        
+                        optionsout << "]; ";      
+                        
+                        ordered.insert( pair<double,string>( -1 * totalscore, optionsout.str() ));                                                                  
+                    }
+                    
+                    for (multimap<double,string>::iterator iter2 = ordered.begin(); iter2 != ordered.end(); iter2++) {
+                        cerr << iter2->second;
                     }
                 }
                 cerr << endl;            
@@ -129,7 +138,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 bool keepunigram = false;
                 EncNGram * unigram = input.slice(i, 1);
                 const string word = unigram->decode(*sourceclassdecoder);
-                cerr << "NOTICE: UNTRANSLATABLE WORD: '" << word << "' (adding)" << endl;  
+                cerr << "NOTICE: Untranslatable word: '" << word << "' (adding)" << endl;  
                 
                 
                 unsigned int targetcls = targetclassdecoder->gethighestclass();
@@ -161,11 +170,9 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 
                 t_aligntargets translationoptions;                
                 translationoptions[targetkey] = scores;
-                if (targetkey->isskipgram()) {
-                    cerr << "DEBUG: ADDING SKIPGRAM" << endl;
-                }
+
                                                 
-                if (DEBUG >= 3) cerr << "ADDING UNKNOWN SOURCEFRAGMENT: " << sourcekey->decode(*sourceclassdecoder) << endl;
+                if (DEBUG >= 3) cerr << "\tAdding *UNKNOWN* sourcefragment: " << sourcekey->decode(*sourceclassdecoder) << endl;
                 sourcefragments.push_back(SourceFragmentData( sourcekey, CorpusReference(0,i), translationoptions) );
                 if (!keepunigram) delete unigram; 
                 
