@@ -230,4 +230,5 @@ void ClassDecoder::prune(unsigned int threshold) {
     for (unsigned int i = threshold; i <= highestclass; i++) {
         classes.erase(i);
     } 
+    highestclass = threshold - 1;
 }
