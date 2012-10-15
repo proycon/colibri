@@ -1901,6 +1901,8 @@ void AlignmentModel::computereverse() {
 
 
 t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefocus, bool debug) {
+        debug = true;
+        
         //compute translate options, aggregating context-data into non-context based scores
         double total = 0;
         
@@ -1917,18 +1919,20 @@ t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefo
                         throw InternalError();
                      }
                 }               
-                const EncAnyGram * targetgram = iter2->first;                
+                const EncAnyGram * targetgram = iter2->first;                        
                 if (translationoptions.count(targetgram) == 0) {
                     //targetgram does not exist yet
                     for (int i = 0; i < iter2->second.size(); i++) {
-                        translationoptions[targetgram].push_back( pow(exp(1), iter2->second[i])  );
-                        if (i == 0) total += iter2->second[i]; 
+                        const double p =  pow(exp(1), iter2->second[i]);                             
+                        translationoptions[targetgram].push_back(p);
+                        if (i == 0) total += p; 
                     }                    
                 } else {
                     //targetgram exists, sum
                     for (int i = 0; i < iter2->second.size(); i++) {
-                        translationoptions[targetgram][i] += pow(exp(1), iter2->second[i]);
-                        if (i == 0) total += iter2->second[i];
+                        const double p =  pow(exp(1), iter2->second[i]);
+                        translationoptions[targetgram][i] += p;
+                        if (i == 0) total += p;
                     }
                 }            
             }
@@ -1940,15 +1944,19 @@ t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefo
         for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
             const EncAnyGram * targetgram = iter->first;
             
+            if (debug) cerr << "fwd:" << translationoptions[targetgram][0] << " / " << total << " = " << translationoptions[targetgram][0] / total << endl;
             translationoptions[targetgram][0] = log(translationoptions[targetgram][0] / total);
+            
                                 
             if (scorevectorsize == 2) {
                 double revtotal = 0;
                 //normalize reverse probability
                 for (t_aligntargets::iterator iter2 = reversealignmatrix[targetgram].begin(); iter2 != reversealignmatrix[targetgram].end(); iter2++) {
-                    revtotal += iter2->second[1];
-                }                  
+                    revtotal += pow(exp(1),iter2->second[1]);
+                }
+                if (debug)  cerr << "rev:" << translationoptions[targetgram][1] << " / " << revtotal << " = " << translationoptions[targetgram][1] / revtotal << endl;                  
                 translationoptions[targetgram][1] = log(translationoptions[targetgram][1] / revtotal);
+                
             }
             
             if (debug) {
