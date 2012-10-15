@@ -1900,8 +1900,7 @@ void AlignmentModel::computereverse() {
 }
 
 
-t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefocus, bool debug) {
-        debug = true;
+t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefocus, bool debug) {    
         
         //compute translate options, aggregating context-data into non-context based scores
         double total = 0;
@@ -1944,7 +1943,6 @@ t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefo
         for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
             const EncAnyGram * targetgram = iter->first;
             
-            if (debug) cerr << "fwd:" << translationoptions[targetgram][0] << " / " << total << " = " << translationoptions[targetgram][0] / total << endl;
             translationoptions[targetgram][0] = log(translationoptions[targetgram][0] / total);
             
                                 
@@ -1954,16 +1952,11 @@ t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefo
                 for (t_aligntargets::iterator iter2 = reversealignmatrix[targetgram].begin(); iter2 != reversealignmatrix[targetgram].end(); iter2++) {
                     revtotal += pow(exp(1),iter2->second[1]);
                 }
-                if (debug)  cerr << "rev:" << translationoptions[targetgram][1] << " / " << revtotal << " = " << translationoptions[targetgram][1] / revtotal << endl;                  
                 translationoptions[targetgram][1] = log(translationoptions[targetgram][1] / revtotal);
                 
             }
             
-            if (debug) {
-                for (int i = 0; i < iter->second.size(); i++) {
-                    cerr << translationoptions[targetgram][i] << " log=" << log(translationoptions[targetgram][i]) << endl;
-                }
-            }
+
         }
                 
         return translationoptions;

@@ -48,7 +48,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 const EncAnyGram * sourcekey = iter->first;
                 if (translationtable->leftsourcecontext || translationtable->rightsourcecontext) {
                     //translation table context information, aggregate scores  
-                    if (DEBUG >=3) cerr << "Computing sum for translation options: " << sourcekey->decode(*sourceclassdecoder) << endl;
+                    //if (DEBUG >=3) cerr << "Computing sum for translation options: " << sourcekey->decode(*sourceclassdecoder) << endl;
                     t_aligntargets translationoptions = translationtable->sumtranslationoptions(sourcekey);
                     if (DEBUG >=3) cerr << "ADDING SOURCEFRAGMENT AFTER REMOVING CONTEXT: " << sourcekey->decode(*sourceclassdecoder) << endl; 
                     sourcefragments.push_back(SourceFragmentData(iter->first, iter->second, translationoptions));
@@ -105,8 +105,15 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                             cerr << *iter3 << " ";
                         }
                         if (!targetkey->isskipgram()) {
-                           cerr << "LM=" << lm->score((const EncNGram*) targetkey) << " ";
-                        }
+                           double lmscore = lm->score((const EncNGram*) targetkey);
+                           cerr << "LM=" << lmscore << " ";
+                           double totalscore=0;
+                           for (int i = 0;  i < iter2->second.size(); i++) {
+                                totalscore += tweights[i] * iter2->second[i]; 
+                           }
+                           totalscore += lweight * lmscore;
+                           cerr << "wsum=" << totalscore << " ";
+                        }                        
                         cerr << "]; ";                        
                     }
                 }
@@ -179,7 +186,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         if (DEBUG >= 3) cerr << "\tComputing future cost:" << endl;
 
         //sanity check:
-        for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
+        /*for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
             for (t_aligntargets::iterator iter2 = iter->translationoptions.begin(); iter2 != iter->translationoptions.end(); iter2++) {
                 const EncAnyGram * translationoption = iter2->first;
                 if (translationoption->isskipgram()) {
@@ -191,7 +198,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                     cerr << iter->sourcefragment->decode(*sourceclassdecoder) << " => " << translationoption->decode(*targetclassdecoder) << endl; 
                 }
             }
-        }
+        }*/
         
         computefuturecost();
         
