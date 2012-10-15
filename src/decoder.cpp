@@ -156,17 +156,23 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 delete buffer; 
                 lm->ngrams[targetunigram] = lm->ngrams[UNKNOWNUNIGRAM];
                 
+                
                 const EncAnyGram * sourcekey = translationtable->getsourcekey((const EncAnyGram *) unigram);                
                 if (sourcekey == NULL) {
-                    translationtable->alignmatrix[(const EncAnyGram *) unigram];
-                    keepunigram = true;
-                    sourcekey = translationtable->getsourcekey((const EncAnyGram *) unigram);
+                    //translationtable->alignmatrix[(const EncAnyGram *) unigram];
+                    //keepunigram = true;
+                    //sourcekey = translationtable->getsourcekey((const EncAnyGram *) unigram);
+                    sourcekey = new EncNGram(*unigram);
+                    unknownsources.push_back(sourcekey);
                 }
                 const EncAnyGram * targetkey = translationtable->gettargetkey((const EncAnyGram *) &targetunigram);
                 if (targetkey == NULL) {
-                    translationtable->targetngrams.insert(targetunigram);
-                    targetkey = translationtable->gettargetkey((const EncAnyGram *) &targetunigram);
+                    //translationtable->targetngrams.insert(targetunigram);
+                    //targetkey = translationtable->gettargetkey((const EncAnyGram *) &targetunigram);
+                    targetkey = new EncNGram(targetunigram);
+                    unknowntargets.push_back(targetkey);
                 }
+                
                 vector<double> scores;
                 for (unsigned int j = 0; j < tweights.size(); j++) scores.push_back(1);                 
                 
@@ -176,7 +182,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                                                 
                 if (DEBUG >= 3) cerr << "\tAdding *UNKNOWN* sourcefragment: " << sourcekey->decode(*sourceclassdecoder) << endl;
                 sourcefragments.push_back(SourceFragmentData( sourcekey, CorpusReference(0,i), translationoptions) );
-                if (!keepunigram) delete unigram; 
+                delete unigram; 
                 
                /* if (DEBUG >= 3) {
                     cerr << "\t" << i << ":1" << " -- " << sourcekey->decode(*sourceclassdecoder) << " ==> " << targetkey->decode(*targetclassdecoder) << " [ ";
@@ -444,6 +450,12 @@ StackDecoder::~StackDecoder() {
         stacks[i].clear();
     }
     targetclassdecoder->prune(highesttargetclass+1);
+    for (int i = 0; i < unknownsources.size(); i++) {
+        delete unknownsources[i];
+    }
+    for (int i = 0; i < unknowntargets.size(); i++) {
+        delete unknowntargets[i];
+    }
 }
 
 /*

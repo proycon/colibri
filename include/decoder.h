@@ -166,6 +166,8 @@ class StackDecoder {
         int stacksize;
         double prunethreshold;
         int highesttargetclass;
+        std::vector<const EncAnyGram *> unknownsources;
+        std::vector<const EncAnyGram *> unknowntargets;
     public:
         int DEBUG;
         std::map<std::pair<int, int>, double> futurecost; //(start, end) => cost    
