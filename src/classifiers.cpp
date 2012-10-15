@@ -146,8 +146,16 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
     
     //get amount of scores:
     const double epsilon = -500;
-    t_aligntargets::iterator tmpiter1 = originaltranslationoptions.begin();    
-    const int scorecount = tmpiter1->second.size();   
+    int scorecount = 0;
+    
+    if (scorehandling != SCOREHANDLING_REPLACE) {
+        t_aligntargets::iterator tmpiter1 = originaltranslationoptions.begin();
+        if (tmpiter1 == originaltranslationoptions.end()) {
+                cerr << "INTERNAL ERROR: Classifier::classify: No translation options passed!" << endl; 
+                throw InternalError();        
+        }    
+        scorecount = tmpiter1->second.size();   
+    }
    
     
     //convert valuedistribution to t_aligntargets    
@@ -307,7 +315,7 @@ void NClassifierArray::classifyfragments(const EncData & input, AlignmentModel *
             if (scorehandling != SCOREHANDLING_REPLACE) {                            
                 //first aggregate original translation options for all training contexts and renormalize.    
                 reftranslationoptions = translationtable->sumtranslationoptions(anygram);
-            } 
+            }
                         
             //extract anygram in context for classifier test input
             const EncAnyGram * withcontext = translationtable->addcontext(&input,anygram, (int) ref.token);
