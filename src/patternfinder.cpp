@@ -18,7 +18,8 @@ void usage() {
     cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced (except in query mode)" << endl;
     cerr << "\t-d modelfile     Load and decode this patternmodel (instead of -f)" << endl;
     cerr << "\t-J modelfile2    Joint decoding of a second (test) model, (using the same classes), use with -d and -c" << endl;
-    cerr << "\t-C               Generate a coverage report" << endl;   
+    cerr << "\t-C               Generate a coverage report" << endl;
+    cerr << "\t-H               Generate a histogram report" << endl;   
     cerr << "\t-t <number>      Token threshold: n-grams and skipgrams occuring less than this will be pruned (default: 2)" << endl;
     cerr << "\t-l <number>      Maximum n-gram/skipgram length (in words, default: 9)" << endl;
     cerr << "\t-s               Compute skip-grams (costs extra memory and time)" << endl;    
