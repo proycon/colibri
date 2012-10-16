@@ -182,6 +182,29 @@ $ make install</pre>
 $ patternfinder -d yourcorpus.indexedpatternmodel.colibri -c yourcorpus.cls -u</pre>
 </div>
 </div>
+<div class="section" id="statistical-reports-and-histograms">
+<h3>Statistical reports and histograms<a class="headerlink" href="#statistical-reports-and-histograms" title="Permalink to this headline">¶</a></h3>
+<p>If you have a pattern model, you can generate a simple statistical report which includes information on the number of occurrences and number of types for patterns, grouped for n-grams or skipgrams for a specific value of <em>n</em>. A report is generated using the <tt class="docutils literal"><span class="pre">-R</span></tt> flag:</p>
+<div class="highlight-python"><pre>$ patternfinder -d yourcorpus.indexedpatternmodel.colibri -R
+
+EXAMPLE OUTPUT:
+
+ REPORT
+     ----------------------------------
+                                           TOKENS     TYPES
+     Total:                        1245756     78261
+     N-grams:                      1245756     78261
+      n=1                           603046     10321
+      n=2                           400409     31734
+      n=3                           161613     22529
+      n=4                            51499      8522
+      n=5                            17219      3027
+      n=6                             6666      1209
+      n=7                             3325       575
+      n=8                             1979       344</pre>
+</div>
+<p>A histogram can also be generated, using the <tt class="docutils literal"><span class="pre">-H</span></tt> flag.</p>
+</div>
 <div class="section" id="training-and-testing-coverage">
 <h3>Training and testing coverage<a class="headerlink" href="#training-and-testing-coverage" title="Permalink to this headline">¶</a></h3>
 <p>An important quality of pattern models lies in the fact that pattern models can be compared. More specifically, you can train a pattern model on a corpus and test it on another corpus, which yields another pattern model containing only those patterns that occur in both training and test data. The difference in count, frequency and coverage can then be easily be compared.</p>
@@ -670,6 +693,7 @@ output best path that leads to best_hyp;</pre>
 <li><a class="reference internal" href="#pattern-finder">Pattern Finder</a><ul>
 <li><a class="reference internal" href="#id3">Introduction</a></li>
 <li><a class="reference internal" href="#creating-a-pattern-model">Creating a pattern model</a></li>
+<li><a class="reference internal" href="#statistical-reports-and-histograms">Statistical reports and histograms</a></li>
 <li><a class="reference internal" href="#training-and-testing-coverage">Training and testing coverage</a></li>
 <li><a class="reference internal" href="#query-mode">Query mode</a></li>
 </ul>

@@ -178,6 +178,32 @@ If you want to generate unindexed models, simply add the flag ``-u``. Do note th
 	$ patternfinder -d yourcorpus.unindexedpatternmodel.colibri -c yourcorpus.cls -u 
 	$ patternfinder -d yourcorpus.indexedpatternmodel.colibri -c yourcorpus.cls -u 
 
+
+Statistical reports and histograms
+----------------------------------
+
+If you have a pattern model, you can generate a simple statistical report which includes information on the number of occurrences and number of types for patterns, grouped for n-grams or skipgrams for a specific value of *n*. A report is generated using the ``-R`` flag::
+
+	   $ patternfinder -d yourcorpus.indexedpatternmodel.colibri -R
+	   
+	   EXAMPLE OUTPUT:
+	   
+	    REPORT
+		----------------------------------
+				                      TOKENS     TYPES
+		Total:                        1245756     78261
+		N-grams:                      1245756     78261
+		 n=1                           603046     10321
+		 n=2                           400409     31734
+		 n=3                           161613     22529
+		 n=4                            51499      8522
+		 n=5                            17219      3027
+		 n=6                             6666      1209
+		 n=7                             3325       575
+		 n=8                             1979       344
+ 
+A histogram can also be generated, using the ``-H`` flag.
+
 Training and testing coverage
 --------------------------------
 
