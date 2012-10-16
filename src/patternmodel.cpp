@@ -2068,7 +2068,7 @@ void IndexedPatternModel::report(std::ostream *OUT) {
     *OUT << "REPORT" << endl;
     *OUT << "----------------------------------" << endl;
     *OUT << "                          " << setw(10) << "TOKENS" << setw(10) << "TYPES" << setw(10) << endl;
-    *OUT << "Total:                    " << setw(10) << totaltokens << setw(10) << ngrams.size() + skipgrams.size() <<  endl;
+    *OUT << "Total:                    " << setw(10) << totalcount << setw(10) << ngrams.size() + skipgrams.size() <<  endl;
     
     
     *OUT << "N-grams:                  " << setw(10) << totalngramcount << setw(10) << ngrams.size() <<  endl;
@@ -2090,7 +2090,7 @@ void UnindexedPatternModel::report(std::ostream *OUT) {
     *OUT << "REPORT" << endl;
     *OUT << "----------------------------------" << endl;
     *OUT << "                          " << setw(10) << "TOKENS" << setw(10) << "TYPES" << setw(10) << endl;
-    *OUT << "Total:                    " << setw(10) << totaltokens << setw(10) << ngrams.size() + skipgrams.size() <<  endl;
+    *OUT << "Total:                    " << setw(10) << totalcount << setw(10) << ngrams.size() + skipgrams.size() <<  endl;
     
     
     *OUT << "N-grams:                  " << setw(10) << totalngramcount << setw(10) << ngrams.size() <<  endl;
