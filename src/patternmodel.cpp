@@ -1452,6 +1452,33 @@ void IndexedPatternModel::histogram(ostream *OUT) {
     
 }
 
+void UnindexedPatternModel::histogram(ostream *OUT) {
+    map<int,unsigned int> h_ngrams;
+    map<int,unsigned int> h_skipgrams;
+    
+    for (unordered_map<const EncNGram,uint32_t>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
+        h_ngrams[iter->second] += 1;
+    }  
+    for (unordered_map<const EncSkipGram,uint32_t>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
+        h_skipgrams[iter->second] += 1;
+    }
+    
+    *OUT << "N-Grams Histogram:" << endl;
+    for (map<int, unsigned int>::iterator iter = h_ngrams.begin(); iter != h_ngrams.end(); iter++) {
+        *OUT << iter->first << "\t" << iter->second << endl;
+    }
+    *OUT << endl;
+    
+    if (!skipgrams.empty()) {
+        *OUT << "Skipgrams Histogram:" << endl;
+        for (map<int, unsigned int>::iterator iter = h_skipgrams.begin(); iter != h_skipgrams.end(); iter++) {
+            *OUT << iter->first << "\t" << iter->second << endl;
+        }
+    }
+    
+}
+
+
 UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
     
     this->MAXLENGTH = MAXLENGTH;
@@ -2030,6 +2057,52 @@ void UnindexedPatternModel::decode(UnindexedPatternModel & testmodel,  ClassDeco
             }                     
            *OUT << endl;
        }  
+}
+
+
+
+void IndexedPatternModel::report(std::ostream *OUT) {
+
+    const int totalcount =  totalngramcount+totalskipgramcount;  
+    *OUT << setiosflags(ios::fixed) << setprecision(4) << endl;       
+    *OUT << "REPORT" << endl;
+    *OUT << "----------------------------------" << endl;
+    *OUT << "                          " << setw(10) << "TOKENS" << setw(10) << "TYPES" << setw(10) << "TTR" << endl;
+    *OUT << "Total:                    " << setw(10) << totaltokens << setw(10) << ngrams.size() + skipgrams.size() <<  endl;
+    
+    
+    *OUT << "N-grams:                  " << setw(10) << totalngramcount << setw(10) << ngrams.size() <<  endl;
+    for (int n = 1; n <= MAXN; n++) {
+        *OUT << " n=" << n << "                       "  << setw(10) << ngramcount[n] << setw(10) << ngramtypes[n] << endl; 
+    }
+    
+    *OUT << "Skipgrams:                " << setw(10) << totalskipgramcount << setw(10) << skipgrams.size() << endl;
+    for (int n = 1; n <= MAXN; n++) {
+        *OUT << " n=" << n << "                       "  << setw(10) << skipgramcount[n] << setw(10) << skipgramtypes[n] << endl; 
+    }                
+
+}
+
+void UnindexedPatternModel::report(std::ostream *OUT) {
+
+    const int totalcount =  totalngramcount+totalskipgramcount;  
+    *OUT << setiosflags(ios::fixed) << setprecision(4) << endl;       
+    *OUT << "REPORT" << endl;
+    *OUT << "----------------------------------" << endl;
+    *OUT << "                          " << setw(10) << "TOKENS" << setw(10) << "TYPES" << setw(10) << "TTR" << endl;
+    *OUT << "Total:                    " << setw(10) << totaltokens << setw(10) << ngrams.size() + skipgrams.size() <<  endl;
+    
+    
+    *OUT << "N-grams:                  " << setw(10) << totalngramcount << setw(10) << ngrams.size() <<  endl;
+    for (int n = 1; n <= MAXN; n++) {
+        *OUT << " n=" << n << "                       "  << setw(10) << ngramcount[n] << setw(10) << ngramtypes[n] << endl; 
+    }
+    
+    *OUT << "Skipgrams:                " << setw(10) << totalskipgramcount << setw(10) << skipgrams.size() << endl;
+    for (int n = 1; n <= MAXN; n++) {
+        *OUT << " n=" << n << "                       "  << setw(10) << skipgramcount[n] << setw(10) << skipgramtypes[n] << endl; 
+    }                
+
 }
 
 double SkipGramData::entropy() const {

@@ -18,7 +18,8 @@ void usage() {
     cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced (except in query mode)" << endl;
     cerr << "\t-d modelfile     Load and decode this patternmodel (instead of -f)" << endl;
     cerr << "\t-J modelfile2    Joint decoding of a second (test) model, (using the same classes), use with -d and -c" << endl;
-    cerr << "\t-C               Generate a coverage report" << endl;
+    cerr << "\t-R               Generate a simple statistical report" << endl;
+    cerr << "\t-C               Generate an extensive coverage report (indexed patternmodels) only)" << endl;
     cerr << "\t-H               Generate a histogram report" << endl;   
     cerr << "\t-t <number>      Token threshold: n-grams and skipgrams occuring less than this will be pruned (default: 2)" << endl;
     cerr << "\t-l <number>      Maximum n-gram/skipgram length (in words, default: 9)" << endl;
@@ -71,6 +72,7 @@ int main( int argc, char *argv[] ) {
     bool DOINITIALONLYSKIP = true;
     bool DOFINALONLYSKIP = true;
     bool DOQUERIER = false;
+    bool DOREPORT = false;
     bool DOCOVERAGE = false;
     bool DOCOVVIEW = false;
     bool DOHISTOGRAM = false;
@@ -78,7 +80,7 @@ int main( int argc, char *argv[] ) {
     bool DEBUG = false;
     double alignthreshold = 0.0;
     char c;    
-    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQDJ:CVA:P:H")) != -1)
+    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQDJ:CRVA:P:H")) != -1)
         switch (c)
         {
         case 'c':
@@ -96,6 +98,9 @@ int main( int argc, char *argv[] ) {
         case 'C':
             DOCOVERAGE = true;
             break;
+        case 'R':
+            DOREPORT = true;
+            break;            
         case 'V':
             DOCOVVIEW = true;
             break;
@@ -287,7 +292,7 @@ int main( int argc, char *argv[] ) {
             cerr << "Not implemented yet for unindexed models" << endl;
             exit(2);
         }       
-    } else if ( (!modelfile.empty()) && ((!classfile.empty()) || DOCOVERAGE  ) ) {
+    } else if ( (!modelfile.empty()) && ((!classfile.empty()) || DOCOVERAGE || DOREPORT || DOHISTOGRAM  ) ) {
     	if (DOINDEX) {
     	    cerr << "Loading model" << endl;
 		    IndexedPatternModel model = IndexedPatternModel(modelfile, DEBUG);
@@ -311,6 +316,9 @@ int main( int argc, char *argv[] ) {
     			     }		        	    
 		        }
 		    }
+            if (DOREPORT) {
+   		        model.report((ostream*) &cout);		        
+	        }
 	       	if (DOCOVERAGE) {
    		        model.coveragereport((ostream*) &cout);		        
 	        }
@@ -341,7 +349,17 @@ int main( int argc, char *argv[] ) {
     			        model.decode(testmodel, classdecoder, (ostream*) &cout);
     			     }
 			    }   
-		    }			
+		    }
+            if (DOREPORT) {
+   		        model.report((ostream*) &cout);		        
+	        }
+	       	if (DOCOVERAGE) {
+   		        cerr << "ERROR: Coverage report not available for unindexed models" << endl;		        
+	        }
+	       	if (DOHISTOGRAM) {
+   		        model.histogram((ostream*) &cout);		        
+	        }	        
+
 		}
         
     } else {
