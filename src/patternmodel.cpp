@@ -1437,14 +1437,17 @@ void IndexedPatternModel::histogram(ostream *OUT) {
         h_skipgrams[iter->second.count()] += 1;
     }
     
-    *OUT << "N-Grams:" << endl;
+    *OUT << "N-Grams Histogram:" << endl;
     for (map<int, unsigned int>::iterator iter = h_ngrams.begin(); iter != h_ngrams.end(); iter++) {
         *OUT << iter->first << "\t" << iter->second << endl;
     }
     *OUT << endl;
-    *OUT << "Skipgrams:" << endl;
-    for (map<int, unsigned int>::iterator iter = h_skipgrams.begin(); iter != h_skipgrams.end(); iter++) {
-        *OUT << iter->first << "\t" << iter->second << endl;
+    
+    if (!skipgrams.empty()) {
+        *OUT << "Skipgrams Histogram:" << endl;
+        for (map<int, unsigned int>::iterator iter = h_skipgrams.begin(); iter != h_skipgrams.end(); iter++) {
+            *OUT << iter->first << "\t" << iter->second << endl;
+        }
     }
     
 }
