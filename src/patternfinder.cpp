@@ -72,11 +72,12 @@ int main( int argc, char *argv[] ) {
     bool DOQUERIER = false;
     bool DOCOVERAGE = false;
     bool DOCOVVIEW = false;
+    bool DOHISTOGRAM = false;
     //bool DOCOMPOSITIONALITY = false;
     bool DEBUG = false;
     double alignthreshold = 0.0;
     char c;    
-    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQDJ:CVA:P:")) != -1)
+    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQDJ:CVA:P:H")) != -1)
         switch (c)
         {
         case 'c':
@@ -135,7 +136,10 @@ int main( int argc, char *argv[] ) {
 	        break;
         case 'P':
             alignthreshold = atof(optarg);
-            break;	        
+            break;	
+        case 'H':
+            DOHISTOGRAM = true;
+            break;        
         case 'h':
             usage();
             exit(0);
@@ -309,6 +313,9 @@ int main( int argc, char *argv[] ) {
 	       	if (DOCOVERAGE) {
    		        model.coveragereport((ostream*) &cout);		        
 	        }
+	       	if (DOHISTOGRAM) {
+   		        model.histogram((ostream*) &cout);		        
+	        }	        
 
 		    
 		} else {

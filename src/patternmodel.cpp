@@ -1426,7 +1426,28 @@ bool IndexedPatternModel::skipgramvarietycheck(SkipGramData & skipgramdata, int 
     return true;
 }
 
-
+void IndexedPatternModel::histogram(ostream *OUT) {
+    map<int,unsigned int> h_ngrams;
+    map<int,unsigned int> h_skipgrams;
+    
+    for (unordered_map<const EncNGram,NGramData>::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
+        h_ngrams[iter->second.count()] += 1;
+    }  
+    for (unordered_map<const EncSkipGram,SkipGramData>::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
+        h_skipgrams[iter->second.count()] += 1;
+    }
+    
+    *OUT << "N-Grams:" << endl;
+    for (map<int, unsigned int>::iterator iter = h_ngrams.begin(); iter != h_ngrams.end(); iter++) {
+        *OUT << iter->first << "\t" << iter->second << endl;
+    }
+    *OUT << endl;
+    *OUT << "Skipgrams:" << endl;
+    for (map<int, unsigned int>::iterator iter = h_skipgrams.begin(); iter != h_skipgrams.end(); iter++) {
+        *OUT << iter->first << "\t" << iter->second << endl;
+    }
+    
+}
 
 UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
     
