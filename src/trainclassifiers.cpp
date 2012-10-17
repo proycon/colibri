@@ -112,7 +112,6 @@ int main( int argc, char *argv[] ) {
     
     } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
     
-        
         cerr << "Building construction expert classifiers" << endl;
         ConstructionExperts classifiers = ConstructionExperts(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold);    
         classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder, exemplarweights);

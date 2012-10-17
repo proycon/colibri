@@ -156,7 +156,7 @@ class MTWrapper(object):
             ('BUILD_COLIBRI_GIZA', False,'Base aligner on word-alignments using giza (do not manually specify -W -s -t in COLIBRI_ALIGNER_OPTIONS)'),
             ('BUILD_COLIBRI_TRANSTABLE', False,'Build a translation table using colibri'),
             ('BUILD_COLIBRI_MOSESPHRASETABLE', False,'Build a Moses-style phrasetable using colibri'),
-            ('BUILD_COLIBRI_CLASSIFIERS', False,'Build and use classifiers'),
+            ('BUILD_COLIBRI_CLASSIFIERS', False,'Build and use classifiers. Also set COLIBRI_CLASSIFIER_OPTIONS to select a classifier method'),
             ('BUILD_COLIBRI_SKIPGRAMS', False,'Include support for skipgrams (automatically adds -s -B -E to patternfinder options, creates proper graph models if enabled, extracts skipgrams in alignment). If alignment is enabled, skipgrams will be extracted from the aligned models, do not use if skipgrams are already to be extracted during EM or Jaccard alignment.'),
             ('BUILD_COLIBRI', False,'Build for colibri decoder'),
             ('BUILD_PHRASAL', False,'Build phrasal configuration, necessary for decoding using phrasal'),
@@ -232,6 +232,7 @@ class MTWrapper(object):
             ('COLIBRI_DECODER_OPTIONS','','Options for the colibri decoder, see decoder -h'),
             ('COLIBRI_LEFTCONTEXTSIZE',1,'For use with BUILD_COLIBRI_CLASSIFIERS=True'),
             ('COLIBRI_RIGHTCONTEXTSIZE',1,'For use with BUILD_COLIBRI_CLASSIFIERS=True'),
+            ('COLIBRI_CLASSIFIER_OPTIONS','-N','For use with BUILD_COLIBRI_CLASSIFIERS=True. Make sure to select at least a classifier here (-N, -X)'),
             ('PHRASAL_MAXMEM', '4g', 'Memory allocated for word alignment, phrase extraction and decoding using phrasal (java)'),
             ('PHRASAL_WITHGAPS', True, 'Consider gaps if using Phrasal?'),
             ('PHRASAL_MAXSOURCEPHRASESPAN', 15, 'Maximum span for a source-side phrase with gaps (phrasal)'),
@@ -1469,7 +1470,7 @@ class MTWrapper(object):
                 
         
         if self.BUILD_COLIBRI_CLASSIFIERS and self.BUILD_COLIBRI_GIZA:
-            if not self.runcmd(self.EXEC_COLIBRI_TRAINCLASSIFIERS + ' -C timbl -d ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls')  + ' -O "' + self.COLIBRI_TIMBL_OPTIONS + '"', "Building and training classifiers"): return False   
+            if not self.runcmd(self.EXEC_COLIBRI_TRAINCLASSIFIERS + ' ' + self.COLIBRI_CLASSIFIER_OPTIONS + ' -C timbl -d ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls')  + ' -O "' + self.COLIBRI_TIMBL_OPTIONS + '"', "Building and training classifiers"): return False   
             
         
         #if self.BUILD_COLIBRI_TRANSTABLE:            
