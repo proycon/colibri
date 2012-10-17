@@ -1681,9 +1681,9 @@ int main( int argc, char *argv[] ) {
                 cerr << "       \tof which rejected: " << decoder->stats.discarded << endl;
                 cerr << "       \tof which pruned: " << decoder->stats.pruned << endl;
                 cerr << "       \tof which gapresolutions: " << decoder->stats.gapresolutions << endl;
-                cerr << "SCORE=" << solution->score() << endl;                
-                cerr << "DONE. OUTPUT:" << endl;
-                cout << s.decode(targetclassdecoder) << endl;
+                cerr << "SCORE=" << solution->score() << endl;
+                const string out = s.decode(targetclassdecoder);                 
+                cerr << "DONE. OUTPUT: " << out << endl;                
                 if ((STATS) && (!GLOBALSTATS)) solution->stats(); 
                 if (decoder->DEBUG == 99) {
                     cerr << "DEBUG: SOLUTION DESTRUCTION. DELETING " << (size_t) solution << endl;
