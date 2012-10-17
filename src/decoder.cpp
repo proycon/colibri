@@ -1327,13 +1327,14 @@ void usage() {
     cerr << "\t-L weight                 Language model weight" << endl;
     cerr << "\t-D weight                 Distortion model weight" << endl;
     cerr << "\t-M distortion-limit       Distortion limit (max number of source words skipped, default: unlimited)" << endl;
-    cerr << "\t-N                        No skipgrams" << endl;
-    cerr << "\t-C id                     Use classifier" << endl;            
+    cerr << "\t-N                        No skipgrams" << endl;            
     cerr << "\t-O options                Timbl options for classification" << endl;
     cerr << "\t--moses                   Translation table is in Moses format" << endl;
     cerr << "\t-v verbosity              Verbosity/debug level" << endl;
     cerr << "\t--stats                   Compute and output decoding statistics for each solution" << endl;
     cerr << "\t--globalstats             Compute and output decoding statistics for all hypothesis accepted on a stack" << endl;
+    cerr << "  Classifier Options:" << endl;
+    cerr << "\t-C id                     Use classifier. ID was provided when calling trainclassifiers" << endl;
     cerr << "\t-x mode                   How to handle classifier scores? (Only with -C). Choose from:" << endl;
     cerr << "\t       weighed            Apply classifier score as weight to original scores (default)" << endl;
     cerr << "\t       append             Append classifier score to translation score vector (make sure to specify an extra weight using -W)" << endl;
@@ -1626,9 +1627,13 @@ int main( int argc, char *argv[] ) {
         } else if (scorehandling == SCOREHANDLING_REPLACE) {
             cerr << "replace" << endl;
         }
-        bool exemplarweights = true; //read from config
-        classifier = (ClassifierInterface*) new NClassifierArray(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext);
-        classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);        
+        int contextthreshold; //will be set by getclassifiertype
+        bool exemplarweights; //will be set by getclassifiertype
+        ClassifierType classifiertype = getclassifierconf(classifierid, contextthreshold, exemplarweights);
+        if (classifiertype == CLASSIFIERTYPE_NARRAY) {        
+            classifier = (ClassifierInterface*) new NClassifierArray(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold);
+            classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);        
+        }
     }   
         
     //const int firstunknownclass_source = sourceclassencoder.gethighestclass()+1;    
@@ -1721,3 +1726,4 @@ int main( int argc, char *argv[] ) {
     
     delete transtable;
 }
+

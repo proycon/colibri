@@ -13,6 +13,16 @@ enum ScoreHandling {
     SCOREHANDLING_REPLACE = 3 //completely replace translation score with classifier score
 };
 
+
+enum ClassifierType { 
+    CLASSIFIERTYPE_NONE = 0, 
+    CLASSIFIERTYPE_NARRAY = 1, 
+    CLASSIFIERTYPE_CONSTRUCTIONEXPERTS = 2
+};
+
+ClassifierType getclassifierconf(const std::string & ID, int & contextthreshold, bool & exemplarweight);
+void writeclassifierconf(const std::string & ID, ClassifierType, int contextthreshold, bool exemplarweight);
+
 class Classifier {
   private:
     int featurevectorsize; //nr of unigram features (each feature is a single word) in the feature vector
@@ -53,22 +63,40 @@ class ClassifierInterface {
         virtual void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,  bool exemplarweights = true) =0;
         virtual void train(const std::string & timbloptions) =0;
         virtual void load( const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG =0) =0;
-        virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling) =0; //decoder will call this, sourcefragments and newtable will be filled for decoder  
+        virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, int contextthreshold = 1); //decoder will call this  
+        virtual t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0;
+        virtual t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0;          
 };
 
 class NClassifierArray: public ClassifierInterface {
     protected:
         int leftcontextsize;
         int rightcontextsize;
+        int contextthreshold;
     public:
         std::map<int, Classifier*> classifierarray;    
-        NClassifierArray(const std::string & id, int leftcontextsize, int rightcontextsize);
+        NClassifierArray(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold = 1);
         void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);       
         void train(const std::string & timbloptions);     
         void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG=0);
-        void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling); //decoder will call this, sourcefragments will be filled for decoder
-        t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);
-        t_aligntargets classify(std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);          
+        t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);
+        t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);          
+        AlignmentModel * classify(AlignmentModel * original);
+};
+
+class ConstructionExperts: public ClassifierInterface {
+    protected:
+        int leftcontextsize;
+        int rightcontextsize;
+        int contextthreshold;
+    public:
+        std::map<int, Classifier*> classifierarray;    
+        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold = 1);
+        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);       
+        void train(const std::string & timbloptions);     
+        void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG=0);
+        t_aligntargets classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);
+        t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);          
         AlignmentModel * classify(AlignmentModel * original);
 };
 
