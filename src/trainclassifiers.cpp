@@ -46,7 +46,7 @@ int main( int argc, char *argv[] ) {
     int targetthreshold = 1;
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
