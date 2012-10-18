@@ -292,6 +292,9 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
             }             
         }
     }    
+    for (map<int, Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
+        iter->second->close();
+    }
 }
 
 
@@ -461,7 +464,7 @@ ConstructionExperts::ConstructionExperts(const string & id, int leftcontextsize,
 
 void ConstructionExperts::train(const string & timbloptions) {
     for (map<uint64_t,Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
-        cerr << "Training classifier hash=" << iter->first << "..." << endl;
+        cerr << "Training classifier hash=" << iter->first << "... " << endl;
         iter->second->train(timbloptions);
     }
 
@@ -526,9 +529,13 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
             if (classifierarray[hash]->empty()) {
                 delete classifierarray[hash];
                 classifierarray.erase(hash);
-            }        
+            }  
         }
     }    
+    
+    for (map<uint64_t, Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
+        iter->second->close();
+    }
 }
 
 
