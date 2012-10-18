@@ -108,7 +108,7 @@ int main( int argc, char *argv[] ) {
     if (mode == CLASSIFIERTYPE_NARRAY) {
     
         cerr << "Building N-Array classifiers" << endl;
-        NClassifierArray classifiers = NClassifierArray(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold);    
+        NClassifierArray classifiers = NClassifierArray(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold);    
         classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder, exemplarweights);
 
         cerr << "Training classifiers" << endl;
@@ -118,7 +118,7 @@ int main( int argc, char *argv[] ) {
     } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
     
         cerr << "Building construction expert classifiers" << endl;
-        ConstructionExperts classifiers = ConstructionExperts(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold);    
+        ConstructionExperts classifiers = ConstructionExperts(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold);    
         classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder, exemplarweights);
         
         cerr << "Training classifiers" << endl;
