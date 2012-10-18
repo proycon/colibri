@@ -74,13 +74,20 @@ void Classifier::addinstance(vector<const EncAnyGram *> featurevector, const Enc
 }
 
 void Classifier::addinstance(vector<string> & featurevector, const string & label, double exemplarweight) {
-    if (!outputfile.is_open()) {
-        if (appendmode) {
-            outputfile.open(trainfile, ios::app);
-        } else {
+    //if (!outputfile.is_open()) {
+        cerr << "Opening (append) " << trainfile << endl;
+        outputfile.open(trainfile, ios::app);
+        /*} else {
+            cerr << "Opening " << trainfile << endl;
             outputfile.open(trainfile);
         }
-    }
+        */
+        if (!outputfile.good()) {
+            cerr << "Unable to write to file " << trainfile << endl;
+            throw InternalError();
+        }
+    //}
+    
 
     if (featurevectorsize == 0) {
         featurevectorsize = featurevector.size();
@@ -98,7 +105,8 @@ void Classifier::addinstance(vector<string> & featurevector, const string & labe
         outputfile << '\t' << exemplarweight;
     }
     outputfile << endl; 
-    added = true;   
+    added = true;
+    outputfile.close();
 }
 
 void Classifier::train(const string & timbloptions) {
@@ -292,9 +300,10 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
             }             
         }
     }    
-    for (map<int, Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
+    /*for (map<int, Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
+        iter->second->flush();
         iter->second->close();
-    }
+    }*/
 }
 
 
@@ -510,7 +519,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
                     }                
                     for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
                         const EncAnyGram * label = iter3->first;
-                        
+                        cerr << "Adding to classifier hash=" << hash << "..." << endl;
                         if (exemplarweights) {
                             //add exemplar weight         
                             double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
@@ -527,15 +536,18 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
             }
             
             if (classifierarray[hash]->empty()) {
+                cerr << "Deleting empty classifier hash=" << hash << "..." << endl;
                 delete classifierarray[hash];
                 classifierarray.erase(hash);
             }  
         }
     }    
     
-    for (map<uint64_t, Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
+    /*for (map<uint64_t, Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
+        cerr << "Closing classifier hash=" << iter->first << "..." << endl;
+        iter->second->flush();
         iter->second->close();
-    }
+    }*/
 }
 
 

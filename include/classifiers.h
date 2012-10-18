@@ -49,6 +49,7 @@ class Classifier {
     const std::string id() { return ID; };
     bool empty() { return !added; }
     void close() { outputfile.close(); }
+    void flush() { outputfile.flush(); }
     t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions );
     t_aligntargets classify(std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);     
 };
