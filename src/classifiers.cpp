@@ -324,7 +324,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
         const int contextcount = translationtable->sourcecontexts[anygram].size(); //in how many different contexts does this occur?
         const int n = anygram->n();
         
-        
+        bool bypass = false;
         if (contextcount >= contextthreshold) {
             //classify!
             t_aligntargets reftranslationoptions;
@@ -333,46 +333,51 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                 //first aggregate original translation options for all training contexts and renormalize.    
                 reftranslationoptions = translationtable->sumtranslationoptions(anygram);
             }
-                        
-            //extract anygram in context for classifier test input
-            const EncAnyGram * withcontext = translationtable->addcontext(&input,anygram, (int) ref.token);
-            const int nwithcontext = withcontext->n();
+            
+            //are there enough targets for this source to warrant a classifier? 
+            if (reftranslationoptions.size() >= targetthreshold) {
+                //yes
+            
+                //extract anygram in context for classifier test input
+                const EncAnyGram * withcontext = translationtable->addcontext(&input,anygram, (int) ref.token);
+                const int nwithcontext = withcontext->n();
 
-             
-            vector<const EncAnyGram *> featurevector;
-            for (int i = 0; i < nwithcontext; i++) {
-                const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                featurevector.push_back(unigram);                    
-            }
-            translationoptions = classify(anygram, featurevector, scorehandling, reftranslationoptions);
-            //cleanup
-            for (int i = 0; i < nwithcontext; i++) {
-                delete featurevector[i];
-            }          
+                 
+                vector<const EncAnyGram *> featurevector;
+                for (int i = 0; i < nwithcontext; i++) {
+                    const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                    featurevector.push_back(unigram);                    
+                }
+                translationoptions = classify(anygram, featurevector, scorehandling, reftranslationoptions);
+                //cleanup
+                for (int i = 0; i < nwithcontext; i++) {
+                    delete featurevector[i];
+                }
+            } else {
+                bypass = true;
+            }                    
         } else {
-            //bypass classifier copy from translation table      
+            bypass = true;
+        }
+        
+        
+        if (bypass) {
+            //bypass classifier; copy from translation table (after aggregating contexts)      
             
-            //TODO!!!, may be a bit fishy still          
-
-            const EncAnyGram * anygramwithcontext = *(translationtable->sourcecontexts[anygram].begin());    
-            t_aligntargets originaltranslationoptions = translationtable->alignmatrix[anygramwithcontext];
+            t_aligntargets reftranslationoptions;
+            reftranslationoptions = translationtable->sumtranslationoptions(anygram);
             
-            for (t_aligntargets::iterator iter = originaltranslationoptions.begin(); iter != originaltranslationoptions.end(); iter++) {
+            for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
                 const EncAnyGram * target = iter->first;
                 const double weight = 0; //== log(1.0)
-                
-                if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_IGNORE) ) {
-                    if (originaltranslationoptions.count(target) == 0) {
-                        cerr << "INTERNAL ERROR: Classifier::classify: Original translation option not found" << endl; 
-                        throw InternalError();
-                    }
-                    translationoptions[target] = originaltranslationoptions[target];          
-                }                 
-                if ((scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_REPLACE)) {
+                if (scorehandling == SCOREHANDLING_REPLACE) {
+                    translationoptions[target].clear();
+                    translationoptions[target].push_back(weight);    
+                } else if (scorehandling == SCOREHANDLING_APPEND) {
                     translationoptions[target].push_back(weight);
-                }                  
-            } 
-             
+                }
+            }
+
         }
         sourcefragments.push_back(SourceFragmentData(anygram, ref, translationoptions));
      }     
