@@ -37,6 +37,7 @@ class Classifier {
     ClassDecoder * targetclassdecoder;
     ClassEncoder * targetclassencoder;
     Timbl::TimblAPI * testexp;
+    bool added;
     bool DEBUG;
   public:
     Classifier(const std::string & id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool append = false, bool exemplarweights = true, bool debug=false); //for building
@@ -46,6 +47,7 @@ class Classifier {
     void addinstance(std::vector<std::string> & featurevector, const std::string & label, double exemplarweight = 1);
     void train(const std::string & timbloptions);
     const std::string id() { return ID; };
+    bool empty() { return !added; }
     t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions );
     t_aligntargets classify(std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);     
 };

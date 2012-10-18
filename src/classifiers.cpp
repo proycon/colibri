@@ -28,6 +28,7 @@ Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecode
     this->sourceclassdecoder = sourceclassdecoder;
     this->targetclassdecoder = targetclassdecoder;
     this->DEBUG = debug;
+    added = false;
 }        
 
 Classifier::Classifier(const std::string & _id, const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, bool debug) {
@@ -38,6 +39,7 @@ Classifier::Classifier(const std::string & _id, const string & timbloptions, Cla
     this->sourceclassdecoder = sourceclassdecoder;
     this->targetclassencoder = targetclassencoder;
     this->DEBUG = debug;
+    added = false;
     
     //const string moretimbloptions = "-F Tabbed -i " + ibasefile + " -w " + wgtfile + " " + timbloptions + " +D +vdb";
     const string moretimbloptions = "-F Tabbed " + timbloptions + " +D +vdb -G 0 +vS";
@@ -95,7 +97,8 @@ void Classifier::addinstance(vector<string> & featurevector, const string & labe
     if (exemplarweights) {
         outputfile << '\t' << exemplarweight;
     }
-    outputfile << endl;    
+    outputfile << endl; 
+    added = true;   
 }
 
 void Classifier::train(const string & timbloptions) {
@@ -273,7 +276,11 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
                         delete featurevector[i];
                     }
                 }
-            }        
+            }   
+            if (classifierarray[n]->empty()) {
+                delete classifierarray[n];
+                classifierarray.erase(n);
+            }             
         }
     }    
 }
@@ -479,6 +486,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
             }    
             
             if (targets.size() >= targetthreshold) {
+                cerr << "Building classifier hash=" << hash << "..." << endl;
                 for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                     const EncAnyGram * withcontext = *iter2;
             
@@ -504,6 +512,11 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
                         delete featurevector[i];
                     }
                 }
+            }
+            
+            if (classifierarray[hash]->empty()) {
+                delete classifierarray[hash];
+                classifierarray.erase(hash);
             }        
         }
     }    
