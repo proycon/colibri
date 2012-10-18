@@ -460,8 +460,8 @@ ConstructionExperts::ConstructionExperts(const string & id, int leftcontextsize,
 
 
 void ConstructionExperts::train(const string & timbloptions) {
-    for (map<size_t,Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
-        cerr << "Training classifier hash=" << (size_t) iter->first << "..." << endl;
+    for (map<uint64_t,Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
+        cerr << "Training classifier hash=" << iter->first << "..." << endl;
         iter->second->train(timbloptions);
     }
 
@@ -479,7 +479,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
         const EncAnyGram * focus = iter->first;                
         if (iter->second.size() >= contextthreshold) { //only use classifier if contextssthreshold is met (by default 1, so it always is)
             stringstream newid;
-            const size_t hash = focus->hash();
+            const uint64_t hash = focus->hash();
             newid << this->id() << "." << focus->hash();
             if (!classifierarray.count(hash)) {
                 classifierarray[hash] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder, false, exemplarweights);
@@ -534,7 +534,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
 
 
 t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
-    const size_t hash = focus->hash();   
+    const uint64_t hash = focus->hash();   
     if ((classifierarray.count(hash)) && (classifierarray[hash] != NULL)) {
         return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
@@ -544,7 +544,7 @@ t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vect
 }
 
 t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
-    const size_t hash = focus->hash(); 
+    const uint64_t hash = focus->hash(); 
     if ((classifierarray.count(hash)) && (classifierarray[hash] != NULL)) {
         return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
@@ -567,7 +567,7 @@ void ConstructionExperts::load( const string & timbloptions, ClassDecoder * sour
         for (int i = filenamenoext.find_last_of('.'); i < filenamenoext.size(); i++) {
             hash_s << filenamenoext[i];            
         }
-        const size_t hash = atoi(hash_s.str().c_str());
+        const uint64_t hash = atoi(hash_s.str().c_str());
         
         const string hashclassifierid = filename.substr(0, filename.size() - 6);
         cerr << "   Loading classifier hash=" << hash << " id=" << hashclassifierid << endl;   

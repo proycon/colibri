@@ -94,7 +94,7 @@ class ConstructionExperts: public ClassifierInterface {
         int contextthreshold;
         int targetthreshold;
     public:
-        std::map<size_t, Classifier*> classifierarray;    
+        std::map<uint64_t, Classifier*> classifierarray;    
         ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold = 2, int targetthreshold = 2);
         void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);       
         void train(const std::string & timbloptions);     
