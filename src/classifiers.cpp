@@ -105,6 +105,15 @@ void Classifier::train(const string & timbloptions) {
     const string ibasefile = string(id() + ".ibase");
     const string moretimbloptions = " -F Tabbed " + timbloptions + " +D +vdb";
     TimblAPI * timbltrainexp = new TimblAPI( moretimbloptions , ID );
+    
+    ifstream * f  = new ifstream(trainfile);
+    if (!f->good()) {
+        cerr << "Training file not found: " << trainfile << endl;
+        throw InternalError();
+    }
+    f->close();
+    delete f; 
+    
     timbltrainexp->Learn(trainfile);   
     timbltrainexp->WriteInstanceBase( ibasefile );
     timbltrainexp->SaveWeights( ibasefile + ".wgt");
