@@ -1628,10 +1628,11 @@ int main( int argc, char *argv[] ) {
             cerr << "replace" << endl;
         }
         int contextthreshold; //will be set by getclassifiertype
+        int targetthreshold; //will be set by getclassifiertype
         bool exemplarweights; //will be set by getclassifiertype
-        ClassifierType classifiertype = getclassifierconf(classifierid, contextthreshold, exemplarweights);
+        ClassifierType classifiertype = getclassifierconf(classifierid, contextthreshold, targetthreshold, exemplarweights);
         if (classifiertype == CLASSIFIERTYPE_NARRAY) {        
-            classifier = (ClassifierInterface*) new NClassifierArray(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold);
+            classifier = (ClassifierInterface*) new NClassifierArray(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold);
             classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);        
         }
     }   

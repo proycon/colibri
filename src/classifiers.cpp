@@ -192,10 +192,12 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
 }
 
 
-NClassifierArray::NClassifierArray(const string & id, int leftcontextsize, int rightcontextsize, int contextthreshold): ClassifierInterface(id) {
+NClassifierArray::NClassifierArray(const string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold): ClassifierInterface(id) {
     this->leftcontextsize = leftcontextsize;
     this->rightcontextsize = rightcontextsize;
-    this->contextthreshold = contextthreshold; //relevant for building only
+    this->contextthreshold = contextthreshold;
+    this->targetthreshold = targetthreshold;
+    
 }
 
 void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG) {    
@@ -227,36 +229,49 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
         exit(3);
     } 
     for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
-        const EncAnyGram * focus = iter->first;                
-        if (iter->second.size() >= contextthreshold) { //only use classifier if contextssthreshold is met (by default 1, so it always is)
+        const EncAnyGram * focus = iter->first;
+                        
+        if (iter->second.size() >= contextthreshold) { //only use classifier if contextsthreshold is met (by default 1, so it always is)
             const int n = focus->n();
             stringstream newid;
             newid << this->id() << ".n" << n;
             if (!classifierarray.count(n)) {
                 classifierarray[n] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder, false, exemplarweights);
             }
+            
+            unordered_set<const EncAnyGram *> targets; //used to check if enough different targets exists, passing targetthreshold
             for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                 const EncAnyGram * withcontext = *iter2;
-                const int nwithcontext = withcontext->n();
-                vector<const EncAnyGram *> featurevector;
-                for (int i = 0; i < nwithcontext; i++) {
-                    const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                    featurevector.push_back(unigram);                    
-                }                
                 for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
                     const EncAnyGram * label = iter3->first;
+                    targets.insert(label);
+                }
+            }            
+            if (targets.size() >= targetthreshold) {
+                for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                    const EncAnyGram * withcontext = *iter2;
+                    const int nwithcontext = withcontext->n();
                     
-                    if (exemplarweights) {
-                        //add exemplar weight         
-                        double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
-                        classifierarray[n]->addinstance(featurevector, label, exemplarweight);
-                    } else {
-                        classifierarray[n]->addinstance(featurevector, label);
+                    vector<const EncAnyGram *> featurevector;
+                    for (int i = 0; i < nwithcontext; i++) {
+                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                        featurevector.push_back(unigram);                    
+                    }                
+                    for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
+                        const EncAnyGram * label = iter3->first;
+                        
+                        if (exemplarweights) {
+                            //add exemplar weight         
+                            double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
+                            classifierarray[n]->addinstance(featurevector, label, exemplarweight);
+                        } else {
+                            classifierarray[n]->addinstance(featurevector, label);
+                        }
+                    }                        
+                    //cleanup
+                    for (int i = 0; i < nwithcontext; i++) {
+                        delete featurevector[i];
                     }
-                }                        
-                //cleanup
-                for (int i = 0; i < nwithcontext; i++) {
-                    delete featurevector[i];
                 }
             }        
         }
@@ -288,7 +303,7 @@ t_aligntargets NClassifierArray::classify(const EncAnyGram * focus, std::vector<
     } 
 }
 
-void ClassifierInterface::classifyfragments(const EncData & input, AlignmentModel * translationtable, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, int contextthreshold) {    
+void ClassifierInterface::classifyfragments(const EncData & input, AlignmentModel * translationtable, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, int contextthreshold, int targetthreshold) {    
      
           
      //decoder will call this
@@ -336,7 +351,8 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
             }          
         } else {
             //bypass classifier copy from translation table      
-            //TODO, may be a bit fishy still          
+            
+            //TODO!!!, may be a bit fishy still          
 
             const EncAnyGram * anygramwithcontext = *(translationtable->sourcecontexts[anygram].begin());    
             t_aligntargets originaltranslationoptions = translationtable->alignmatrix[anygramwithcontext];
@@ -371,20 +387,24 @@ void NClassifierArray::train(const string & timbloptions) {
 
 }
 
-void writeclassifierconf(const string & ID, ClassifierType type, int contextthreshold, bool exemplarweight) {
+void writeclassifierconf(const string & ID, ClassifierType type, int contextthreshold, int targetthreshold, bool exemplarweight) {
     const string filename = ID + ".classifierconf";
     ofstream * f = new ofstream(ID + ".classifierconf");
     if (f->good()) {
         *f << (int) type << endl;
         *f << contextthreshold << endl;
+        *f << targetthreshold << endl;
         *f << exemplarweight << endl;
+    } else {
+        cerr << "ERROR: No classifier configuration found!" << endl;
+        throw InternalError();
     }
     f->close();
     delete f;
 }
 
 
-ClassifierType getclassifierconf(const string & ID, int & contextthreshold, bool & exemplarweight) {
+ClassifierType getclassifierconf(const string & ID, int & contextthreshold, int & targetthreshold, bool & exemplarweight) {
     const string filename = ID + ".classifierconf";
     ifstream * f = new ifstream(ID + ".classifierconf");
     string input;
@@ -398,7 +418,10 @@ ClassifierType getclassifierconf(const string & ID, int & contextthreshold, bool
         buffer2 >> contextthreshold;
         *f >> input; 
         istringstream buffer3(input);
-        buffer3 >> exemplarweight;   
+        buffer3 >> targetthreshold;  
+         *f >> input;
+        istringstream buffer4(input);
+        buffer4 >> exemplarweight;
     }
     f->close();
     delete f;
@@ -407,16 +430,17 @@ ClassifierType getclassifierconf(const string & ID, int & contextthreshold, bool
 
 
 
-ConstructionExperts::ConstructionExperts(const string & id, int leftcontextsize, int rightcontextsize, int contextthreshold): ClassifierInterface(id) {
+ConstructionExperts::ConstructionExperts(const string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold): ClassifierInterface(id) {
     this->leftcontextsize = leftcontextsize;
     this->rightcontextsize = rightcontextsize;
     this->contextthreshold = contextthreshold;
+    this->targetthreshold = targetthreshold;
 }
 
 
 void ConstructionExperts::train(const string & timbloptions) {
-    for (map<int,Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
-        cerr << "Training classifier n=" << iter->first << "..." << endl;
+    for (map<size_t,Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
+        cerr << "Training classifier hash=" << (size_t) iter->first << "..." << endl;
         iter->second->train(timbloptions);
     }
 
@@ -434,34 +458,46 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
         const EncAnyGram * focus = iter->first;                
         if (iter->second.size() >= contextthreshold) { //only use classifier if contextssthreshold is met (by default 1, so it always is)
             stringstream newid;
-            const int hash = focus->hash();
+            const size_t hash = focus->hash();
             newid << this->id() << "." << focus->hash();
             if (!classifierarray.count(hash)) {
                 classifierarray[hash] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder, false, exemplarweights);
             }
+            
+            unordered_set<const EncAnyGram *> targets; //used to check if enough different targets exists, passing targetthreshold
             for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                 const EncAnyGram * withcontext = *iter2;
-        
-                const int nwithcontext = withcontext->n();
-                vector<const EncAnyGram *> featurevector;
-                for (int i = 0; i < nwithcontext; i++) {
-                    const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                    featurevector.push_back(unigram);                    
-                }                
                 for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
                     const EncAnyGram * label = iter3->first;
-                    
-                    if (exemplarweights) {
-                        //add exemplar weight         
-                        double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
-                        classifierarray[hash]->addinstance(featurevector, label, exemplarweight);
-                    } else {
-                        classifierarray[hash]->addinstance(featurevector, label);
+                    targets.insert(label);
+                }
+            }    
+            
+            if (targets.size() >= targetthreshold) {
+                for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                    const EncAnyGram * withcontext = *iter2;
+            
+                    const int nwithcontext = withcontext->n();
+                    vector<const EncAnyGram *> featurevector;
+                    for (int i = 0; i < nwithcontext; i++) {
+                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                        featurevector.push_back(unigram);                    
+                    }                
+                    for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
+                        const EncAnyGram * label = iter3->first;
+                        
+                        if (exemplarweights) {
+                            //add exemplar weight         
+                            double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
+                            classifierarray[hash]->addinstance(featurevector, label, exemplarweight);
+                        } else {
+                            classifierarray[hash]->addinstance(featurevector, label);
+                        }
+                    }                        
+                    //cleanup
+                    for (int i = 0; i < nwithcontext; i++) {
+                        delete featurevector[i];
                     }
-                }                        
-                //cleanup
-                for (int i = 0; i < nwithcontext; i++) {
-                    delete featurevector[i];
                 }
             }        
         }
@@ -471,7 +507,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
 
 
 t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
-    const int hash = focus->hash();   
+    const size_t hash = focus->hash();   
     if ((classifierarray.count(hash)) && (classifierarray[hash] != NULL)) {
         return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
@@ -481,7 +517,7 @@ t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vect
 }
 
 t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
-    const int hash = focus->hash(); 
+    const size_t hash = focus->hash(); 
     if ((classifierarray.count(hash)) && (classifierarray[hash] != NULL)) {
         return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
@@ -502,9 +538,9 @@ void ConstructionExperts::load( const string & timbloptions, ClassDecoder * sour
         const string filenamenoext = filename.substr(0,filename.size() - 6);
         
         for (int i = filenamenoext.find_last_of('.'); i < filenamenoext.size(); i++) {
-            hash_s << filename[i];            
+            hash_s << filenamenoext[i];            
         }
-        const int hash = atoi(hash_s.str().c_str());
+        const size_t hash = atoi(hash_s.str().c_str());
         
         const string hashclassifierid = filename.substr(0, filename.size() - 6);
         cerr << "   Loading classifier hash=" << hash << " id=" << hashclassifierid << endl;   

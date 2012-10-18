@@ -12,6 +12,7 @@ void usage() {
     cerr << "Options:" << endl;
     cerr << " -C [id]      Classifier output prefix. The decoder takes this same ID to load your classifier." << endl;
     cerr << " -c [int]     Context threshold. Only create a classifier when at least this many different contexts exist. Defaults to 1." << endl;
+    cerr << " -t [int]     Target threshold. Only create a classifier when at least this many different target options exist. Defaults to 1." << endl;
     cerr << " -x           disable exemplar weighting" << endl;
     cerr << " -O [options] Timbl options" << endl;
     //cerr << "\t-C number                 Classifier mode" << endl;
@@ -42,6 +43,7 @@ int main( int argc, char *argv[] ) {
     ClassifierType mode = CLASSIFIERTYPE_NONE;
     
     int contextthreshold = 1;
+    int targetthreshold = 1;
     
     char c;    
     while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:",long_options,&option_index)) != -1) {
@@ -79,6 +81,9 @@ int main( int argc, char *argv[] ) {
             break;
         case 'c':
             contextthreshold = atoi(optarg);
+            break;
+        case 't':
+            targetthreshold = atoi(optarg);
             break; 
         case 'x':
             exemplarweights = false;
@@ -122,7 +127,7 @@ int main( int argc, char *argv[] ) {
     
     }
     
-    writeclassifierconf(outputprefix, mode, contextthreshold, exemplarweights);
+    writeclassifierconf(outputprefix, mode, contextthreshold, targetthreshold, exemplarweights);
     
 
     

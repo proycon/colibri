@@ -20,8 +20,8 @@ enum ClassifierType {
     CLASSIFIERTYPE_CONSTRUCTIONEXPERTS = 2
 };
 
-ClassifierType getclassifierconf(const std::string & ID, int & contextthreshold, bool & exemplarweight);
-void writeclassifierconf(const std::string & ID, ClassifierType, int contextthreshold, bool exemplarweight);
+ClassifierType getclassifierconf(const std::string & ID, int & contextthreshold, int & targetthreshold, bool & exemplarweight);
+void writeclassifierconf(const std::string & ID, ClassifierType, int contextthreshold, int targetthreshold, bool exemplarweight);
 
 class Classifier {
   private:
@@ -63,7 +63,7 @@ class ClassifierInterface {
         virtual void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,  bool exemplarweights = true) =0;
         virtual void train(const std::string & timbloptions) =0;
         virtual void load( const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG =0) =0;
-        virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, int contextthreshold = 1); //decoder will call this  
+        virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, int contextthreshold = 2, int targetthreshold = 2); //decoder will call this  
         virtual t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0;
         virtual t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0;          
 };
@@ -73,9 +73,10 @@ class NClassifierArray: public ClassifierInterface {
         int leftcontextsize;
         int rightcontextsize;
         int contextthreshold;
+        int targetthreshold;
     public:
         std::map<int, Classifier*> classifierarray;    
-        NClassifierArray(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold = 1);
+        NClassifierArray(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold = 2, int targetthreshold = 2);
         void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);       
         void train(const std::string & timbloptions);     
         void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG=0);
@@ -89,9 +90,10 @@ class ConstructionExperts: public ClassifierInterface {
         int leftcontextsize;
         int rightcontextsize;
         int contextthreshold;
+        int targetthreshold;
     public:
-        std::map<int, Classifier*> classifierarray;    
-        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold = 1);
+        std::map<size_t, Classifier*> classifierarray;    
+        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold = 2, int targetthreshold = 2);
         void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);       
         void train(const std::string & timbloptions);     
         void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG=0);
