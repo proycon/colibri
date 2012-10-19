@@ -1689,7 +1689,8 @@ int main( int argc, char *argv[] ) {
                 cerr << "       \tof which gapresolutions: " << decoder->stats.gapresolutions << endl;
                 cerr << "SCORE=" << solution->score() << endl;
                 const string out = s.decode(targetclassdecoder);                 
-                cerr << "DONE. OUTPUT: " << out << endl;                
+                cerr << "DONE. OUTPUT: " << out << endl; 
+                cout << out << endl;               
                 if ((STATS) && (!GLOBALSTATS)) solution->stats(); 
                 if (decoder->DEBUG == 99) {
                     cerr << "DEBUG: SOLUTION DESTRUCTION. DELETING " << (size_t) solution << endl;
