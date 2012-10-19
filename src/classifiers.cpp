@@ -463,6 +463,104 @@ ClassifierType getclassifierconf(const string & ID, int & contextthreshold, int 
 }
 
 
+MonoJoinedClassifier::MonoJoinedClassifier(const string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold): ClassifierInterface(id) {
+    this->leftcontextsize = leftcontextsize;
+    this->rightcontextsize = rightcontextsize;
+    this->contextthreshold = contextthreshold;
+    this->targetthreshold = targetthreshold;
+    
+}
+
+
+void MonoJoinedClassifier::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG) {    
+    vector<string> files = globfiles(ID + ".ibase");
+    classifier = new Classifier(ID, timbloptions,  sourceclassdecoder, targetclassencoder, (DEBUG >= 3));    
+}
+
+void MonoJoinedClassifier::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights) {
+    if (ttable->leftsourcecontext != leftcontextsize) {
+        cerr << "Translation table has left context size: " << ttable->leftsourcecontext << ", not " << leftcontextsize << endl;
+        exit(3); 
+    } else if (ttable->rightsourcecontext != rightcontextsize)  {
+        cerr << "Translation table has right context size: " << ttable->rightsourcecontext << ", not " << rightcontextsize << endl;
+        exit(3);
+    } 
+    classifier = new Classifier(this->id(), sourceclassdecoder, targetclassdecoder, false, exemplarweights);
+    for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
+        const EncAnyGram * focus = iter->first;
+                        
+        if (iter->second.size() >= contextthreshold) { //only use classifier if contextsthreshold is met (by default 1, so it always is)
+            const int n = focus->n();
+            stringstream newid;
+
+            
+            unordered_set<const EncAnyGram *> targets; //used to check if enough different targets exists, passing targetthreshold
+            for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                const EncAnyGram * withcontext = *iter2;
+                for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
+                    const EncAnyGram * label = iter3->first;
+                    targets.insert(label);
+                }
+            }            
+            if (targets.size() >= targetthreshold) {
+                for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                    const EncAnyGram * withcontext = *iter2;
+                    const int nwithcontext = withcontext->n();
+                    
+                    vector<const EncAnyGram *> featurevector;
+                    
+                    //left context
+                    for (int i = 0; i < leftcontextsize; i++) {
+                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                        featurevector.push_back(unigram);                    
+                    }         
+                    
+                    featurevector.push_back(focus);
+                    
+                    //right context
+                    for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                        featurevector.push_back(unigram);                    
+                    }         
+
+                    for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
+                        const EncAnyGram * label = iter3->first;
+                        
+                        if (exemplarweights) {
+                            //add exemplar weight         
+                            double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
+                            classifier->addinstance(featurevector, label, exemplarweight);
+                        } else {
+                            classifier->addinstance(featurevector, label);
+                        }
+                    }                        
+                    //cleanup
+                    for (int i = 0; i < nwithcontext; i++) {
+                        delete featurevector[i];
+                    }
+                }
+            }   
+        }
+    }    
+}
+
+
+
+
+
+
+t_aligntargets MonoJoinedClassifier::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {  
+        return classifier->classify(featurevector, scorehandling, originaltranslationoptions);
+}
+
+t_aligntargets MonoJoinedClassifier::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+        return classifier->classify(featurevector, scorehandling, originaltranslationoptions);
+}
+
+void MonoJoinedClassifier::train(const string & timbloptions) {
+    classifier->train(timbloptions);
+}
+
 
 ConstructionExperts::ConstructionExperts(const string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold): ClassifierInterface(id) {
     this->leftcontextsize = leftcontextsize;

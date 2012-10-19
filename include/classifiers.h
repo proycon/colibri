@@ -17,7 +17,8 @@ enum ScoreHandling {
 enum ClassifierType { 
     CLASSIFIERTYPE_NONE = 0, 
     CLASSIFIERTYPE_NARRAY = 1, 
-    CLASSIFIERTYPE_CONSTRUCTIONEXPERTS = 2
+    CLASSIFIERTYPE_CONSTRUCTIONEXPERTS = 2,
+    CLASSIFIERTYPE_MONOJOINED = 3
 };
 
 ClassifierType getclassifierconf(const std::string & ID, int & contextthreshold, int & targetthreshold, bool & exemplarweight);
@@ -70,6 +71,25 @@ class ClassifierInterface {
         virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, int contextthreshold = 2, int targetthreshold = 2); //decoder will call this  
         virtual t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0;
         virtual t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0;          
+};
+
+
+/* Monolithic single classifier, in which focus part is joined as a single feature */
+class MonoJoinedClassifier: public ClassifierInterface {
+    protected:
+        int leftcontextsize;
+        int rightcontextsize;
+        int contextthreshold;
+        int targetthreshold;
+    public:
+        Classifier * classifier;  
+        MonoJoinedClassifier(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold);
+        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);       
+        void train(const std::string & timbloptions);     
+        void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG=0);
+        t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);
+        t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);          
+        AlignmentModel * classify(AlignmentModel * original);
 };
 
 class NClassifierArray: public ClassifierInterface {

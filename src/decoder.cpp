@@ -1633,7 +1633,16 @@ int main( int argc, char *argv[] ) {
         ClassifierType classifiertype = getclassifierconf(classifierid, contextthreshold, targetthreshold, exemplarweights);
         if (classifiertype == CLASSIFIERTYPE_NARRAY) {        
             classifier = (ClassifierInterface*) new NClassifierArray(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold);
-            classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);        
+            classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);
+        } else if (classifiertype == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
+            classifier = (ClassifierInterface*) new ConstructionExperts(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold);
+            classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);                    
+        } else if (classifiertype == CLASSIFIERTYPE_MONOJOINED) {
+            classifier = (ClassifierInterface*) new MonoJoinedClassifier(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold);
+            classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);            
+        } else {
+            cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;
+            throw InternalError();            
         }
     }   
         
