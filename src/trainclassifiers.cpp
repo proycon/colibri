@@ -9,6 +9,7 @@ void usage() {
     cerr << "Classifier types: (pick one)" << endl;
     cerr << " -N           N-Classifier Array, one classifier per pattern size group" << endl;
     cerr << " -X           Construction experts, one classifier per construction" << endl;
+    cerr << " -M           Monolithic joined classifier, focus words are joined" << endl;
     cerr << "Options:" << endl;
     cerr << " -C [id]      Classifier output prefix. The decoder takes this same ID to load your classifier." << endl;
     cerr << " -c [int]     Context threshold. Only create a classifier when at least this many different contexts exist. Defaults to 1." << endl;
@@ -46,7 +47,7 @@ int main( int argc, char *argv[] ) {
     int targetthreshold = 1;
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -71,6 +72,9 @@ int main( int argc, char *argv[] ) {
             break;
         case 'N':
             mode = CLASSIFIERTYPE_NARRAY;
+            break;
+        case 'M':
+            mode = CLASSIFIERTYPE_MONOJOINED;
             break;
         case 'O':
             if (exemplarweights) {
@@ -125,6 +129,16 @@ int main( int argc, char *argv[] ) {
         cerr << "   Timbl options: " << timbloptions << endl;
         classifiers.train(timbloptions);
     
+    } else if (mode == CLASSIFIERTYPE_MONOJOINED) {
+
+        cerr << "Building monolithic classifier" << endl;
+        MonoJoinedClassifier classifiers = MonoJoinedClassifier(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold);    
+        classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder, exemplarweights);
+        
+        cerr << "Training classifiers" << endl;
+        cerr << "   Timbl options: " << timbloptions << endl;
+        classifiers.train(timbloptions);
+        
     }
     
     writeclassifierconf(outputprefix, mode, contextthreshold, targetthreshold, exemplarweights);
