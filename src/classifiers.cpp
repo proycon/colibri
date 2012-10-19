@@ -395,9 +395,10 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
             t_aligntargets reftranslationoptions;
             reftranslationoptions = translationtable->sumtranslationoptions(anygram);
             
-            for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
+            for (t_aligntargets::iterator iter = reftranslationoptions.begin(); iter != reftranslationoptions.end(); iter++) {
                 const EncAnyGram * target = iter->first;
                 const double weight = 0; //== log(1.0)
+                translationoptions[target] = reftranslationoptions[target];
                 if (scorehandling == SCOREHANDLING_REPLACE) {
                     translationoptions[target].clear();
                     translationoptions[target].push_back(weight);    
