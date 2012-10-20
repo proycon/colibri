@@ -43,7 +43,7 @@ class Classifier {
   public:
     Classifier(const std::string & id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true, bool debug=false); //for building
     Classifier(const std::string & id, const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, bool debug); //for testing            
-    void addinstance(std::vector<const EncAnyGram *> featurevector, const EncAnyGram * label, double exemplarweight = 1);
+    void addinstance(std::vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight = 1);
     void addinstance(std::vector<std::string> & featurevector, const std::string & label, double exemplarweight = 1);
     void train(const std::string & timbloptions);
     const std::string id() { return ID; };

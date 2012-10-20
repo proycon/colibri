@@ -59,7 +59,7 @@ Classifier::Classifier(const std::string & _id, const string & timbloptions, Cla
 }
 
 
-void Classifier::addinstance(vector<const EncAnyGram *> featurevector, const EncAnyGram * label, double exemplarweight) {
+void Classifier::addinstance(vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight) {
     vector<string> featurevector_s;
     for (vector<const EncAnyGram *>::const_iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         const EncAnyGram * anygram = *iter;
@@ -240,7 +240,7 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
     } 
     for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
         const EncAnyGram * focus = iter->first;
-        cerr << "DEBUG: " << focus->decode(*sourceclassdecoder) << endl;
+        //cerr << "DEBUG: " << focus->decode(*sourceclassdecoder) << endl;
                         
         if (iter->second.size() >= contextthreshold) { //only use classifier if contextsthreshold is met (by default 1, so it always is)
             const int n = focus->n();
