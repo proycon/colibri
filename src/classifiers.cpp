@@ -61,9 +61,8 @@ Classifier::Classifier(const std::string & _id, const string & timbloptions, Cla
 
 void Classifier::addinstance(vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight) {
     vector<string> featurevector_s;
-    for (vector<const EncAnyGram *>::const_iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
+    for (vector<const EncAnyGram *>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         const EncAnyGram * anygram = *iter;
-        anygram->n();
         const string feature = anygram->decode(*sourceclassdecoder);
         featurevector_s.push_back(feature);        
     }
