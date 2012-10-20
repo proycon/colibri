@@ -67,7 +67,8 @@ void Classifier::addinstance(vector<const EncAnyGram *> featurevector, const Enc
     vector<string> featurevector_s;
     for (vector<const EncAnyGram *>::const_iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         const EncAnyGram * anygram = *iter;
-        featurevector_s.push_back(anygram->decode(*sourceclassdecoder));        
+        const string feature = anygram->decode(*sourceclassdecoder);
+        featurevector_s.push_back(feature);        
     }
     const string label_s = label->decode(*targetclassdecoder);
     addinstance(featurevector_s, label_s, exemplarweight);
