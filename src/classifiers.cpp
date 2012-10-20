@@ -72,7 +72,7 @@ void Classifier::addinstance(vector<const EncAnyGram *> & featurevector, const E
 
 void Classifier::addinstance(vector<string> & featurevector, const string & label, double exemplarweight) {
     //if (!outputfile.is_open()) {
-        cerr << "Opening (append) " << trainfile << endl;
+        //cerr << "Opening (append) " << trainfile << endl;
         outputfile.open(trainfile, ios::app);
         /*} else {
             cerr << "Opening " << trainfile << endl;
