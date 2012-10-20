@@ -302,7 +302,7 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
                         for (int i = 0; i < leftcontextsize; i++) {
                             delete featurevector[i];
                         }
-                        for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                        for (int i = leftcontextsize + 1; i < leftcontextsize + rightcontextsize + 1; i++) {
                             delete featurevector[i];
                         }
                     } else {
@@ -417,7 +417,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                     for (int i = 0; i < leftcontextsize; i++) {
                         delete featurevector[i];
                     }
-                    for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                    for (int i = leftcontextsize + 1; i < leftcontextsize + rightcontextsize + 1; i++) {
                         delete featurevector[i];
                     }
                 } else {
@@ -586,7 +586,7 @@ void MonoClassifier::build(AlignmentModel * ttable, ClassDecoder * sourceclassde
                         for (int i = 0; i < leftcontextsize; i++) {
                             delete featurevector[i];
                         }
-                        for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                        for (int i = leftcontextsize + 1; i < leftcontextsize + rightcontextsize + 1; i++) {
                             delete featurevector[i];
                         }
                     } else {
@@ -699,7 +699,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
                         for (int i = 0; i < leftcontextsize; i++) {
                             delete featurevector[i];
                         }
-                        for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                        for (int i = leftcontextsize + 1; i < leftcontextsize + rightcontextsize + 1; i++) {
                             delete featurevector[i];
                         }
                     } else {
