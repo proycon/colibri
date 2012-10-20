@@ -21,13 +21,14 @@ vector<string> globfiles(const string& pat){ //from http://stackoverflow.com/que
 Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights, bool debug ) {
     //for training
     ID = _id;
-    trainfile = string(_id + ".train");        
+    trainfile = string(_id + ".train");
+    remove(trainfile.c_str()); //remove pre-existing trainfile (no exception if file does not exist)         
     featurevectorsize = 0;    
     this->exemplarweights = exemplarweights;
     this->sourceclassdecoder = sourceclassdecoder;
     this->targetclassdecoder = targetclassdecoder;
     this->DEBUG = debug;
-    added = false;
+    added = false;    
 }        
 
 Classifier::Classifier(const std::string & _id, const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, bool debug) {
@@ -169,7 +170,7 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
         if (tmpiter1 == originaltranslationoptions.end()) {
                 cerr << "INTERNAL ERROR: Classifier::classify: No translation options passed!" << endl; 
                 throw InternalError();        
-        }    
+        }
         scorecount = tmpiter1->second.size();   
     }
    
