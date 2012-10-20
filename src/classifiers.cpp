@@ -18,12 +18,11 @@ vector<string> globfiles(const string& pat){ //from http://stackoverflow.com/que
     return ret;
 }
 
-Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,bool appendmode, bool exemplarweights, bool debug ) {
+Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights, bool debug ) {
     //for training
     ID = _id;
     trainfile = string(_id + ".train");        
     featurevectorsize = 0;    
-    this->appendmode = appendmode;
     this->exemplarweights = exemplarweights;
     this->sourceclassdecoder = sourceclassdecoder;
     this->targetclassdecoder = targetclassdecoder;
@@ -59,9 +58,6 @@ Classifier::Classifier(const std::string & _id, const string & timbloptions, Cla
     }
 }
 
-Classifier::~Classifier() {
-    if (outputfile.is_open()) outputfile.close();    
-}
 
 void Classifier::addinstance(vector<const EncAnyGram *> featurevector, const EncAnyGram * label, double exemplarweight) {
     vector<string> featurevector_s;
@@ -250,7 +246,7 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
             stringstream newid;
             newid << this->id() << ".n" << n;
             if (!classifierarray.count(n)) {
-                classifierarray[n] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder, false, exemplarweights);
+                classifierarray[n] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder, exemplarweights);
             }
             
             unordered_set<const EncAnyGram *> targets; //used to check if enough different targets exists, passing targetthreshold
@@ -510,7 +506,7 @@ void MonoClassifier::build(AlignmentModel * ttable, ClassDecoder * sourceclassde
         cerr << "Translation table has right context size: " << ttable->rightsourcecontext << ", not " << rightcontextsize << endl;
         exit(3);
     } 
-    classifier = new Classifier(this->id(), sourceclassdecoder, targetclassdecoder, false, exemplarweights);
+    classifier = new Classifier(this->id(), sourceclassdecoder, targetclassdecoder, exemplarweights);
     for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
         const EncAnyGram * focus = iter->first;
                         
@@ -617,7 +613,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
             const uint64_t hash = focus->hash();
             newid << this->id() << "." << focus->hash();
             if (!classifierarray.count(hash)) {
-                classifierarray[hash] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder, false, exemplarweights);
+                classifierarray[hash] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder, exemplarweights);
             }
             
             unordered_set<const EncAnyGram *> targets; //used to check if enough different targets exists, passing targetthreshold
