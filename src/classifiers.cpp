@@ -212,13 +212,6 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
 }
 
 
-NClassifierArray::NClassifierArray(const string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold): ClassifierInterface(id) {
-    this->leftcontextsize = leftcontextsize;
-    this->rightcontextsize = rightcontextsize;
-    this->contextthreshold = contextthreshold;
-    this->targetthreshold = targetthreshold;
-    
-}
 
 void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG) {    
     vector<string> files = globfiles(ID + ".n*.ibase");
@@ -240,7 +233,7 @@ void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourcec
     }    
 }
 
-void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights) {
+void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
     if (ttable->leftsourcecontext != leftcontextsize) {
         cerr << "Translation table has left context size: " << ttable->leftsourcecontext << ", not " << leftcontextsize << endl;
         exit(3); 
@@ -273,10 +266,28 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
                     const int nwithcontext = withcontext->n();
                     
                     vector<const EncAnyGram *> featurevector;
-                    for (int i = 0; i < nwithcontext; i++) {
-                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                        featurevector.push_back(unigram);                    
-                    }                
+
+                    if (singlefocusfeature) {                    
+                        //left context
+                        for (int i = 0; i < leftcontextsize; i++) {
+                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                            featurevector.push_back(unigram);                    
+                        }         
+                        
+                        featurevector.push_back(focus);
+                        
+                        //right context
+                        for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                            featurevector.push_back(unigram);                    
+                        }         
+                    } else {
+                        for (int i = 0; i < nwithcontext; i++) {
+                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                            featurevector.push_back(unigram);                    
+                        }                             
+                    }                    
+                    
                     for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
                         const EncAnyGram * label = iter3->first;
                         
@@ -331,7 +342,7 @@ t_aligntargets NClassifierArray::classify(const EncAnyGram * focus, std::vector<
     } 
 }
 
-void ClassifierInterface::classifyfragments(const EncData & input, AlignmentModel * translationtable, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, int contextthreshold, int targetthreshold) {    
+void ClassifierInterface::classifyfragments(const EncData & input, AlignmentModel * translationtable, t_sourcefragments & sourcefragments, ScoreHandling scorehandling) {    
      
           
      //decoder will call this
@@ -372,9 +383,26 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
 
                  
                 vector<const EncAnyGram *> featurevector;
-                for (int i = 0; i < nwithcontext; i++) {
-                    const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                    featurevector.push_back(unigram);                    
+
+                if (singlefocusfeature) {                    
+                    //left context
+                    for (int i = 0; i < translationtable->leftsourcecontext; i++) {
+                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                        featurevector.push_back(unigram);                    
+                    }         
+                    
+                    featurevector.push_back(anygram);
+                    
+                    //right context
+                    for (int i = nwithcontext - translationtable->rightsourcecontext - 1; i < nwithcontext; i++) {
+                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                        featurevector.push_back(unigram);                    
+                    }         
+                } else {
+                    for (int i = 0; i < nwithcontext; i++) {
+                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                        featurevector.push_back(unigram);                    
+                    }                             
                 }
                 translationoptions = classify(anygram, featurevector, scorehandling, reftranslationoptions);
                 //cleanup
@@ -421,7 +449,7 @@ void NClassifierArray::train(const string & timbloptions) {
 
 }
 
-void writeclassifierconf(const string & ID, ClassifierType type, int contextthreshold, int targetthreshold, bool exemplarweight) {
+void writeclassifierconf(const string & ID, ClassifierType type, int contextthreshold, int targetthreshold, bool exemplarweight, bool singlefocusfeature) {
     const string filename = ID + ".classifierconf";
     ofstream * f = new ofstream(ID + ".classifierconf");
     if (f->good()) {
@@ -429,6 +457,7 @@ void writeclassifierconf(const string & ID, ClassifierType type, int contextthre
         *f << contextthreshold << endl;
         *f << targetthreshold << endl;
         *f << exemplarweight << endl;
+        *f << singlefocusfeature << endl;
     } else {
         cerr << "ERROR: No classifier configuration found!" << endl;
         throw InternalError();
@@ -438,7 +467,7 @@ void writeclassifierconf(const string & ID, ClassifierType type, int contextthre
 }
 
 
-ClassifierType getclassifierconf(const string & ID, int & contextthreshold, int & targetthreshold, bool & exemplarweight) {
+ClassifierType getclassifierconf(const string & ID, int & contextthreshold, int & targetthreshold, bool & exemplarweight, bool & singlefocusfeature) {
     const string filename = ID + ".classifierconf";
     ifstream * f = new ifstream(ID + ".classifierconf");
     string input;
@@ -456,6 +485,9 @@ ClassifierType getclassifierconf(const string & ID, int & contextthreshold, int 
          *f >> input;
         istringstream buffer4(input);
         buffer4 >> exemplarweight;
+        *f >> input;
+        istringstream buffer5(input);
+        buffer5 >> singlefocusfeature;
     }
     f->close();
     delete f;
@@ -463,21 +495,13 @@ ClassifierType getclassifierconf(const string & ID, int & contextthreshold, int 
 }
 
 
-MonoJoinedClassifier::MonoJoinedClassifier(const string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold): ClassifierInterface(id) {
-    this->leftcontextsize = leftcontextsize;
-    this->rightcontextsize = rightcontextsize;
-    this->contextthreshold = contextthreshold;
-    this->targetthreshold = targetthreshold;
-    
-}
 
-
-void MonoJoinedClassifier::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG) {    
+void MonoClassifier::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG) {    
     vector<string> files = globfiles(ID + ".ibase");
     classifier = new Classifier(ID, timbloptions,  sourceclassdecoder, targetclassencoder, (DEBUG >= 3));    
 }
 
-void MonoJoinedClassifier::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights) {
+void MonoClassifier::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
     if (ttable->leftsourcecontext != leftcontextsize) {
         cerr << "Translation table has left context size: " << ttable->leftsourcecontext << ", not " << leftcontextsize << endl;
         exit(3); 
@@ -509,19 +533,26 @@ void MonoJoinedClassifier::build(AlignmentModel * ttable, ClassDecoder * sourcec
                     
                     vector<const EncAnyGram *> featurevector;
                     
-                    //left context
-                    for (int i = 0; i < leftcontextsize; i++) {
-                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                        featurevector.push_back(unigram);                    
-                    }         
-                    
-                    featurevector.push_back(focus);
-                    
-                    //right context
-                    for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
-                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                        featurevector.push_back(unigram);                    
-                    }         
+                    if (singlefocusfeature) {                    
+                        //left context
+                        for (int i = 0; i < leftcontextsize; i++) {
+                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                            featurevector.push_back(unigram);                    
+                        }         
+                        
+                        featurevector.push_back(focus);
+                        
+                        //right context
+                        for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                            featurevector.push_back(unigram);                    
+                        }         
+                    } else {
+                        for (int i = 0; i < nwithcontext; i++) {
+                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                            featurevector.push_back(unigram);                    
+                        }                             
+                    }
 
                     for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
                         const EncAnyGram * label = iter3->first;
@@ -549,24 +580,16 @@ void MonoJoinedClassifier::build(AlignmentModel * ttable, ClassDecoder * sourcec
 
 
 
-t_aligntargets MonoJoinedClassifier::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {  
+t_aligntargets MonoClassifier::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {  
         return classifier->classify(featurevector, scorehandling, originaltranslationoptions);
 }
 
-t_aligntargets MonoJoinedClassifier::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+t_aligntargets MonoClassifier::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
         return classifier->classify(featurevector, scorehandling, originaltranslationoptions);
 }
 
-void MonoJoinedClassifier::train(const string & timbloptions) {
+void MonoClassifier::train(const string & timbloptions) {
     classifier->train(timbloptions);
-}
-
-
-ConstructionExperts::ConstructionExperts(const string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold): ClassifierInterface(id) {
-    this->leftcontextsize = leftcontextsize;
-    this->rightcontextsize = rightcontextsize;
-    this->contextthreshold = contextthreshold;
-    this->targetthreshold = targetthreshold;
 }
 
 
@@ -578,7 +601,7 @@ void ConstructionExperts::train(const string & timbloptions) {
 
 }
 
-void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights) {
+void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
     if (ttable->leftsourcecontext != leftcontextsize) {
         cerr << "Translation table has left context size: " << ttable->leftsourcecontext << ", not " << leftcontextsize << endl;
         exit(3); 
@@ -612,10 +635,29 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
             
                     const int nwithcontext = withcontext->n();
                     vector<const EncAnyGram *> featurevector;
-                    for (int i = 0; i < nwithcontext; i++) {
-                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                        featurevector.push_back(unigram);                    
-                    }                
+    
+                    if (singlefocusfeature) {                    
+                        //left context
+                        for (int i = 0; i < leftcontextsize; i++) {
+                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                            featurevector.push_back(unigram);                    
+                        }         
+                        
+                        featurevector.push_back(focus);
+                        
+                        //right context
+                        for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                            featurevector.push_back(unigram);                    
+                        }         
+                    } else {
+                        for (int i = 0; i < nwithcontext; i++) {
+                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                            featurevector.push_back(unigram);                    
+                        }                             
+                    }
+                    
+                                        
                     for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
                         const EncAnyGram * label = iter3->first;
                         cerr << "Adding to classifier hash=" << hash << "..." << endl;

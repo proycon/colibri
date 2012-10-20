@@ -37,6 +37,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
             //Use classifier
             if (DEBUG >= 3) cerr << "Gathering source fragments from classifier:" << endl;
             if (DEBUG >= 3) cerr << "  Calling classifier" << endl;
+            bool exemplarweights = true; //irrelevant
             classifier->classifyfragments(input, translationtable, sourcefragments, scorehandling);
         } else {            
             //Collect source fragments and translation options straight from translation table
@@ -1612,9 +1613,9 @@ int main( int argc, char *argv[] ) {
     
     cerr << "   loaded translations for " << transtable->size() << " patterns" << endl;
     
-    ClassifierInterface * classifier = NULL;
+    ClassifierInterface * classifier = NULL;    
     if (!classifierid.empty()) {
-        //cerr << "Computing reverse index for translation table" << endl;
+        //cerr << "Computing reverse indexM for translation table" << endl;
         //transtable->computereverse(); //not necessary 
         cerr << "Loading classifiers" << endl;
         cerr << "   ID: " << classifierid << endl;
@@ -1630,15 +1631,16 @@ int main( int argc, char *argv[] ) {
         int contextthreshold; //will be set by getclassifiertype
         int targetthreshold; //will be set by getclassifiertype
         bool exemplarweights; //will be set by getclassifiertype
-        ClassifierType classifiertype = getclassifierconf(classifierid, contextthreshold, targetthreshold, exemplarweights);
+        bool singlefocusfeature; //will be set by getclassifiertype        
+        ClassifierType classifiertype = getclassifierconf(classifierid, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
         if (classifiertype == CLASSIFIERTYPE_NARRAY) {        
-            classifier = (ClassifierInterface*) new NClassifierArray(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold);
+            classifier = (ClassifierInterface*) new NClassifierArray(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
             classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);
         } else if (classifiertype == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
-            classifier = (ClassifierInterface*) new ConstructionExperts(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold);
-            classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);                    
-        } else if (classifiertype == CLASSIFIERTYPE_MONOJOINED) {
-            classifier = (ClassifierInterface*) new MonoJoinedClassifier(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold);
+            classifier = (ClassifierInterface*) new ConstructionExperts(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+             classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);                    
+        } else if (classifiertype == CLASSIFIERTYPE_MONO) {
+            classifier = (ClassifierInterface*) new MonoClassifier(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
             classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);            
         } else {
             cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;
@@ -1663,7 +1665,7 @@ int main( int argc, char *argv[] ) {
             if (debug >= 1) cerr << "Processing unknown words" << endl; 
             addunknownwords(*transtable, lm, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
             if (debug >= 1) cerr << "Setting up decoder" << endl;
-            StackDecoder * decoder = new StackDecoder(*inputdata, transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder, classifier, scorehandling, (bool) GLOBALSTATS);
+            StackDecoder * decoder = new StackDecoder(*inputdata, transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder, classifier, scorehandling,  (bool) GLOBALSTATS);
             if (debug >= 1) cerr << "Decoding..." << endl;
             TranslationHypothesis * solution = decoder->decode();                    
             if (solution != NULL) {

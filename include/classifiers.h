@@ -18,11 +18,11 @@ enum ClassifierType {
     CLASSIFIERTYPE_NONE = 0, 
     CLASSIFIERTYPE_NARRAY = 1, 
     CLASSIFIERTYPE_CONSTRUCTIONEXPERTS = 2,
-    CLASSIFIERTYPE_MONOJOINED = 3
+    CLASSIFIERTYPE_MONO = 3
 };
 
-ClassifierType getclassifierconf(const std::string & ID, int & contextthreshold, int & targetthreshold, bool & exemplarweight);
-void writeclassifierconf(const std::string & ID, ClassifierType, int contextthreshold, int targetthreshold, bool exemplarweight);
+ClassifierType getclassifierconf(const std::string & ID, int & contextthreshold, int & targetthreshold, bool & exemplarweight, bool & singlefocusfeature);
+void writeclassifierconf(const std::string & ID, ClassifierType, int contextthreshold, int targetthreshold, bool exemplarweight, bool singlefocusfeature);
 
 class Classifier {
   private:
@@ -60,31 +60,38 @@ class Classifier {
 class ClassifierInterface {
     protected:
         std::string ID;
+        int leftcontextsize;
+        int rightcontextsize;
+        int contextthreshold;
+        int targetthreshold;  
+        bool singlefocusfeature;
+        bool exemplarweights;
     public:
-        ClassifierInterface(const std::string & _id) {
+        ClassifierInterface(const std::string & _id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, bool exemplarweights, bool singlefocusfeature) {
             ID = _id;
+            this->leftcontextsize = leftcontextsize;
+            this->rightcontextsize = rightcontextsize;
+            this->contextthreshold = contextthreshold;
+            this->targetthreshold = targetthreshold;
+            this->exemplarweights = exemplarweights;
+            this->singlefocusfeature = singlefocusfeature;            
         }
         const std::string id() { return ID; };
-        virtual void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder,  bool exemplarweights = true) =0;
+        virtual void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) =0;
         virtual void train(const std::string & timbloptions) =0;
         virtual void load( const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG =0) =0;
-        virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, int contextthreshold = 2, int targetthreshold = 2); //decoder will call this  
+        virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling); //decoder will call this  
         virtual t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0;
         virtual t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0;          
 };
 
 
 /* Monolithic single classifier, in which focus part is joined as a single feature */
-class MonoJoinedClassifier: public ClassifierInterface {
-    protected:
-        int leftcontextsize;
-        int rightcontextsize;
-        int contextthreshold;
-        int targetthreshold;
+class MonoClassifier: public ClassifierInterface {      
     public:
         Classifier * classifier;  
-        MonoJoinedClassifier(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold);
-        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);       
+        MonoClassifier(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature) {}; 
+        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);       
         void train(const std::string & timbloptions);     
         void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG=0);
         t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);
@@ -93,15 +100,10 @@ class MonoJoinedClassifier: public ClassifierInterface {
 };
 
 class NClassifierArray: public ClassifierInterface {
-    protected:
-        int leftcontextsize;
-        int rightcontextsize;
-        int contextthreshold;
-        int targetthreshold;
     public:
         std::map<int, Classifier*> classifierarray;    
-        NClassifierArray(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold);
-        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);       
+        NClassifierArray(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature) {}; 
+        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);       
         void train(const std::string & timbloptions);     
         void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG=0);
         t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);
@@ -117,8 +119,8 @@ class ConstructionExperts: public ClassifierInterface {
         int targetthreshold;
     public:
         std::map<uint64_t, Classifier*> classifierarray;    
-        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold);
-        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true);       
+        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature) {}; 
+        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);       
         void train(const std::string & timbloptions);     
         void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG=0);
         t_aligntargets classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);

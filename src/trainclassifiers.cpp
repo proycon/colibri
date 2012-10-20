@@ -16,6 +16,7 @@ void usage() {
     cerr << " -t [int]     Target threshold. Only create a classifier when at least this many different target options exist. Defaults to 1." << endl;
     cerr << " -x           disable exemplar weighting" << endl;
     cerr << " -O [options] Timbl options" << endl;
+    cerr << " -1           Represent the focus feature as a single entity, rather than individual tokens" << endl;
     //cerr << "\t-C number                 Classifier mode" << endl;
     //cerr << "\t   1 - Local context with Classifier Array" << endl;
 }
@@ -45,9 +46,10 @@ int main( int argc, char *argv[] ) {
     
     int contextthreshold = 1;
     int targetthreshold = 1;
+    bool singlefocusfeature = false;
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -74,7 +76,7 @@ int main( int argc, char *argv[] ) {
             mode = CLASSIFIERTYPE_NARRAY;
             break;
         case 'M':
-            mode = CLASSIFIERTYPE_MONOJOINED;
+            mode = CLASSIFIERTYPE_MONO;
             break;
         case 'O':
             if (exemplarweights) {
@@ -91,6 +93,9 @@ int main( int argc, char *argv[] ) {
             break; 
         case 'x':
             exemplarweights = false;
+            break;
+        case '1':
+            singlefocusfeature = true;
             break; 	
         }
     }
@@ -112,8 +117,8 @@ int main( int argc, char *argv[] ) {
     if (mode == CLASSIFIERTYPE_NARRAY) {
     
         cerr << "Building N-Array classifiers" << endl;
-        NClassifierArray classifiers = NClassifierArray(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold);    
-        classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder, exemplarweights);
+        NClassifierArray classifiers = NClassifierArray(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
+        classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder);
 
         cerr << "Training classifiers" << endl;
         cerr << "   Timbl options: " << timbloptions << endl;
@@ -122,18 +127,18 @@ int main( int argc, char *argv[] ) {
     } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
     
         cerr << "Building construction expert classifiers" << endl;
-        ConstructionExperts classifiers = ConstructionExperts(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold);    
-        classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder, exemplarweights);
+        ConstructionExperts classifiers = ConstructionExperts(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
+        classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder);
         
         cerr << "Training classifiers" << endl;
         cerr << "   Timbl options: " << timbloptions << endl;
         classifiers.train(timbloptions);
     
-    } else if (mode == CLASSIFIERTYPE_MONOJOINED) {
+    } else if (mode == CLASSIFIERTYPE_MONO) {
 
         cerr << "Building monolithic classifier" << endl;
-        MonoJoinedClassifier classifiers = MonoJoinedClassifier(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold);    
-        classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder, exemplarweights);
+        MonoClassifier classifiers = MonoClassifier(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
+        classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder);
         
         cerr << "Training classifiers" << endl;
         cerr << "   Timbl options: " << timbloptions << endl;
@@ -141,7 +146,7 @@ int main( int argc, char *argv[] ) {
         
     }
     
-    writeclassifierconf(outputprefix, mode, contextthreshold, targetthreshold, exemplarweights);
+    writeclassifierconf(outputprefix, mode, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
     
 
     
