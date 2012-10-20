@@ -298,8 +298,17 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
                         }
                     }                        
                     //cleanup
-                    for (int i = 0; i < nwithcontext; i++) {
-                        delete featurevector[i];
+                    if (singlefocusfeature) {    
+                        for (int i = 0; i < leftcontextsize; i++) {
+                            delete featurevector[i];
+                        }
+                        for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                            delete featurevector[i];
+                        }
+                    } else {
+                        for (int i = 0; i < nwithcontext; i++) {
+                            delete featurevector[i];
+                        }
                     }
                 }
             }   
@@ -404,8 +413,17 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                 }
                 translationoptions = classify(anygram, featurevector, scorehandling, reftranslationoptions);
                 //cleanup
-                for (int i = 0; i < nwithcontext; i++) {
-                    delete featurevector[i];
+                if (singlefocusfeature) {    
+                    for (int i = 0; i < leftcontextsize; i++) {
+                        delete featurevector[i];
+                    }
+                    for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                        delete featurevector[i];
+                    }
+                } else {
+                    for (int i = 0; i < nwithcontext; i++) {
+                        delete featurevector[i];
+                    }
                 }
             } else {
                 bypass = true;
@@ -564,8 +582,17 @@ void MonoClassifier::build(AlignmentModel * ttable, ClassDecoder * sourceclassde
                         }
                     }                        
                     //cleanup
-                    for (int i = 0; i < nwithcontext; i++) {
-                        delete featurevector[i];
+                    if (singlefocusfeature) {    
+                        for (int i = 0; i < leftcontextsize; i++) {
+                            delete featurevector[i];
+                        }
+                        for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                            delete featurevector[i];
+                        }
+                    } else {
+                        for (int i = 0; i < nwithcontext; i++) {
+                            delete featurevector[i];
+                        }
                     }
                 }
             }   
@@ -668,8 +695,17 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
                         }
                     }                        
                     //cleanup
-                    for (int i = 0; i < nwithcontext; i++) {
-                        delete featurevector[i];
+                    if (singlefocusfeature) {    
+                        for (int i = 0; i < leftcontextsize; i++) {
+                            delete featurevector[i];
+                        }
+                        for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                            delete featurevector[i];
+                        }
+                    } else {
+                        for (int i = 0; i < nwithcontext; i++) {
+                            delete featurevector[i];
+                        }
                     }
                 }
             }
