@@ -111,11 +111,6 @@ class NClassifierArray: public ClassifierInterface {
 };
 
 class ConstructionExperts: public ClassifierInterface {
-    protected:
-        int leftcontextsize;
-        int rightcontextsize;
-        int contextthreshold;
-        int targetthreshold;
     public:
         std::map<uint64_t, Classifier*> classifierarray;    
         ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature) {}; 
