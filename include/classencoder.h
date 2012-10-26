@@ -14,10 +14,14 @@ class ClassEncoder {
      unsigned int bosclass;
      unsigned int eosclass;
      unsigned int highestclass;
+     void buildclasses(std::unordered_map<std::string,int> freqlist);
+     void processcorpus(const std::string & filename, std::unordered_map<std::string,int> & freqlist);
+     void processfoliacorpus(const std::string & filename, std::unordered_map<std::string,int> & freqlist);
     public:
     ClassEncoder();
     ClassEncoder(const std::string &); //load an existing classer
     void build(const std::string & filename); //build a class from this dataset
+    void build(std::vector<std::string> & files); //build a class from this dataset
     
     std::unordered_map<unsigned int, std::string> added;
     

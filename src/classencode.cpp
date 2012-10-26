@@ -7,25 +7,31 @@
 using namespace std;
 
 void usage() {
-    cerr << "Syntax: classencoder -f corpus [ -c classmodel ]" << endl;
+    cerr << "Syntax: classencoder [ -c classmodel ] corpus [corpus2 etc..]" << endl;
     cerr << "Description: Encodes a corpus. If used with -c, encodes a corpus according to the specified pre-existing class model" << endl;
+    cerr << "Options: -o    outputprefix for class file" << endl;
 }
 
 int main( int argc, char *argv[] ) {    
     string classfile = "";
     string corpusfile = "";
     string outputprefix = "";
-       
+    vector<string> corpusfiles;
+    
     char c;    
-    while ((c = getopt(argc, argv, "f:h:c:")) != -1)
+    while ((c = getopt(argc, argv, "f:h:c:o:")) != -1) {
         switch (c)
         {
-        case 'f':
+        case 'f': //keep for backward compatibility
             corpusfile = optarg;
+            corpusfiles.push_back(corpusfile);
             break;
         case 'c':
             classfile = optarg;
-            break;                
+            break;   
+        case 'o':
+            outputprefix = optarg;
+            break;             
         case 'h':
             usage();
             exit(0);
@@ -33,14 +39,23 @@ int main( int argc, char *argv[] ) {
             cerr << "Unknown option: -" <<  optopt << endl;
             abort ();
         }
-        
-    if (corpusfile.empty()) {
-    	usage();
-    	exit(2);
     }
     
+    for (int i = 1; i < argc; i++) {
+        string tmp = argv[1];
+        corpusfiles.push_back(tmp);
+    }
+    
+    if (corpusfiles.empty()) {
+    	usage();
+    	exit(2);
+    } else {
+        corpusfile = corpusfiles[0]; //only for extension determination
+    }
+        
     if (outputprefix.empty()) {
-        outputprefix = corpusfile; 
+        outputprefix = corpusfile;
+        strip_extension(outputprefix,"xml");     
         strip_extension(outputprefix,"txt");    
     }
 
@@ -54,18 +69,24 @@ int main( int argc, char *argv[] ) {
         classencoder = ClassEncoder(classfile);
         allowunknown = true;
         cerr << "Building classes from corpus (extending existing classes)" << endl;
-        classencoder.build(corpusfile);
+        classencoder.build(corpusfiles);
         classencoder.save(outputprefix + ".cls");
         cerr << "Built " << outputprefix << ".cls , extending " << classfile << endl;          
     } else {
         cerr << "Building classes from corpus" << endl;
         classencoder = ClassEncoder();
-        classencoder.build(corpusfile);
+        classencoder.build(corpusfiles);
         classencoder.save(outputprefix + ".cls");
         cerr << "Built " << outputprefix << ".cls" << endl;            
     }   
     
-         
-    classencoder.encodefile(corpusfile, outputprefix + ".clsenc", allowunknown);    
-    cerr << "Encoded corpus as " << outputprefix << ".clsenc" << endl;
+    for (int i = 0; i < corpusfiles.size(); i++) {
+        string outfile = "";
+        strip_extension(outfile,"txt");
+        strip_extension(outfile,"xml");       
+        classencoder.encodefile(corpusfiles[i], outfile + ".clsenc", allowunknown);    
+        cerr << "Encoded corpus as " << outfile << ".clsenc" << endl;
+    }
+    
+    
 }

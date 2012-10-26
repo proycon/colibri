@@ -89,9 +89,8 @@ ClassEncoder::ClassEncoder(const string & filename) {
         }
 }
 
-void ClassEncoder::build(const string & filename) {
-	   unordered_map<string,int> freqlist;
-	    
+
+void ClassEncoder::processcorpus(const string & filename, unordered_map<string,int> & freqlist) {
 	   //compute frequency list of all words        
        ifstream IN;
        IN.open( filename.c_str() );    
@@ -118,8 +117,16 @@ void ClassEncoder::build(const string & filename) {
               
           }
         }        
-        IN.close();
-        
+        IN.close();       
+}
+
+
+void ClassEncoder::processfoliacorpus(const string & filename, unordered_map<string,int> & freqlist) {
+
+}
+
+void ClassEncoder::buildclasses(unordered_map<string,int> freqlist) {
+
         //sort by occurrence count  using intermediate representation
         multimap<const int, const string> revfreqlist;
         for (unordered_map<const string,int>::iterator iter = freqlist.begin(); iter != freqlist.end(); iter++) {
@@ -136,6 +143,32 @@ void ClassEncoder::build(const string & filename) {
         	    classes[iter->second] = cls;
             }
         }
+}
+
+void ClassEncoder::build(const string & filename) {
+	    unordered_map<string,int> freqlist;
+	    if (filename.rfind(".xml") != string::npos) {
+	        processfoliacorpus(filename, freqlist);
+	    } else {
+	        processcorpus(filename, freqlist);
+	    }
+        buildclasses(freqlist);
+}
+
+
+void ClassEncoder::build(vector<string> & files) {
+	    unordered_map<string,int> freqlist;
+	    	    
+	    for (vector<string>::iterator iter = files.begin(); iter != files.end(); iter++) {
+	        const string filename = *iter;
+	        if (filename.rfind(".xml") != string::npos) {
+	            processfoliacorpus(filename, freqlist);
+	        } else {
+	            processcorpus(filename, freqlist);
+	        }
+	        
+	    } 	    	    
+        buildclasses(freqlist);
 }
 
 void ClassEncoder::save(const string & filename) {
