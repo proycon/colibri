@@ -10,6 +10,7 @@ void usage() {
     cerr << "Syntax: classencoder [ -c classmodel ] corpus [corpus2 etc..]" << endl;
     cerr << "Description: Encodes a corpus. If used with -c, encodes a corpus according to the specified pre-existing class model" << endl;
     cerr << "Options: -o    outputprefix for class file" << endl;
+    cerr << "         -l    read input filenames from list-file (one filename per line)" << endl;
     cerr << "         -u    produce one unified encoded corpus (in case multiple corpora are specified)" << endl;
 }
 
@@ -20,8 +21,11 @@ int main( int argc, char *argv[] ) {
     vector<string> corpusfiles;
     bool unified = false;
     
+    ifstream listin;
+    string tmpfilename;
+    
     char c;    
-    while ((c = getopt(argc, argv, "f:h:c:o:u")) != -1) {
+    while ((c = getopt(argc, argv, "f:h:c:o:ul:")) != -1) {
         switch (c)
         {
         case 'f': //keep for backward compatibility
@@ -36,6 +40,19 @@ int main( int argc, char *argv[] ) {
             break;
         case 'u':
             unified = true;
+            break;
+        case 'l':
+            listin.open(optarg);
+            if (listin.good()) {
+                while (!listin.eof()) {
+                    listin >> tmpfilename;
+                    corpusfiles.push_back(tmpfilename);
+                }
+            } else {
+                cerr << "Can't read " << optarg << endl;
+                abort();
+            }
+            listin.close();
             break;
         case 'h':
             usage();
