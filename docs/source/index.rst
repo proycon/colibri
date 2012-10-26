@@ -27,7 +27,10 @@ Colibri is hosted on `github <http://github.com/proycon/colibri/>`_ and should b
 
 	$ git clone git://github.com/proycon/colibri.git
 	
-You need to compile the software, but in order to do so you must first install the dependency **Timbl** [Daelemans2010]_ ; a tarball is obtainable from `the Timbl website <http://ilk.uvt.nl/timbl/>`_ , follow the instructions included with Timbl to install it.
+You need to compile the software, but in order to do so you must first install the two dependencies:
+
+ *  **Timbl** [Daelemans2010]_ ; a tarball is obtainable from `the Timbl website <http://ilk.uvt.nl/timbl/>`_ , follow the instructions included with Timbl to install it.
+ * **libfolia**; obtainable from `the FoLiA website <http://proycon.github.com/folia>`_,  follow the instructions included with libfolia to install it.
 
 In addition to the C/C++ compiler (``gcc``), the build process for colibri makes use of ``autoconf`` and ``automake``. Make sure these are installed on your system. Also install the package ``autoconf-archive`` if available on your distribution. Colibri can now be compiled and installed::
 
@@ -78,19 +81,33 @@ Class-encoding your corpus
 
 When working with colibri, you first want to **class encode** your corpus. This is done by the program ``classencode``. It takes as input a *tokenised* monolingual corpus in plain text format, containing *one sentence per line*. Each line should be delimited by a single newline character (unix line endings). Colibri is completely agnostic when it comes to the character encoding of the input. Given a corpus file ``yourcorpus``, class encoding is done as follows::
 
-	$ classencode -f yourcorpus
+	$ classencode yourcorpus
 
 This results in two files:
 
  * ``yourcorpus.cls`` - This is the class file; it lists all word-types and class numbers.  
  * ``yourcorpus.clsenc`` - This is the corpus is encoded binary form. It is a lossless compression that is roughly half the size of the original  
 
-
 If your corpus is not tokenised yet, you can consider using the tokeniser `ucto <http://ilk.uvt.nl/ucto>`_ (not part of colibri), this will also do sentence detection and output one line per sentence::
 
 	$ ucto -L en -n untokenisedcorpus.txt > tokenisedcorpus.txt
 	
 The above sample is for English (``-L en``), several other languages are also supported.
+
+In addition to this plain text input. The class encoder also supports *FoLiA XML* (`folia website <http://proycon.github.com/folia>`_), make sure such files end with the extension ``xml`` and they will be automatically interpreted as FoLiA XML::
+
+	$ classencode yourcorpus.xml
+	
+
+It is possible to encode multiple corpus files similtaneously, but generating a joined class file::
+
+	$ classencode yourcorpus1 yourcorpus2
+	
+This results in ``yourcorpus1.cls`` and ``yourcorpus1.clsenc`` and ``yourcorpus2.clsenc``. The class file spans both despite the name. An explicit name can be passed with the ``-o`` flag. It is also possible to encode multiple corpora in a single unified file by passing the ``-u`` flag. This is often desired if you want to train a pattern model on the all the joined data::
+
+	$ classencode -o out -u yourcorpus1 yourcorpus2
+
+This will create a ``out.cls`` and ``out.clsenc``.
 
 Class-decoding your corpus
 ------------------------------
