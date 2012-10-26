@@ -125,16 +125,12 @@ void ClassEncoder::processfoliacorpus(const string & filename, unordered_map<str
     Document doc;
     doc.readFromFile(filename);
     
-    vector<Sentence*> sentences = doc.sentences();
-    for (vector<Sentence*>::iterator iter = sentences.begin(); iter != sentences.end(); iter++) {
-        Sentence * sentence = *iter;
-        vector<Word*> words = sentence->words();
-        for (vector<Word*>::iterator iterw = words.begin(); iterw != words.end(); iterw++) {
-            Word * word = *iterw;
-            const string wordtext = word->str();
-            freqlist[wordtext]++;
-        }
-    } 
+    vector<Word*> words = doc.words();
+    for (vector<Word*>::iterator iterw = words.begin(); iterw != words.end(); iterw++) {
+        Word * word = *iterw;
+        const string wordtext = word->str();
+        freqlist[wordtext]++;
+    }
     
 }
 
@@ -382,25 +378,29 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
 	    unsigned char outputbuffer[65536];
 	    int outputsize = 0;
 	    unsigned int linenum = 1;
-	    vector<Sentence*> sentences = doc.sentences();
-	    const size_t sl = sentences.size();
-	    for (int i = 0; i < sl; i++) {
-	        Sentence * sentence = sentences[i];
-	        vector<Word*> words = sentence->words();
+	    vector<Word*> words = doc.words();
+	    const size_t wl = words.size();
+	    FoliaElement * prevparent = NULL;
+	    for (int i = 0; i < wl; i++) {
+	        Word * word = words[i];
 	        string line = "";
-	        const size_t wl = words.size();
-	        for (int j = 0; j < wl; j++) {
-	            if (j > 0) line += " ";
-	            line += words[j]->str();
+	        if ((word->parent() != prevparent) && (i< wl -1)) {
+	            if (prevparent != NULL) {
+	            }
+	            if (line.empty()) {
+	                line += word->str(); 
+	            } else {
+	                line += " " + word->str();
+	            }
+	            outputsize = encodestring(line, outputbuffer, allowunknown, autoaddunknown);     
+	            if (outputsize > 0) OUT.write((const char *) outputbuffer, outputsize);
+	        	OUT.write(&one, sizeof(char)); //newline          
+          	    OUT.write(&zero, sizeof(char)); //write separator
+          	    linenum++;        
+	        } else {
+	            prevparent = word->parent();
 	        }
-           if ((outputsize > 0) && (i < sl - 1)) {      
-          	 OUT.write(&one, sizeof(char)); //newline          
-          	 OUT.write(&zero, sizeof(char)); //write separator
-          	 linenum++;      	 
-           }   	                  
-	       outputsize = encodestring(line, outputbuffer, allowunknown, autoaddunknown);
-           if (outputsize > 0) OUT.write((const char *) outputbuffer, outputsize);   
-	    } 
+        } 
 	    cerr << "Encoded " << linenum << " lines" << endl;
 	    OUT.close();
 	            
