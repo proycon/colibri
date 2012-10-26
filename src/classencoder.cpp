@@ -390,26 +390,28 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
 	    vector<Word*> words = doc.words();
 	    const size_t wl = words.size();
 	    FoliaElement * prevparent = NULL;
+	    string line = "";
 	    for (int i = 0; i < wl; i++) {
 	        Word * word = words[i];
-	        string line = "";
-	        if ((word->parent() != prevparent) && (i< wl -1)) {
-	            if (prevparent != NULL) {
-	            }
-	            if (line.empty()) {
-	                line += word->str(); 
-	            } else {
-	                line += " " + word->str();
-	            }
+	        if ((!line.empty()) && (word->parent() != prevparent) && (i< wl -1)) {
 	            outputsize = encodestring(line, outputbuffer, allowunknown, autoaddunknown);     
 	            if (outputsize > 0) OUT.write((const char *) outputbuffer, outputsize);
 	        	OUT.write(&one, sizeof(char)); //newline          
           	    OUT.write(&zero, sizeof(char)); //write separator
           	    linenum++;        
-	        } else {
-	            prevparent = word->parent();
+          	    line = "";
 	        }
+            prevparent = word->parent();
+        	if (line.empty()) {
+                line += word->str(); 
+            } else {
+                line += " " + word->str();
+            }
         } 
+        if (!line.empty()) {
+            outputsize = encodestring(line, outputbuffer, allowunknown, autoaddunknown);     
+	        if (outputsize > 0) OUT.write((const char *) outputbuffer, outputsize);
+        }
 	    cerr << "Encoded " << linenum << " lines" << endl;
 	    OUT.close();
 	            
