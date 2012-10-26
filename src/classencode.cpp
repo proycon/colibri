@@ -39,14 +39,14 @@ int main( int argc, char *argv[] ) {
             break;
         case 'h':
             usage();
-            exit(0);    
+            exit(0);  
 		default:
             cerr << "Unknown option: -" <<  optopt << endl;
             abort ();
         }
     }
     
-    for (int i = 1; i < argc; i++) {
+    for (int i = optind; i < argc; i++) {
         string tmp = argv[i];
         corpusfiles.push_back(tmp);
     }
@@ -93,9 +93,9 @@ int main( int argc, char *argv[] ) {
             strip_extension(outfile,"txt");
             strip_extension(outfile,"xml");
         }       
-        classencoder.encodefile(corpusfiles[i], outfile + ".clsenc", allowunknown, false, unified);    
-        cerr << "Encoded corpus as " << outfile << ".clsenc" << endl;
+        classencoder.encodefile(corpusfiles[i], outfile + ".clsenc", allowunknown, false, unified);
+        cerr << "Encoded corpus " << corpusfiles[i] << " in " << outfile << ".clsenc" << endl;
     }
-    
+
     
 }

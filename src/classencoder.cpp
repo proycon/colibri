@@ -366,13 +366,14 @@ void ClassEncoder::add(std::string s, unsigned int cls) {
 }
 
 void ClassEncoder::encodefile(const std::string & inputfilename, const std::string & outputfilename, bool allowunknown, bool autoaddunknown, bool append) {
+    const char zero = 0;
+    const char one = 1;
+	    
     if (inputfilename.rfind(".xml") != string::npos) {
         //FoLiA
         Document doc;
         doc.readFromFile(inputfilename);
         
-	    const char zero = 0;
-	    const char one = 1;
 	    ofstream OUT;
 	    if (append) {
 	        OUT.open(outputfilename.c_str(), ios::app | ios::binary);
@@ -413,11 +414,17 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
 	    OUT.close();
 	            
     } else {
-	    const char zero = 0;
-	    const char one = 1;
 	    ofstream OUT;
 	    ifstream IN;
-	    OUT.open(outputfilename.c_str(), ios::out | ios::binary);	
+	    if (append) {
+	        OUT.open(outputfilename.c_str(), ios::app | ios::binary);
+	        if (OUT.tellp() > 0) {
+	            OUT.write(&one, sizeof(char)); //newline          
+          	    OUT.write(&zero, sizeof(char)); //write separator
+	        }
+	    } else {
+	        OUT.open(outputfilename.c_str(), ios::out | ios::binary);
+	    }	
 	    IN.open(inputfilename.c_str());
 	    unsigned char outputbuffer[65536];
 	    int outputsize = 0;
