@@ -60,7 +60,13 @@
 <p>Colibri is hosted on <a class="reference external" href="http://github.com/proycon/colibri/">github</a> and should be retrieved through the versioning control system <tt class="docutils literal"><span class="pre">git</span></tt>. Provided git is installed on your system, this is done as follows:</p>
 <div class="highlight-python"><pre>$ git clone git://github.com/proycon/colibri.git</pre>
 </div>
-<p>You need to compile the software, but in order to do so you must first install the dependency <strong>Timbl</strong> <a class="reference internal" href="#daelemans2010">[Daelemans2010]</a> ; a tarball is obtainable from <a class="reference external" href="http://ilk.uvt.nl/timbl/">the Timbl website</a> , follow the instructions included with Timbl to install it.</p>
+<p>You need to compile the software, but in order to do so you must first install the two dependencies:</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>Timbl</strong> <a class="reference internal" href="#daelemans2010">[Daelemans2010]</a> ; a tarball is obtainable from <a class="reference external" href="http://ilk.uvt.nl/timbl/">the Timbl website</a> , follow the instructions included with Timbl to install it.</li>
+<li><strong>libfolia</strong>; obtainable from <a class="reference external" href="http://proycon.github.com/folia">the FoLiA website</a>,  follow the instructions included with libfolia to install it.</li>
+</ul>
+</div></blockquote>
 <p>In addition to the C/C++ compiler (<tt class="docutils literal"><span class="pre">gcc</span></tt>), the build process for colibri makes use of <tt class="docutils literal"><span class="pre">autoconf</span></tt> and <tt class="docutils literal"><span class="pre">automake</span></tt>. Make sure these are installed on your system. Also install the package <tt class="docutils literal"><span class="pre">autoconf-archive</span></tt> if available on your distribution. Colibri can now be compiled and installed:</p>
 <div class="highlight-python"><pre>$ cd colibri
 $ bash bootstrap
@@ -99,7 +105,7 @@ $ make install</pre>
 <div class="section" id="class-encoding-your-corpus">
 <h3>Class-encoding your corpus<a class="headerlink" href="#class-encoding-your-corpus" title="Permalink to this headline">¶</a></h3>
 <p>When working with colibri, you first want to <strong>class encode</strong> your corpus. This is done by the program <tt class="docutils literal"><span class="pre">classencode</span></tt>. It takes as input a <em>tokenised</em> monolingual corpus in plain text format, containing <em>one sentence per line</em>. Each line should be delimited by a single newline character (unix line endings). Colibri is completely agnostic when it comes to the character encoding of the input. Given a corpus file <tt class="docutils literal"><span class="pre">yourcorpus</span></tt>, class encoding is done as follows:</p>
-<div class="highlight-python"><pre>$ classencode -f yourcorpus</pre>
+<div class="highlight-python"><pre>$ classencode yourcorpus</pre>
 </div>
 <p>This results in two files:</p>
 <blockquote>
@@ -112,6 +118,16 @@ $ make install</pre>
 <div class="highlight-python"><pre>$ ucto -L en -n untokenisedcorpus.txt &gt; tokenisedcorpus.txt</pre>
 </div>
 <p>The above sample is for English (<tt class="docutils literal"><span class="pre">-L</span> <span class="pre">en</span></tt>), several other languages are also supported.</p>
+<p>In addition to this plain text input. The class encoder also supports <em>FoLiA XML</em> (<a class="reference external" href="http://proycon.github.com/folia">folia website</a>), make sure such files end with the extension <tt class="docutils literal"><span class="pre">xml</span></tt> and they will be automatically interpreted as FoLiA XML:</p>
+<div class="highlight-python"><pre>$ classencode yourcorpus.xml</pre>
+</div>
+<p>It is possible to encode multiple corpus files similtaneously, but generating a joined class file:</p>
+<div class="highlight-python"><pre>$ classencode yourcorpus1 yourcorpus2</pre>
+</div>
+<p>This results in <tt class="docutils literal"><span class="pre">yourcorpus1.cls</span></tt> and <tt class="docutils literal"><span class="pre">yourcorpus1.clsenc</span></tt> and <tt class="docutils literal"><span class="pre">yourcorpus2.clsenc</span></tt>. The class file spans both despite the name. An explicit name can be passed with the <tt class="docutils literal"><span class="pre">-o</span></tt> flag. It is also possible to encode multiple corpora in a single unified file by passing the <tt class="docutils literal"><span class="pre">-u</span></tt> flag. This is often desired if you want to train a pattern model on the all the joined data:</p>
+<div class="highlight-python"><pre>$ classencode -o out -u yourcorpus1 yourcorpus2</pre>
+</div>
+<p>This will create a <tt class="docutils literal"><span class="pre">out.cls</span></tt> and <tt class="docutils literal"><span class="pre">out.clsenc</span></tt>.</p>
 </div>
 <div class="section" id="class-decoding-your-corpus">
 <h3>Class-decoding your corpus<a class="headerlink" href="#class-decoding-your-corpus" title="Permalink to this headline">¶</a></h3>
