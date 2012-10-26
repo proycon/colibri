@@ -61,6 +61,14 @@ PKG_CHECK_MODULES([timbl], [timbl >= 6.4.2] )
 CXXFLAGS="$CXXFLAGS $timbl_CFLAGS"
 LIBS="$LIBS $timbl_LIBS"
 
+AC_ARG_WITH(folia,
+       [  --with-folia=DIR       use libfolia installed in <DIR>],
+       [PKG_CONFIG_PATH="$withval/lib/pkgconfig:$PKG_CONFIG_PATH"],
+       [PKG_CONFIG_PATH="$prefix/lib/pkgconfig:$PKG_CONFIG_PATH"])
+AC_MSG_NOTICE( [pkg-config search path: $PKG_CONFIG_PATH] )
+PKG_CHECK_MODULES([folia],[folia >= 0.10])
+CXXFLAGS="$CXXFLAGS $folia_CFLAGS"
+LIBS="$folia_LIBS $LIBS"
 
 #useICU=;
 # inspired by feh-1.3.4/configure.ac.  Tnx Tom Gilbert and feh hackers.

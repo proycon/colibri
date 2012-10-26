@@ -7,6 +7,9 @@
 #include <fstream>
 #include <ngram.h>
 
+#include "libfolia/document.h"
+#include "libfolia/folia.h"
+
 class ClassEncoder {
     private:
      std::unordered_map<std::string,unsigned int> classes;

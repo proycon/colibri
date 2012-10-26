@@ -7,7 +7,7 @@
 #include "common.h"
 
 using namespace std;
-
+using namespace folia;
 
 
 bool validclass(unsigned int cls) {
@@ -122,7 +122,20 @@ void ClassEncoder::processcorpus(const string & filename, unordered_map<string,i
 
 
 void ClassEncoder::processfoliacorpus(const string & filename, unordered_map<string,int> & freqlist) {
-
+    Document doc;
+    doc.readFromFile(filename);
+    
+    vector<Sentence*> sentences = doc.sentences();
+    for (vector<Sentence*>::iterator iter = sentences.begin(); iter != sentences.end(); iter++) {
+        Sentence * sentence = *iter;
+        vector<Word*> words = sentence->words();
+        for (vector<Word*>::iterator iterw = words.begin(); iterw != words.end(); iterw++) {
+            Word * word = *iterw;
+            const string wordtext = word->str();
+            freqlist[wordtext]++;
+        }
+    } 
+    
 }
 
 void ClassEncoder::buildclasses(unordered_map<string,int> freqlist) {
@@ -357,27 +370,63 @@ void ClassEncoder::add(std::string s, unsigned int cls) {
 }
 
 void ClassEncoder::encodefile(const std::string & inputfilename, const std::string & outputfilename, bool allowunknown, bool autoaddunknown) {
-	const char zero = 0;
-	const char one = 1;
-	ofstream OUT;
-	ifstream IN;
-	OUT.open(outputfilename.c_str(), ios::out | ios::binary);	
-	IN.open(inputfilename.c_str());
-	unsigned char outputbuffer[65536];
-	int outputsize = 0;
-	unsigned int linenum = 1;
-	while (IN.good()) {	
-      string line = "";
-      getline(IN, line);
-      if ((outputsize > 0) && (!IN.eof())) {      
-      	 OUT.write(&one, sizeof(char)); //newline          
-      	 OUT.write(&zero, sizeof(char)); //write separator
-      	 linenum++;      	 
-      }           
-      outputsize = encodestring(line, outputbuffer, allowunknown, autoaddunknown);
-      if (outputsize > 0) OUT.write((const char *) outputbuffer, outputsize);                        
-    }
-    cerr << "Encoded " << linenum << " lines" << endl;
-	IN.close();
-	OUT.close();
+    if (inputfilename.rfind(".xml") != string::npos) {
+        //FoLiA
+        Document doc;
+        doc.readFromFile(inputfilename);
+        
+	    const char zero = 0;
+	    const char one = 1;
+	    ofstream OUT;
+        OUT.open(outputfilename.c_str(), ios::out | ios::binary);
+	    unsigned char outputbuffer[65536];
+	    int outputsize = 0;
+	    unsigned int linenum = 1;
+	    vector<Sentence*> sentences = doc.sentences();
+	    const size_t sl = sentences.size();
+	    for (int i = 0; i < sl; i++) {
+	        Sentence * sentence = sentences[i];
+	        vector<Word*> words = sentence->words();
+	        string line = "";
+	        const size_t wl = words.size();
+	        for (int j = 0; j < wl; j++) {
+	            if (j > 0) line += " ";
+	            line += words[j]->str();
+	        }
+           if ((outputsize > 0) && (i < sl - 1)) {      
+          	 OUT.write(&one, sizeof(char)); //newline          
+          	 OUT.write(&zero, sizeof(char)); //write separator
+          	 linenum++;      	 
+           }   	                  
+	       outputsize = encodestring(line, outputbuffer, allowunknown, autoaddunknown);
+           if (outputsize > 0) OUT.write((const char *) outputbuffer, outputsize);   
+	    } 
+	    cerr << "Encoded " << linenum << " lines" << endl;
+	    OUT.close();
+	            
+    } else {
+	    const char zero = 0;
+	    const char one = 1;
+	    ofstream OUT;
+	    ifstream IN;
+	    OUT.open(outputfilename.c_str(), ios::out | ios::binary);	
+	    IN.open(inputfilename.c_str());
+	    unsigned char outputbuffer[65536];
+	    int outputsize = 0;
+	    unsigned int linenum = 1;
+	    while (IN.good()) {	
+          string line = "";
+          getline(IN, line);
+          if ((outputsize > 0) && (!IN.eof())) {      
+          	 OUT.write(&one, sizeof(char)); //newline          
+          	 OUT.write(&zero, sizeof(char)); //write separator
+          	 linenum++;      	 
+          }           
+          outputsize = encodestring(line, outputbuffer, allowunknown, autoaddunknown);
+          if (outputsize > 0) OUT.write((const char *) outputbuffer, outputsize);                        
+        }
+        cerr << "Encoded " << linenum << " lines" << endl;
+	    IN.close();
+	    OUT.close();
+	}
 }
