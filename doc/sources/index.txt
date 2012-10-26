@@ -107,7 +107,7 @@ This results in ``yourcorpus1.cls`` and ``yourcorpus1.clsenc`` and ``yourcorpus2
 
 	$ classencode -o out -u yourcorpus1 yourcorpus2
 
-This will create a ``out.cls`` and ``out.clsenc``.
+This will create a ``out.cls`` and ``out.clsenc``. If you want to specify a large number of files, you can use the ``-l`` flag and specify a filename from which all input filenames will be read, one per line.
 
 Class-decoding your corpus
 ------------------------------

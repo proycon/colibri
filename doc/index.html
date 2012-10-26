@@ -127,7 +127,7 @@ $ make install</pre>
 <p>This results in <tt class="docutils literal"><span class="pre">yourcorpus1.cls</span></tt> and <tt class="docutils literal"><span class="pre">yourcorpus1.clsenc</span></tt> and <tt class="docutils literal"><span class="pre">yourcorpus2.clsenc</span></tt>. The class file spans both despite the name. An explicit name can be passed with the <tt class="docutils literal"><span class="pre">-o</span></tt> flag. It is also possible to encode multiple corpora in a single unified file by passing the <tt class="docutils literal"><span class="pre">-u</span></tt> flag. This is often desired if you want to train a pattern model on the all the joined data:</p>
 <div class="highlight-python"><pre>$ classencode -o out -u yourcorpus1 yourcorpus2</pre>
 </div>
-<p>This will create a <tt class="docutils literal"><span class="pre">out.cls</span></tt> and <tt class="docutils literal"><span class="pre">out.clsenc</span></tt>.</p>
+<p>This will create a <tt class="docutils literal"><span class="pre">out.cls</span></tt> and <tt class="docutils literal"><span class="pre">out.clsenc</span></tt>. If you want to specify a large number of files, you can use the <tt class="docutils literal"><span class="pre">-l</span></tt> flag and specify a filename from which all input filenames will be read, one per line.</p>
 </div>
 <div class="section" id="class-decoding-your-corpus">
 <h3>Class-decoding your corpus<a class="headerlink" href="#class-decoding-your-corpus" title="Permalink to this headline">¶</a></h3>
