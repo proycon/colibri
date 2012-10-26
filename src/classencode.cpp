@@ -86,10 +86,14 @@ int main( int argc, char *argv[] ) {
     }   
     
     for (int i = 0; i < corpusfiles.size(); i++) {
-        string outfile = "";
-        strip_extension(outfile,"txt");
-        strip_extension(outfile,"xml");       
-        classencoder.encodefile(corpusfiles[i], outfile + ".clsenc", allowunknown);    
+        string outfile = corpusfiles[i];
+        if (unified) {
+            outfile = outputprefix;
+        } else {
+            strip_extension(outfile,"txt");
+            strip_extension(outfile,"xml");
+        }       
+        classencoder.encodefile(corpusfiles[i], outfile + ".clsenc", allowunknown, false, unified);    
         cerr << "Encoded corpus as " << outfile << ".clsenc" << endl;
     }
     
