@@ -170,6 +170,7 @@ void ClassEncoder::build(vector<string> & files) {
 	    	    
 	    for (vector<string>::iterator iter = files.begin(); iter != files.end(); iter++) {
 	        const string filename = *iter;
+	        cerr << "Processing " << filename << endl;
 	        if (filename.rfind(".xml") != string::npos) {
 	            processfoliacorpus(filename, freqlist);
 	        } else {
