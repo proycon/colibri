@@ -2000,7 +2000,7 @@ void UnindexedPatternModel::decode(ClassDecoder & classdecoder, ostream *OUT) {
        //const double freq2 = (double) iter->second / ngramtokencount;
        //const double freq3 = (double) iter->second / grandtotal;
        const EncNGram ngram = iter->first;
-        *OUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << iter->second << '\t' << tokens << '\t' << cov << '\t' << freqall << '\t' << freqg << '\t' << freqn;
+        *OUT << (int) ngram.n() << '\t' << setprecision(numeric_limits<double>::digits10 + 1) << ngram.decode(classdecoder) << '\t' << iter->second << '\t' << tokens << '\t' << cov << '\t' << freqall << '\t' << freqg << '\t' << freqn;
         *OUT << endl;
     }
    
