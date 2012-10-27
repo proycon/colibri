@@ -1691,7 +1691,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
                 }
             }
        }
-       cerr << "Pruned " << pruned << " " << n << "-grams";  //"(" << tokencount[n] << " tokens)" << endl;
+       cerr << "Pruned " << pruned << " " << n << "-grams" << endl;  //"(" << tokencount[n] << " tokens)" << endl;
     
        
        if (DOSKIPGRAMS) {       
