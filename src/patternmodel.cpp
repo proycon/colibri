@@ -688,6 +688,13 @@ void IndexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram &
     }    
 }
 
+void IndexedPatternModel::readheader(std::istream * in, bool ignore) {
+    if ((model_id < INDEXEDPATTERNMODEL) && (!ignore)) {
+        cerr << "ERROR: Reading an unindexed pattern model as indexed. Did you forget to pass the -u flag?" << endl;
+        exit(2);
+    }
+}
+
 void IndexedPatternModel::readfooter(std::istream * f, bool ignore) {
     if (!ignore) {
          sentencesize.clear();

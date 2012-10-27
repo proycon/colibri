@@ -234,7 +234,7 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     EncAnyGram* get_reverse_index_item(const int, const int);
     
     virtual uint64_t id() { return INDEXEDPATTERNMODEL + INDEXEDPATTERNMODELVERSION; }
-    virtual void readheader(std::istream * in, bool ignore = false) {};
+    virtual void readheader(std::istream * in, bool ignore = false);
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
     virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false);    
