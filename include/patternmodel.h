@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <map>
 
-const char MAXN = 20;
+const unsigned char MAXN = 0xff;
 
 const short GRAPHPATTERNMODELVERSION = 2; //unsigned:1
 const short INDEXEDPATTERNMODELVERSION = 3; //unsigned:2
