@@ -480,6 +480,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
         cerr << endl;
        }
     
+       if (foundngrams == 0) break;
 
        //prune n-grams
        int pruned = 0;
@@ -535,6 +536,8 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
            cerr << "Pruned " << pruned << " skipgrams" << endl; // (" << skiptokencount[n] << " tokens)" << endl;
            
         }
+        
+
     }
     cerr << "Computing general statistics..." << endl;
     computestats();
@@ -1698,6 +1701,8 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
        } else {
         cerr << endl;
        }
+       
+       if (foundngrams == 0) break;
     
 
        //prune n-grams
