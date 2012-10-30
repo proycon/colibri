@@ -144,9 +144,9 @@ void ModelWriter::writefile(const string & filename) {
 
 
 ModelQuerierBase::ModelQuerierBase() {
-	for (int n = 1; n <= MAXN; n++) {
+	/*for (int n = 1; n <= MAXN; n++) { //removed in favour of on-demand-basis
     	compute_multi_skips(gapconf[n], vector<pair<int,int> >(), n);
-    }
+    }*/
 }
 
 std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerierBase::getpatterns(const unsigned char * data, const unsigned char datasize, bool doskipgrams, uint32_t linenum, const int minn, const int maxn) {
@@ -177,6 +177,9 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerierBase::getpatt
 				
 					//iterate over all gap configurations
 					const int n = ngram->n();
+					
+					if (gapconf[n].empty()) compute_multi_skips(gapconf[n], vector<pair<int,int> >(), n);
+					
 					for (size_t j = 0; j < gapconf[n].size(); j++) {
 						//iterate over all gaps
 
