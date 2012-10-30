@@ -27,7 +27,7 @@ class EncAnyGram {
      unsigned char* data;
     
      EncAnyGram();
-     EncAnyGram(const unsigned char* dataref, const char size);
+     EncAnyGram(const unsigned char* dataref, const unsigned char size);
      EncAnyGram(const EncAnyGram& ref);
      EncAnyGram(const EncData& ref);            
      virtual ~EncAnyGram();

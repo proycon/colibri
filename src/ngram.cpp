@@ -16,7 +16,7 @@ EncAnyGram::EncAnyGram() {
     data = NULL;
 }
 
-EncAnyGram::EncAnyGram(const unsigned char* dataref, const char size) {
+EncAnyGram::EncAnyGram(const unsigned char* dataref, const unsigned char size) {
    //create a copy of the character data (will take less space than storing pointers anyhow!)
    if (size <= 0) {
        cerr << "INTERNAL ERROR EncAnyGram(): Data size must be > 0! Parameter says " << (int) size << "!" << endl;
@@ -134,9 +134,9 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
     if (endpos == -1) {
         endpos = size - 1;
     }
-    const unsigned char bytesize = (char) (endpos - beginpos + 1);    
+    const int bytesize = (char) (endpos - beginpos + 1);    
     if (bytesize <= 0) {
-        cerr << "INTERNAL ERROR getencgram(): yielding ngram with size <= 0! Not possible!" << " index="<<index << " n="<<n <<" size="<< (int) bytesize << " beginpos=" << beginpos << " endpos=" << endpos << " sentencesize=" << size << endl;
+        cerr << "INTERNAL ERROR getencgram(): yielding ngram with size <= 0! Not possible!" << " index="<<index << " n="<<n <<" size="<< bytesize << " beginpos=" << beginpos << " endpos=" << endpos << " sentencesize=" << size << endl;
         if (linenum > 0) cerr << "OCCURRED ON LINE " << linenum << endl;
         cerr << "ENCODED DATA DUMP FOR DEBUG (index:byte): ";
         for (int i = 0; i < size; i++) {
@@ -144,8 +144,12 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
         }
         cerr << endl;
         throw InternalError();
+    } else if (bytesize >= 256) {
+        cerr <<  "ERROR getencgram(): yielding ngram with size >= 256! Not possible!  " << " index="<<index << " n="<<n <<" size="<< bytesize << " beginpos=" << beginpos << " endpos=" << endpos << " sentencesize=" << size << endl;
+        cerr << "This error may be the result of setting the maximum n-gram size too high, choose a lower value." << endl;
+        throw InternalError();
     }
-    return new EncNGram(line + beginpos, bytesize);
+    return new EncNGram(line + beginpos, (unsigned char) bytesize);
 }
 
 
