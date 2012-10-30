@@ -9,8 +9,9 @@
 
 const char MAXN = 20;
 
-const short GRAPHPATTERNMODELVERSION = 1;
-const short INDEXEDPATTERNMODELVERSION = 2;
+const short GRAPHPATTERNMODELVERSION = 2; //unsigned:1
+const short INDEXEDPATTERNMODELVERSION = 3; //unsigned:2
+const short UNINDEXEDPATTERNMODELVERSION = 2; //unsigned:1
 
 enum ModelType {
 	UNINDEXEDPATTERNMODEL = 10, 
@@ -124,8 +125,8 @@ class ModelReader {
     uint64_t model_id;
     virtual uint64_t id() =0;
     virtual void readheader(std::istream * in, bool ignore=false) =0;
-    virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false) =0;
-    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false) =0;
+    virtual void readngramdata(std::istream * in, const EncNGram & ngram, int ngramversion=1, bool ignore = false) =0;
+    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, int ngramversion=1, bool ignore = false) =0;
     virtual void readfooter(std::istream * in, bool ignore = false) =0;    
     
     virtual void readfile(const std::string & filename, const bool DEBUG=false);
@@ -235,8 +236,8 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     
     virtual uint64_t id() { return INDEXEDPATTERNMODEL + INDEXEDPATTERNMODELVERSION; }
     virtual void readheader(std::istream * in, bool ignore = false);
-    virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
-    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
+    virtual void readngramdata(std::istream * in, const EncNGram & ngram, int ngramversion=1,bool ignore = false);
+    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, int ngramversion=1,bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false);    
     
     virtual void writeheader(std::ostream * out) {};
@@ -316,8 +317,8 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
     
     virtual uint64_t id() { return UNINDEXEDPATTERNMODEL; }
     virtual void readheader(std::istream * in,  bool ignore = false) {};
-    virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
-    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
+    virtual void readngramdata(std::istream * in, const EncNGram & ngram, int ngramversion=1,bool ignore = false);
+    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, int ngramversion=1,bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};    
     
     virtual void writeheader(std::ostream * out) {};
@@ -413,7 +414,7 @@ class GraphRelations {
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_successors;  
     std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_predecessors;  
     
-    void readrelations(std::istream * in,const EncAnyGram* = NULL, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * = NULL, bool ignore = false);
+    void readrelations(std::istream * in,const EncAnyGram* = NULL, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * = NULL, int ngramversion=1,bool ignore = false);
     
     void getrelations(std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relations, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram*> & container);
     
@@ -505,8 +506,8 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
     const EncAnyGram* getkey(const EncAnyGram* key) { return model->getkey(key); }
     
     virtual void readheader(std::istream * in, bool ignore = false);
-    virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
-    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
+    virtual void readngramdata(std::istream * in, const EncNGram & ngram, int ngramversion=1,bool ignore = false);
+    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, int ngramversion=1,bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};    
     
     virtual void writeheader(std::ostream * out);
@@ -628,8 +629,8 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier, public Gra
     bool has_children() { return (HASCHILDREN) ; }
     
     virtual void readheader(std::istream * in, bool ignore = false);
-    virtual void readngramdata(std::istream * in, const EncNGram & ngram, bool ignore = false);
-    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore = false);
+    virtual void readngramdata(std::istream * in, const EncNGram & ngram, int ngramversion=1,bool ignore = false);
+    virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram,int ngramversion=1,bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};
 };
 

@@ -22,7 +22,7 @@ class EncNGram;
 
 class EncAnyGram {
     protected:
-     char _size;    
+     unsigned char _size;    
     public:    
      unsigned char* data;
     
@@ -32,8 +32,8 @@ class EncAnyGram {
      EncAnyGram(const EncData& ref);            
      virtual ~EncAnyGram();
      
-     virtual const char n() const;
-     virtual const char size() const;
+     virtual const unsigned char n() const;
+     virtual const unsigned char size() const;
      
      virtual std::string decode(ClassDecoder& classdecoder) const;
      virtual bool out() const;
@@ -80,8 +80,8 @@ class EncAnyGram {
 class EncNullGram: public EncAnyGram {
    public:
 	EncNullGram() { data = new unsigned char[1]; data[0] = 0; _size = 1; }
-	const char n() { return 1; }
-	const char size() { return 1; }
+	const unsigned char n() { return 1; }
+	const unsigned char size() { return 1; }
 	const size_t hash() const { return 0; }
 	void writeasbinary(std::ostream * out) const {}
 	virtual std::string decode(ClassDecoder& classdecoder) const { return "{NULL}"; }
@@ -90,10 +90,10 @@ class EncNullGram: public EncAnyGram {
 class EncNGram: public EncAnyGram {
    public:
     //EncNGram(): EncAnyGram() {}; 
-    EncNGram(const unsigned char* dataref, const char size): EncAnyGram(dataref, size) {};
+    EncNGram(const unsigned char* dataref, const unsigned char size): EncAnyGram(dataref, size) {};
     EncNGram(const EncNGram& ref): EncAnyGram(ref) {};
     EncNGram(const EncData& ref): EncAnyGram(ref) {};       
-    EncNGram(std::istream * in);
+    EncNGram(std::istream * in, int version = 1);
     
     int getclass(const int index) const;
     EncNGram * slice(const int begin,const int length) const;    
@@ -131,12 +131,12 @@ class EncSkipGram: public EncAnyGram {
       
       //SkipConf skipconf; //skip configuration (encoded in 16 bits, 4 bit per gap: max 4 gaps, max 16 spaces in a gap)
       
-      const char n() const;
+      const unsigned char n() const;
       
       EncSkipGram(const std::vector<EncNGram*> & dataref, const std::vector<int> & skipref, bool initialskip = false, bool finalskip = false);
-      EncSkipGram(const unsigned char *dataref, const char size, const unsigned char* skipref, const char skipcount);
+      EncSkipGram(const unsigned char *dataref, const unsigned char size, const unsigned char* skipref, const char skipcount);
       //EncSkipGram(const EncNGram & pregap, const EncNGram & postgap, const char refn);
-      EncSkipGram(std::istream * in, const char gapcount = -1);
+      EncSkipGram(std::istream * in, const char gapcount = -1, int version = 1);
       virtual std::string decode(ClassDecoder& classdecoder) const;
       bool out() const;
       bool isskipgram() const { return (skipcount > 0); }

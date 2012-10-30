@@ -60,6 +60,18 @@ void ModelReader::readfile(const string & filename, const bool DEBUG ) {
     	cerr << "\tTOTALTYPES=" << totaltypes << endl;
     }
     
+    //Determine whether to n-gramsize is signed (0) or unsigned (1):
+    int ngramversion = 1;
+    if ((model_id > UNINDEXEDPATTERNMODEL) && (model_id < INDEXEDPATTERNMODEL)) {
+        if (model_id < UNINDEXEDPATTERNMODEL + 2) { ngramversion = 0; } else { ngramversion = 1; } 
+    } 
+    if ((model_id > INDEXEDPATTERNMODEL) && (model_id < GRAPHPATTERNMODEL)) {
+        if (model_id < INDEXEDPATTERNMODEL + 3) { ngramversion = 0; } else { ngramversion = 1; } 
+    }     
+    if ((model_id > GRAPHPATTERNMODEL) && (model_id < GRAPHPATTERNMODEL+10)) {
+        if (model_id < GRAPHPATTERNMODEL + 2) { ngramversion = 0; } else { ngramversion = 1; } 
+    }     
+    
     readheader(&f);
     unsigned char check;    
     for (unsigned int i = 0; i < totaltypes; i++) {           
@@ -80,7 +92,7 @@ void ModelReader::readfile(const string & filename, const bool DEBUG ) {
         f.read(&gapcount, sizeof(char));
         if (gapcount == 0) {
             if (DEBUG)  cerr << "\tNGRAM: ";
-            const EncNGram ngram = EncNGram(&f); //read from file
+            const EncNGram ngram = EncNGram(&f, ngramversion); //read from file
             const int n = ngram.n();
             if (n > FOUNDMAXN) FOUNDMAXN = n;
             if (n < FOUNDMINN) FOUNDMINN = n;
@@ -90,12 +102,12 @@ void ModelReader::readfile(const string & filename, const bool DEBUG ) {
             //lastngram = ngram;    
         } else {
             if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps: ";
-            const EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file
+            const EncSkipGram skipgram = EncSkipGram( &f, gapcount, ngramversion); //read from file
             const int n = skipgram.n();
             if (n > FOUNDMAXN) FOUNDMAXN = n;
             if (n < FOUNDMINN) FOUNDMINN = n;            
             if (DEBUG) skipgram.out();              
-            readskipgramdata(&f, skipgram);
+            readskipgramdata(&f, skipgram, ngramversion);
             last = 2;
             //lastskipgram = skipgram;
         }
@@ -640,7 +652,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatte
 
 
 
-void IndexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, bool ignore) {
+void IndexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, int ngramversion, bool ignore) {
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
     for (unsigned int j = 0; j < count; j++) {
@@ -665,7 +677,7 @@ void IndexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram
 
 
 
-void IndexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram & skipgram, bool ignore) {
+void IndexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram & skipgram, int ngramversion, bool ignore) {
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count            
     if (!ignore) {
@@ -679,7 +691,7 @@ void IndexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram &
     uint32_t skipcontentcount;
     f->read((char*) &skipcontentcount, sizeof(uint32_t));   
     for (unsigned int j = 0; j < skipcontentcount; j++) {                                
-        EncSkipGram skipcontent = EncSkipGram(f);  
+        EncSkipGram skipcontent = EncSkipGram(f,-1,ngramversion);  
         f->read((char*) &count, sizeof(uint32_t)); //read occurrence count                
         for (unsigned int k = 0; k < count; k++) {
             CorpusReference ref = CorpusReference(f); //read from file
@@ -1822,7 +1834,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, Unindexe
   
 }
 
-void UnindexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, bool ignore ) {
+void UnindexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram, int ngramversion, bool ignore ) {
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
     if (model_id >= INDEXEDPATTERNMODEL) { //read and ignore references        
@@ -1838,7 +1850,7 @@ void UnindexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngr
 
 
 
-void UnindexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram & skipgram, bool ignore) {
+void UnindexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram & skipgram, int ngramversion, bool ignore) {
     uint32_t count;
     f->read((char*) &count, sizeof(uint32_t)); //read occurrence count
     if (model_id >= INDEXEDPATTERNMODEL) { //read and ignore references
@@ -1846,7 +1858,7 @@ void UnindexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram
         f->read((char*) &skipcontentcount, sizeof(uint32_t));
         uint32_t occount;   
         for (unsigned int j = 0; j < skipcontentcount; j++) {   
-            EncSkipGram skipcontent = EncSkipGram(f);  
+            EncSkipGram skipcontent = EncSkipGram(f, -1, ngramversion);  
             f->read((char*) &occount, sizeof(uint32_t)); //read occurrence count                
             for (unsigned int k = 0; k < occount; k++) {
                 CorpusReference ref = CorpusReference(f); //read from file (and ignore)
@@ -2562,7 +2574,7 @@ void GraphPatternModel::writeheader(std::ostream * out) {
     out->write((char*) &DOPREDECESSORS, sizeof(bool)); //1 byte, not 1 bit
 }
 
-void GraphPatternModel::readngramdata(std::istream * in, const EncNGram & ngram, bool ignore) {
+void GraphPatternModel::readngramdata(std::istream * in, const EncNGram & ngram, int ngramversion, bool ignore) {
 	model->readngramdata(in, ngram, ignore || secondpass);
     if (HASXCOUNT) {
         uint32_t _xcount;
@@ -2578,18 +2590,18 @@ void GraphPatternModel::readngramdata(std::istream * in, const EncNGram & ngram,
         	}
         } 
     }
-    if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_parents, (ignore || !secondpass || !DOPARENTS));
-    if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_children, (ignore || !secondpass || !DOCHILDREN));
-    if (HASTEMPLATES) readrelations(in, (const EncAnyGram*) &ngram, &rel_templates, (ignore || !secondpass || !DOTEMPLATES));
-    if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &ngram, &rel_instances, (ignore || !secondpass || !DOINSTANCES));
-    if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &ngram, &rel_skipusage, (ignore || !secondpass || !DOSKIPUSAGE));
-    if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &ngram, &rel_skipcontent, (ignore || !secondpass || !DOSKIPCONTENT));
-    if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &ngram, &rel_successors, (ignore || !secondpass || !DOSUCCESSORS));
-    if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &ngram, &rel_predecessors, (ignore || !secondpass || !DOPREDECESSORS));        
+    if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_parents, ngramversion, (ignore || !secondpass || !DOPARENTS));
+    if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_children, ngramversion, (ignore || !secondpass || !DOCHILDREN));
+    if (HASTEMPLATES) readrelations(in, (const EncAnyGram*) &ngram, &rel_templates, ngramversion, (ignore || !secondpass || !DOTEMPLATES));
+    if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &ngram, &rel_instances, ngramversion, (ignore || !secondpass || !DOINSTANCES));
+    if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &ngram, &rel_skipusage, ngramversion, (ignore || !secondpass || !DOSKIPUSAGE));
+    if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &ngram, &rel_skipcontent, ngramversion, (ignore || !secondpass || !DOSKIPCONTENT));
+    if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &ngram, &rel_successors, ngramversion, (ignore || !secondpass || !DOSUCCESSORS));
+    if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &ngram, &rel_predecessors, ngramversion, (ignore || !secondpass || !DOPREDECESSORS));        
 }
 
-void GraphPatternModel::readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
-	model->readskipgramdata(in,skipgram, ignore || secondpass);
+void GraphPatternModel::readskipgramdata(std::istream * in, const EncSkipGram & skipgram, int ngramversion, bool ignore) {
+	model->readskipgramdata(in,skipgram, ngramversion, ignore || secondpass);
     if (HASXCOUNT) {
         uint32_t _xcount;
         in->read((char*) &_xcount, sizeof(uint32_t));
@@ -3386,7 +3398,7 @@ int SelectivePatternModel::transitivereduction() {
 }*/
 
 
-void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ngram, bool ignore) {
+void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ngram,int ngramversion,  bool ignore) {
 	//NOTE MAYBE TODO: make sure to update when GraphModel updates!
 
 	if ((ngram.n() < MINLENGTH) || (ngram.n() > MAXLENGTH)) ignore = true;
@@ -3411,14 +3423,14 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
         if (&ngram == NULL) {
          cerr << "NULL!" << endl;
         }
-    	if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_parents);
-    	if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_children);
-    	if (HASTEMPLATES) readrelations(in,  (const EncAnyGram*) &ngram, &rel_templates);
-        if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &ngram, &rel_instances);
-        if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &ngram, &rel_skipusage);
-        if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &ngram, &rel_skipcontent);
-        if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &ngram, &rel_successors);
-        if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &ngram, &rel_predecessors);
+    	if (HASPARENTS) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_parents,ngramversion);
+    	if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &ngram, &rel_subsumption_children,ngramversion);
+    	if (HASTEMPLATES) readrelations(in,  (const EncAnyGram*) &ngram, &rel_templates,ngramversion);
+        if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &ngram, &rel_instances,ngramversion);
+        if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &ngram, &rel_skipusage,ngramversion);
+        if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &ngram, &rel_skipcontent,ngramversion);
+        if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &ngram, &rel_successors,ngramversion);
+        if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &ngram, &rel_predecessors,ngramversion);
     } else {
     	if (HASPARENTS) readrelations(in); //read and ignore
     	if (HASCHILDREN) readrelations(in);  //read and ignore
@@ -3470,7 +3482,7 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
 
 
 
-void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGram & skipgram, bool ignore) {
+void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGram & skipgram, int ngramversion, bool ignore) {
 	//NOTE MAYBE TODO: make sure to update when GraphModel updates!
 
 	if ( (!DOSKIPGRAMS) || (skipgram.n() < MINLENGTH) || (skipgram.n() > MAXLENGTH) ) ignore = true;
@@ -3499,14 +3511,14 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
     if (HASXCOUNT) in->read((char*) &xcount, sizeof(uint32_t));     
 
     if (secondpass) {    		
-    	if (HASPARENTS) readrelations(in, (const EncAnyGram*) &skipgram, &rel_subsumption_parents);
-    	if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &skipgram, &rel_subsumption_children);
-    	if (HASTEMPLATES) readrelations(in,  (const EncAnyGram*) &skipgram, &rel_templates);
-        if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &skipgram, &rel_instances);
-        if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &skipgram, &rel_skipusage);
-        if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &skipgram, &rel_skipcontent);
-        if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &skipgram, &rel_successors);
-        if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &skipgram, &rel_predecessors);
+    	if (HASPARENTS) readrelations(in, (const EncAnyGram*) &skipgram, &rel_subsumption_parents, ngramversion);
+    	if (HASCHILDREN) readrelations(in, (const EncAnyGram*) &skipgram, &rel_subsumption_children, ngramversion);
+    	if (HASTEMPLATES) readrelations(in,  (const EncAnyGram*) &skipgram, &rel_templates, ngramversion);
+        if (HASINSTANCES) readrelations(in, (const EncAnyGram*) &skipgram, &rel_instances, ngramversion);
+        if (HASSKIPUSAGE) readrelations(in, (const EncAnyGram*) &skipgram, &rel_skipusage, ngramversion);
+        if (HASSKIPCONTENT) readrelations(in, (const EncAnyGram*) &skipgram, &rel_skipcontent, ngramversion);
+        if (HASSUCCESSORS) readrelations(in, (const EncAnyGram*) &skipgram, &rel_successors, ngramversion);
+        if (HASPREDECESSORS) readrelations(in, (const EncAnyGram*) &skipgram, &rel_predecessors, ngramversion);
     } else {
     	if (HASPARENTS) readrelations(in); //read and ignore
     	if (HASCHILDREN) readrelations(in);  //read and ignore
@@ -3684,14 +3696,14 @@ const EncAnyGram* SelectivePatternModel::getkey(const EncAnyGram* key) {
 
 
 
-void GraphRelations::readrelations(std::istream * in, const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * relationhash, bool ignore) {
+void GraphRelations::readrelations(std::istream * in, const EncAnyGram * anygram, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * relationhash, int ngramversion, bool ignore) {
     uint32_t count;
     in->read((char*) &count,  sizeof(uint32_t));
     char gapcount;        
     for (unsigned int i = 0; i < count; i++) {                        
        in->read(&gapcount, sizeof(char));
        if (gapcount == 0) {
-        EncNGram ngram = EncNGram(in);
+        EncNGram ngram = EncNGram(in, ngramversion);
         if ((!ignore) && (secondpass) && (anygram != NULL) && (relationhash != NULL)) {
             const EncAnyGram * key = getkey(anygram);
         	const EncAnyGram * key2 = getkey((EncAnyGram*) &ngram);
@@ -3705,7 +3717,7 @@ void GraphRelations::readrelations(std::istream * in, const EncAnyGram * anygram
 			}        		
         }
        } else {
-        EncSkipGram skipgram = EncSkipGram( in, gapcount);
+        EncSkipGram skipgram = EncSkipGram( in, gapcount, ngramversion);
         if ((!ignore) && (secondpass) && (anygram != NULL) && (relationhash != NULL)) {
             const EncAnyGram * key = getkey(anygram);
         	const EncAnyGram * key2 = getkey((EncAnyGram*) &skipgram);

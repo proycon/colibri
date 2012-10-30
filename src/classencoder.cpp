@@ -138,7 +138,7 @@ void ClassEncoder::buildclasses(unordered_map<string,int> freqlist) {
 
         //sort by occurrence count  using intermediate representation
         multimap<const int, const string> revfreqlist;
-        for (unordered_map<const string,int>::iterator iter = freqlist.begin(); iter != freqlist.end(); iter++) {
+        for (unordered_map<string,int>::iterator iter = freqlist.begin(); iter != freqlist.end(); iter++) {
         	revfreqlist.insert( pair<const int,const string>(-1 * iter->second, iter->first) );
         } 
         

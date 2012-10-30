@@ -1,4 +1,5 @@
 #include "patternmodel.h"
+#include <getopt.h>
 
 using namespace std;
 

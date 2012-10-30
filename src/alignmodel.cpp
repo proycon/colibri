@@ -1509,6 +1509,11 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
         leftsourcecontext = 0;
         rightsourcecontext = 0;
     }
+    int ngramversion = 1;
+    if (model_id < (unsigned int) ALIGNMENTMODEL + 5) {
+        ngramversion = 0;
+    }
+    
     if (DEBUG) {
         cerr << "leftsourcecontext=" << (int) leftsourcecontext << endl;
         cerr << "rightsourcecontext=" << (int) rightsourcecontext << endl;
@@ -1532,7 +1537,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
         bool sourceisskipgram = false;
         if (gapcount == 0) {
             if (DEBUG)  cerr << "\tNGRAM";
-            const EncNGram * ngram = new EncNGram(&f); //read from file
+            const EncNGram * ngram = new EncNGram(&f, ngramversion); //read from file
             sourcegram = getsourcekey((EncAnyGram*) ngram); //does the key already exist?
             if (sourcegram == NULL) {            
                 //no
@@ -1546,7 +1551,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
             }               
         } else {
             if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
-            const EncSkipGram * skipgram = new EncSkipGram( &f, gapcount); //read from file
+            const EncSkipGram * skipgram = new EncSkipGram( &f, gapcount, ngramversion); //read from file
             if (allowskipgrams) {              
                 sourcegram = getsourcekey((EncAnyGram*) skipgram);  //does the key already exist?
                 if (sourcegram == NULL) {
@@ -1584,7 +1589,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
             bool targetisskipgram = false;	    
 		    if (gapcount == 0) {
 		        if (DEBUG)  cerr << "\tNGRAM";
-		        EncNGram ngram = EncNGram(&f); //read from file
+		        EncNGram ngram = EncNGram(&f, ngramversion); //read from file
 		        if (DEBUG)  cerr << "\tread";
 		        if (!gettargetkey((EncAnyGram*) &ngram)) {
 		        	targetngrams.insert(ngram);		        	
@@ -1592,7 +1597,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
 		        targetgram = gettargetkey((EncAnyGram*) &ngram);                                           
 		    } else {
 		        if (DEBUG)  cerr << "\tSKIPGRAM, " << (int) gapcount << " gaps";
-		        EncSkipGram skipgram = EncSkipGram( &f, gapcount); //read from file
+		        EncSkipGram skipgram = EncSkipGram( &f, gapcount, ngramversion); //read from file
 		        if (allowskipgrams) {		                          		        
 		            if (!gettargetkey((EncAnyGram*) &skipgram)) {
 		            	targetskipgrams.insert(skipgram);		        	

@@ -63,15 +63,15 @@ EncAnyGram::~EncAnyGram() {
 
 
 
-const char EncAnyGram::size() const {
+const unsigned char EncAnyGram::size() const {
     return _size;
 }
 
-const char EncAnyGram::n() const {
+const unsigned char EncAnyGram::n() const {
     if (isskipgram()) {
         return ((const EncSkipGram *) this)->n();
     } else {
-        char count = 1; 
+        unsigned char count = 1; 
         for (int i = 0; i < _size; i++) {
             if (data[i] == 0) count++;
         }    
@@ -445,7 +445,7 @@ void EncAnyGram::writeasbinary(ostream * out) const {
         cerr << "INTERNAL ERROR EncNGram::writeasbinary(): Writing skipgram with size <= 0! Not possible!" << endl;
         throw InternalError();
     }
-    out->write( &_size, sizeof(char) ); //data length
+    out->write( (char*) &_size, sizeof(unsigned char) ); //data length
     out->write( (char*) data , (int) _size ); //data
 }
 
@@ -462,7 +462,7 @@ void EncSkipGram::writeasbinary(ostream * out) const {
         cerr << "INTERNAL ERROR EncSkipGram::writeasbinary(): Writing skipgram with size <= 0! Not possible!" << endl;
         throw InternalError();
     }
-    out->write( &_size, sizeof(char) ); //size
+    out->write( (char*) &_size, sizeof(unsigned char) ); //size
     out->write( (char*) data , (int) _size ); //data
 }
 
@@ -536,7 +536,7 @@ EncSkipGram::EncSkipGram(const vector<EncNGram*> & dataref, const vector<int> & 
     } 
 }
 
-EncSkipGram::EncSkipGram(const unsigned char *dataref, const char size, const unsigned char* skipref, const char skipcount): EncAnyGram(dataref,size) {
+EncSkipGram::EncSkipGram(const unsigned char *dataref, const unsigned char size, const unsigned char* skipref, const char skipcount): EncAnyGram(dataref,size) {
     this->skipcount = skipcount;
     for (int i = 0; i < skipcount; i++) {
         skipsize[i] = skipref[i];
@@ -568,7 +568,7 @@ EncSkipGram::EncSkipGram(const unsigned char *dataref, const char size, const un
 
 
 bool EncSkipGram::operator==(const EncSkipGram &other) const {
-        const char othersize = other.size();
+        const unsigned char othersize = other.size();
         if (_size == othersize) {
             if (skipcount != other.skipcount) return false;
             for (int i = 0; i < _size; i++) {
@@ -593,8 +593,8 @@ bool EncSkipGram::variablewidth() const {
     return false;
 }
 
-const char EncSkipGram::n() const {    
-    char count = 0;
+const unsigned char EncSkipGram::n() const {    
+    unsigned char count = 0;
     bool item = (data[0] != 0);
     for (int i = 0; i < _size; i++) {
         if (data[i] == 0) { 
@@ -1149,8 +1149,14 @@ char SkipConf::count() {
 
 
 
-EncNGram::EncNGram(istream * in) {
-    in->read(&_size, sizeof(char));    
+EncNGram::EncNGram(istream * in, int version) {
+    if (version == 0) {
+        char sc;
+        in->read(&sc, sizeof(char));
+        _size = (unsigned char) sc;
+    } else {
+        in->read((char*) &_size, sizeof(unsigned char));
+    }    
     if (_size <= 0) {
         cerr << "INTERNAL ERROR: EncNGram(): data has to have size >0, " << (int) _size << " is not possible!" << endl;;
         throw InternalError();
@@ -1159,7 +1165,7 @@ EncNGram::EncNGram(istream * in) {
     in->read((char*) data, (int) _size); //read data                                                
 }
 
-EncSkipGram::EncSkipGram(istream * in, const char _skipcount) {
+EncSkipGram::EncSkipGram(istream * in, const char _skipcount, int version) {
     if (_skipcount < 0) {
         in->read(&skipcount, sizeof(char));
     } else {
@@ -1172,7 +1178,13 @@ EncSkipGram::EncSkipGram(istream * in, const char _skipcount) {
     for (int j = 0; j < skipcount; j++) {
         in->read(skipsize + j, sizeof(char)); //reads in skipref[j]                
     }
-    in->read(&_size, sizeof(char));
+    if (version == 0) {
+        char sc;
+        in->read(&sc, sizeof(char));
+        _size = (unsigned char) sc;
+    } else {
+        in->read((char*) &_size, sizeof(unsigned char));
+    }    
     if (_size <= 0) {
         cerr << "INTERNAL ERROR: EncSkipGram(): data has to have size >0, read " << (int) _size << ", not possible!" << endl;;
         cerr << "skipcount=" << (int) skipcount << endl;

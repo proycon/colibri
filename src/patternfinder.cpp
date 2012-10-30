@@ -6,6 +6,7 @@
 #include <cmath>
 #include <algorithms.h>
 #include <common.h>
+#include <getopt.h>
 
 using namespace std;
 
