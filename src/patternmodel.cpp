@@ -301,7 +301,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
         uint32_t sentence = 0;
                 
         vector< vector< pair<int,int> > > gaps;
-        compute_multi_skips(gaps, vector<pair<int,int> >(), n);    
+        if (DOSKIPGRAMS) compute_multi_skips(gaps, vector<pair<int,int> >(), n);    
                     
                     
         int foundngrams = 0; //types
@@ -1525,7 +1525,7 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
         int foundskipgrams = 0;
                 
         vector< vector< pair<int,int> > > gaps;
-        compute_multi_skips(gaps, vector<pair<int,int> >(), n);    
+        if (DOSKIPGRAMS) compute_multi_skips(gaps, vector<pair<int,int> >(), n);    
         
         unordered_map<const EncSkipGram,size_t> lastskipcontenthash; //0 if not seen yet , 1 if already verified, hash key otherwise
         
