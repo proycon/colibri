@@ -1987,13 +1987,13 @@ void UnindexedPatternModel::computestats() {
     totalskipgramcount = 0;
     for (int n = 1; n <= MAXN; n++) { ngramcount[n] = 0;  skipgramcount[n] = 0; ngramtypes[n] = 0; skipgramcount[n] = 0; }
 
-    for (unordered_map<const EncNGram,uint32_t >::iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
+    for (unordered_map<const EncNGram,uint32_t >::const_iterator iter = ngrams.begin(); iter != ngrams.end(); iter++) {
         const EncAnyGram * anygram = &iter->first;
         ngramtypes[(int) anygram->n()]++;
         ngramcount[(int) anygram->n()] += iter->second;  
         totalngramcount += iter->second;   
     }
-    for (unordered_map<const EncSkipGram,uint32_t >::iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
+    for (unordered_map<const EncSkipGram,uint32_t >::const_iterator iter = skipgrams.begin(); iter != skipgrams.end(); iter++) {
         const EncAnyGram * anygram = &iter->first;
         skipgramtypes[(int) anygram->n()]++;
         skipgramcount[(int) anygram->n()] += iter->second;  
