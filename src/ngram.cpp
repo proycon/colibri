@@ -134,7 +134,7 @@ EncNGram * getencngram(const int index, const int n, const unsigned char *line, 
     if (endpos == -1) {
         endpos = size - 1;
     }
-    const char bytesize = (char) (endpos - beginpos + 1);    
+    const unsigned char bytesize = (char) (endpos - beginpos + 1);    
     if (bytesize <= 0) {
         cerr << "INTERNAL ERROR getencgram(): yielding ngram with size <= 0! Not possible!" << " index="<<index << " n="<<n <<" size="<< (int) bytesize << " beginpos=" << beginpos << " endpos=" << endpos << " sentencesize=" << size << endl;
         if (linenum > 0) cerr << "OCCURRED ON LINE " << linenum << endl;
