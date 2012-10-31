@@ -28,6 +28,7 @@ Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecode
     this->sourceclassdecoder = sourceclassdecoder;
     this->targetclassdecoder = targetclassdecoder;
     this->DEBUG = debug;
+    textexp = NULL;
     added = false;    
 }        
 
@@ -59,6 +60,9 @@ Classifier::Classifier(const std::string & _id, const string & timbloptions, Cla
     }
 }
 
+Classifier::~Classifier() {
+    if (textexp != NULL) delete textexp; 
+}
 
 void Classifier::addinstance(vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight) {
     vector<string> featurevector_s;

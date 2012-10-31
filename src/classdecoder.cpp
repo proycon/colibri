@@ -42,7 +42,8 @@ ClassDecoder::ClassDecoder(const string & filename) {
           }
         }        
         IN->close();  
-
+        delete IN;
+        
         if (unknownclass == 0) {
             highestclass++;
             unknownclass = highestclass;
@@ -50,7 +51,8 @@ ClassDecoder::ClassDecoder(const string & filename) {
             classes[unknownclass] = "{UNKNOWN}";
             classes[bosclass] = "{BEGIN}";
             classes[eosclass] = "{END}";
-        }        
+        }      
+          
 }
 
         
@@ -129,6 +131,7 @@ void ClassDecoder::decodefile(const string & filename, unsigned int start, unsig
         }
     }
     IN->close();
+    delete IN;
     if (!eol) cout << endl; //final endline not in corpus (which is good, but we want it outputted anyhow)     
     cerr << "Processed " << linenumber  << " lines" << endl;               
 } 

@@ -539,8 +539,8 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
            cerr << "Pruned " << pruned << " skipgrams" << endl; // (" << skiptokencount[n] << " tokens)" << endl;
            
         }
-        
-
+        IN->close();
+        delete IN;
     }
     cerr << "Computing general statistics..." << endl;
     computestats();
@@ -653,7 +653,8 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatte
 			 }			
 		} 
     }
-    
+    IN->close();
+    delete IN;
 }
 
 
@@ -1736,8 +1737,12 @@ UnindexedPatternModel::UnindexedPatternModel(const string & corpusfile, int MAXL
            cerr << "Pruned " << pruned << " skipgrams" << endl; //(" << skiptokencount[n] << " tokens)" << endl;
            
         }
+        
+        IN->close();
+        delete IN;
 
     }
+    
     computestats();        
 }
 
