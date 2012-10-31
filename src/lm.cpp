@@ -169,15 +169,18 @@ double LanguageModel::scoreword(const EncNGram * word, const EncNGram * history)
         lookup = word;
     }
     const int n = lookup->n();
-    unordered_map<EncNGram, double>::iterator iter = ngrams.find(*lookup); 
+    unordered_map<EncNGram, double>::iterator iter = ngrams.find(*lookup);
+         
     if (iter != ngrams.end()) {
-        if (DEBUG) cerr << "\t\t\tLM DEBUG: scoreword(): Found " << n << "-gram, score=" << iter->second << endl;        
+        if (DEBUG) cerr << "\t\t\tLM DEBUG: scoreword(): Found " << n << "-gram, score=" << iter->second << endl;
+        if (history != NULL) delete lookup;        
         return iter->second;        
     } else {
-        if (DEBUG) cerr << "\t\t\tLM DEBUG: scoreword(): " << n << "-gram not found. Backing off..." << endl;
+        if (DEBUG) cerr << "\t\t\tLM DEBUG: scoreword(): " << n << "-gram not found. Backing off..." << endl;        
     }
     
     if (history != NULL) delete lookup;
+    
          
     //not found, back-off    
     double result = 0;
