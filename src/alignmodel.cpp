@@ -766,6 +766,9 @@ EncAnyGram * AlignmentModel::addcontext(const EncData * sentence, const EncAnyGr
         if ((rightcontext_dummies != NULL) && (rightcontext != rightcontext_dummies)) delete rightcontext_dummies;
     }
     return focus->addcontext(leftcontext, rightcontext);
+    
+    delete leftcontext;
+    delete rightcontext;
 }
 
 
