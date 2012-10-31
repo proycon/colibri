@@ -418,18 +418,11 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                 }
                 translationoptions = classify(anygram, featurevector, scorehandling, reftranslationoptions);
                 //cleanup
-                if (singlefocusfeature) {    
-                    for (int i = 0; i < leftcontextsize; i++) {
-                        delete featurevector[i];
-                    }
-                    for (int i = leftcontextsize + 1; i < leftcontextsize + rightcontextsize + 1; i++) {
-                        delete featurevector[i];
-                    }
-                } else {
-                    for (int i = 0; i < nwithcontext; i++) {
-                        delete featurevector[i];
-                    }
+                
+                for (int i = 0; i < featurevector.size(); i++) {
+                    if (featurevector[i] != anygram) delete featurevector[i];
                 }
+                                
                 delete withcontext;
             } else {
                 bypass = true;
