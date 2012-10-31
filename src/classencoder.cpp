@@ -315,7 +315,7 @@ int ClassEncoder::encodestring(const string & line, unsigned char * outputbuffer
 	  	        		outputbuffer[outputcursor++] = byterep[j];
 	  	        	}  	        	
 	  	        	//OUT.write((const char *) byterep, length);	  	        
-	  	        	delete byterep;
+	  	        	delete [] byterep;
 				} else {
 				    //skip
 				    if (outputcursor == 0) {
