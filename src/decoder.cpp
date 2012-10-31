@@ -154,7 +154,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 int size = 0;
                 unsigned char * buffer = inttobytes(targetcls, size);                
                 EncNGram targetunigram = EncNGram(buffer, size);
-                delete buffer; 
+                delete [] buffer; 
                 lm->ngrams[targetunigram] = lm->ngrams[UNKNOWNUNIGRAM];
                 
                 
