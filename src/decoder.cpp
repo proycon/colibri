@@ -845,7 +845,7 @@ TranslationHypothesis::TranslationHypothesis(TranslationHypothesis * parent, Sta
     futurecost = 0;
     begin = -1;    
     for (unsigned int i = 0; i <= inputcoveragemask.size() ; i++) {
-        if ((!inputcoveragemask[i]) && (begin == -1) && (i < inputcoveragemask.size())) {
+        if ((i < inputcoveragemask.size()) && (!inputcoveragemask[i]) && (begin == -1)) {
             begin = i;
         } else if (((i == inputcoveragemask.size()) || (inputcoveragemask[i])) && (begin != -1)) {
             const double c = decoder->futurecost[make_pair((int) begin,(int) i-begin)];
