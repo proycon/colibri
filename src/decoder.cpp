@@ -372,7 +372,11 @@ TranslationHypothesis * StackDecoder::decodestack(Stack & stack) {
                 delete fallbackhyp;                
             }            
         }        
-        if (DEBUG >= 1) cerr << "\t Expanded " << totalexpanded << " new hypotheses in total after processing stack " << stack.index << endl;
+        if (DEBUG >= 1) {
+            unsigned int storedhyps = 0;
+            for (unsigned int j = 0; j <= inputlength; j++) storedhyps += stacks[j].size();
+            cerr << "\t Expanded " << totalexpanded << " new hypotheses in total after processing stack " << stack.index << " (overall " << storedhyps << " in memory)" << endl;
+        }
         unsigned int totalpruned = 0;
         for (int j = inputlength; j >= stack.index+1; j--) { //prune further stacks (hypotheses may have been added to any of them).. always prune superior stack first
             unsigned int pruned = stacks[j].prune();
