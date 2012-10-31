@@ -426,6 +426,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                         delete featurevector[i];
                     }
                 }
+                delete withcontext;
             } else {
                 bypass = true;
             }                    
