@@ -769,3 +769,22 @@ void ConstructionExperts::load( const string & timbloptions, ClassDecoder * sour
         classifierarray[hash] = new Classifier(hashclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder, (DEBUG >= 3));
     }    
 }
+
+NClassifierArray::~NClassifierArray() {
+    for (map<int, Classifier*>::const_iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
+        Classifier * c = iter->second;
+        if (c != NULL) delete c;
+    }
+}
+
+ConstructionExperts::~ConstructionExperts() {
+    for (map<uint64_t, Classifier*>::const_iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
+        Classifier * c = iter->second;
+        delete c;
+    }
+}
+
+
+MonoClassifier::~MonoClassifier() {
+    if (classifier != NULL) delete classifier;
+}
