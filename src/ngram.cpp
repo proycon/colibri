@@ -857,9 +857,9 @@ EncNGram * EncNGram::gettoken(int index) const {
 bool EncAnyGram::unknown() { //does this anygram have an unknown class in it?
     unsigned char unknownclass= 2;
     for (int i = 0; i < _size; i++) {
-        if ((i == 0) && (data[i] == unknownclass) && ((_size == 1) || (data[i+1] == 0))) {
+        if ((i == 0) && (data[i] == unknownclass) && ((_size == 1) || (data[i+1] == 0)) ) {
             return true;
-        } else if ((data[i - 1] == 0) && (data[i] == unknownclass) && ((_size == i) || (data[i+1] == 0))) {
+        } else if ( (i > 0) && (data[i - 1] == 0) && (data[i] == unknownclass) && ((_size == i) || (data[i+1] == 0))) {
             return true;
         }
     }  
