@@ -765,10 +765,15 @@ EncAnyGram * AlignmentModel::addcontext(const EncData * sentence, const EncAnyGr
         if ((rightcontext_body != NULL) && (rightcontext != rightcontext_body)) delete rightcontext_body;
         if ((rightcontext_dummies != NULL) && (rightcontext != rightcontext_dummies)) delete rightcontext_dummies;
     }
-    return focus->addcontext(leftcontext, rightcontext);
+    
+    
+    
+    EncAnyGram * result = focus->addcontext(leftcontext, rightcontext);
     
     delete leftcontext;
-    delete rightcontext;
+    delete rightcontext;    
+    
+    return result;
 }
 
 
