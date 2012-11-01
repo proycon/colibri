@@ -62,9 +62,8 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     void load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0); //take the intersection of two existing models
 
         
-    
-    
-    
+    // ~AlignmentModel(); //TODO: write destructor and do cleanup  
+        
     size_t size() { return alignmatrix.size(); }
     
     t_alignmatrix alignmatrix;

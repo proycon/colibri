@@ -136,6 +136,11 @@ int main( int argc, char *argv[] ) {
     
     } else if (mode == CLASSIFIERTYPE_MONO) {
 
+        if (!singlefocusfeature) {
+                cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
+                exit(2);
+        }
+        
         cerr << "Building monolithic classifier" << endl;
         MonoClassifier classifiers = MonoClassifier(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
         classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder);

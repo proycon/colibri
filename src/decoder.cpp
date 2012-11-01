@@ -1644,6 +1644,10 @@ int main( int argc, char *argv[] ) {
             classifier = (ClassifierInterface*) new ConstructionExperts(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
              classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);                    
         } else if (classifiertype == CLASSIFIERTYPE_MONO) {
+            if (!singlefocusfeature) {
+                cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
+                throw InternalError();
+            }
             classifier = (ClassifierInterface*) new MonoClassifier(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
             classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);            
         } else {
