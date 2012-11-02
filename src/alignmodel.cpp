@@ -1986,9 +1986,9 @@ void AlignmentModel::stats() {
     }
     cout << "sources aligned: " << sourcecount << endl;
     cout << "total alignments: " << totalcount << endl;
-    cout << "average alignments per source: " << (double) (totalcount / sourcecount) << endl;
-    cout << "left context: " << leftsourcecontext << endl;
-    cout << "right context: " << rightsourcecontext << endl;
+    cout << "average alignments per source: " << (double) totalcount / sourcecount << endl;
+    cout << "left context: " << (int) leftsourcecontext << endl;
+    cout << "right context: " << (int) rightsourcecontext << endl;
     cout << "score vector size: " << scorecount << endl;
 }
 
