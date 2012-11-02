@@ -1975,6 +1975,23 @@ t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefo
         return translationoptions;
 }
 
+
+void AlignmentModel::stats() {
+    unsigned int sourcecount = alignmatrix.size();
+    unsigned int totalcount = 0;
+    int scorecount = 0;
+    for (t_alignmatrix::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+        totalcount += iter->second.size();
+        if (iter->second.begin() != iter->second.end()) scorecount = iter->second.begin()->second.size();
+    }
+    cout << "sources aligned: " << sourcecount << endl;
+    cout << "total alignments: " << totalcount << endl;
+    cout << "average alignments per source: " << (double) (totalcount / sourcecount) << endl;
+    cout << "left context: " << leftsourcecontext << endl;
+    cout << "right context: " << rightsourcecontext << endl;
+    cout << "score vector size: " << scorecount << endl;
+}
+
 /**************************** EXPERIMENTAL EM MODEL **********************************/
 
 

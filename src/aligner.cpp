@@ -52,7 +52,8 @@ void usage() {
     cerr << "\t-L n                      Maximum N length" << endl;         
     cerr << " Output options:" << endl;    
     cerr << "\t-o filename               Write an alignment model to file using this filename (extension *.alignmodel.colibri will be automatically added)",
-    cerr << "\t--moses                   Output phrase-translation table in Moses format" << endl;    
+    cerr << "\t--moses                   Output phrase-translation table in Moses format" << endl;
+    cerr << "\t--stats                   Output statistics only (use with -d)" << endl;    
 }
 
 
@@ -96,6 +97,7 @@ int main( int argc, char *argv[] ) {
     //int DOSIMPLETABLE = 0;
     //int TARGETFIRST = 0;
     int MOSESFORMAT = 0;
+    int DOSTATS = 0;
     
     int bestn = 0;
     
@@ -122,6 +124,7 @@ int main( int argc, char *argv[] ) {
        //{"simpletable", no_argument,       &DOSIMPLETABLE, 1},
        //{"targetfirst", no_argument,       &TARGETFIRST, 1},
        {"moses", no_argument,             &MOSESFORMAT, 1},
+       {"stats", no_argument,             &DOSTATS, 1},
        {"null", no_argument,             &EM_NULL, 1}, 
                       
        {0, 0, 0, 0}
@@ -498,6 +501,10 @@ int main( int argc, char *argv[] ) {
                 reversealignmodel = new AlignmentModel(invmodelfile, false, DOSKIPGRAMS, bestn, DODEBUG); 
             }     
             cerr << "\tLoaded " << reversealignmodel->size() << " source patterns for inverse model" << endl;
+        }
+        
+        if (DOSTATS) {
+            alignmodel->stats();
         }
 	} else {
 	    cerr << "Error: Don't know what to do.. No model to load or build?" << endl;
