@@ -1041,7 +1041,19 @@ class MTWrapper(object):
                     scores.append( ( blue, meteor, nist, ter, wer, per) )
                     names.append(batch)
                     f.close()
-                if os.path.isfile(batchdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG  + '.phrasetable'):   
+                if os.path.isfile(batchdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG  + '.alignmodel.colibri'):                    
+                    os.system(self.EXEC_COLIBRI_ALIGNER + " -d " + batchdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG  + '.alignmodel.colibri' + " --stats > " + batchdir + "/alignmodel.stats")
+                    f = open(batchdir + "/alignmodel.stats")
+                    count = uniquecount = 0                    
+                    for line in f:
+                        if line[:17] == "sources aligned: ": 
+                            uniquecount = int(line[17:])
+                        elif line[:18] == "total alignments: ":
+                            count = int(line[18:])
+                    f.close()
+                    phrasetablesize.append( (count, uniquecount) )
+                    names_phrasetable.append(batch)                          
+                elif os.path.isfile(batchdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG  + '.phrasetable'):   
                     count = 0
                     uniquecount = 0
                     f = open(batchdir + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG  + '.phrasetable')
