@@ -349,7 +349,7 @@ int main( int argc, char *argv[] ) {
 	
 	if ((DO_EM) || (COOCMODE) || (DOGIZA)) {	
 	    //************ BUILD ****************
-	    if (sourcemodelfile.empty()  || targetmodelfile.empty()) {
+	    if ((!DOGIZA) && (sourcemodelfile.empty()  || targetmodelfile.empty())) {
       	    cerr << "Error: Specify at least a source model (-s) and target model (-t) to build an alignment model" << endl;
             exit(2);	    
 	    } else if ((DOGIZA) && ((DO_EM) || (COOCMODE))) {
