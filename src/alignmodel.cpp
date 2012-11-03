@@ -2291,9 +2291,19 @@ void AlignmentModel::stats() {
     unsigned int sourcecount = alignmatrix.size();
     unsigned int totalcount = 0;
     int scorecount = 0;
-    for (t_alignmatrix::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
-        totalcount += iter->second.size();
-        if (iter->second.begin() != iter->second.end()) scorecount = iter->second.begin()->second.size();
+    if (leftsourcecontext || rightsourcecontext) {
+        sourcecount = sourcecontexts.size();
+        for (t_contexts::iterator iter = sourcecontexts.begin(); iter != sourcecontexts.end();  iter++) {
+            for (unordered_set<const EncAnyGram *>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                totalcount += alignmatrix[*iter2].size();
+                scorecount = alignmatrix[*iter2].begin()->second.size();
+            }
+        }
+    } else {
+        for (t_alignmatrix::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+            totalcount += iter->second.size();
+            if (iter->second.begin() != iter->second.end()) scorecount = iter->second.begin()->second.size();
+        }
     }
     cout << "sources aligned: " << sourcecount << endl;
     cout << "total alignments: " << totalcount << endl;
