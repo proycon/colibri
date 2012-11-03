@@ -406,7 +406,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                     featurevector.push_back(anygram);
                     
                     //right context
-                    for (int i = nwithcontext - translationtable->rightsourcecontext - 1; i < nwithcontext; i++) {
+                    for (int i = nwithcontext - translationtable->rightsourcecontext; i < nwithcontext; i++) {
                         const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
                         featurevector.push_back(unigram);                    
                     }         
