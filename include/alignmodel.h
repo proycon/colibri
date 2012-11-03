@@ -51,12 +51,11 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     unsigned char leftsourcecontext;
     unsigned char rightsourcecontext;
     
-    //Empty model
-    AlignmentModel() { DEBUG = false; } //an empty alignment model
     
     //Initialise new alignment model from pattern models (actual computation needs to be invoked explicitly, different types possible)    
     AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, unsigned char leftsourcecontext=0, unsigned char rightsourcecontext=0, const bool DEBUG = false); //prepare to compute on the basis of two pattern models
 
+    AlignmentModel(unsigned char leftsourcecontext=0, unsigned char rightsourcecontext=0, const bool DEBUG = false); //prepare to compute without pattern models (heuristic giza approach), or empty model
 
     //Load alignment model from (binary) file
     AlignmentModel(const std::string & filename, bool logprobs = true, bool allowskipgrams = true, const int bestn = 0, bool DEBUG = false); //load from binary file
@@ -122,7 +121,7 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 	int extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold=0, const double coocthreshold=0, const double alignscorethreshold = 0.5, int computereverse = 2, ClassDecoder * sourcedecoder = NULL, ClassDecoder * targetdecoder = NULL); //classdecoders only for verbose output
 	int extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold=0, const double coocthreshold=0, const double alignscorethreshold=0.5,  int computereverse = 2, ClassDecoder * sourcedecoder = NULL, ClassDecoder * targetdecoder = NULL);
 	
-	int extractgizapatterns_heur(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, PhraseAlignHeuristic phrasealignheuristic, int sentenceindex, int computereverse);
+	int extractgizapatterns_heur(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, PhraseAlignHeuristic phrasealignheuristic, int computereverse);
 	int extractgizapatterns_heur(GizaSentenceAlignment & sentence_a, int sentenceindex, int computereverse);
 	
 	GizaSentenceAlignment extractgiza_growdiag(GizaSentenceAlignment & sentence_s2t ,GizaSentenceAlignment & sentence_t2s);

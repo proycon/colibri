@@ -20,7 +20,8 @@ void usage() {
     cerr << "\t-E                        Use EM alignment method" << endl;
     //cerr << "\t-2                        Use Alternative EM alignment method (type-based)" << endl;
     //cerr << "\t-3                        Use Iterative EM alignment method" << endl;
-    cerr << "\t-W giza-s-t.A3:giza-t-s.A3   Extract phrases by matching giza word-alignments with pattern models. Specify two GIZA alignment models (one for each direction), separated by a colon" << endl;    
+    cerr << "\t-W giza-s-t.A3:giza-t-s.A3   Extract phrases by matching giza word-alignments with pattern models (supervised, if -s and -t are specified), or using heuristic methods (unsupervised, if -H is specified). Specify two GIZA alignment models (one for each direction), separated by a colon" << endl;
+    cerr << "\t-H method                 Heuristic method for unsupervised phrase alignment. Choose from: growdiag, growdiagfinal (default), s2t, intersection, union" << endl;    
     cerr << " Generic alignment options:" << endl;    
     cerr << "\t-I 1                      Compute intersection (one single joint score)" << endl;
     cerr << "\t-I 2                      Compute intersection (two scores p(s|t),p(t|s) )" << endl;
@@ -110,6 +111,7 @@ int main( int argc, char *argv[] ) {
     bool DOSKIPUSAGE = false;    
     bool DOTEMPLATES = false; 
     bool DOINSTANCES = false;    
+    PhraseAlignHeuristic phrasealignheuristic = PAH_GROWDIAGFINAL;
     
     unsigned char LEFTCONTEXTSIZE = 0;
     unsigned char RIGHTCONTEXTSIZE = 0;
@@ -139,7 +141,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -263,7 +265,21 @@ int main( int argc, char *argv[] ) {
             break;
         case 'z':
         	DONORM = false;
-        	break;        	
+        	break;    
+        case 'H':
+            if (optarg == "growdiag") {
+                phrasealignheuristic = PAH_GROWDIAG;
+            } else if (optarg == "intersection") {
+                phrasealignheuristic = PAH_INTERSECTION;
+            } else if (optarg == "union") {
+                phrasealignheuristic = PAH_UNION;                
+            } else if (optarg == "s2t") {
+                phrasealignheuristic = PAH_S2T;
+            } else {
+                cerr << "ERROR: Unknown phrase alignment heuristic: " << optarg << endl;
+                exit(2);
+            }
+            
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
             abort ();
@@ -397,9 +413,16 @@ int main( int argc, char *argv[] ) {
             outputprefix = "alignmodel.colibri";
         }
 		
+		bool usepatternmodels = (!sourcemodelfile.empty() && !targetmodelfile.empty());
 		
-		alignmodel = new AlignmentModel(sourcemodel,targetmodel, LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE, DODEBUG);
-		reversealignmodel = new AlignmentModel(targetmodel,sourcemodel, 0,0, DODEBUG); 				
+		if (usepatternmodels) {
+		    alignmodel = new AlignmentModel(sourcemodel,targetmodel, LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE, DODEBUG);
+		    reversealignmodel = new AlignmentModel(targetmodel,sourcemodel, 0,0, DODEBUG);
+		} else {
+		    alignmodel = new AlignmentModel(LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE, DODEBUG);
+		}    
+		
+		 				
 		bool EM_INIT = true;
 		
 		if (COOCMODE) {
@@ -460,13 +483,18 @@ int main( int argc, char *argv[] ) {
     		ClassEncoder targetclassencoder = ClassEncoder(targetclassfile);    
 				
 		    cerr << "Initialising GIZA++ Word Alignments" << endl;
+	        GizaModel gizamodels2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);
+	        GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
 
-		    {   
-		        GizaModel gizamodels2t = GizaModel(gizast, &sourceclassencoder, &targetclassencoder);
-		        GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
+
+		    if (usepatternmodels) {   
 		        		    
-		        cerr << "Extracting phrases based on GIZA++ Word Alignments" << endl;
+		        cerr << "Extracting phrases based on GIZA++ Word Alignments and pattern models (semi-supervised)" << endl;
 		        int found = alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold, DOBIDIRECTIONAL);
+		        cerr << "\tFound " << found << " pairs, " << alignmodel->size()  << " source patterns." << endl;
+		    } else {
+		        cerr << "Extracting phrases based on GIZA++ Word Alignments and heuristics (unsupervised)" << endl;
+		        int found = alignmodel->extractgizapatterns_heur(gizamodels2t, gizamodelt2s, phrasealignheuristic, DOBIDIRECTIONAL);
 		        cerr << "\tFound " << found << " pairs, " << alignmodel->size()  << " source patterns." << endl;
 		    }
 		    

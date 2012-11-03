@@ -15,6 +15,13 @@ AlignmentModel::AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePat
 }
 
 
+
+AlignmentModel::AlignmentModel(unsigned char leftsourcecontext, unsigned char rightsourcecontext, bool DEBUG) {    
+    this->DEBUG = DEBUG;
+    this->leftsourcecontext = leftsourcecontext;
+    this->rightsourcecontext = rightsourcecontext;     
+}
+
 void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthreshold, int bestn) {
 	 //Compute intersection with reverse model
 	for (t_alignmatrix::const_iterator sourceiter = alignmatrix.begin(); sourceiter != alignmatrix.end(); sourceiter++) {
@@ -1270,7 +1277,7 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
     
 }
 
-int AlignmentModel::extractgizapatterns_heur(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, PhraseAlignHeuristic phrasealignheuristic, int sentenceindex, int computereverse) {
+int AlignmentModel::extractgizapatterns_heur(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, PhraseAlignHeuristic phrasealignheuristic, int computereverse) {
     unsigned int totalfound = 0;
     while (!gizamodel_s2t.eof() && !gizamodel_t2s.eof()) {         
         GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
