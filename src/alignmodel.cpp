@@ -2310,6 +2310,7 @@ void AlignmentModel::stats() {
     cout << "average alignments per source: " << (double) totalcount / sourcecount << endl;
     cout << "left context: " << (int) leftsourcecontext << endl;
     cout << "right context: " << (int) rightsourcecontext << endl;
+    if (leftsourcecontext || rightsourcecontext) cout << "source contexts: " << alignmatrix.size() << endl;
     cout << "score vector size: " << scorecount << endl;
 }
 
