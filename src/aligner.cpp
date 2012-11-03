@@ -278,7 +278,7 @@ int main( int argc, char *argv[] ) {
             } else if (optarg == "s2t") {
                 phrasealignheuristic = PAH_S2T;
             } else {
-                cerr << "ERROR: Unknown phrase alignment heuristic: " << optarg << endl;
+                cerr << "ERROR: Unknown phrase alignment heuristic: '" << optarg << "'" << endl;
                 exit(2);
             }
             break;
