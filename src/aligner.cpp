@@ -267,7 +267,9 @@ int main( int argc, char *argv[] ) {
         	DONORM = false;
         	break;    
         case 'H':
-            if (optarg == "growdiag") {
+            if (optarg == "growdiagfinal") {
+                phrasealignheuristic = PAH_GROWDIAGFINAL;
+            } else if (optarg == "growdiag") {
                 phrasealignheuristic = PAH_GROWDIAG;
             } else if (optarg == "intersection") {
                 phrasealignheuristic = PAH_INTERSECTION;
