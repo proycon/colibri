@@ -1462,7 +1462,12 @@ class MTWrapper(object):
             aligner_extraoptions = ' -l ' + str(self.COLIBRI_LEFTCONTEXTSIZE) + ' -r ' + str(self.COLIBRI_RIGHTCONTEXTSIZE)
             
         if self.BUILD_COLIBRI_GIZA:
-            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -t ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -I 2 -N ' + self.COLIBRI_ALIGNER_OPTIONS + ' ' + aligner_extraoptions + ' -W ' + self.gets2tfilename('A3.final') + ':' + self.gett2sfilename('A3.final') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls'), "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
+            if '-H' in self.COLIBRI_ALIGNER_OPTIONS:
+                #unsupervised
+                if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -I 2 -N ' + self.COLIBRI_ALIGNER_OPTIONS + ' ' + aligner_extraoptions + ' -W ' + self.gets2tfilename('A3.final') + ':' + self.gett2sfilename('A3.final') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls'), "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
+            else:
+                #semi-supervised
+                if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -t ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -I 2 -N ' + self.COLIBRI_ALIGNER_OPTIONS + ' ' + aligner_extraoptions + ' -W ' + self.gets2tfilename('A3.final') + ':' + self.gett2sfilename('A3.final') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls'), "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
             #if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -t ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -s ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gett2sfilename('alignmodel.colibri') + ' -N ' + self.COLIBRI_ALIGNER_OPTIONS + ' -W ' + self.gett2sfilename('A3.final') + ':' + self.gets2tfilename('A3.final') + ' -T ' + self.getsourcefilename('cls') + ' -S ' + self.gettargetfilename('cls'), "Building alignment model",self.gett2sfilename('alignmodel.colibri') ): return False #TODO: This step can be computed from the previous rather than from scratch as done here
         else:  
             if self.BUILD_COLIBRI_CLASSIFIERS:
