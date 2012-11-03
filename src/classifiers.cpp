@@ -280,7 +280,7 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
                         featurevector.push_back(focus);
                         
                         //right context
-                        for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                        for (int i = nwithcontext - rightcontextsize; i < nwithcontext; i++) {
                             const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
                             featurevector.push_back(unigram);                    
                         }         
@@ -558,7 +558,7 @@ void MonoClassifier::build(AlignmentModel * ttable, ClassDecoder * sourceclassde
                         featurevector.push_back(focus);
                         
                         //right context
-                        for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                        for (int i = nwithcontext - rightcontextsize ; i < nwithcontext; i++) {
                             const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
                             featurevector.push_back(unigram);                    
                         }         
@@ -670,7 +670,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
                         featurevector.push_back(focus);
                         
                         //right context
-                        for (int i = nwithcontext - rightcontextsize - 1; i < nwithcontext; i++) {
+                        for (int i = nwithcontext - rightcontextsize; i < nwithcontext; i++) {
                             const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
                             featurevector.push_back(unigram);                    
                         }         
