@@ -137,7 +137,7 @@ int main( int argc, char *argv[] ) {
     
     string raw;
     string::size_type pos;
-    
+    string a;
     
     
     char c;    
@@ -267,18 +267,19 @@ int main( int argc, char *argv[] ) {
         	DONORM = false;
         	break;    
         case 'H':
-            if (optarg == "growdiagfinal") {
+            a = string(optarg);
+            if (a == "growdiagfinal") {
                 phrasealignheuristic = PAH_GROWDIAGFINAL;
-            } else if (optarg == "growdiag") {
+            } else if (a == "growdiag") {
                 phrasealignheuristic = PAH_GROWDIAG;
-            } else if (optarg == "intersection") {
+            } else if (a == "intersection") {
                 phrasealignheuristic = PAH_INTERSECTION;
-            } else if (optarg == "union") {
+            } else if (a == "union") {
                 phrasealignheuristic = PAH_UNION;                
-            } else if (optarg == "s2t") {
+            } else if (a == "s2t") {
                 phrasealignheuristic = PAH_S2T;
             } else {
-                cerr << "ERROR: Unknown phrase alignment heuristic: '" << optarg << "'" << endl;
+                cerr << "ERROR: Unknown phrase alignment heuristic: '" << a << "'" << endl;
                 exit(2);
             }
             break;
