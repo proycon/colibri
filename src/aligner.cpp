@@ -281,7 +281,7 @@ int main( int argc, char *argv[] ) {
                 cerr << "ERROR: Unknown phrase alignment heuristic: " << optarg << endl;
                 exit(2);
             }
-            
+            break;
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
             abort ();
