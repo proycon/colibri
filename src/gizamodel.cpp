@@ -11,6 +11,9 @@ GizaModel::GizaModel(const string & filename, ClassEncoder * sourceencoder, Clas
     nextlinebuffer = "{UNDEFINED}";
 }
 
+
+
+
 GizaModel::~GizaModel() {
     IN->close();
     delete IN;

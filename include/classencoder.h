@@ -36,6 +36,7 @@ class ClassEncoder {
     EncNGram input2ngram(const std::string &,  bool allowunknown, bool autoaddunknown=false);
     EncAnyGram * input2anygram(const std::string &,  bool allowunknown, bool autoaddunknown=false);
     
+    
     void add(std::string, unsigned int cls);
     
     unsigned int gethighestclass() { return highestclass; }

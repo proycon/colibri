@@ -778,6 +778,7 @@ EncAnyGram * AlignmentModel::addcontext(const EncData * sentence, const EncAnyGr
 
 
 int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold, int computereverse, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
+        //SUPERVISED
         GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
         GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
         
@@ -1095,35 +1096,338 @@ int AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & g
       normalize();
       if (computereverse) {
             cerr << "Integrating reverse model" << endl;
-            normalize(&reversealignmatrix);
-        
-            //add reversealignmodel to normal model and delete reversemodel
-            for (t_alignmatrix::iterator iter = reversealignmatrix.begin(); iter != reversealignmatrix.end(); iter++) {
-                const EncAnyGram * target = iter->first;
-                for (t_aligntargets::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-                    const EncAnyGram * source = iter2->first;
-                    if (iter2->second.size() != 1) {
-                        cerr << "INTERNAL ERROR: Expected one score for pair in reverse matrix, got " << iter2->second.size() << endl;
-                        throw InternalError();
-                    }
-                    if ( alignmatrix[source][target].size() != 1) {
-                        cerr << "INTERNAL ERROR: Expected one score for pair in alignmatrix, got " <<alignmatrix[source][target].size() << endl;
-                        throw InternalError();
-                    }
-                    if (computereverse == 1) {
-                        alignmatrix[source][target][0] = alignmatrix[source][target][0] * iter2->second[0];
-                    } else if (computereverse == 2) {
-                        alignmatrix[source][target].push_back(iter2->second[0]);
-                    }
-                }
-                reversealignmatrix.erase(target); //make space whilst processing
-            }
-            
-            //reversealignmatrix.clear();
+            integratereverse(computereverse);
       }
       
       return totalfound;      
 }
+
+
+void AlignmentModel::integratereverse(int computereverse) {
+    normalize(&reversealignmatrix);
+
+    //add reversealignmodel to normal model and delete reversemodel
+    for (t_alignmatrix::iterator iter = reversealignmatrix.begin(); iter != reversealignmatrix.end(); iter++) {
+        const EncAnyGram * target = iter->first;
+        for (t_aligntargets::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+            const EncAnyGram * source = iter2->first;
+            if (iter2->second.size() != 1) {
+                cerr << "INTERNAL ERROR: Expected one score for pair in reverse matrix, got " << iter2->second.size() << endl;
+                throw InternalError();
+            }
+            if ( alignmatrix[source][target].size() != 1) {
+                cerr << "INTERNAL ERROR: Expected one score for pair in alignmatrix, got " <<alignmatrix[source][target].size() << endl;
+                throw InternalError();
+            }
+            if (computereverse == 1) {
+                alignmatrix[source][target][0] = alignmatrix[source][target][0] * iter2->second[0];
+            } else if (computereverse == 2) {
+                alignmatrix[source][target].push_back(iter2->second[0]);
+            }
+        }
+        reversealignmatrix.erase(target); //make space whilst processing
+    }    
+}
+
+
+int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a, int sentenceindex, int computereverse) {
+    int t_length = sentence_a.target->length();
+    int s_length = sentence_a.source->length();
+    
+    vector< pair< pair<int,int>,pair<int,int> > > phrases;
+    
+    for (int t_start = 0; t_start < t_length; t_start++) {
+        for (int t_end = t_start; t_end < t_length; t_end++) {
+            //find the minimally matching source phrase
+            int s_start = s_length;
+            int s_end = 0;
+            for (multimap<const unsigned char,const unsigned char>::iterator iter = sentence_a.alignment.begin(); iter != sentence_a.alignment.end(); iter++) { 
+                const unsigned char s = iter->first;
+                const unsigned char t = iter->second;
+                if ((t_start <= t) && (t >= t_end)) {
+                    if (s < s_start) s_start = s;
+                    if (s > s_end) s_end = s;                    
+                }
+                 
+            }
+            //extract phrase
+            if (s_end == 0) continue;
+            
+            //check if alignment points violate consistency
+            bool valid = false;
+            for (multimap<const unsigned char,const unsigned char>::iterator iter = sentence_a.alignment.begin(); iter != sentence_a.alignment.end(); iter++) {
+                const unsigned char s = iter->first;
+                const unsigned char t = iter->second;
+                if ( (s_start <= s) && (s_end >= s) && ((t < t_start) || (t > t_end))  ) {
+                    valid = true;
+                    break;
+                }  
+            }
+            if (!valid) continue;
+
+            
+            //add phrase pairs (incl. additional unaligned s)
+            bool s_startaligned = false;
+            bool s_endaligned = false;
+            
+            
+            
+            int s_start2 = s_start;
+            do {
+                int s_end2 = s_end;
+                
+                do {
+                    //add phrasepair
+                    phrases.push_back(pair< pair<int,int>,pair<int,int> >( pair<int,int>(s_start2,s_end2), pair<int,int>(t_start,t_end) ) );                
+                    s_end2++;
+                    if (s_end2 > s_length-1) break;
+                    //is s_end2 aligned?
+                    s_endaligned= false;
+                    for (vector< pair< pair<int,int>,pair<int,int> > >::iterator iter = phrases.begin(); iter != phrases.end(); iter++) {
+                        int s_refstart = iter->first.first;
+                        int s_refend = iter->first.second;
+                        if ((s_end2 >= s_refstart) && (s_end2 <= s_refend)) {
+                            s_endaligned = true;
+                            break;
+                        }
+                    }
+                } while (!s_endaligned);
+                s_start2--;
+                if (s_start2 < 0) break;
+                s_startaligned= false;
+                for (vector< pair< pair<int,int>,pair<int,int> > >::iterator iter = phrases.begin(); iter != phrases.end(); iter++) {
+                    int s_refstart = iter->first.first;
+                    int s_refend = iter->first.second;
+                    if ((s_start2 >= s_refstart) && (s_start2 <= s_refend)) {
+                        s_startaligned = true;
+                        break;
+                    }
+                }                
+            } while (!s_startaligned); 
+            
+            
+            
+        } 
+    }  
+    
+    
+
+    
+    //add actual phrases
+    for (vector< pair< pair<int,int>,pair<int,int> > >::iterator iter = phrases.begin(); iter != phrases.end(); iter++) {
+        int s_start = iter->first.first;
+        int s_end = iter->first.second;    
+        int t_start = iter->first.first;
+        int t_end = iter->first.second;
+  
+  
+        EncNGram * sourcegramnocontext = sentence_a.source->slice(s_start,s_end - s_start + 1);
+        EncNGram * sourcegram;
+        s_start = s_start - leftsourcecontext;
+        s_end = s_end + rightsourcecontext;
+        if ((s_start < 0) && (s_end > s_length)) {
+            //add begin and end markers
+            EncNGram bos = EncNGram(&BOSCLASS, 1);
+            EncNGram eos = EncNGram(&EOSCLASS, 1);
+            EncNGram tmp2 = EncNGram(bos + *sourcegramnocontext);
+            sourcegram = new EncNGram(tmp2 + eos);
+        } else if (s_start < 0) {
+            //add begin marker
+            EncNGram bos = EncNGram(&BOSCLASS, 1);
+            sourcegram = new EncNGram(bos + *sourcegramnocontext);
+        } else if (s_end > s_length) {
+            //add end marker
+            EncNGram eos = EncNGram(&EOSCLASS, 1);
+            sourcegram = new EncNGram(*sourcegramnocontext + eos);
+        } else {
+            sourcegram = sourcegramnocontext;
+        }
+        
+        if (sourcegramnocontext != sourcegram) {
+            sourcecontexts[(const EncAnyGram *) sourcegramnocontext].insert((const EncAnyGram *) sourcegram);
+        }
+        
+        const EncAnyGram * targetgram = (const EncAnyGram *) sentence_a.target->slice(t_start,t_end - t_start + 1);
+    
+                                                
+        //add alignment
+        if (alignmatrix[(const EncAnyGram *)sourcegram][targetgram].empty()) {
+            alignmatrix[(const EncAnyGram *)sourcegram][targetgram].push_back(1);
+        } else {
+            alignmatrix[(const EncAnyGram *)sourcegram][targetgram][0] += 1;
+        }
+        
+        if (computereverse) {
+            if (reversealignmatrix[targetgram][(const EncAnyGram *)sourcegram].empty()) {
+                reversealignmatrix[targetgram][(const EncAnyGram *)sourcegram].push_back(1);
+            } else {
+                reversealignmatrix[targetgram][(const EncAnyGram *)sourcegram][0] += 1;
+            }
+        }
+    }
+    
+     
+    
+}
+
+int AlignmentModel::extractgizapatterns_heur(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, PhraseAlignHeuristic phrasealignheuristic, int sentenceindex, int computereverse) {
+    unsigned int totalfound = 0;
+    while (!gizamodel_s2t.eof() && !gizamodel_t2s.eof()) {         
+        GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
+        GizaSentenceAlignment sentence_t2s = gizamodel_t2s.readsentence();    
+        const int i = gizamodel_s2t.index();
+        cerr << " @" << i << endl;
+        
+        
+        int found;    
+        if ((phrasealignheuristic == PAH_GROWDIAG) || (phrasealignheuristic == PAH_GROWDIAGFINAL)) {
+            GizaSentenceAlignment sentence_a = extractgiza_growdiag(sentence_s2t, sentence_t2s);            
+            if (phrasealignheuristic == PAH_GROWDIAGFINAL) {
+                extractgiza_final(sentence_a, sentence_s2t, sentence_t2s);
+            }
+            found = extractgizapatterns_heur(sentence_a, i, computereverse);
+        } else if (phrasealignheuristic == PAH_S2T) {
+            found = extractgizapatterns_heur(sentence_s2t, i, computereverse );
+        } else if (phrasealignheuristic == PAH_INTERSECTION) {
+            GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
+            found = extractgizapatterns_heur(sentence_i, i, computereverse);
+        } else if (phrasealignheuristic == PAH_UNION) {
+            GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
+            found = extractgizapatterns_heur(sentence_u, i, computereverse);
+        }
+        
+        //int found = extractgizapatterns(sentence_s2t, sentence_t2s, i, pairoccurrencethreshold, coocthreshold, alignscorethreshold, computereverse, sourcedecoder,targetdecoder);
+        totalfound += found;
+        cerr << "   found " << found << endl;
+      } //alignment read        
+    
+    
+      normalize();
+      if (computereverse) {
+            cerr << "Integrating reverse model" << endl;
+            integratereverse(computereverse);
+      }
+      
+      return totalfound;   
+}
+
+
+GizaSentenceAlignment AlignmentModel::extractgiza_growdiag(GizaSentenceAlignment & sentence_s2t ,GizaSentenceAlignment & sentence_t2s) {
+    /*
+     GROW-DIAG():
+      iterate until no new points added
+        for english word e = 0 ... en
+          for foreign word f = 0 ... fn
+            if ( e aligned with f )
+              for each neighboring point ( e-new, f-new ):
+                if ( ( e-new not aligned or f-new not aligned ) and
+                     ( e-new, f-new ) in union( e2f, f2e ) ) 
+                  add alignment point ( e-new, f-new )
+    */
+    
+    int added;
+    GizaSentenceAlignment sentence_a = sentence_s2t.intersect(sentence_t2s); //alignment starts with intersection
+    GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
+    do {
+        added = 0;
+        for (multimap<const unsigned char,const unsigned char>::iterator iter = sentence_a.alignment.begin(); iter != sentence_a.alignment.end(); iter++) {
+            //e aligned with f
+            
+            //for each neighbouring point
+            for (unsigned char x = -1; x <= 1; x++) {
+                for (unsigned char y = -1; y <= 1; y++) {
+                    if (!(( x == 0) && (y == 0))) { //not 0,0                        
+                        //is this neighbour aligned already?
+                        if (sentence_a.alignment.count(x) == 0) {
+                            continue; //yes, break
+                        } else {
+                            bool found = false;
+                            for (multimap<const unsigned char,const unsigned char>::iterator iter2 = sentence_a.alignment.lower_bound(x); iter2 != sentence_a.alignment.upper_bound(x); iter2++) {
+                                if (iter2->second == y) {
+                                    found = true;
+                                    break;
+                                } 
+                            }
+                            if (found) {
+                                continue; //yes, break
+                            } else {
+                                //not aligned already.. is it in the union?
+                                if (sentence_u.alignment.count(x) == 0) {                                    
+                                    continue; //no, break
+                                } else {
+                                    found = false;
+                                    for (multimap<const unsigned char,const unsigned char>::iterator iter2 = sentence_u.alignment.lower_bound(x); iter2 != sentence_u.alignment.upper_bound(x); iter2++) {
+                                        if (iter2->second == y) {
+                                            found = true;
+                                            break;
+                                        } 
+                                    }     
+                                    if (found) {
+                                        //yes, found in union, add alignment point:
+                                        sentence_a.alignment.insert(pair<const unsigned char, const unsigned char>(x,y));
+                                        added += 1;
+                                    } else {
+                                        //no, break
+                                        continue;
+                                    }                           
+                                }                                
+                            }
+                        }                        
+                    }
+                }
+            } 
+            
+        } 
+    } while (added > 0);    
+    return sentence_a;
+}
+
+void AlignmentModel::extractgiza_final(GizaSentenceAlignment & sentence_a ,GizaSentenceAlignment & sentence_s2t , GizaSentenceAlignment & sentence_t2s ) {
+    /*FINAL(a):
+        for english word e-new = 0 ... en
+            for foreign word f-new = 0 ... fn
+              if ( ( e-new not aligned or f-new not aligned ) and
+                   ( e-new, f-new ) in alignment a )
+                add alignment point ( e-new, f-new )
+    */
+    
+    //does final step both ways
+    
+
+    //temporary map to easily find targets
+    set<unsigned char> targets_a;
+    for (multimap<const unsigned char,const unsigned char>::iterator iter = sentence_a.alignment.begin(); iter != sentence_a.alignment.end(); iter++) {
+        targets_a.insert(iter->second);
+    }
+    
+        
+    for (multimap<const unsigned char,const unsigned char>::iterator iter = sentence_s2t.alignment.begin(); iter != sentence_s2t.alignment.end(); iter++) {
+        const unsigned char s = iter->first;
+        const unsigned char t = iter->second;        
+
+        const bool s_aligned = sentence_a.alignment.count(s);
+        const bool t_aligned = targets_a.count(t);
+        if (!s_aligned || !t_aligned) {
+            sentence_a.alignment.insert(pair<const unsigned char, const unsigned char>(s,t));
+            targets_a.insert(t);
+        }
+    }
+
+
+    //inverse direction:            
+    for (multimap<const unsigned char,const unsigned char>::iterator iter = sentence_t2s.alignment.begin(); iter != sentence_t2s.alignment.end(); iter++) {
+        const unsigned char s = iter->second;
+        const unsigned char t = iter->first;        
+
+        const bool t_aligned = targets_a.count(t);;
+        const bool s_aligned = sentence_a.alignment.count(s);
+        if (!s_aligned || !t_aligned) {
+            sentence_a.alignment.insert(pair<const unsigned char, const unsigned char>(s,t));                
+        }
+    }    
+}
+
+
 
 int AlignmentModel::extractskipgrams(const int absolutecoocthreshold) {
     unsigned int found = 0;

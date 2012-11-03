@@ -36,8 +36,9 @@ class GizaModel {
         int sentenceindex; 
         std::string nextlinebuffer;
     public:
-                
-        GizaModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder);
+        
+        
+        GizaModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder); 
         ~GizaModel();
                 
         bool eof() const { return IN->eof(); };  

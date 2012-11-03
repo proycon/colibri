@@ -12,6 +12,15 @@ enum CoocMode {
 	QUICK = 3,
 };
 
+enum PhraseAlignHeuristic {
+    PAH_S2T = 0,
+    PAH_T2S = 1,
+    PAH_INTERSECTION = 2,
+    PAH_UNION = 3,
+    PAH_GROWDIAG = 4,
+    PAH_GROWDIAGFINAL = 5 
+};
+
 void orderedinsert(std::list<double> &, double value);
 void recompute_token_index(std::unordered_map<const EncAnyGram *, std::vector<int> > & tokenfwindex, std::unordered_map<int, std::vector<const EncAnyGram *> > & tokenrevindex, EncData * sentence, const std::vector<const EncAnyGram*> * patterns, bool includeskipgrams = false );
 size_t get_templates(const EncAnyGram * anygram, SelectivePatternModel * model, std::unordered_set<const EncSkipGram *> & container);
@@ -113,6 +122,13 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 	int extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold=0, const double coocthreshold=0, const double alignscorethreshold = 0.5, int computereverse = 2, ClassDecoder * sourcedecoder = NULL, ClassDecoder * targetdecoder = NULL); //classdecoders only for verbose output
 	int extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold=0, const double coocthreshold=0, const double alignscorethreshold=0.5,  int computereverse = 2, ClassDecoder * sourcedecoder = NULL, ClassDecoder * targetdecoder = NULL);
 	
+	int extractgizapatterns_heur(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, PhraseAlignHeuristic phrasealignheuristic, int sentenceindex, int computereverse);
+	int extractgizapatterns_heur(GizaSentenceAlignment & sentence_a, int sentenceindex, int computereverse);
+	
+	GizaSentenceAlignment extractgiza_growdiag(GizaSentenceAlignment & sentence_s2t ,GizaSentenceAlignment & sentence_t2s);
+	void extractgiza_final(GizaSentenceAlignment & sentence_a ,GizaSentenceAlignment & sentence_s2t , GizaSentenceAlignment & sentence_t2s );
+	
+	void integratereverse(int computereverse);
 	int extractskipgrams(const int absolutecoocthreshold = 2);
 	
 	EncAnyGram * addcontext(const EncData * sentence, const EncAnyGram * focus, int sourceindex);
