@@ -30,18 +30,31 @@ Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecode
     this->DEBUG = debug;
     testexp = NULL;
     added = false;    
+    used = false;
 }        
 
-Classifier::Classifier(const std::string & _id, const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, bool debug) {
+Classifier::Classifier(const std::string & _id, const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, bool loadondemand, bool debug) {
     //for testing
     ID = _id;
+
     ibasefile = string(_id + ".ibase");
     wgtfile = string(_id + ".ibase.wgt");           
     this->sourceclassdecoder = sourceclassdecoder;
     this->targetclassencoder = targetclassencoder;
     this->DEBUG = debug;
+    this->timbloptions = timbloptions;
     added = false;
     
+    used = false;
+    if (loadondemand) {
+        loaded = false;
+    } else {
+        load();
+    }
+}
+
+void Classifier::load() {
+    if (DEBUG) cerr << "    Loading classifier " << ID << " from " << ibasefile << endl;
     //const string moretimbloptions = "-F Tabbed -i " + ibasefile + " -w " + wgtfile + " " + timbloptions + " +D +vdb";
     const string moretimbloptions = "-F Tabbed " + timbloptions + " +D +vdb -G 0 +vS";
     if (DEBUG) cerr << "    Instantiating Timbl API: "  << moretimbloptions << endl; 
@@ -58,6 +71,12 @@ Classifier::Classifier(const std::string & _id, const string & timbloptions, Cla
         cerr << "Error getting weights " << wgtfile << endl;
         throw InternalError();
     }
+    loaded = true;
+}
+
+void Classifier::unload() {
+    if (testexp != NULL) delete testexp;
+    loaded = false; 
 }
 
 Classifier::~Classifier() {
@@ -141,6 +160,9 @@ t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> & featurevec
 }
 
 t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+    if (!loaded) load();
+    used = true;
+    
     if (DEBUG) cerr << "\t\t\tClassifier input: " << endl;
     stringstream features_ss;
     for (vector<string>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
@@ -231,7 +253,7 @@ void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourcec
         
         const string nclassifierid = filename.substr(0, filename.size() - 6);
         cerr << "   Loading classifier n=" << n << " id=" << nclassifierid << endl;   
-        classifierarray[n] = new Classifier(nclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder, (DEBUG >= 3));
+        classifierarray[n] = new Classifier(nclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder, false, (DEBUG >= 3));
     }    
 }
 
@@ -513,7 +535,7 @@ ClassifierType getclassifierconf(const string & ID, int & contextthreshold, int 
 
 void MonoClassifier::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG) {    
     vector<string> files = globfiles(ID + ".ibase");
-    classifier = new Classifier(ID, timbloptions,  sourceclassdecoder, targetclassencoder, (DEBUG >= 3));    
+    classifier = new Classifier(ID, timbloptions,  sourceclassdecoder, targetclassencoder, false, (DEBUG >= 3));    
 }
 
 void MonoClassifier::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
@@ -752,8 +774,7 @@ void ConstructionExperts::load( const string & timbloptions, ClassDecoder * sour
     for (vector<string>::iterator iter = files.begin(); iter != files.end(); iter++) {
     
         const string filename = *iter;
-        
-        //grab n
+    
         stringstream hash_s;
         const string filenamenoext = filename.substr(0,filename.size() - 6);
         
@@ -763,9 +784,16 @@ void ConstructionExperts::load( const string & timbloptions, ClassDecoder * sour
         const uint64_t hash = atoi(hash_s.str().c_str());
         
         const string hashclassifierid = filename.substr(0, filename.size() - 6);
-        cerr << "   Loading classifier hash=" << hash << " id=" << hashclassifierid << endl;   
-        classifierarray[hash] = new Classifier(hashclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder, (DEBUG >= 3));
+        cerr << "   Preparing classifier hash=" << hash << " id=" << hashclassifierid << endl;   
+        classifierarray[hash] = new Classifier(hashclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder, true, (DEBUG >= 3));
     }    
+}
+
+void ConstructionExperts::reset() {
+    //unload unused classifiers
+    for (map<uint64_t, Classifier*>::const_iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
+        if (!iter->second->used) iter->second->unload();
+    }
 }
 
 NClassifierArray::~NClassifierArray() {

@@ -33,16 +33,19 @@ class Classifier {
     std::string ibasefile;
     std::string wgtfile;           
     std::string ID;
+    std::string timbloptions;
     bool appendmode;
     ClassDecoder * sourceclassdecoder;
     ClassDecoder * targetclassdecoder;
     ClassEncoder * targetclassencoder;
     Timbl::TimblAPI * testexp;
     bool added;
+    bool loaded;
     bool DEBUG;
   public:
+    bool used;
     Classifier(const std::string & id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true, bool debug=false); //for building
-    Classifier(const std::string & id, const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, bool debug); //for testing
+    Classifier(const std::string & id, const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, bool loadondemand = false, bool debug = false); //for testing
     ~Classifier();            
     void addinstance(std::vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight = 1);
     void addinstance(std::vector<std::string> & featurevector, const std::string & label, double exemplarweight = 1);
@@ -51,6 +54,8 @@ class Classifier {
     bool empty() { return !added; }
     void close() { outputfile.close(); }
     void flush() { outputfile.flush(); }
+    void load();
+    void unload();
     t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions );
     t_aligntargets classify(std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);     
 };
@@ -82,7 +87,8 @@ class ClassifierInterface {
         virtual void load( const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG =0) =0;
         virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling); //decoder will call this  
         virtual t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0;
-        virtual t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0;          
+        virtual t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0; 
+        virtual void reset() {};         
 };
 
 
@@ -124,6 +130,7 @@ class ConstructionExperts: public ClassifierInterface {
         t_aligntargets classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);
         t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);          
         AlignmentModel * classify(AlignmentModel * original);
+        void reset();
 };
 
 /*class ConstructionExperts: public ClassifierInterface {

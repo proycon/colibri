@@ -1673,6 +1673,7 @@ int main( int argc, char *argv[] ) {
             if (debug >= 1) cerr << "Processing unknown words" << endl; 
             addunknownwords(*transtable, lm, sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder, tweights.size());
             if (debug >= 1) cerr << "Setting up decoder" << endl;
+            if (classifier != NULL) classifier->reset(); //unloads unused classifiers for certain types (does nothing for others)
             StackDecoder * decoder = new StackDecoder(*inputdata, transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder, classifier, scorehandling,  (bool) GLOBALSTATS);
             if (debug >= 1) cerr << "Decoding..." << endl;
             TranslationHypothesis * solution = decoder->decode();                    
