@@ -254,22 +254,20 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
 }
 
 
-double Classifier::crossvalidate(const std::string & timbloptions, TimblAPI * timblexp) {
-    
-    ibasefile = string(ID + ".train");    
+double Classifier::crossvalidate(const std::string & timbloptions) {
+
     trainfile = string(ID + ".train");
-    timblexp = NULL;
-    if (timblexp == NULL) {
-        if (!loaded) load();
-        testexp->GetInstanceBase(ibasefile);
-        testexp->SetOptions("-t leave_one_out");
-        testexp->Test(trainfile);
-        return testexp->GetAccuracy(); 
-    } else {
-        timblexp->SetOptions("-t leave_one_out");
-        timblexp->Test(trainfile);
-        return timblexp->GetAccuracy();    
-    }
+    string outfile = string(ID + ".out");
+    unload();
+    const string moretimbloptions = "-F Tabbed " + timbloptions + " +D +vdb -G 0 +vS -t leave_one_out";
+    if (DEBUG) cerr << "    Instantiating Timbl API: "  << moretimbloptions << endl; 
+    testexp = new TimblAPI( moretimbloptions , ID );
+    testexp->Learn(trainfile);   
+    testexp->Test(trainfile, outfile);
+    double a = testexp->GetAccuracy();
+    delete testexp;
+    testexp = NULL; 
+    return a;
 }
 
 void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG) {    
@@ -683,18 +681,19 @@ void ConstructionExperts::train(const string & timbloptions) {
             deleteprevious = false;
         }
         cerr << "Training classifier hash=" << iter->first << "... " << endl;
-        TimblAPI * timblexp = iter->second->train(timbloptions, true);
+        double accuracy = 0;
         if (accuracythreshold > 0) {
-            cerr << "Cross-validating classifier hash=" << iter->first << ": ";        
-            double accuracy = iter->second->crossvalidate(timbloptions, timblexp);
-            cerr << accuracy << endl;        
-            if (accuracy < accuracythreshold) {
-                map<uint64_t,Classifier*>::iterator previous = iter;
-                deleteprevious = true;
-                iter->second->remove();
-            }
+            cerr << "Cross-validating classifier hash=" << iter->first << ": ";
+            accuracy =  iter->second->crossvalidate(timbloptions);
+            cerr << accuracy << endl;
         }
-        delete timblexp;
+        if (accuracy >= accuracythreshold) {                    
+            TimblAPI * timblexp = iter->second->train(timbloptions);    
+            map<uint64_t,Classifier*>::iterator previous = iter;
+            deleteprevious = true;
+            iter->second->remove();        
+            delete timblexp;
+        }        
     }
     if (deleteprevious) classifierarray.erase(previous);    
 }
