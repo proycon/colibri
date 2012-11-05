@@ -675,7 +675,7 @@ void ConstructionExperts::train(const string & timbloptions) {
     unsigned int total = classifierarray.size();
     map<uint64_t,Classifier*>::iterator iter = classifierarray.begin();
     while (iter != classifierarray.end()) {
-        double p = (double) count / (double) total; 
+        double p = ((double) count / (double) total) * 100; 
         count++;        
         double accuracy = 0;
         if (accuracythreshold > 0) {
