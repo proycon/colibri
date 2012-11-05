@@ -84,10 +84,12 @@ void Classifier::remove() {
     unload();
     trainfile = string(ID + ".train");
     ibasefile = string(ID + ".ibase");
-    wgtfile = string(ID + ".ibase.wgt");      
+    wgtfile = string(ID + ".ibase.wgt");
+    const string outfile = string(ID + ".train");      
     std::remove(trainfile.c_str());    
     std::remove(ibasefile.c_str());
     std::remove(wgtfile.c_str());
+    std::remove(outfile.c_str());
 }
 
 Classifier::~Classifier() {
@@ -141,28 +143,21 @@ void Classifier::addinstance(vector<string> & featurevector, const string & labe
     outputfile.close();
 }
 
-TimblAPI * Classifier::train(const string & timbloptions, bool keep) {
+void Classifier::train(const string & timbloptions) {
     const string ibasefile = string(id() + ".ibase");
     const string moretimbloptions = " -F Tabbed " + timbloptions + " +D +vdb";
-    TimblAPI * timbltrainexp = new TimblAPI( moretimbloptions , ID );
-    
+    TimblAPI * timbltrainexp = new TimblAPI( moretimbloptions , ID );    
     ifstream * f  = new ifstream(trainfile);
     if (!f->good()) {
         cerr << "Training file not found: " << trainfile << endl;
         throw InternalError();
     }
     f->close();
-    delete f; 
-    
+    delete f;     
     timbltrainexp->Learn(trainfile);   
     timbltrainexp->WriteInstanceBase( ibasefile );
     timbltrainexp->SaveWeights( ibasefile + ".wgt");
-    if (keep) {
-        return timbltrainexp;
-    } else {
-        delete timbltrainexp;
-        return NULL;
-    }        
+    delete timbltrainexp;
 }
 
 
@@ -266,7 +261,8 @@ double Classifier::crossvalidate(const std::string & timbloptions) {
     testexp->Test(trainfile, outfile);
     double a = testexp->GetAccuracy();
     delete testexp;
-    testexp = NULL; 
+    testexp = NULL;     
+    std::remove(outfile.c_str());
     return a;
 }
 
@@ -688,11 +684,10 @@ void ConstructionExperts::train(const string & timbloptions) {
             cerr << accuracy << endl;
         }
         if (accuracy >= accuracythreshold) {                    
-            TimblAPI * timblexp = iter->second->train(timbloptions);    
+            iter->second->train(timbloptions);    
             map<uint64_t,Classifier*>::iterator previous = iter;
             deleteprevious = true;
-            iter->second->remove();        
-            delete timblexp;
+            iter->second->remove();
         }        
     }
     if (deleteprevious) classifierarray.erase(previous);    
