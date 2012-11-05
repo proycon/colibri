@@ -669,7 +669,8 @@ void MonoClassifier::train(const string & timbloptions) {
 
 
 void ConstructionExperts::train(const string & timbloptions) {
-    for (map<uint64_t,Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {        
+    map<uint64_t,Classifier*>::iterator iter = classifierarray.begin();
+    while (iter != classifierarray.end()) {        
         double accuracy = 0;
         if (accuracythreshold > 0) {
             cerr << "Cross-validating classifier hash=" << iter->first << ": ";
@@ -682,8 +683,10 @@ void ConstructionExperts::train(const string & timbloptions) {
             cerr << "Removing classifieroutput... " << endl;                    
             iter->second->remove();
             cerr << "Removing classifier from array... " << endl;
-            classifierarray.erase(iter);
-        }        
+            iter = classifierarray.erase(iter);
+        } else {
+            iter++;
+        }
     }
         
 }
