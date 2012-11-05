@@ -14,6 +14,7 @@ void usage() {
     cerr << " -C [id]      Classifier output prefix. The decoder takes this same ID to load your classifier." << endl;
     cerr << " -c [int]     Context threshold. Only create a classifier when at least this many different contexts exist. Defaults to 1." << endl;
     cerr << " -t [int]     Target threshold. Only create a classifier when at least this many different target options exist. Defaults to 1." << endl;
+    cerr << " -a [float]   Accuracy threshold for Construction experts (-X), only experts with a leave-one-out accuracy higher than specified will be included. Value between 0 and 1. Defaults to 1." << endl;
     cerr << " -x           disable exemplar weighting" << endl;
     cerr << " -O [options] Timbl options" << endl;
     cerr << " -1           Represent the focus feature as a single entity, rather than individual tokens" << endl;
@@ -47,9 +48,10 @@ int main( int argc, char *argv[] ) {
     int contextthreshold = 1;
     int targetthreshold = 1;
     bool singlefocusfeature = false;
+    double accuracythreshold = 0;
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -90,6 +92,9 @@ int main( int argc, char *argv[] ) {
             break;
         case 't':
             targetthreshold = atoi(optarg);
+            break;
+        case 'a':
+            accuracythreshold = atof(optarg);
             break; 
         case 'x':
             exemplarweights = false;
@@ -129,6 +134,8 @@ int main( int argc, char *argv[] ) {
         cerr << "Building construction expert classifiers" << endl;
         ConstructionExperts classifiers = ConstructionExperts(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
         classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder);
+        
+        classifiers.accuracythreshold = accuracythreshold;
         
         cerr << "Training classifiers" << endl;
         cerr << "   Timbl options: " << timbloptions << endl;

@@ -1,6 +1,7 @@
 #include <classifiers.h>
 #include <glob.h>
 #include "timbl/StringOps.h"
+#include <stdio.h>
 
 using namespace std;
 using namespace Timbl;
@@ -22,7 +23,7 @@ Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecode
     //for training
     ID = _id;
     trainfile = string(_id + ".train");
-    remove(trainfile.c_str()); //remove pre-existing trainfile (no exception if file does not exist)         
+    std::remove(trainfile.c_str()); //remove pre-existing trainfile (no exception if file does not exist)         
     featurevectorsize = 0;    
     this->exemplarweights = exemplarweights;
     this->sourceclassdecoder = sourceclassdecoder;
@@ -77,6 +78,16 @@ void Classifier::load() {
 void Classifier::unload() {
     if (testexp != NULL) delete testexp;
     loaded = false; 
+}
+
+void Classifier::remove() {
+    unload();
+    trainfile = string(ID + ".train");
+    ibasefile = string(ID + ".ibase");
+    wgtfile = string(ID + ".ibase.wgt");      
+    std::remove(trainfile.c_str());    
+    std::remove(ibasefile.c_str());
+    std::remove(wgtfile.c_str());
 }
 
 Classifier::~Classifier() {
@@ -148,6 +159,8 @@ void Classifier::train(const string & timbloptions) {
     timbltrainexp->SaveWeights( ibasefile + ".wgt");
     delete timbltrainexp;    
 }
+
+
 
 t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
     if (DEBUG) cerr << "\t\t\tConverting classifier input to strings..." << endl;
@@ -236,6 +249,13 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
 }
 
 
+double Classifier::crossvalidate(const std::string & timbloptions) {
+    if (!loaded) load();
+    trainfile = string(ID + ".train");
+    testexp->SetOptions("-t leave_one_out");
+    testexp->Test(trainfile);
+    return testexp->GetAccuracy();
+}
 
 void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG) {    
     vector<string> files = globfiles(ID + ".n*.ibase");
@@ -640,11 +660,27 @@ void MonoClassifier::train(const string & timbloptions) {
 
 
 void ConstructionExperts::train(const string & timbloptions) {
+    bool deleteprevious = false;
+    map<uint64_t,Classifier*>::iterator previous;
     for (map<uint64_t,Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
+        if (deleteprevious) {
+            classifierarray.erase(previous);
+            deleteprevious = false;
+        }
         cerr << "Training classifier hash=" << iter->first << "... " << endl;
         iter->second->train(timbloptions);
+        if (accuracythreshold > 0) {
+            cerr << "Cross-validating classifier hash=" << iter->first << ": ";        
+            double accuracy = iter->second->crossvalidate(timbloptions);
+            cerr << accuracy << endl;        
+            if (accuracy < accuracythreshold) {
+                map<uint64_t,Classifier*>::iterator previous = iter;
+                deleteprevious = true;
+                iter->second->remove();
+            }
+        }
     }
-
+    if (deleteprevious) classifierarray.erase(previous);    
 }
 
 void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {

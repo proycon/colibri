@@ -50,12 +50,14 @@ class Classifier {
     void addinstance(std::vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight = 1);
     void addinstance(std::vector<std::string> & featurevector, const std::string & label, double exemplarweight = 1);
     void train(const std::string & timbloptions);
+    double crossvalidate(const std::string & timbloptions); //returns accuracy (measured using leave one out cross validation)
     const std::string id() { return ID; };
     bool empty() { return !added; }
     void close() { outputfile.close(); }
     void flush() { outputfile.flush(); }
     void load();
     void unload();
+    void remove();
     t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions );
     t_aligntargets classify(std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);     
 };
@@ -121,8 +123,9 @@ class NClassifierArray: public ClassifierInterface {
 
 class ConstructionExperts: public ClassifierInterface {
     public:
+        double accuracythreshold;
         std::map<uint64_t, Classifier*> classifierarray;    
-        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature) {}; 
+        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature) { accuracythreshold = 0; }; 
         ~ConstructionExperts();
         void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);       
         void train(const std::string & timbloptions);     
