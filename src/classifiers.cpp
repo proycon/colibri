@@ -673,20 +673,23 @@ void ConstructionExperts::train(const string & timbloptions) {
     map<uint64_t,Classifier*>::iterator previous;
     for (map<uint64_t,Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
         if (deleteprevious) {
+            cerr << "Removing classifier from array... " << endl;
             classifierarray.erase(previous);
             deleteprevious = false;
         }
-        cerr << "Training classifier hash=" << iter->first << "... " << endl;
+        
         double accuracy = 0;
         if (accuracythreshold > 0) {
             cerr << "Cross-validating classifier hash=" << iter->first << ": ";
             accuracy =  iter->second->crossvalidate(timbloptions);
             cerr << accuracy << endl;
         }
-        if (accuracy >= accuracythreshold) {                    
-            iter->second->train(timbloptions);    
+        if (accuracy >= accuracythreshold) {
+            cerr << "Training classifier hash=" << iter->first << "... " << endl;                    
+            iter->second->train(timbloptions);
+            cerr << "Removing classifieroutput... " << endl;    
             map<uint64_t,Classifier*>::iterator previous = iter;
-            deleteprevious = true;
+            deleteprevious = true;            
             iter->second->remove();
         }        
     }
