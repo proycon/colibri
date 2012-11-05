@@ -255,10 +255,12 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
 
 
 double Classifier::crossvalidate(const std::string & timbloptions, TimblAPI * timblexp) {
-    if (!loaded) load();
+    
     ibasefile = string(ID + ".train");    
     trainfile = string(ID + ".train");
+    timblexp = NULL;
     if (timblexp == NULL) {
+        if (!loaded) load();
         testexp->GetInstanceBase(ibasefile);
         testexp->SetOptions("-t leave_one_out");
         testexp->Test(trainfile);
