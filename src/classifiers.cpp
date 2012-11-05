@@ -669,15 +669,7 @@ void MonoClassifier::train(const string & timbloptions) {
 
 
 void ConstructionExperts::train(const string & timbloptions) {
-    bool deleteprevious = false;
-    map<uint64_t,Classifier*>::iterator previous;
-    for (map<uint64_t,Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
-        if (deleteprevious) {
-            cerr << "Removing classifier from array... " << endl;
-            classifierarray.erase(previous);
-            deleteprevious = false;
-        }
-        
+    for (map<uint64_t,Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {        
         double accuracy = 0;
         if (accuracythreshold > 0) {
             cerr << "Cross-validating classifier hash=" << iter->first << ": ";
@@ -687,13 +679,13 @@ void ConstructionExperts::train(const string & timbloptions) {
         if (accuracy >= accuracythreshold) {
             cerr << "Training classifier hash=" << iter->first << "... " << endl;                    
             iter->second->train(timbloptions);
-            cerr << "Removing classifieroutput... " << endl;    
-            map<uint64_t,Classifier*>::iterator previous = iter;
-            deleteprevious = true;            
+            cerr << "Removing classifieroutput... " << endl;                    
             iter->second->remove();
+            cerr << "Removing classifier from array... " << endl;
+            classifierarray.erase(iter);
         }        
     }
-    if (deleteprevious) classifierarray.erase(previous);    
+        
 }
 
 void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
