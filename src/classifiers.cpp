@@ -686,14 +686,12 @@ void ConstructionExperts::train(const string & timbloptions) {
         if (accuracy >= accuracythreshold) {
             cerr << "Training classifier #" << count << "/" << total << " -- " << p << "% hash=" << iter->first << "... " << endl;                    
             iter->second->train(timbloptions);
-            //cerr << "Removing classifieroutput... " << endl;                    
-            iter->second->remove();
-            //cerr << "Removing classifier from array... " << endl;
-            iter = classifierarray.erase(iter);
-            discarded++;
-        } else {
             accepted++;
             iter++;
+        } else {
+            iter->second->remove();
+            iter = classifierarray.erase(iter);
+            discarded++;            
         }
     }
     cerr << "Training complete: " << accepted << " classifiers built, " << discarded << " discarded due to not making the accuracy threshold." << endl;        
