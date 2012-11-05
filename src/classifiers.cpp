@@ -669,26 +669,34 @@ void MonoClassifier::train(const string & timbloptions) {
 
 
 void ConstructionExperts::train(const string & timbloptions) {
+    unsigned int accepted = 0;
+    unsigned int discarded = 0;
+    unsigned int count = 0;
+    unsigned int total = classifierarray.size();
     map<uint64_t,Classifier*>::iterator iter = classifierarray.begin();
-    while (iter != classifierarray.end()) {        
+    while (iter != classifierarray.end()) {
+        double p = (double) count / (double) total; 
+        count++;        
         double accuracy = 0;
         if (accuracythreshold > 0) {
-            cerr << "Cross-validating classifier hash=" << iter->first << ": ";
+            cerr << "Cross-validating classifier #" << count << "/" << total << " -- " << p << "% hash=" << iter->first << ": ";
             accuracy =  iter->second->crossvalidate(timbloptions);
             cerr << accuracy << endl;
         }
         if (accuracy >= accuracythreshold) {
-            cerr << "Training classifier hash=" << iter->first << "... " << endl;                    
+            cerr << "Training classifier #" << count << "/" << total << " -- " << p << "% hash=" << iter->first << "... " << endl;                    
             iter->second->train(timbloptions);
-            cerr << "Removing classifieroutput... " << endl;                    
+            //cerr << "Removing classifieroutput... " << endl;                    
             iter->second->remove();
-            cerr << "Removing classifier from array... " << endl;
+            //cerr << "Removing classifier from array... " << endl;
             iter = classifierarray.erase(iter);
+            discarded++;
         } else {
+            accepted++;
             iter++;
         }
     }
-        
+    cerr << "Training complete: " << accepted << " classifiers built, " << discarded << " discarded due to not making the accuracy threshold." << endl;        
 }
 
 void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
