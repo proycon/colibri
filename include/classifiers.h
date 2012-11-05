@@ -49,8 +49,8 @@ class Classifier {
     ~Classifier();            
     void addinstance(std::vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight = 1);
     void addinstance(std::vector<std::string> & featurevector, const std::string & label, double exemplarweight = 1);
-    void train(const std::string & timbloptions);
-    double crossvalidate(const std::string & timbloptions); //returns accuracy (measured using leave one out cross validation)
+    Timbl::TimblAPI * train(const std::string & timbloptions, bool keep=false);
+    double crossvalidate(const std::string & timbloptions, Timbl::TimblAPI * timblexp = NULL); //returns accuracy (measured using leave one out cross validation)
     const std::string id() { return ID; };
     bool empty() { return !added; }
     void close() { outputfile.close(); }
