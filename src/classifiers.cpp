@@ -803,8 +803,9 @@ t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vect
     if ((classifierarray.count(hash)) && (classifierarray[hash] != NULL)) {
         return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
-        cerr << "INTERNAL ERROR: ConstructionExperts::classify invokes classifier " << hash << ", but it does not exist" << endl;
-        throw InternalError();
+        //cerr << "INTERNAL ERROR: ConstructionExperts::classify invokes classifier " << hash << ", but it does not exist" << endl;
+        //throw InternalError();
+        return originaltranslationoptions;
     } 
 }
 
@@ -813,8 +814,9 @@ t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vect
     if ((classifierarray.count(hash)) && (classifierarray[hash] != NULL)) {
         return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
-        cerr << "INTERNAL ERROR: ConstructionExperts::classify invokes classifier " << hash << ", but it does not exist" << endl;
-        throw InternalError();
+        //cerr << "INTERNAL ERROR: ConstructionExperts::classify invokes classifier " << hash << ", but it does not exist" << endl;
+        //throw InternalError();
+        return originaltranslationoptions;
     } 
 }
 
