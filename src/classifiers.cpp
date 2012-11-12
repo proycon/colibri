@@ -422,7 +422,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
         const CorpusReference ref = iter->second;
         
         if (DEBUG >= 2) {
-            cerr << "\t\t\tClassifying " << anygram->decode(*sourceclassdecoder) << " @" << ref.sentence << ":" << (int) ref.token << endl;            
+            cerr << "\t\t\tClassifying " << anygram->decode(*sourceclassdecoder) << " @" <<  (int) ref.token << ":" << anygram->n() << endl;            
         }
         
         t_aligntargets translationoptions;
@@ -474,12 +474,47 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                 }
                 
                 translationoptions = classify(anygram, featurevector, scorehandling, reftranslationoptions);
-                //cleanup
+                if (DEBUG >= 3) {
+                    cerr << "\t\t\t\t";
+                    multimap<double,string> ordered;
                 
+                    for (t_aligntargets::iterator iter2 = translationoptions.begin(); iter2 != translationoptions.end(); iter2++) {
+                        stringstream optionsout;
+                        const EncAnyGram * targetkey = iter2->first;                       
+                        if (targetkey->isskipgram()) {
+                            optionsout << ((const EncSkipGram*) targetkey)->decode(*targetclassdecoder) << " [ ";                            
+                        } else {
+                            optionsout <<  ((const EncNGram*) targetkey)->decode(*targetclassdecoder) << " [ ";
+                        }  
+                        
+                        if (reftranslationoptions.count(targetkey)) {
+                            for (vector<double>::iterator iter3 = reftranslationoptions[targetkey].begin(); iter3 != reftranslationoptions[targetkey].end(); iter3++) {
+                                optionsout << *iter3 << " ";
+                            }                             
+                        }
+                        optionsout << "] --> [ ";
+                        double totalscore = 0;
+                        for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
+                            optionsout << *iter3 << " ";
+                            totalscore += *iter3;
+                        }                                                
+                        optionsout << "]; ";
+                        
+                                       
+                        ordered.insert( pair<double,string>( -1 * totalscore, optionsout.str() ));                                                                  
+                    }
+                    
+                    for (multimap<double,string>::iterator iter2 = ordered.begin(); iter2 != ordered.end(); iter2++) {
+                        cerr << iter2->second;
+                    }
+                    cerr << endl;                
+                }
+                
+                //cleanup                
                 for (int i = 0; i < featurevector.size(); i++) {
                     if (featurevector[i] != anygram) delete featurevector[i];
                 }
-                                
+                                                
                 delete withcontext;
             } else {
                 if (DEBUG >= 2) cerr << "\t\t\t\tBypassing classifier... number of reference target options is less than set threshold: " << reftranslationoptions.size() << " < " << targetthreshold << endl;
