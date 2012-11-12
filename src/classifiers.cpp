@@ -421,6 +421,10 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
         const EncAnyGram * anygram = iter->first;
         const CorpusReference ref = iter->second;
         
+        if (DEBUG >= 2) {
+            cerr << "\t\t\tClassifying " << anygram->decode(*sourceclassdecoder) << " @" << ref.sentence << ":" << (int) ref.token << endl;            
+        }
+        
         t_aligntargets translationoptions;
         
         const int contextcount = translationtable->sourcecontexts[anygram].size(); //in how many different contexts does this occur?
@@ -438,6 +442,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
             
             //are there enough targets for this source to warrant a classifier? 
             if (reftranslationoptions.size() >= targetthreshold) {
+                
                 //yes
             
                 //extract anygram in context for classifier test input
@@ -467,6 +472,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                         featurevector.push_back(unigram);                    
                     }                             
                 }
+                
                 translationoptions = classify(anygram, featurevector, scorehandling, reftranslationoptions);
                 //cleanup
                 
@@ -476,9 +482,11 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                                 
                 delete withcontext;
             } else {
+                if (DEBUG >= 2) cerr << "\t\t\t\tBypassing classifier... number of reference target options is less than set threshold: " << reftranslationoptions.size() << " < " << targetthreshold << endl;
                 bypass = true;
             }                    
         } else {
+            if (DEBUG >= 2) cerr << "\t\t\t\tBypassing classifier... number of contexts is less than set threshold: " << contextcount << " < " << contextthreshold << endl;
             bypass = true;
         }
         

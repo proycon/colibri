@@ -293,7 +293,7 @@ void StackDecoder::computefuturecost() {
                 for (unsigned int l = 1; l < length; l++) {
                     double spanscore = futurecost[make_pair((int) start,(int) l)] + futurecost[make_pair((int) start+l,(int) length - l)];
                     if (spanscore > futurecost[span]) { //(higher score -> lower cost)
-                        if (DEBUG >= 3) {
+                        if (DEBUG >= 4) {
                             cerr << "[" << span.first << ":" << span.second << "]" << " = [" << start << ":" << l << "] + [" << start + l << ":" << length -l << "] = " << futurecost[make_pair((int) start,(int) l)] << " + " << futurecost[make_pair((int) start+l,(int) length - l)] << " = " << spanscore << endl;
                         }
                         futurecost[span] = spanscore;
@@ -1654,6 +1654,7 @@ int main( int argc, char *argv[] ) {
             cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;
             throw InternalError();            
         }
+        if (debug > 0) classifier->enabledebug(debug, &sourceclassdecoder, &targetclassdecoder); 
     }   
         
     //const int firstunknownclass_source = sourceclassencoder.gethighestclass()+1;    

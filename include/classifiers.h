@@ -73,8 +73,14 @@ class ClassifierInterface {
         int targetthreshold;  
         bool singlefocusfeature;
         bool exemplarweights;
+        int DEBUG;
+        ClassDecoder * sourceclassdecoder;
+        ClassDecoder * targetclassdecoder;
     public:
         ClassifierInterface(const std::string & _id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, bool exemplarweights, bool singlefocusfeature) {
+            DEBUG = 0;
+            sourceclassdecoder = NULL;
+            targetclassdecoder = NULL;
             ID = _id;
             this->leftcontextsize = leftcontextsize;
             this->rightcontextsize = rightcontextsize;
@@ -82,6 +88,12 @@ class ClassifierInterface {
             this->targetthreshold = targetthreshold;
             this->exemplarweights = exemplarweights;
             this->singlefocusfeature = singlefocusfeature;            
+        }
+        void enabledebug(int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
+            this->DEBUG = debug;
+            this->sourceclassdecoder = sourceclassdecoder;
+            this->targetclassdecoder = targetclassdecoder;
+        
         }
         const std::string id() { return ID; };
         virtual void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) =0;
