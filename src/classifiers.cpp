@@ -876,11 +876,11 @@ void ConstructionExperts::load( const string & timbloptions, ClassDecoder * sour
         for (int i = filenamenoext.find_last_of('.'); i < filenamenoext.size(); i++) {
             hash_s << filenamenoext[i];            
         }
+        
         const uint64_t hash = atoi(hash_s.str().c_str());
         
-        const string hashclassifierid = filename.substr(0, filename.size() - 6);
-        cerr << "   Preparing classifier hash=" << hash << " id=" << hashclassifierid << endl;   
-        classifierarray[hash] = new Classifier(hashclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder, true, (DEBUG >= 3));
+        cerr << "   Preparing classifier hash=" << hash_s.str() << "=" << hash << " id=" << filenamenoext << endl;   
+        classifierarray[hash] = new Classifier(filenamenoext, timbloptions,  sourceclassdecoder, targetclassencoder, true, (DEBUG >= 3));
     }    
 }
 
