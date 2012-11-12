@@ -422,7 +422,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
         const CorpusReference ref = iter->second;
         
         if (DEBUG >= 2) {
-            cerr << "\t\t\tClassifying " << anygram->decode(*sourceclassdecoder) << " @" <<  (int) ref.token << ":" << anygram->n() << endl;            
+            cerr << "\t\t\tClassifying " << anygram->decode(*sourceclassdecoder) << " @" <<  (int) ref.token << ":" << (int) anygram->n() << ": ";     
         }
         
         t_aligntargets translationoptions;
@@ -474,8 +474,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                 }
                 
                 translationoptions = classify(anygram, featurevector, scorehandling, reftranslationoptions);
-                if (DEBUG >= 3) {
-                    cerr << "\t\t\t\t";
+                if (DEBUG >= 2) {
                     multimap<double,string> ordered;
                 
                     for (t_aligntargets::iterator iter2 = translationoptions.begin(); iter2 != translationoptions.end(); iter2++) {
@@ -846,7 +845,7 @@ t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vect
     if ((classifierarray.count(hash)) && (classifierarray[hash] != NULL)) {
         return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
-        //cerr << "INTERNAL ERROR: ConstructionExperts::classify invokes classifier " << hash << ", but it does not exist" << endl;
+        if (DEBUG >= 2) cerr << "Classifier " << hash << " does not exist";
         //throw InternalError();
         return originaltranslationoptions;
     } 
@@ -857,6 +856,7 @@ t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vect
     if ((classifierarray.count(hash)) && (classifierarray[hash] != NULL)) {
         return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
+        if (DEBUG >= 2) cerr << "Classifier " << hash << " does not exist";
         //cerr << "INTERNAL ERROR: ConstructionExperts::classify invokes classifier " << hash << ", but it does not exist" << endl;
         //throw InternalError();
         return originaltranslationoptions;
