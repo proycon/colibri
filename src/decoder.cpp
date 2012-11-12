@@ -1661,6 +1661,8 @@ int main( int argc, char *argv[] ) {
 
     DecodeStats overallstats;
     
+    cerr << "Ready to receive input..." << endl;
+    
     string input;
     unsigned char buffer[8192]; 
     int size;
