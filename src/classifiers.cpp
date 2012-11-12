@@ -76,11 +76,11 @@ void Classifier::load() {
 }
 
 void Classifier::unload() {
-    if (testexp != NULL) {
+    if ((loaded) && (testexp != NULL)) {
         delete testexp;
         testexp = NULL;
-    }
-    loaded = false; 
+        loaded = false; 
+    }    
 }
 
 void Classifier::remove() {
@@ -96,10 +96,7 @@ void Classifier::remove() {
 }
 
 Classifier::~Classifier() {
-    if (testexp != NULL) {
-        delete testexp;
-        testexp = NULL;
-    } 
+    unload();
 }
 
 void Classifier::addinstance(vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight) {
