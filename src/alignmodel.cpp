@@ -2227,8 +2227,6 @@ void AlignmentModel::computereverse() {
 t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefocus, bool debug) {    
         
         //compute translate options, aggregating context-data into non-context based scores
-        double total = 0;
-        
         int scorevectorsize = 0;
                 
         t_aligntargets translationoptions;
@@ -2248,18 +2246,24 @@ t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefo
                     for (int i = 0; i < iter2->second.size(); i++) {
                         const double p =  pow(exp(1), iter2->second[i]);                             
                         translationoptions[targetgram].push_back(p);
-                        if (i == 0) total += p; 
                     }                    
                 } else {
                     //targetgram exists, sum
                     for (int i = 0; i < iter2->second.size(); i++) {
                         const double p =  pow(exp(1), iter2->second[i]);
                         translationoptions[targetgram][i] += p;
-                        if (i == 0) total += p;
                     }
                 }            
             }
         }
+
+        //compute total
+        double total = 0;
+        for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
+            const EncAnyGram * targetgram = iter->first;   
+            total += translationoptions[targetgram][0];
+        }
+        
 
         if ((scorevectorsize == 2) && (reversealignmatrix.empty())) computereverse();
         

@@ -228,7 +228,7 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
             if (originaltranslationoptions.count(target)) {
                 result[target] = originaltranslationoptions[target];               
             } else {
-                //translation option did not exist yet:
+                //translation option did not exist yet
                 for (int i = 0; i < scorecount; i++) {
                         result[target].push_back(epsilon);
                 }
