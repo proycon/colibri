@@ -241,7 +241,7 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
             //ONLY WEIGH FOR p(t|s)
             
             //for (int i = 0; i < originaltranslationoptions[target].size(); i++) {
-                if (DEBUG) cerr << " [" << result[target][0] << "+" << weight << "=" << resulttarget][0] + weight << "] "; 
+                if (DEBUG) cerr << " [" << result[target][0] << "+" << weight << "=" << result[target][0] + weight << "] "; 
                 result[target][0] = result[target][0] + weight;                
             //}                        
         }
