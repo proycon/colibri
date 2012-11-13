@@ -237,10 +237,10 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
         if (scorehandling == SCOREHANDLING_WEIGHED) {
             //ONLY WEIGH FOR p(t|s)
             
-            //for (int i = 0; i < originaltranslationoptions[target].size(); i++) {
-            if (DEBUG) cerr << " [" << result[target][0] << "+" << weight << "=" << originaltranslationoptions[target][0] + weight << "] "; 
-            result[target][0] = originaltranslationoptions[target][0] + weight;                
-            //}                        
+            for (int i = 0; i < originaltranslationoptions[target].size(); i++) {
+                if (DEBUG) cerr << " [" << result[target][i] << "+" << weight << "=" << originaltranslationoptions[target][i] + weight << "] "; 
+                result[target][i] = originaltranslationoptions[target][i] + weight;                
+            }                        
         }
         if ((scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_REPLACE)) {
             result[target].push_back(weight);
@@ -248,7 +248,7 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
         if (DEBUG) cerr << endl; 
     }
 
-    //note: any targets not present in classifier output will be pruned! Additional targets only in classifier will be added with very low (epsilon) probalility
+    //note: any targets not present in classifier output will be pruned! Additional targets only in classifier will be added with very low (epsilon) probability
     
     
     //renormalise (only p(t|s) can be normalised) 
