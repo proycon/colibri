@@ -2259,9 +2259,8 @@ t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefo
 
         //compute total
         double total = 0;
-        for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
-            const EncAnyGram * targetgram = iter->first;   
-            total += translationoptions[targetgram][0];
+        for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {   
+            total += iter->second[0];
         }
         
 
