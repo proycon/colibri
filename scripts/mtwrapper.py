@@ -2311,6 +2311,7 @@ if __name__ == "__main__":
         usage()
         sys.exit(2)
 
+    parentdir = None
     sourcecorpusfile = targetcorpusfile = sourcelang = targetlang = corpusname = expname = workdir = ""
     devsourcecorpusfile = devtargetcorpusfile = testsourcecorpusfile = testtargetcorpusfile = ""
     trainset = testset = devset = 0
