@@ -216,6 +216,7 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
         scorecount = tmpiter1->second.size();   
     }
    
+    const bool ADDNEWCLASSIFIEROPTIONS = false;  
     
     //convert valuedistribution to t_aligntargets    
     t_aligntargets result;
@@ -227,11 +228,13 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
         if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_IGNORE)) {
             if (originaltranslationoptions.count(target)) {
                 result[target] = originaltranslationoptions[target];               
-            } else {
+            } else if (ADDNEWCLASSIFIEROPTIONS) {
                 //translation option did not exist yet
                 for (int i = 0; i < scorecount; i++) {
                         result[target].push_back(epsilon);
                 }
+            } else {
+                break;
             }          
         } 
         if (scorehandling == SCOREHANDLING_WEIGHED) {
@@ -249,27 +252,33 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
     }
 
     //note: any targets not present in classifier output will be pruned! Additional targets only in classifier will be added with very low (epsilon) probability
+    if (result.empty()) {
+        cerr << "WARNING: NO TRANSLATION OPTIONS!!" << endl;        
+    }
     
-    
-    //renormalise (only p(t|s) can be normalised) 
-    map<int,double> total;
-    for (t_aligntargets::iterator iter = result.begin(); iter != result.end(); iter++) {
-        for (int i = 0; i < scorecount; i++) {
-            if ((i == 0) || ((i == scorecount -1) && (scorehandling == SCOREHANDLING_APPEND))) {
-                if (total.count(i) == 0) total[i] = 0;
-                total[i] += pow(exp(1), iter->second[0]);
+    const bool NORMALISE = true;
+    if (NORMALISE) {
+        //renormalise (only p(t|s) can be normalised) 
+        map<int,double> total;
+        for (t_aligntargets::iterator iter = result.begin(); iter != result.end(); iter++) {
+            for (int i = 0; i < scorecount; i++) {
+                if ((i == 0) || ((i == scorecount -1) && (scorehandling == SCOREHANDLING_APPEND))) {
+                    if (total.count(i) == 0) total[i] = 0;
+                    total[i] += pow(exp(1), iter->second[0]);
+                }
             }
+        }
+        
+        for (t_aligntargets::iterator iter = result.begin(); iter != result.end(); iter++) {
+            for (int i = 0; i < scorecount; i++) {
+                if ((i == 0) || ((i == scorecount -1) && (scorehandling == SCOREHANDLING_APPEND))) {
+                    result[iter->first][i] = log(pow(exp(1),iter->second[0]) / total[i]);
+                }
+            } 
         }
     }
     
-    for (t_aligntargets::iterator iter = result.begin(); iter != result.end(); iter++) {
-        for (int i = 0; i < scorecount; i++) {
-            if ((i == 0) || ((i == scorecount -1) && (scorehandling == SCOREHANDLING_APPEND))) {
-                result[iter->first][i] = log(pow(exp(1),iter->second[0]) / total[i]);
-            }
-        } 
-    }
-     
+         
     return result;
 }
 
