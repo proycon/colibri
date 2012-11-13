@@ -237,10 +237,10 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
         if (scorehandling == SCOREHANDLING_WEIGHED) {
             //ONLY WEIGH FOR p(t|s)
             
-            for (int i = 0; i < originaltranslationoptions[target].size(); i++) {
-                if (DEBUG) cerr << " [" << result[target][i] << "+" << weight << "=" << originaltranslationoptions[target][i] + weight << "] "; 
-                result[target][i] = originaltranslationoptions[target][i] + weight;                
-            }                        
+            //for (int i = 0; i < originaltranslationoptions[target].size(); i++) {
+                if (DEBUG) cerr << " [" << result[target][0] << "+" << weight << "=" << originaltranslationoptions[target][0] + weight << "] "; 
+                result[target][0] = originaltranslationoptions[target][0] + weight;                
+            //}                        
         }
         if ((scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_REPLACE)) {
             result[target].push_back(weight);
@@ -265,7 +265,7 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
     for (t_aligntargets::iterator iter = result.begin(); iter != result.end(); iter++) {
         for (int i = 0; i < scorecount; i++) {
             if ((i == 0) || ((i == scorecount -1) && (scorehandling == SCOREHANDLING_APPEND))) {
-                result[iter->first][0] = log(pow(exp(1),iter->second[0]) / total[i]);
+                result[iter->first][i] = log(pow(exp(1),iter->second[0]) / total[i]);
             }
         } 
     }
