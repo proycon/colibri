@@ -239,7 +239,7 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
             
             //for (int i = 0; i < originaltranslationoptions[target].size(); i++) {
                 if (DEBUG) cerr << " [" << result[target][0] << "+" << weight << "=" << originaltranslationoptions[target][0] + weight << "] "; 
-                result[target][0] = originaltranslationoptions[target][0] + weight;                
+                result[target][0] = result[target][0] + weight;                
             //}                        
         }
         if ((scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_REPLACE)) {
