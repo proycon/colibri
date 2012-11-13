@@ -22,8 +22,9 @@ void usage() {
     cerr << "\t-R               Generate a simple statistical report" << endl;
     cerr << "\t-C               Generate an extensive coverage report (indexed patternmodels) only)" << endl;
     cerr << "\t-H               Generate a histogram report" << endl;   
+    cerr << "\t-i               Output Hash Identifier for each pattern (use with -d)" << endl;
     cerr << "\t-t <number>      Token threshold: n-grams and skipgrams occuring less than this will be pruned (default: 2)" << endl;
-    cerr << "\t-l <number>      Maximum n-gram/skipgram length (in words, default: 9)" << endl;
+    cerr << "\t-l <number>      Maximum n-gram/skipgram length (in words/tokens, default: 9)" << endl;
     cerr << "\t-s               Compute skip-grams (costs extra memory and time)" << endl;    
     cerr << "\t-T <number>      Skip threshold: only skip content that occurs at least x times will be considered (default: same as -t). Value can never be lower than value for -t" << endl;
     cerr << "\t-u				Create an unindexed model instead of an indexed model. Significantly reduces memory requirements" << endl;
@@ -77,11 +78,12 @@ int main( int argc, char *argv[] ) {
     bool DOCOVERAGE = false;
     bool DOCOVVIEW = false;
     bool DOHISTOGRAM = false;
+    bool OUTPUTHASH=false;
     //bool DOCOMPOSITIONALITY = false;
     bool DEBUG = false;
     double alignthreshold = 0.0;
     char c;    
-    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQDJ:CRVA:P:H")) != -1)
+    while ((c = getopt(argc, argv, "c:f:d:t:T:S:l:o:suLhnBEQDJ:CRVA:P:Hi")) != -1)
         switch (c)
         {
         case 'c':
@@ -147,6 +149,9 @@ int main( int argc, char *argv[] ) {
         case 'H':
             DOHISTOGRAM = true;
             break;        
+        case 'i':
+            OUTPUTHASH=true;
+            break;
         case 'h':
             usage();
             exit(0);
@@ -308,12 +313,12 @@ int main( int argc, char *argv[] ) {
 		        } else {
 		            if (modelfile2.empty()) {		        
     		        	cerr << "Decoding" << endl;
-		        	    if (covviewfile.empty()) model.decode(classdecoder, (ostream*) &cout);
+		        	    if (covviewfile.empty()) model.decode(classdecoder, (ostream*) &cout, OUTPUTHASH);
     			     } else {    			
     			        cerr << "Loading test model" << endl;     
     			        IndexedPatternModel testmodel = IndexedPatternModel(modelfile2, DEBUG);
     			        cerr << "Joint decoding" << endl;
-    			        if (covviewfile.empty()) model.decode(testmodel, classdecoder, (ostream*) &cout);
+    			        if (covviewfile.empty()) model.decode(testmodel, classdecoder, (ostream*) &cout, OUTPUTHASH);
     			     }		        	    
 		        }
 		    }
@@ -342,12 +347,12 @@ int main( int argc, char *argv[] ) {
 		        } else {
 		            if (modelfile2.empty()) {
 			            cerr << "Decoding" << endl;
-    			        model.decode(classdecoder, (ostream*) &cout);
+    			        model.decode(classdecoder, (ostream*) &cout, OUTPUTHASH);
     			     } else {    			
     			        cerr << "Loading test model" << endl;     
     			        UnindexedPatternModel testmodel = UnindexedPatternModel(modelfile2, DEBUG);
     			        cerr << "Joint decoding" << endl;
-    			        model.decode(testmodel, classdecoder, (ostream*) &cout);
+    			        model.decode(testmodel, classdecoder, (ostream*) &cout, OUTPUTHASH);
     			     }
 			    }   
 		    }

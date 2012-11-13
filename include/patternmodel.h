@@ -254,8 +254,8 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     size_t hash();
     
     
-    void decode(ClassDecoder & classdecoder, std::ostream *OUT);
-    void decode(IndexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT);
+    void decode(ClassDecoder & classdecoder, std::ostream *OUT, bool outputhash=false);
+    void decode(IndexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT, bool outputhash=false);
     
     bool skipgramvarietycheck(SkipGramData & skipgramdata, int mintypecount=2);
     void coveragereport(std::ostream *OUT, const std::string & corpusfile = "", std::ostream *HTMLOUT = NULL, ClassDecoder * decoder = NULL, int segmentsize = 100000);
@@ -332,8 +332,8 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
     
     size_t hash();
     
-    void decode(ClassDecoder & classdecoder, std::ostream *OUT);
-    void decode(UnindexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT);
+    void decode(ClassDecoder & classdecoder, std::ostream *OUT, bool outputhash=false);
+    void decode(UnindexedPatternModel & testmodel, ClassDecoder & classdecoder, std::ostream *OUT, bool outputhash=false);
     
     void report(std::ostream *OUT);
     void histogram(std::ostream *OUT);
