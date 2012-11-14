@@ -1382,7 +1382,7 @@ int addunknownwords( AlignmentModel & ttable, LanguageModel & lm, ClassEncoder &
             const string word = sourceclassencoder.added[cls];
             sourceclassdecoder.add(cls, word);
             
-            cerr << "NOTICE: Unknown word in input: '" << word << "'"; //, assigning classes (" << cls << ", " << targetcls << ")" << endl;            
+            cerr << "NOTICE: Unknown word in input: '" << word << "'" << endl; //, assigning classes (" << cls << ", " << targetcls << ")" << endl;            
             
             /*unsigned int targetcls = targetclassencoder.gethighestclass() + 1;
             targetclassencoder.add(word, targetcls);
