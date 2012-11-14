@@ -70,14 +70,15 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         
         
         
-        //Build a coverage mask, this will be used to check if their are words uncoverable by translations, these will be added as unknown words 
+        //Build a coverage mask, this will be used to check if their are source words uncoverable by translations, these will be added as unknown words 
         std::vector<bool> inputcoveragemask;
         inputcoveragemask.reserve(inputlength);
         for (unsigned int i = 0; i < inputlength; i++) inputcoveragemask.push_back(false);
         
         
                         
-        for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {           
+        for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
+            //set coverage mask for this source pattern           
             const EncAnyGram * sourcekey = iter->sourcefragment;
             int n = sourcekey->n();
             for (int j = iter->ref.token; j < iter->ref.token + n; j++) inputcoveragemask[j] = true;
@@ -133,17 +134,23 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         
         highesttargetclass = targetclassdecoder->gethighestclass();
         
-        //Check for uncoverable words               
+        //Check for uncoverable words: even though the words may exist in the classer, the alignment model may not have any options.
+        //  At this point, there are no unknown words for the source classer, that has been already processed by addunknownwords() earlier.
+        //  The target classer will have untranslatable words added for each occurrence (which is okay since we decode output anyway)
+                        
         for (unsigned int i = 0; i < inputlength; i++) {
             if (!inputcoveragemask[i]) {
-                //found one
+                //found an uncovered word
                 
                 bool keepunigram = false;
                 EncNGram * unigram = input.slice(i, 1);
                 const string word = unigram->decode(*sourceclassdecoder);
-                cerr << "NOTICE: Untranslatable word: '" << word << "' (adding)" << endl;  
+                cerr << "NOTICE: No translations known for '" << word << "', transferring without translation" << endl;  
                 
                 
+                //the target word will be the same as the source word, we don't know the translation so leave it untranslated,
+                
+                //add a target classer option. we may have multiple, but that's ok since we decode output anyway)
                 unsigned int targetcls = targetclassdecoder->gethighestclass();
                 do {
                     targetcls++; //not most efficient, may take quite some iterations
@@ -155,8 +162,11 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 unsigned char * buffer = inttobytes(targetcls, size);                
                 EncNGram targetunigram = EncNGram(buffer, size);
                 delete [] buffer; 
-                lm->ngrams[targetunigram] = lm->ngrams[UNKNOWNUNIGRAM];
+                lm->ngrams[targetunigram] = lm->ngrams[UNKNOWNUNIGRAM]; //add to LM
                 
+                
+                
+                //add a translation options for the unknown sources, scores will be always be 1 (log(0) ), not adding to the translation table itself 
                 
                 const EncAnyGram * sourcekey = translationtable->getsourcekey((const EncAnyGram *) unigram);                
                 if (sourcekey == NULL) {
@@ -175,7 +185,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 }
                 
                 vector<double> scores;
-                for (unsigned int j = 0; j < tweights.size(); j++) scores.push_back(1);                 
+                for (unsigned int j = 0; j < tweights.size(); j++) scores.push_back(1);            
                 
                 t_aligntargets translationoptions;                
                 translationoptions[targetkey] = scores;
@@ -1350,7 +1360,8 @@ void usage() {
     cerr << "\t-x mode                   How to handle classifier scores? (Only with -C). Choose from:" << endl;
     cerr << "\t       weighed            Apply classifier score as weight to original scores (default)" << endl;
     cerr << "\t       append             Append classifier score to translation score vector (make sure to specify an extra weight using -W)" << endl;
-    cerr << "\t       replace            Use only classifier score, replacing translation table scores (make to specify only one weight using -W)" << endl;        
+    cerr << "\t       replace            Use only classifier score, replacing translation table scores (make to specify only one weight using -W)" << endl;
+    cerr << "\t       ignore             Ignore, do not use classifiers" << endl;        
 }
 
 void addsentencemarkers(ClassDecoder & targetclassdecoder, ClassEncoder & targetclassencoder) {
@@ -1361,19 +1372,25 @@ void addsentencemarkers(ClassDecoder & targetclassdecoder, ClassEncoder & target
 }
 
 int addunknownwords( AlignmentModel & ttable, LanguageModel & lm, ClassEncoder & sourceclassencoder, ClassDecoder & sourceclassdecoder,  ClassEncoder & targetclassencoder, ClassDecoder & targetclassdecoder, int tweights_size) {
+    //Sync sourceclassdecoder with sourceclassencoder, which may have added with unknown words 
+
     int added = 0;
     if (sourceclassencoder.gethighestclass() > sourceclassdecoder.gethighestclass()) {
         for (unsigned int i = sourceclassdecoder.gethighestclass() + 1; i <= sourceclassencoder.gethighestclass(); i++) {
             added++;
             unsigned int cls = i;
             const string word = sourceclassencoder.added[cls];
-            sourceclassdecoder.add(cls, word);            
+            sourceclassdecoder.add(cls, word);
             
-            unsigned int targetcls = targetclassencoder.gethighestclass() + 1;
+            cerr << "NOTICE: Unknown word in input: '" << word << "'"; //, assigning classes (" << cls << ", " << targetcls << ")" << endl;            
+            
+            /*unsigned int targetcls = targetclassencoder.gethighestclass() + 1;
             targetclassencoder.add(word, targetcls);
-            targetclassdecoder.add(targetcls, word);
+            targetclassdecoder.add(targetcls, word);*/
             
-            cerr << "NOTICE: Unknown word in input: " << word << " (" << cls << ", " << targetcls << ")" << endl;
+            
+            
+            /*  simply leaving this out, untranslatable words will be dealt with later, not added to phrase table:
             
             EncNGram sourcegram = sourceclassencoder.input2ngram( word,false,false);
             EncNGram targetgram = targetclassencoder.input2ngram( word,false,false);
@@ -1386,6 +1403,7 @@ int addunknownwords( AlignmentModel & ttable, LanguageModel & lm, ClassEncoder &
             
             
             
+            
             const EncAnyGram * sourcekey = ttable.getsourcekey((const EncAnyGram*) &sourcegram );
             if (sourcekey == NULL) {
                 sourcekey = new EncNGram(sourcegram); //new pointer
@@ -1395,7 +1413,7 @@ int addunknownwords( AlignmentModel & ttable, LanguageModel & lm, ClassEncoder &
             vector<double> scores;
             for (int j = 0; j < tweights_size; j++) scores.push_back(1);
             ttable.alignmatrix[sourcekey][targetkey] = scores;
-            
+            */
             
         }
     }
