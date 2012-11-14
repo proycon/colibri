@@ -35,16 +35,16 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         
         if (classifier != NULL) {
             //Use classifier
-            if (DEBUG >= 3) cerr << "Gathering source fragments from classifier:" << endl;
-            if (DEBUG >= 3) cerr << "  Calling classifier" << endl;
+            if (DEBUG >= 1) cerr << "Gathering source fragments from classifier:" << endl;
+            if (DEBUG >= 1) cerr << "  Calling classifier" << endl;
             bool exemplarweights = true; //irrelevant
             classifier->classifyfragments(input, translationtable, sourcefragments, scorehandling);
         } else {            
             //Collect source fragments and translation options straight from translation table
-            if (DEBUG >= 3) cerr << "Gathering source fragments from translation table:" << endl;
+            if (DEBUG >= 1) cerr << "Gathering source fragments from translation table:" << endl;
             vector<pair<const EncAnyGram*, CorpusReference> > tmpsourcefragments;  
             tmpsourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn);
-            if (DEBUG >= 3) cerr << "  " << tmpsourcefragments.size() << " source-fragments found in translation table" << endl;
+            if (DEBUG >= 1) cerr << "  " << tmpsourcefragments.size() << " source-fragments found in translation table" << endl;
             for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = tmpsourcefragments.begin(); iter != tmpsourcefragments.end(); iter++) {
                 const EncAnyGram * sourcekey = iter->first;
                 if (translationtable->leftsourcecontext || translationtable->rightsourcecontext) {
@@ -63,9 +63,9 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                     if (DEBUG >=3 ) cerr << "\tAdding sourcefragment from translation table: " << sourcekey->decode(*sourceclassdecoder) << endl;
                     sourcefragments.push_back(SourceFragmentData(sourcekey, iter->second, translationoptions)); 
                 }
-            }
-            if (DEBUG >= 3) cerr << "  " << sourcefragments.size() << " source-fragments registered" << endl;
+            }            
         }
+        if (DEBUG >= 1) cerr << "  " << sourcefragments.size() << " source-fragments registered" << endl;
         
         
         
@@ -199,7 +199,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         this->lweight = lweight;
         this->dlimit = dlimit;
         
-        if (DEBUG >= 3) cerr << "\tComputing future cost:" << endl;
+        
 
         //sanity check:
         /*for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
@@ -225,10 +225,12 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
 
 void StackDecoder::computefuturecost() {
 
-    
+        if (DEBUG >= 1) cerr << "\tComputing future cost";
+        
         map<pair<int,int>, double> sourcefragments_costbyspan;
         //reorder source fragments by span for more efficiency
         for (t_sourcefragments::iterator iter = sourcefragments.begin(); iter != sourcefragments.end(); iter++) {
+            if (DEBUG >= 1) cerr << ".";
             
             const EncAnyGram * candidate = iter->sourcefragment;
             const CorpusReference ref = iter->ref;
@@ -275,8 +277,11 @@ void StackDecoder::computefuturecost() {
             } 
             sourcefragments_costbyspan[span] = bestscore; 
         }   
+        if (DEBUG >= 1) cerr << ":";
+        
         //compute future cost
         for (unsigned int length = 1; length <= inputlength; length++) {
+            if (DEBUG >= 1) cerr << ".";
             for (unsigned int start = 0; start < inputlength - length + 1; start++) {
                 const pair<int,int> span = make_pair((int) start,(int) length);
                 map<pair<int,int>, double>::iterator iter = sourcefragments_costbyspan.find(span);
@@ -301,6 +306,8 @@ void StackDecoder::computefuturecost() {
                 }
             }
         }
+        if (DEBUG >= 1) cerr << "done" << endl;
+        
         
         if (DEBUG >= 3) {
             cerr << "\tFuture cost precomputation:" << endl;
