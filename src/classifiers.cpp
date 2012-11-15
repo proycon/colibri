@@ -176,6 +176,33 @@ t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> & featurevec
 }
 
 t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+    /*
+concerning p(t|s) only
+
+        C - Set of translation options from classifier
+        S - Set of translation options from statistical phrase table
+
+        WEIGHTED, APPEND, IGNORE METHODS:
+
+        |--0--|-------x--------|---(1-x)--|
+          C        C ∩ S           S
+
+        probability mass: x:1-x
+        |C ∩ S| can be 0 if classifier & statistical model disagree completely)
+        WEIGHTED: redistribute within x according to classifier weights
+
+        REPLACE METHOD:
+
+        |----------x--------|---0----|	
+          C        C ∩ S           S
+          
+          
+          FILTEREDWEIGHED METHOD:
+          [--0--|----x-----|---0--]
+             C      C ∩ S     S
+    */
+
+
     if (!loaded) load();
     used = true;
     
@@ -191,6 +218,8 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
     double distance;
     const string features = features_ss.str();
     const ValueDistribution * valuedistribution;    
+    
+    //invoke classifier, obtain valuedistribution
     const TargetValue * targetvalue = testexp->Classify(features, valuedistribution, distance);
     
 
@@ -204,10 +233,13 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
      
     
     //get amount of scores:
-    const double epsilon = -500;
+    const double epsilon = -900;
     int scorecount = 0;
     
+    
+    
     if (scorehandling != SCOREHANDLING_REPLACE) {
+        //how long is the score vector?
         t_aligntargets::iterator tmpiter1 = originaltranslationoptions.begin();
         if (tmpiter1 == originaltranslationoptions.end()) {
                 cerr << "INTERNAL ERROR: Classifier::classify: No translation options passed!" << endl; 
@@ -216,9 +248,10 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
         scorecount = tmpiter1->second.size();   
     }
    
-    const bool ADDNEWCLASSIFIEROPTIONS = false;  
     
-    //convert valuedistribution to t_aligntargets    
+    //convert valuedistribution to t_aligntargets
+    double cis_oldtotal = 0; //|C ∩ S|   
+    double cis_total = 0; //|C ∩ S| 
     t_aligntargets result;
     for (ValueDistribution::dist_iterator iter = valuedistribution->begin(); iter != valuedistribution->end(); iter++) {
         const string data = CodeToStr(iter->second->Value()->Name());        
@@ -227,22 +260,21 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
         const EncAnyGram * target = targetclassencoder->input2anygram(data, false);
         if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_IGNORE)) {
             if (originaltranslationoptions.count(target)) {
+                //this target occurs in the original statistical model        
                 result[target] = originaltranslationoptions[target];               
-            } else if (ADDNEWCLASSIFIEROPTIONS) {
-                //translation option did not exist yet
-                for (int i = 0; i < scorecount; i++) {
-                        result[target].push_back(epsilon);
-                }
             } else {
+                //this target only occurs in the classifier, ignore
                 break;
             }          
         } 
+        
         if (scorehandling == SCOREHANDLING_WEIGHED) {
-            //ONLY WEIGH FOR p(t|s)
-            
+            //ONLY WEIGH FOR p(t|s)            
             //for (int i = 0; i < originaltranslationoptions[target].size(); i++) {
-                if (DEBUG) cerr << " [" << result[target][0] << "+" << weight << "=" << result[target][0] + weight << "] "; 
-                result[target][0] = result[target][0] + weight;                
+                if (DEBUG) cerr << " [" << result[target][0] << "+" << weight << "=" << result[target][0] + weight << "] ";
+                cis_oldtotal += pow(exp(1),result[target][0]); //counting for normalisation later ..prior
+                result[target][0] = result[target][0] + weight;
+                cis_total += pow(exp(1), result[target][0]);   //counting for normalisation later ..post
             //}                        
         }
         if ((scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_REPLACE)) {
@@ -251,20 +283,65 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
         if (DEBUG) cerr << endl; 
     }
 
-    //note: any targets not present in classifier output will be pruned! Additional targets only in classifier will be added with very low (epsilon) probability
-    if (result.empty()) {
-        cerr << "WARNING: NO TRANSLATION OPTIONS!!" << endl;        
+
+
+
+    
+    
+    if ((scorehandling != SCOREHANDLING_REPLACE))  {
+
+        //iterate over original statistical distribution and add translation options not in classifier (S).. renormalise   C | S for WEIGHED methods
+            
+        for (t_aligntargets::iterator iter = originaltranslationoptions.begin(); iter != originaltranslationoptions.end(); iter++) {
+            const EncAnyGram * target = iter->first;
+            if ((result.count(target) == 0) && (scorehandling != SCOREHANDLING_FILTEREDWEIGHED)) {
+                //translation option is not in classifier: S only, add to results
+                if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_IGNORE)) {        
+                    result[target] = originaltranslationoptions[target];
+                    //s_total += pow(exp(1), iter->second[0]);
+                }                 
+            } else {
+                //translation option is in classifier as well: C | S
+                if (scorehandling == SCOREHANDLING_WEIGHED) {
+                    //renormalise within C | S only, S remains as is 
+                    result[target][0] = log( pow(exp(1), result[target][0]) * (cis_oldtotal/cis_total) ); 
+                } else if (scorehandling == SCOREHANDLING_FILTEREDWEIGHED) {
+                    result[target][0] = log( pow(exp(1), result[target][0]) * cis_oldtotal) ; 
+                }
+            }
+            
+        }  
+        
     }
     
-    const bool NORMALISE = true;
-    if (NORMALISE) {
+    
+    if (result.empty()) {
+        //should be possible for SCOREHANDLING_FILTEREDWEIGHED
+        cerr << "WARNING: NO TRANSLATION OPTIONS AFTER CLASSIFICATION! FALLING BACK TO ORIGINALS FROM STATISTICAL MODEL" << endl;        
+        return originaltranslationoptions;        
+    }
+
+    
+    //no p(t|s) normalisation needed for APPEND method, neither for score 0 nor for last score
+    
+     
+            
+    /*        
+        for (t_aligntargets::iterator iter = result.begin(); iter != result.end(); iter++) {
+            const EncAnyGram * target = iter->first;
+            if (originaltranslationoptions.count(target) != 0) {
+                //
+                result[target] = 
+            }
+        }    
+
         //renormalise (only p(t|s) can be normalised) 
         map<int,double> total;
         for (t_aligntargets::iterator iter = result.begin(); iter != result.end(); iter++) {
             for (int i = 0; i < scorecount; i++) {
                 if ((i == 0) || ((i == scorecount -1) && (scorehandling == SCOREHANDLING_APPEND))) {
                     if (total.count(i) == 0) total[i] = 0;
-                    total[i] += pow(exp(1), iter->second[0]);
+                    total[i] += pow(exp(1), iter->second[i]);
                 }
             }
         }
@@ -272,13 +349,17 @@ t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHa
         for (t_aligntargets::iterator iter = result.begin(); iter != result.end(); iter++) {
             for (int i = 0; i < scorecount; i++) {
                 if ((i == 0) || ((i == scorecount -1) && (scorehandling == SCOREHANDLING_APPEND))) {
-                    result[iter->first][i] = log(pow(exp(1),iter->second[0]) / total[i]);
+                    result[iter->first][i] = log(pow(exp(1),iter->second[i]) / total[i]);
                 }
             } 
         }
-    }
+    */   
+        
+             
+            
     
-         
+    
+
     return result;
 }
 

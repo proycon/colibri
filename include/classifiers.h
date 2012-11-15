@@ -6,11 +6,12 @@
     LOCALCONTEXT_ARRAY = 1
 };*/
 
-enum ScoreHandling {
-    SCOREHANDLING_IGNORE = 0, //ignore classifier score
-    SCOREHANDLING_WEIGHED = 1, //add classifier output as weight to original translation model scores
-    SCOREHANDLING_APPEND = 2, //append additional score to score vector
-    SCOREHANDLING_REPLACE = 3 //completely replace translation score with classifier score
+enum ScoreHandling { //C = set of distributions from classifier, S = set of distributions from statistical model
+    SCOREHANDLING_IGNORE = 0, //ignore classifier score: (C ∩ S) ∪ S
+    SCOREHANDLING_WEIGHED = 1, //add classifier output as weight to original translation model scores: (C ∩ S) ∪ S
+    SCOREHANDLING_APPEND = 2, //append additional score to score vector.  (C ∩ S) ∪ S
+    SCOREHANDLING_REPLACE = 3, //completely replace translation score with classifier score: C
+    SCOREHANDLING_FILTEREDWEIGHED = 4 //completely replace translation score with classifier score: (C ∩ S)
 };
 
 
