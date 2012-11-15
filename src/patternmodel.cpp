@@ -162,7 +162,14 @@ std::vector<pair<const EncAnyGram*, CorpusReference> > ModelQuerierBase::getpatt
 	for (int begin = 0; begin <= l; begin++) {
 		for (int length = minn; (length <= maxn) && (begin+length <= l);  length++) {
 		    //cerr << "TRYING PATTERN " << begin << " " << length << endl;
-			EncNGram * ngram = getencngram(begin,length, data, datasize);
+		    
+		    EncNGram * ngram;
+		    try {
+			     ngram = getencngram(begin,length, data, datasize);
+			} catch (exception &e) {
+			    cerr << "ModelQuerierBase::getpattern:: Attempting to continue despite error..." << endl;
+			    continue;
+			}
 			const EncAnyGram * anygram =  ngram;
 			
 				
