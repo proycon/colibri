@@ -1213,7 +1213,7 @@ EncData::EncData(const unsigned char* dataref, const int size) {
    data = new unsigned char[size];
    int pos = 0;
    for (int i = 0; i < size; i++) {
-        if ((i > 0) && (dataref[i] == 0) && (dataref[i-1] == 0)) 
+        if ((i > 0) && (dataref[i] == 0) && (dataref[i-1] == 0)) { 
             cerr << "INTERNAL WARNING: Double zero byte in input! Shouldn't happen.. compensated" << endl;
         } else {
             data[pos++] = dataref[i]; 
