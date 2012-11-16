@@ -655,9 +655,10 @@ int Stack::recombine() {
     
     //process map of hashes
     for (unordered_map<size_t, multimap<double,TranslationHypothesis *> >::iterator iter = tmpmap.begin(); iter != tmpmap.end(); iter++) {
+
         for (multimap<double,TranslationHypothesis *>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
             if (iter2 != iter->second.begin()) {
-                //keep only the first one, prune the others as they can be recombined
+                //keep only the first one, best route
                 TranslationHypothesis * h = iter2->second;
                 list<TranslationHypothesis *>::iterator it = find(contents.begin(), contents.end(), h);
                 contents.erase(it);
