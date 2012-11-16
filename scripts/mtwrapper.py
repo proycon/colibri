@@ -891,7 +891,8 @@ class MTWrapper(object):
             for batch, conf in self.batches:
                 if not selectedbatches or batch in selectedbatches:
                     xpool.append(BatchExperiment( (self, batch, conf, True, True ) ) )
-            xpool.run()
+            for x in xpool.run():
+                pass
             self.log("Done")
             
         elif cmd == 'batchconf':
@@ -989,8 +990,13 @@ class MTWrapper(object):
             xpool = ExperimentPool(threads)        
             for batch, conf in self.batches:
                 if not selectedbatches or batch in selectedbatches:
-                    xpool.append(BatchExperiment( (self, batch, conf, False, True ) ) )
-            xpool.run()
+                     batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch
+                     if os.path.exists(batchdir):
+                        xpool.append(BatchExperiment( (self, batch, conf, False, True ) ) )
+                     else:
+                        self.log("Batch " + batch + " has not been trained yet.. skipping",yellow,True)
+            for x in xpool.run():
+                pass
             self.log("Done")
             
         elif cmd == 'batchreport':
