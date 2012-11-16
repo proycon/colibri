@@ -70,6 +70,7 @@ class TranslationHypothesis {
         EncNGram * getoutputtoken(int index); //get output token (unigram, will return unknown class if in gap)                    
         EncData getoutput(std::deque<TranslationHypothesis*> * path = NULL); //get output
                         
+        size_t recombinationhash(); //hash value, different hypotheses can be recombined iff they have equal hashes
 };
 
 
@@ -152,6 +153,7 @@ class Stack {
     bool empty() { return contents.empty(); }
     void clear();   
     int prune();
+    int recombine();
     TranslationHypothesis * pop();
 };
 

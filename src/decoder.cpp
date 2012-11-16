@@ -396,6 +396,9 @@ TranslationHypothesis * StackDecoder::decodestack(Stack & stack) {
         }
         unsigned int totalpruned = 0;
         for (int j = inputlength; j >= stack.index+1; j--) { //prune further stacks (hypotheses may have been added to any of them).. always prune superior stack first
+            unsigned int recombined = stacks[j].recombine();    
+            if ((DEBUG >= 1) && (recombined > 0)) cerr << "\t  Recombined " << recombined << " hypotheses from gapless stack " << j << endl;
+            
             unsigned int pruned = stacks[j].prune();
             if ((DEBUG >= 1) && (pruned > 0)) cerr << "\t  Pruned " << pruned << " hypotheses from gapless stack " << j << endl;
             totalpruned += pruned; 
@@ -626,13 +629,52 @@ int Stack::prune() {
                         cerr << "DEBUG: SCORE EXCEEDS CUTOFF, PRUNING BY DELETING " << (size_t) h << endl;                    
                         h->cleanup();
                     } else {
-                        delete h; //TODO: REENABLE AND FIX -- MEMORY LEAK?
+                        delete h;
                     }
                 }
             }
         }
     }
     return pruned;
+}
+
+int Stack::recombine() {
+    //recombine hypotheses if they match on:
+    // - source coverage
+    // - the history for LM (target)
+    // - the end of the last source phrase
+
+    int pruned = 0;
+    
+    //prevent exponential search, build a temporary hash map: O(2n) instead of O(n^2)
+    unordered_map<size_t, multimap<double,TranslationHypothesis *> > tmpmap;
+    for (list<TranslationHypothesis*>::iterator iter = contents.begin(); iter != contents.end(); iter++) {
+        TranslationHypothesis*  h = *iter;
+        tmpmap[h->recombinationhash()].insert(pair<double,TranslationHypothesis*>(h->score()*-1, h));               
+    }
+    
+    //process map of hashes
+    for (unordered_map<size_t, multimap<double,TranslationHypothesis *> >::iterator iter = tmpmap.begin(); iter != tmpmap.end(); iter++) {
+        for (multimap<double,TranslationHypothesis *>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+            if (iter2 != iter->second.begin()) {
+                //keep only the first one, prune the others as they can be recombined
+                TranslationHypothesis * h = iter2->second;
+                list<TranslationHypothesis *>::iterator it = find(contents.begin(), contents.end(), h);
+                contents.erase(it);
+                pruned++;
+                if (h->deletable()) {
+                    if (decoder->DEBUG == 9) {
+                        cerr << "DEBUG: SCORE EXCEEDS CUTOFF, PRUNING BY DELETING " << (size_t) h << endl;                    
+                        h->cleanup();
+                    } else {
+                        delete h;
+                    }
+                }
+            }
+        }        
+    } 
+
+    
 }
 
 
@@ -1330,7 +1372,35 @@ void TranslationHypothesis::stats() {
     decoder->stats.steps.push_back(stepcount);        
 }
     
- 
+size_t TranslationHypothesis::recombinationhash() {
+    //recombine hypotheses if they match on:
+    // - source coverage
+    // - the history for LM (target)
+    // (- the end of the last source phrase .. is implied by first point?) 
+
+    //compute jenkins hash on source coverage
+    unsigned long h =0;
+    int i;
+    for(i = 0; i < inputcoveragemask.size(); ++i)
+    {
+        h += (int) inputcoveragemask[i];
+        h += (h << 10);
+        h ^= (h >> 6);
+    }
+    h += (h << 3);
+    h ^= (h >> 11);
+    h += (h << 15);
+
+    if (history != NULL) {
+        h += history->hash();
+    }
+    
+    return h;    
+}
+
+
+
+
 
 void usage() {
     cerr << "Colibri MT Decoder" << endl;
