@@ -675,6 +675,7 @@ class MTWrapper(object):
     def usage(self):
         print >>sys.stderr,"Usage: " + os.path.basename(sys.argv[0]) + ' [command]'
         print >>sys.stderr,"Commands:"
+        print >>sys.stderr,"\tstart                              Train and test the MT system (on testset in configuration)"
         print >>sys.stderr,"\ttrain                              Train the MT system"
         print >>sys.stderr,"\trun <inputfile> [options]          Run the MT system on the specified input file"
         print >>sys.stderr,"\t\t-t                               Tokenise the input file"
@@ -700,9 +701,36 @@ class MTWrapper(object):
         except:
             print >>sys.stderr, "Please specify a command..."
             self.usage()
-            sys.exit(2)
+            sys.exit(2)        
+        if cmd == 'start':
+            self.initlog('train')
+            if os.path.isfile(self.WORKDIR + '/.frozen'):
+                print >>sys.stderr, "Courageously refusing to train system because it is frozen"
+                sys.exit(2)
+            if not self.starttrain():
+                sys.exit(1)
+                        
+            self.initlog('test')
+            if len(sys.argv) == 4:
+                inputfile = sys.argv[2]
+                referencefile = sys.argv[3]
+            elif len(sys.argv) == 2:
+                if not self.TESTSOURCECORPUS or not os.path.exists(self.TESTSOURCECORPUS):
+                    self.log("No predefined default test corpus set for input (set TESTSOURCECORPUS) or specify on command line",red,True)
+                    sys.exit(2)
+                if not self.TESTTARGETCORPUS or not os.path.exists(self.TESTTARGETCORPUS):
+                    self.log("No predefined default test corpus set for reference (set TESTSOURCECORPUS and TESTTARGETCORPUS) or specify on command line ",red,True)
+                    sys.exit(2)                    
+                inputfile = self.TESTSOURCECORPUS                
+                referencefile = self.TESTTARGETCORPUS                
+            else:
+                self.usage()
+                sys.exit(2)
             
-        if cmd == 'train':
+            if not self.test(inputfile, referencefile): 
+                sys.exit(1)
+            
+        elif cmd == 'train':
             self.initlog('train')
             if os.path.isfile(self.WORKDIR + '/.frozen'):
                 print >>sys.stderr, "Courageously refusing to train system because it is frozen"
