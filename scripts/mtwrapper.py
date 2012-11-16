@@ -1481,9 +1481,9 @@ class MTWrapper(object):
         
         if self.BUILD_COLIBRI_MOSESPHRASETABLE:
             if self.BUILD_COLIBRI_SKIPGRAMS:
-                if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -d ' + self.gets2tfilename('alignmodelS.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' > ' + self.gets2tfilename('phrasetable'), "Outputting moses-style phrasetable from colibri",   self.gets2tfilename('phrasetable') ): return False
+                if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -d ' + self.gets2tfilename('alignmodelS.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' --moses > ' + self.gets2tfilename('phrasetable'), "Outputting moses-style phrasetable from colibri",   self.gets2tfilename('phrasetable') ): return False
             else:
-                if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -d ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' > ' + self.gets2tfilename('phrasetable'), "Outputting moses-style phrasetable from colibri",   self.gets2tfilename('phrasetable') ): return False
+                if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -d ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' --moses > ' + self.gets2tfilename('phrasetable'), "Outputting moses-style phrasetable from colibri",   self.gets2tfilename('phrasetable') ): return False
                 
         
         if self.BUILD_COLIBRI_CLASSIFIERS and self.BUILD_COLIBRI_GIZA:
