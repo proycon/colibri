@@ -891,7 +891,7 @@ class MTWrapper(object):
             for batch, conf in self.batches:
                 if not selectedbatches or batch in selectedbatches:
                     xpool.append(BatchExperiment( (self, batch, conf, True, True ) ) )
-            for x in xpool.run():
+            for x in xpool.run(False):
                 pass
             self.log("Done")
             
@@ -995,7 +995,7 @@ class MTWrapper(object):
                         xpool.append(BatchExperiment( (self, batch, conf, False, True ) ) )
                      else:
                         self.log("Batch " + batch + " has not been trained yet.. skipping",yellow,True)
-            for x in xpool.run():
+            for x in xpool.run(False):
                 pass
             self.log("Done")
             
