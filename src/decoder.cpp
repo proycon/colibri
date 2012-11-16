@@ -145,7 +145,7 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
                 bool keepunigram = false;
                 EncNGram * unigram = input.slice(i, 1);
                 const string word = unigram->decode(*sourceclassdecoder);
-                cerr << "NOTICE: No translations known for '" << word << "', transferring without translation" << endl;  
+                cerr << "NOTICE: No translations known for '" << word << "' (" << i << ":1) , transferring without translation" << endl;  
                 
                 
                 //the target word will be the same as the source word, we don't know the translation so leave it untranslated,
