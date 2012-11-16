@@ -96,9 +96,7 @@ class BatchExperiment(AbstractExperiment):
         
 
         batchdir = mtwrapper.WORKDIR + '/' + mtwrapper.CORPUSNAME + '-' + mtwrapper.SOURCELANG + '-' + mtwrapper.TARGETLANG + '-' + batch 
-        if os.path.exists(batchdir + '/.batchdone'):
-            mtwrapper.log("Batch " + batch + " already completed.. skipping",white,True)            
-        elif train and test:                    
+        if train and test:                    
             mtwrapper.log("Starting batch " + batch + " " + mtwrapper.timestamp(),white,True)
             mtwrapper.log("Logs will be in " + batchdir + "/train.log and " + batchdir + "/test.log")
             self.startcommand(batchdir + '/mt-' +  mtwrapper.CORPUSNAME + '-' + mtwrapper.SOURCELANG + '-' + mtwrapper.TARGETLANG + '-' + batch + '.py',batchdir,sys.stdout, sys.stderr,'start')
