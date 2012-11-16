@@ -19,11 +19,8 @@ import numpy
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot
-from pynlpl.evaluation import filesampler
+from pynlpl.evaluation import filesampler, ExperimentPool, AbstractExperiment
 from pynlpl.net import GenericWrapperServer
-#from twisted.internet import protocol, reactor
-#from twisted.protocols import basic
-
 
 
 def bold(s):
@@ -58,39 +55,8 @@ def magenta(s):
     CSI="\x1B["
     return CSI+"35m" + s + CSI + "0m"   
 
-# class MTProtocol(basic.LineReceiver):
-    # def lineReceived(self, line):
-        #post line as input to process
-        # while self.factory.busy:
-            # time.sleep(0.1)
-        #send output to client
-        # self.factory.process.stdin.write(line+"\n")
-        # output = self.factory.process.stdout.readline().strip()
-        # self.sendLine(output)
-        
-# class MTFactory(protocol.ServerFactory):
-    # protocol = MTProtocol
 
-    # def __init__(self, cmd, shell=True, sendstderr=False):
-        # if isinstance(cmd, str) or isinstance(cmd,unicode):
-            # self.cmd = shlex.split(cmd)
-        # else: 
-            # self.cmd = cmd
-            
-        # self.sendstderr = False
-        # self.busy = False
-        # print >>sys.stderr, bold(white("STARTING SERVER..."))
-        # print >>sys.stderr, self.cmd
-        # self.process = subprocess.Popen(self.cmd, shell, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-    # def __delete__(self):
-        # self.process.close()
-    
-# class MTServer:
-    # """Generic Server around a stdin/stdout based CLI tool"""
-    # def __init__(self, cmdline, port, shell=True,sendstderr= False, close_fds=True):
-        # reactor.listenTCP(port, MTFactory(cmdline, shell, sendstderr))
-        # reactor.run()
+
 
 def serveroutputproc(line):        
     #print >>sys.stderr, "SERVEROUTPUTPROC: ", line
@@ -120,7 +86,33 @@ def serveroutputproc(line):
     else:
         return ""
         
+class BatchExperiment(AbstractExperiment):
+    
+    def start(self):
+        mtwrapper, batch, conf, train, test = self.inputdata
+        
+        mtwrapper.log("Branching for batch " + batch,white,True) 
+        mtwrapper.branch(batch, conf, False, True, False)
+        
 
+        batchdir = mtwrapper.WORKDIR + '/' + mtwrapper.CORPUSNAME + '-' + mtwrapper.SOURCELANG + '-' + mtwrapper.TARGETLANG + '-' + batch 
+        if os.path.exists(batchdir + '/.batchdone'):
+            mtwrapper.log("Batch " + batch + " already completed.. skipping",white,True)            
+        elif train and test:                    
+            mtwrapper.log("Starting batch " + batch + " " + mtwrapper.timestamp(),white,True)
+            mtwrapper.log("Logs will be in " + batchdir + "/train.log and " + batchdir + "/test.log")
+            self.startcommand(batchdir + '/mt-' +  mtwrapper.CORPUSNAME + '-' + mtwrapper.SOURCELANG + '-' + mtwrapper.TARGETLANG + '-' + batch + '.py',batchdir,sys.stdout, sys.stderr,'start')
+        elif train:
+            mtwrapper.log("Starting training batch " + batch + " " + mtwrapper.timestamp(),white,True)
+            mtwrapper.log(" Log will be in " + batchdir + '/train.log')
+            self.startcommand(batchdir + '/mt-' +  mtwrapper.CORPUSNAME + '-' + mtwrapper.SOURCELANG + '-' + mtwrapper.TARGETLANG + '-' + batch + '.py',batchdir,sys.stdout, sys.stderr,'train') 
+        elif test:
+            mtwrapper.log("Starting testing batch " + batch + " " + mtwrapper.timestamp(),white,True)
+            mtwrapper.log(" Log will be in " + batchdir + '/test.log')
+            self.startcommand(batchdir + '/mt-' +  mtwrapper.CORPUSNAME + '-' + mtwrapper.SOURCELANG + '-' + mtwrapper.TARGETLANG + '-' + batch + '.py',batchdir,sys.stdout, sys.stderr,'test')
+        else:        
+            raise Exception("Don't know what to do")
+                
 
 class MTWrapper(object):
     defaults = [
@@ -865,7 +857,16 @@ class MTWrapper(object):
             if self.parseconf(sys.argv[2:]):
                 self.log("Writing new configuration...")
                 self.writesettings()
-        elif cmd == 'startbatch' or cmd == 'batchstart':
+        elif cmd[:10] == 'startbatch' or cmd[:10] == 'batchstart':
+            if cmd[10] != ' ':
+                space = cmd.find(' ',10)
+                if space > -1: 
+                    threads = int(cmd[10:space])
+                else: 
+                    threads = int(cmd[10:])
+            else: 
+                threads = 1
+            
             self.initlog('batch')
             if not self.batches:
                 self.log("No batch jobs in configuration...",red)
@@ -883,35 +884,14 @@ class MTWrapper(object):
             else:
                 selectedbatches= None
                 
-                
-                            
+
+            xpool = ExperimentPool(threads)        
             for batch, conf in self.batches:
                 if not selectedbatches or batch in selectedbatches:
-                    self.log("Branching for batch " + batch,white,True) 
-                    self.branch(batch, conf, False, True, False)
-
-                    batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch 
-                    if os.path.exists(batchdir + '/.batchdone'):
-                        self.log("Batch " + batch + " already completed.. skipping",white,True)
-                    else:                    
-                        self.log("Starting training batch " + batch + " " + self.timestamp(),white,True)
-                        self.log(" Log will be in " + batchdir + '/train.log')
-                        rtrain = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py train')                    
-                        if rtrain == 0: 
-                            self.log("Training batch " + batch + " finished succesfully " + self.timestamp(),green,True)
-                        else:
-                            self.log("Training batch " + batch + " finished with error code " + str(rtrain) + " " + self.timestamp(),red,True)
-                                                                                        
-                        self.log("Starting testing batch " + batch + " " + self.timestamp(),white,True)
-                        self.log(" Log will be in " + batchdir + '/test.log')
-                        rtest = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py test')
-                        if rtest == 0: 
-                            self.log("Testing batch " + batch + " finished succesfully " + self.timestamp(),green,True)
-                            open(batchdir + '/.batchdone','w').close()
-                        else:
-                            self.log("Testing batch " + batch + " finished with error code " + str(rtest) + " " + self.timestamp(),red,True)
-                            
-                    self.log("----------------------------------------------------",white)
+                    xpool.append(BatchExperiment( (self, batch, conf, True, True ) ) )
+            xpool.run()
+            self.log("Done")
+            
         elif cmd == 'batchconf':
             
             
@@ -939,7 +919,7 @@ class MTWrapper(object):
                     if r == 0: 
                         self.log("Configuring batch " + batch + " finished succesfully " + self.timestamp(),green,True)
                     else:
-                        self.log("Configuring batch " + batch + " finished with error code " + str(rtrain) + " " + self.timestamp(),red,True)
+                        self.log("Configuring batch " + batch + " finished with error code " + str(r) + " " + self.timestamp(),red,True)
         elif cmd == 'batchscore':                                        
             self.initlog('batchscore')
             if not self.batches:
@@ -963,10 +943,19 @@ class MTWrapper(object):
                     batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch 
                     if os.path.exists(batchdir):                
                         self.log("Starting scoring batch " + batch + " " + self.timestamp(),white,True)
-                        rtrain = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py score')                
+                        os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py score')                
                     else:
                         self.log("Batch " + batch + " has not been trained or tested yet.. skipping",yellow,True)
         elif cmd == 'batchtest':                                        
+            if cmd[9] != ' ':
+                space = cmd.find(' ',9)
+                if space > -1: 
+                    threads = int(cmd[9:space])
+                else: 
+                    threads = int(cmd[9:])
+            else: 
+                threads = 1
+            
             self.initlog('batchtest')
             if not self.batches:
                 self.log("No batch jobs in configuration...",red)
@@ -984,15 +973,22 @@ class MTWrapper(object):
             else:
                 selectedbatches= None   
                 
+            # for batch, conf in self.batches:
+                # if not selectedbatches or batch in selectedbatches:
+                    # batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch 
+                    # if os.path.exists(batchdir):                
+                        # self.log("Starting scoring batch " + batch + " " + self.timestamp(),white,True)
+                        # rtrain = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py test')                
+                    # else:
+                        # self.log("Batch " + batch + " has not been trained yet.. skipping",yellow,True)
+
+            xpool = ExperimentPool(threads)        
             for batch, conf in self.batches:
                 if not selectedbatches or batch in selectedbatches:
-                    batchdir = self.WORKDIR + '/' + self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch 
-                    if os.path.exists(batchdir):                
-                        self.log("Starting scoring batch " + batch + " " + self.timestamp(),white,True)
-                        rtrain = os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py test')                
-                    else:
-                        self.log("Batch " + batch + " has not been trained yet.. skipping",yellow,True)
-                    
+                    xpool.append(BatchExperiment( (self, batch, conf, False, True ) ) )
+            xpool.run()
+            self.log("Done")
+            
         elif cmd == 'batchreport':
             self.initlog('batchreport')
             if not self.batches:
