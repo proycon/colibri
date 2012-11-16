@@ -872,6 +872,8 @@ class MTWrapper(object):
                 self.log("No batch jobs in configuration...",red)
                 sys.exit(2)
 
+            self.log("Threads: " + str(threads))
+
             if not os.path.isfile(self.WORKDIR + '/.frozen'):
                 self.log("Refusing to start batches from a non-frozen system, please explicitly freeze the system first",red)
                 sys.exit(2)
@@ -946,7 +948,7 @@ class MTWrapper(object):
                         os.system(batchdir + '/mt-' +  self.CORPUSNAME + '-' + self.SOURCELANG + '-' + self.TARGETLANG + '-' + batch + '.py score')                
                     else:
                         self.log("Batch " + batch + " has not been trained or tested yet.. skipping",yellow,True)
-        elif cmd == 'batchtest':                                        
+        elif cmd[:9] == 'batchtest':                                        
             if cmd[9] != ' ':
                 space = cmd.find(' ',9)
                 if space > -1: 
@@ -960,6 +962,8 @@ class MTWrapper(object):
             if not self.batches:
                 self.log("No batch jobs in configuration...",red)
                 sys.exit(2)
+
+            self.log("Threads: " + str(threads))
 
             if not os.path.isfile(self.WORKDIR + '/.frozen'):
                 self.log("Refusing to start batches from a non-frozen system, please explicitly freeze the system first",red)
