@@ -396,8 +396,8 @@ TranslationHypothesis * StackDecoder::decodestack(Stack & stack) {
         }
         unsigned int totalpruned = 0;
         for (int j = inputlength; j >= stack.index+1; j--) { //prune further stacks (hypotheses may have been added to any of them).. always prune superior stack first
-            unsigned int recombined = stacks[j].recombine();    
-            if ((DEBUG >= 1) && (recombined > 0)) cerr << "\t  Recombined " << recombined << " hypotheses from gapless stack " << j << endl;
+            //unsigned int recombined = stacks[j].recombine();    
+            //if ((DEBUG >= 1) && (recombined > 0)) cerr << "\t  Recombined " << recombined << " hypotheses from gapless stack " << j << endl;
             
             unsigned int pruned = stacks[j].prune();
             if ((DEBUG >= 1) && (pruned > 0)) cerr << "\t  Pruned " << pruned << " hypotheses from gapless stack " << j << endl;
