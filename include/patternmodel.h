@@ -9,7 +9,7 @@
 
 const unsigned char MAXN = 0xff;
 
-const short GRAPHPATTERNMODELVERSION = 2; //unsigned:1
+const short GRAPHPATTERNMODELVERSION = 3; //unsigned:1, withoutweighedrelations:2
 const short INDEXEDPATTERNMODELVERSION = 3; //unsigned:2
 const short UNINDEXEDPATTERNMODELVERSION = 2; //unsigned:1
 

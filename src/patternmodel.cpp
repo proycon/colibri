@@ -2281,6 +2281,26 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
     applyfilter(filter);
     DELETEMODEL = false;
     
+    multimap<uint32_t,multimap<unsigned char,EncAnyGram*> > reverseindex; // sentence => token => anygram
+    //unordered_map<CorpusReference,unordered_set<EncAnyGram* > > reverseindex;
+    
+    if (DOSUCCESSORS || DOPREDECESSORS || DOCOOCCURRENCE) {
+        cerr << "Computing reverse index" << endl;
+        for(std::unordered_map<EncNGram,NGramData >::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
+            const EncAnyGram * ngram = ( const EncAnyGram * ) &(iter->first);
+            CorpusReference ref = iter->second;
+            reverseindex
+            
+            reverseindex[ref].add(ngram);
+        }
+        for(std::unordered_map<EncNGram,NGramData >::iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {
+            const EncAnyGram * skipgram = ( const EncAnyGram * ) &(iter->first);
+            CorpusReference ref = iter->second;
+            reverseindex[ref].add(skipgram);
+        }        
+    }
+    
+    
     cerr << "Computing relations on n-grams" << endl;
     for(std::unordered_map<EncNGram,NGramData >::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
     	//cerr << "DEBUG: n1" << endl;        
@@ -2300,24 +2320,38 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
             delete *iter2;
         }   
         //cerr << "DEBUG: n3" << endl;
-        if (DOSUCCESSORS || DOPREDECESSORS) {
-			vector<pair<EncNGram*,EncNGram*> > splitngrams;
-		    ngram->splits(splitngrams);
-		    for (vector<pair<EncNGram*,EncNGram*> >::iterator iter2 = splitngrams.begin(); iter2 != splitngrams.end(); iter2++) {
-		    	//const EncAnyGram * subngram = model->getkey(*iter2);
-		    
-		   		const EncAnyGram * left = model->getkey(iter2->first);
-		   		const EncAnyGram * right = model->getkey(iter2->second);
-		    	if ((left != NULL) && (right != NULL)) {
-		    		if (DOSUCCESSORS) rel_successors[left].insert(right);
-		    		if (DOPREDECESSORS) rel_predecessors[right].insert(left);
-		    	}
-		    	delete iter2->first;
-		    	delete iter2->second;
-		    }
+        if (DOSUCCESSORS) {
+            if (iter->second.token + ngram->n() <= 255) {
+                CorpusReference successorindex = CorpusReference(iter->second.sentence, iter->second.token + ngram->n());
+                for (unordered_map<CorpusReference,unordered_set<EncAnyGram* > >::iterator iter2 = reverseindex.begin(); iter2 != reverseindex.end(); iter2++) {
+                    for (unordered_set<EncAnyGram* >::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
+                        const EncAnyGram * successor = (const EncAnygram *) *iter3;
+                        rel_successors[(const EncAnyGram *) ngram][(const EncAnyGram *) successor] += 1;
+                    }
+                }
+             }        
         }
-        //cerr << "DEBUG: n4" << endl;
+        if (DOPREDECESSORS) {
+            if (iter->second.token > 0) {
+                //different begin points based on length!
+                for (int l = 1; l <= iter->second.token && l <= MAXN; l++) {
+                    CorpusReference predecessorindex = CorpusReference(iter->second.sentence, iter->second.token - l);
+                    for (unordered_map<CorpusReference,unordered_set<EncAnyGram* > >::iterator iter2 = reverseindex.begin(); iter2 != reverseindex.end(); iter2++) {
+                        for (unordered_set<EncAnyGram* >::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
+                            const EncAnyGram * predecessor = (const EncAnygram *) *iter3;
+                            if (predecessor->n() == l) {
+                                rel_predecessors[(const EncAnyGram *) ngram][(const EncAnyGram *) predecessor] += 1;
+                            }
+                        }
+                    }
+                }
+             }        
+        }
+
+        
     }
+    
+    
     
     
 
@@ -2352,6 +2386,38 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
             }
             delete ngram;
         }          
+        
+        
+        
+        if (DOSUCCESSORS) {
+            if (iter->second.token + ngram->n() <= 255) {
+                CorpusReference successorindex = CorpusReference(iter->second.sentence, iter->second.token + ngram->n());
+                for (unordered_map<CorpusReference,unordered_set<EncAnyGram* > >::iterator iter2 = reverseindex.begin(); iter2 != reverseindex.end(); iter2++) {
+                    for (unordered_set<EncAnyGram* >::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
+                        const EncAnyGram * successor = (const EncAnygram *) *iter3;
+                        rel_successors[(const EncAnyGram *) skipgram][(const EncAnyGram *) successor] += 1;
+                    }
+                }
+             }        
+        }
+        if (DOPREDECESSORS) {
+            if (iter->second.token > 0) {
+                //different begin points based on length!
+                for (int l = 1; l <= iter->second.token && l <= MAXN; l++) {
+                    CorpusReference predecessorindex = CorpusReference(iter->second.sentence, iter->second.token - l);
+                    for (unordered_map<CorpusReference,unordered_set<EncAnyGram* > >::iterator iter2 = reverseindex.begin(); iter2 != reverseindex.end(); iter2++) {
+                        for (unordered_set<EncAnyGram* >::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
+                            const EncAnyGram * predecessor = (const EncAnygram *) *iter3;
+                            if (predecessor->n() == l) {
+                                rel_predecessors[(const EncAnyGram *) skipgram][(const EncAnyGram *) predecessor] += 1;
+                            }
+                        }
+                    }
+                }
+             }        
+        }
+
+        
         
 		//cerr << "DEBUG: s2" << endl;
         if ((DOSKIPCONTENT) || (DOSKIPUSAGE) || (DOINSTANCES) || (DOTEMPLATES)) {

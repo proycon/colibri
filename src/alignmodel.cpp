@@ -2289,6 +2289,19 @@ t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefo
         return translationoptions;
 }
 
+AlignmentModel * removecontext() {
+    if (!this->leftsourcecontext && !this->rightsourcecontext) {
+        cerr << "ERROR: Model has no context information" << endl;
+        throw InternalError();
+    }
+    AlignmentModel * newmodel = new AlignmentModel();
+    for (t_contexts::iterator iter = sourcecontexts.begin(); iter != sourcecontexts.end();  iter++) {
+        const EncAnyGram * sourcekey = iter->first;            
+        newmodel->alignmatrix[sourcekey] = translationtable->sumtranslationoptions(sourcekey); 
+    }    
+    return newmodel;
+}
+
 
 void AlignmentModel::stats() {
     unsigned int sourcecount = alignmatrix.size();
@@ -2316,6 +2329,9 @@ void AlignmentModel::stats() {
     if (leftsourcecontext || rightsourcecontext) cout << "source contexts: " << alignmatrix.size() << endl;
     cout << "score vector size: " << scorecount << endl;
 }
+
+
+s
 
 /**************************** EXPERIMENTAL EM MODEL **********************************/
 

@@ -138,6 +138,8 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 	
 	t_aligntargets sumtranslationoptions(const EncAnyGram * sourcefocus, bool debug = false);	
 	
+	AlignmentModel * removecontext();
+	
 	void stats();
 };
 
