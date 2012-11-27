@@ -2290,6 +2290,20 @@ t_aligntargets AlignmentModel::sumtranslationoptions(const EncAnyGram * sourcefo
 }
 
 
+AlignmentModel * AlignmentModel::removecontext() {
+    if (!this->leftsourcecontext && !this->rightsourcecontext) {
+        cerr << "ERROR: Model has no context information" << endl;
+        throw InternalError();
+    }
+    AlignmentModel * newmodel = new AlignmentModel();
+    for (t_contexts::iterator iter = sourcecontexts.begin(); iter != sourcecontexts.end();  iter++) {
+        const EncAnyGram * sourcekey = iter->first;            
+        newmodel->alignmatrix[sourcekey] = sumtranslationoptions(sourcekey); 
+    }    
+    return newmodel;
+}
+
+
 void AlignmentModel::stats() {
     unsigned int sourcecount = alignmatrix.size();
     unsigned int totalcount = 0;

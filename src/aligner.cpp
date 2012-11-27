@@ -54,7 +54,8 @@ void usage() {
     cerr << " Output options:" << endl;    
     cerr << "\t-o filename               Write an alignment model to file using this filename (extension *.alignmodel.colibri will be automatically added)",
     cerr << "\t--moses                   Output phrase-translation table in Moses format" << endl;
-    cerr << "\t--stats                   Output statistics only (use with -d)" << endl;    
+    cerr << "\t--stats                   Output statistics only (use with -d)" << endl;
+    cerr << "\t--removecontext           Generate a model without context from a model with context" << endl;    
 }
 
 
@@ -99,6 +100,7 @@ int main( int argc, char *argv[] ) {
     //int TARGETFIRST = 0;
     int MOSESFORMAT = 0;
     int DOSTATS = 0;
+    int REMOVECONTEXT = 0;
     
     int bestn = 0;
     
@@ -128,7 +130,7 @@ int main( int argc, char *argv[] ) {
        {"moses", no_argument,             &MOSESFORMAT, 1},
        {"stats", no_argument,             &DOSTATS, 1},
        {"null", no_argument,             &EM_NULL, 1}, 
-                      
+        {"removecontext", no_argument,             &REMOVECONTEXT, 1},                      
        {0, 0, 0, 0}
      };
     /* getopt_long stores the option index here. */
@@ -537,6 +539,25 @@ int main( int argc, char *argv[] ) {
         if (DOSTATS) {
             alignmodel->stats();
         }
+        
+        if (REMOVECONTEXT) {
+            if (!alignmodel->leftsourcecontext && !alignmodel->rightsourcecontext) {
+                cerr << "ERROR: Model has no context" << endl;
+                exit(2);
+            }
+            if (outputprefix.empty()) {
+                cerr << "ERROR: Specify an explicit output prefix using -o" << endl;
+                exit(2);
+            }             
+            cerr << "Removing context" << endl;
+            AlignmentModel * newalignmodel = alignmodel->removecontext();
+            if (!outputprefix.empty()) {
+                newalignmodel->save(outputprefix);
+            }
+            exit(0);
+        }
+
+        
 	} else {
 	    cerr << "Error: Don't know what to do.. No model to load or build?" << endl;
 	    exit(2);

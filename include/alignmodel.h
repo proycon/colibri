@@ -137,6 +137,7 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 	void save(const std::string & filename);
 	
 	t_aligntargets sumtranslationoptions(const EncAnyGram * sourcefocus, bool debug = false);	
+	AlignmentModel * removecontext();
 	
 	void stats();
 };
