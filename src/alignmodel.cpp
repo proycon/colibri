@@ -2300,6 +2300,8 @@ AlignmentModel * AlignmentModel::removecontext() {
         const EncAnyGram * sourcekey = iter->first;            
         newmodel->alignmatrix[sourcekey] = sumtranslationoptions(sourcekey); 
     }    
+    newmodel->targetngrams = targetngrams;
+    newmodel->targetskipgrams = targetskipgrams;
     return newmodel;
 }
 
