@@ -681,6 +681,8 @@ class MTWrapper(object):
         print >>sys.stderr,"\tbatchtest [batchname] [batchname2]      (Re-)score batches (if none are specified, all specified batches will be tested sequentially)"
         print >>sys.stderr,"\tbatchscore [batchname] [batchname2]     (Re-)score batches (if none are specified, all specified batches will be scored sequentially)"
         print >>sys.stderr,"\rresource [sourcecorpus] [targetcorpus] [trainsize] [testsize] [devsize]    Regenerate training/test/dev sets from specified sources, trainsize may be '*' for all remaining data. Will automatically issue a 'clean all' as well"
+        print >>sys.stderr,"\tbatchscore [batchname] [batchname2]     (Re-)score batches (if none are specified, all specified batches will be scored sequentially)"
+        print >>sys.stderr,"Note: The batch commands (except batchreport), can run batches in parallel, append the number of threads you want directly to the command (no space)"
 
     def start(self):        
         print >>sys.stderr, repr(sys.argv)
