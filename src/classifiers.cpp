@@ -647,12 +647,14 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
         
             for (t_aligntargets::iterator iter = reftranslationoptions.begin(); iter != reftranslationoptions.end(); iter++) {
                 const EncAnyGram * target = iter->first;
-                translationoptions[target] = reftranslationoptions[target];
+                
                 if (scorehandling == SCOREHANDLING_REPLACE) {
-                    translationoptions[target].clear();
                     translationoptions[target].push_back(reftranslationoptions[target][0]); //fall back to first statistical value    
                 } else if (scorehandling == SCOREHANDLING_APPEND) {
+                    translationoptions[target] = reftranslationoptions[target];
                     translationoptions[target].push_back(reftranslationoptions[target][0]); //fall back to first statistical value
+                } else {
+                    translationoptions[target] = reftranslationoptions[target];
                 }
             }
 
