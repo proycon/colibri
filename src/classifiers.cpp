@@ -544,18 +544,17 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
         
         const int contextcount = translationtable->sourcecontexts[anygram].size(); //in how many different contexts does this occur?
         const int n = anygram->n();
+
+        t_aligntargets reftranslationoptions;            
+                                    
+        //first aggregate original translation options for all training contexts and renormalize.    
+        reftranslationoptions = translationtable->sumtranslationoptions(anygram);
         
         bool bypass = false;
         if (contextcount >= contextthreshold) {
             //classify!
-            t_aligntargets reftranslationoptions;
             
-            if (scorehandling != SCOREHANDLING_REPLACE) {                            
-                //first aggregate original translation options for all training contexts and renormalize.    
-                reftranslationoptions = translationtable->sumtranslationoptions(anygram);
-            }
-            
-            //are there enough targets for this source to warrant a classifier? 
+            //are there enough targets for this source to warrant a classifier?
             if (reftranslationoptions.size() >= targetthreshold) {
                 
                 //yes
@@ -644,20 +643,16 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
         
         
         if (bypass) {
-            //bypass classifier; copy from translation table (after aggregating contexts)      
-            
-            t_aligntargets reftranslationoptions;
-            reftranslationoptions = translationtable->sumtranslationoptions(anygram);
-            
+            //bypass classifier; copy from translation table      
+        
             for (t_aligntargets::iterator iter = reftranslationoptions.begin(); iter != reftranslationoptions.end(); iter++) {
                 const EncAnyGram * target = iter->first;
-                const double weight = 0; //== log(1.0)
                 translationoptions[target] = reftranslationoptions[target];
                 if (scorehandling == SCOREHANDLING_REPLACE) {
                     translationoptions[target].clear();
-                    translationoptions[target].push_back(weight);    
+                    translationoptions[target].push_back(reftranslationoptions[target][0]); //fall back to first statistical value    
                 } else if (scorehandling == SCOREHANDLING_APPEND) {
-                    translationoptions[target].push_back(weight);
+                    translationoptions[target].push_back(reftranslationoptions[target][0]); //fall back to first statistical value
                 }
             }
 
