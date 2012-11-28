@@ -740,13 +740,12 @@ EncAnyGram * AlignmentModel::addcontext(const EncData * sentence, const EncAnyGr
     {
         EncNGram * rightcontext_body = NULL;
         EncNGram * rightcontext_dummies = NULL;
-        int begin = sourceindex + focus->n();
-        int length = rightsourcecontext;
+        int begin = sourceindex + focus->n(); //begin of the rightcontext
+        int length = rightsourcecontext; 
         int rightdummies = 0;
-        if (begin + length > sentence->length()) {
-            rightdummies = sentence->length() - (begin + length);
+        if (begin + length >= sentence->length()) {
+            rightdummies = (begin + length) - sentence->length();
             length = length - rightdummies;
-            begin = 0;
         }                         
         if (length > 0) {
             rightcontext_body = sentence->slice(begin, length);                                                        
