@@ -1131,7 +1131,7 @@ void AlignmentModel::integratereverse(int computereverse) {
                 alignmatrix[source][target].push_back(iter2->second[0]);
             }
         }
-        reversealignmatrix.erase(target); //make space whilst processing
+        //reversealignmatrix.erase(target); //make space whilst processing
     }    
 }
 
