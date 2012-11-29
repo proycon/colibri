@@ -1184,10 +1184,44 @@ class MTWrapper(object):
 
 
         width = 0.9       # the width of the bars: can also be len(x) sequence
+        hbarheight = 0.2
+
+
+        fig = matplotlib.pyplot.figure(figsize=(15,10)) 
+        matplotlib.pyplot.gcf().subplots_adjust(bottom=0.2, left=0.4)        
+        locations = numpy.arange(len(scores))    # the x locations for the groups
+        
+        matplotlib.pyplot.grid(True)
+        p_bleu = matplotlib.pyplot.barh(locations ,  [x[0] for x in scores], align='right', hbarheight=0.2, color='b')                        
+        matplotlib.pyplot.ylabel('BLEU score')
+        matplotlib.pyplot.title('BLEU scores for ' + title)
+        matplotlib.pyplot.yticks(locations+hbarheight/2., names)# size='small')
+        #fig.autofmt_xdate()
+        matplotlib.pyplot.xticks(numpy.arange(0,max( (x[0] for x in scores)),0.01))
+        autolabel(p_bleu)
+        fig.savefig(self.WORKDIR + '/batchreport-bleu.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
+        matplotlib.pyplot.clf()        
+            
+            
+            
+
+
 
         fig = matplotlib.pyplot.figure(figsize=(15,10)) 
         matplotlib.pyplot.gcf().subplots_adjust(bottom=0.4, left=0.2)        
         xlocations = numpy.arange(len(scores))    # the x locations for the groups
+               
+        #matplotlib.pyplot.grid(True)
+        #p_bleu = matplotlib.pyplot.bar(xlocations, [ x[0] for x in scores] ,  width, color='b')        
+        #matplotlib.pyplot.ylabel('BLEU score')
+        #matplotlib.pyplot.title('BLEU scores for ' + title)
+        #matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
+        #fig.autofmt_xdate()
+        #matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in scores)),0.01))
+        #autolabel(p_bleu)
+        #fig.savefig(self.WORKDIR + '/batchreport-bleu.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
+        #matplotlib.pyplot.clf()
+        
         
         matplotlib.pyplot.grid(True)
         p_bleu = matplotlib.pyplot.bar(xlocations, [ x[0] for x in scores] ,  width, color='b')        
@@ -1257,7 +1291,7 @@ class MTWrapper(object):
         matplotlib.pyplot.clf()
             
 
-                
+                    
 
             
     def clean(self, targets):            
