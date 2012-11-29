@@ -1246,7 +1246,7 @@ class MTWrapper(object):
         matplotlib.pyplot.ylabel('Error rate')
         matplotlib.pyplot.title('Error rates for ' + title)
         matplotlib.pyplot.yticks(locations+hbarheight/2., names)# size='small')        
-        matplotlib.pyplot.xticks(numpy.arange(0, max( (x[3],x[4],x[5]) for x in scores ) ,5) )
+        matplotlib.pyplot.xticks(numpy.arange(0, max( ( max(x[3],x[4],x[5]) for x in scores ) ) ,5) )
         
         matplotlib.pyplot.legend( (p_ter[0],p_wer[0],p_per[0]), ('TER', 'WER','PER') )
         fig.savefig(self.WORKDIR + '/batchreport-er.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
