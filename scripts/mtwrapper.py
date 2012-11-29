@@ -1183,112 +1183,168 @@ class MTWrapper(object):
                     matplotlib.pyplot.text(rect.get_x()+rect.get_width()/2., height+0.001, '%.3f'%height,ha='center', va='bottom')
 
 
-        width = 0.9       # the width of the bars: can also be len(x) sequence
+        def autolabelh(rects):
+            # attach some text labels
+            for rect in rects:
+                width = rect.get_width()
+                if width == round(width):
+                    matplotlib.pyplot.text(width+0.01, rect.get_y()+rect.get_height()/2., '%d'%width,ha='center', va='center')
+                else:
+                    matplotlib.pyplot.text(width+0.01, rect.get_y()+rect.get_height()/2., '%.3f'%width,ha='center', va='center')
+
+
+
+       
         hbarheight = 0.2
 
+        locations = numpy.arange(len(scores))    # the x locations for the groups
 
         fig = matplotlib.pyplot.figure(figsize=(15,10)) 
-        matplotlib.pyplot.gcf().subplots_adjust(bottom=0.2, left=0.4)        
-        locations = numpy.arange(len(scores))    # the x locations for the groups
-        
+        matplotlib.pyplot.gcf().subplots_adjust(bottom=0.2, left=0.4)       
         matplotlib.pyplot.grid(True)
-        p_bleu = matplotlib.pyplot.barh(locations ,  [x[0] for x in scores], hbarheight=0.2, color='b')                        
+        p_bleu = matplotlib.pyplot.barh(locations ,  [x[0] for x in scores], align='center', color='b')                        
         matplotlib.pyplot.ylabel('BLEU score')
         matplotlib.pyplot.title('BLEU scores for ' + title)
         matplotlib.pyplot.yticks(locations+hbarheight/2., names)# size='small')
-        #fig.autofmt_xdate()
         matplotlib.pyplot.xticks(numpy.arange(0,max( (x[0] for x in scores)),0.01))
-        autolabel(p_bleu)
+        autolabelh(p_bleu)
         fig.savefig(self.WORKDIR + '/batchreport-bleu.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
         matplotlib.pyplot.clf()        
             
-            
-            
-
-
-
         fig = matplotlib.pyplot.figure(figsize=(15,10)) 
-        matplotlib.pyplot.gcf().subplots_adjust(bottom=0.4, left=0.2)        
-        xlocations = numpy.arange(len(scores))    # the x locations for the groups
-               
-        #matplotlib.pyplot.grid(True)
-        #p_bleu = matplotlib.pyplot.bar(xlocations, [ x[0] for x in scores] ,  width, color='b')        
-        #matplotlib.pyplot.ylabel('BLEU score')
-        #matplotlib.pyplot.title('BLEU scores for ' + title)
-        #matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
-        #fig.autofmt_xdate()
-        #matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in scores)),0.01))
-        #autolabel(p_bleu)
-        #fig.savefig(self.WORKDIR + '/batchreport-bleu.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
-        #matplotlib.pyplot.clf()
-        
-        
+        matplotlib.pyplot.gcf().subplots_adjust(bottom=0.2, left=0.4)                   
         matplotlib.pyplot.grid(True)
-        p_bleu = matplotlib.pyplot.bar(xlocations, [ x[0] for x in scores] ,  width, color='b')        
-        matplotlib.pyplot.ylabel('BLEU score')
-        matplotlib.pyplot.title('BLEU scores for ' + title)
-        matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
-        fig.autofmt_xdate()
-        matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in scores)),0.01))
-        autolabel(p_bleu)
-        fig.savefig(self.WORKDIR + '/batchreport-bleu.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
-        matplotlib.pyplot.clf()
-
-        fig = matplotlib.pyplot.figure(figsize=(15,10)) 
-        matplotlib.pyplot.grid(True)
-        p_bleu = matplotlib.pyplot.bar(xlocations, [ x[1] for x in scores] ,  width, color='y')        
+        p_meteor = matplotlib.pyplot.barh(locations ,  [x[1] for x in scores], align='center', color='y')                        
         matplotlib.pyplot.ylabel('METEOR score')
-        matplotlib.pyplot.title('METEOR scores for ' + title )
-        matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
-        fig.autofmt_xdate()
-        matplotlib.pyplot.yticks(numpy.arange(0,max( (x[1] for x in scores)),0.05))
-        autolabel(p_bleu)
+        matplotlib.pyplot.title('METEOR scores for ' + title)
+        matplotlib.pyplot.yticks(locations+hbarheight/2., names)# size='small')
+        matplotlib.pyplot.xticks(numpy.arange(0,max( (x[1] for x in scores)),0.05))
+        autolabelh(p_meteor)
         fig.savefig(self.WORKDIR + '/batchreport-meteor.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
-        matplotlib.pyplot.clf()
-
+        matplotlib.pyplot.clf()                    
+            
         fig = matplotlib.pyplot.figure(figsize=(15,10)) 
+        matplotlib.pyplot.gcf().subplots_adjust(bottom=0.2, left=0.4)                   
         matplotlib.pyplot.grid(True)
-        p_bleu = matplotlib.pyplot.bar(xlocations, [ x[2] for x in scores] ,  width, color='r')        
+        p_nist = matplotlib.pyplot.barh(locations ,  [x[2] for x in scores], align='center', color='y')                        
         matplotlib.pyplot.ylabel('NIST score')
-        matplotlib.pyplot.title('NIST scores for ' + title )
-        matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
-        fig.autofmt_xdate()
-        matplotlib.pyplot.yticks(numpy.arange(0,max( (x[2] for x in scores)),0.1))
-        autolabel(p_bleu)
+        matplotlib.pyplot.title('NIST scores for ' + title)
+        matplotlib.pyplot.yticks(locations+hbarheight/2., names)# size='small')
+        matplotlib.pyplot.xticks(numpy.arange(0,max( (x[2] for x in scores)),0.1))
+        autolabelh(p_nist)
         fig.savefig(self.WORKDIR + '/batchreport-nist.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
-        matplotlib.pyplot.clf()
+        matplotlib.pyplot.clf()    
 
 
-        fig = matplotlib.pyplot.figure(figsize=(15,10))               
-        matplotlib.pyplot.gcf().subplots_adjust(bottom=0.4, left=0.2)
-        p_ter = matplotlib.pyplot.bar(xlocations, [x[3] for x in scores] ,  width, color='g')
-        p_wer = matplotlib.pyplot.bar(xlocations, [x[4] for x in scores] ,  width, color='y')
-        p_per = matplotlib.pyplot.bar(xlocations, [x[5] for x in scores] ,  width, color='m')        
-        matplotlib.pyplot.ylabel('Score')
-        matplotlib.pyplot.title('TER/WER/PER scores for ' + title)
-        matplotlib.pyplot.xticks(xlocations+width/2., names)#, names , rotation='vertical')
-        matplotlib.pyplot.yticks(numpy.arange(0,max( (max(x[3],x[4],x[5]) for x in scores)),5))
+            
+        fig = matplotlib.pyplot.figure(figsize=(15,10)) 
+        matplotlib.pyplot.gcf().subplots_adjust(bottom=0.2, left=0.4)                   
+        matplotlib.pyplot.grid(True)
+        p_ter = matplotlib.pyplot.barh(locations ,  [x[3] for x in scores], align='center', color='g')
+        p_wer = matplotlib.pyplot.barh(locations ,  [x[4] for x in scores], align='center', color='y')
+        p_per = matplotlib.pyplot.barh(locations ,  [x[5] for x in scores], align='center', color='m')                        
+        matplotlib.pyplot.ylabel('Error rate')
+        matplotlib.pyplot.title('Error rates for ' + title)
+        matplotlib.pyplot.yticks(locations+hbarheight/2., names)# size='small')        
+        matplotlib.pyplot.xticks(numpy.arange(0, max( ( (x[3],x[4],x[5]) for x in scores ) ),5))
+        
         matplotlib.pyplot.legend( (p_ter[0],p_wer[0],p_per[0]), ('TER', 'WER','PER') )
-        fig.autofmt_xdate()
-        fig.savefig(self.WORKDIR + '/batchreport-er.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)
-                            
-        fig = matplotlib.pyplot.figure(figsize=(15,10))
-        xlocations2 = numpy.arange(len(phrasetablesize))    # the x locations for the groups
-        matplotlib.pyplot.grid(True)       
-        p_count = matplotlib.pyplot.bar(xlocations2, [ x[0] for x in phrasetablesize ] ,  width, color='b')
-        p_uniquecount = matplotlib.pyplot.bar(xlocations2, [ x[1] for x in phrasetablesize ] ,  width, color='m')        
+        fig.savefig(self.WORKDIR + '/batchreport-er.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
+        matplotlib.pyplot.clf()    
+        
+        
+        locations2 = numpy.arange(len(phrasetablesize))    # the x locations for the groups
+        
+        fig = matplotlib.pyplot.figure(figsize=(15,10)) 
+        matplotlib.pyplot.gcf().subplots_adjust(bottom=0.2, left=0.4)                   
+        matplotlib.pyplot.grid(True)
+        p_count = matplotlib.pyplot.barh(locations2 ,  [x[0] for x in phrasetablesize], align='center', color='b')
+        p_uniquecount = matplotlib.pyplot.barh(locations2 ,  [x[1] for x in phrasetablesize], align='center', color='m')                        
         matplotlib.pyplot.ylabel('Number of phrase pairs in phrase table')
-        matplotlib.pyplot.title('Phrase table size for ' + title)
-        matplotlib.pyplot.xticks(xlocations2+width/2., names_phrasetable)# size='small')
-        fig.autofmt_xdate()
-        try:        
-            matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in phrasetablesize)),100000))
-            matplotlib.pyplot.legend( (p_count[0],p_uniquecount[0]), ('Count', 'Unique') )
-            autolabel(p_count)
+        matplotlib.pyplot.title('Phrase table size for ' + title)        
+        try:
+            matplotlib.pyplot.yticks(locations2+hbarheight/2., names_phrasetable )# size='small')
+            matplotlib.pyplot.xticks(numpy.arange(0,max( (x[0] for x in phrasetablesize)),0.1))
+            autolabelh(p_count)
             fig.savefig(self.WORKDIR + '/batchreport-phrasetable.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)
-        except:
+        except:       
             self.log("Error during plotting of phrasetable size",red)
         matplotlib.pyplot.clf()
+            
+
+
+        # width = 0.9       # the width of the bars: can also be len(x) sequence
+        # fig = matplotlib.pyplot.figure(figsize=(15,10)) 
+        # matplotlib.pyplot.gcf().subplots_adjust(bottom=0.4, left=0.2)        
+        # xlocations = numpy.arange(len(scores))    # the x locations for the groups
+             
+        
+        # matplotlib.pyplot.grid(True)
+        # p_bleu = matplotlib.pyplot.bar(xlocations, [ x[0] for x in scores] ,  width, color='b')        
+        # matplotlib.pyplot.ylabel('BLEU score')
+        # matplotlib.pyplot.title('BLEU scores for ' + title)
+        # matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
+        # fig.autofmt_xdate()
+        # matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in scores)),0.01))
+        # autolabel(p_bleu)
+        # fig.savefig(self.WORKDIR + '/batchreport-bleu.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
+        # matplotlib.pyplot.clf()
+
+        # fig = matplotlib.pyplot.figure(figsize=(15,10)) 
+        # matplotlib.pyplot.grid(True)
+        # p_bleu = matplotlib.pyplot.bar(xlocations, [ x[1] for x in scores] ,  width, color='y')        
+        # matplotlib.pyplot.ylabel('METEOR score')
+        # matplotlib.pyplot.title('METEOR scores for ' + title )
+        # matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
+        # fig.autofmt_xdate()
+        # matplotlib.pyplot.yticks(numpy.arange(0,max( (x[1] for x in scores)),0.05))
+        # autolabel(p_bleu)
+        # fig.savefig(self.WORKDIR + '/batchreport-meteor.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
+        # matplotlib.pyplot.clf()
+
+        # fig = matplotlib.pyplot.figure(figsize=(15,10)) 
+        # matplotlib.pyplot.grid(True)
+        # p_bleu = matplotlib.pyplot.bar(xlocations, [ x[2] for x in scores] ,  width, color='r')        
+        # matplotlib.pyplot.ylabel('NIST score')
+        # matplotlib.pyplot.title('NIST scores for ' + title )
+        # matplotlib.pyplot.xticks(xlocations+width/2., names)# size='small')
+        # fig.autofmt_xdate()
+        # matplotlib.pyplot.yticks(numpy.arange(0,max( (x[2] for x in scores)),0.1))
+        # autolabel(p_bleu)
+        # fig.savefig(self.WORKDIR + '/batchreport-nist.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)       
+        # matplotlib.pyplot.clf()
+
+
+        # fig = matplotlib.pyplot.figure(figsize=(15,10))               
+        # matplotlib.pyplot.gcf().subplots_adjust(bottom=0.4, left=0.2)
+        # p_ter = matplotlib.pyplot.bar(xlocations, [x[3] for x in scores] ,  width, color='g')
+        # p_wer = matplotlib.pyplot.bar(xlocations, [x[4] for x in scores] ,  width, color='y')
+        # p_per = matplotlib.pyplot.bar(xlocations, [x[5] for x in scores] ,  width, color='m')        
+        # matplotlib.pyplot.ylabel('Score')
+        # matplotlib.pyplot.title('TER/WER/PER scores for ' + title)
+        # matplotlib.pyplot.xticks(xlocations+width/2., names)#, names , rotation='vertical')
+        # matplotlib.pyplot.yticks(numpy.arange(0,max( (max(x[3],x[4],x[5]) for x in scores)),5))
+        # matplotlib.pyplot.legend( (p_ter[0],p_wer[0],p_per[0]), ('TER', 'WER','PER') )
+        # fig.autofmt_xdate()
+        # fig.savefig(self.WORKDIR + '/batchreport-er.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)
+                            
+        # fig = matplotlib.pyplot.figure(figsize=(15,10))
+        # xlocations2 = numpy.arange(len(phrasetablesize))    # the x locations for the groups
+        # matplotlib.pyplot.grid(True)       
+        # p_count = matplotlib.pyplot.bar(xlocations2, [ x[0] for x in phrasetablesize ] ,  width, color='b')
+        # p_uniquecount = matplotlib.pyplot.bar(xlocations2, [ x[1] for x in phrasetablesize ] ,  width, color='m')        
+        # matplotlib.pyplot.ylabel('Number of phrase pairs in phrase table')
+        # matplotlib.pyplot.title('Phrase table size for ' + title)
+        # matplotlib.pyplot.xticks(xlocations2+width/2., names_phrasetable)# size='small')
+        # fig.autofmt_xdate()
+        # try:        
+            # matplotlib.pyplot.yticks(numpy.arange(0,max( (x[0] for x in phrasetablesize)),100000))
+            # matplotlib.pyplot.legend( (p_count[0],p_uniquecount[0]), ('Count', 'Unique') )
+            # autolabel(p_count)
+            # fig.savefig(self.WORKDIR + '/batchreport-phrasetable.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)
+        # except:
+            # self.log("Error during plotting of phrasetable size",red)
+        # matplotlib.pyplot.clf()
             
 
                     
