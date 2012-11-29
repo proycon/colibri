@@ -650,7 +650,7 @@ int Stack::recombine() {
     // - the end of the last source phrase
 
     int pruned = 0;
-    if (content.size() <= 1) return 0;
+    if (contents.size() <= 1) return 0;
     
     //prevent exponential search, build a temporary hash map: O(2n) instead of O(n^2)
     unordered_map<size_t, multimap<double,TranslationHypothesis *> > tmpmap;
