@@ -1261,10 +1261,11 @@ class MTWrapper(object):
         p_count = matplotlib.pyplot.barh(locations2 ,  [x[0] for x in phrasetablesize], align='center', color='b')
         p_uniquecount = matplotlib.pyplot.barh(locations2 ,  [x[1] for x in phrasetablesize], align='center', color='m')                        
         matplotlib.pyplot.ylabel('Number of phrase pairs in phrase table')
-        matplotlib.pyplot.title('Phrase table size for ' + title)        
+        matplotlib.pyplot.title('Phrase table size for ' + title)
+        matplotlib.pyplot.legend( (p_count[0],p_uniquecount[0]), ('Count', 'Unique') )        
         try:
             matplotlib.pyplot.yticks(locations2+hbarheight/2., names_phrasetable )# size='small')
-            matplotlib.pyplot.xticks(numpy.arange(0,max( (x[0] for x in phrasetablesize)),0.1))
+            matplotlib.pyplot.xticks(numpy.arange(0,max( (x[0] for x in phrasetablesize) ),100000))
             autolabelh(p_count)
             fig.savefig(self.WORKDIR + '/batchreport-phrasetable.png', dpi=None, facecolor='w', edgecolor='w', orientation='portrait', papertype=None, format='png', transparent=False, bbox_inches=None, pad_inches=0.3)
         except:       
