@@ -858,7 +858,7 @@ class MTWrapper(object):
                 self.log("Writing new configuration...")
                 self.writesettings()
         elif cmd[:10] == 'startbatch' or cmd[:10] == 'batchstart':
-            if cmd[10] != ' ':
+            if len(cmd) > 10 and cmd[10] != ' ':
                 space = cmd.find(' ',10)
                 if space > -1: 
                     threads = int(cmd[10:space])
@@ -950,7 +950,7 @@ class MTWrapper(object):
                     else:
                         self.log("Batch " + batch + " has not been trained or tested yet.. skipping",yellow,True)
         elif cmd[:9] == 'batchtest':                                        
-            if cmd[9] != ' ':
+            if len(cmd) > 9 and cmd[9] != ' ':
                 space = cmd.find(' ',9)
                 if space > -1: 
                     threads = int(cmd[9:space])
