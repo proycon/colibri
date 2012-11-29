@@ -11,6 +11,8 @@ unsigned char UNKNOWNCLASS = 2;
 unsigned char BOSCLASS = 3;
 unsigned char EOSCLASS = 4;
 
+const bool RECOMBINE = true; 
+
 const EncNGram UNKNOWNUNIGRAM = EncNGram(&UNKNOWNCLASS,1);
 
 StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationtable, LanguageModel * lm, int stacksize, double prunethreshold, vector<double> tweights, double dweight, double lweight, int dlimit, int maxn, int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, ClassifierInterface * classifier, ScoreHandling scorehandling, bool globalstats) {
@@ -396,8 +398,11 @@ TranslationHypothesis * StackDecoder::decodestack(Stack & stack) {
         }
         unsigned int totalpruned = 0;
         for (int j = inputlength; j >= stack.index+1; j--) { //prune further stacks (hypotheses may have been added to any of them).. always prune superior stack first
-            //unsigned int recombined = stacks[j].recombine();    
-            //if ((DEBUG >= 1) && (recombined > 0)) cerr << "\t  Recombined " << recombined << " hypotheses from gapless stack " << j << endl;
+            if (RECOMBINE) {
+                unsigned int origsize = stacks[j].size();
+                unsigned int recombined = stacks[j].recombine();    
+                if ((DEBUG >= 1) && (recombined > 0)) cerr << "\t  Recombined " << recombined << " of " << origsize << " hypotheses from gapless stack " << j << endl;
+            }
             
             unsigned int pruned = stacks[j].prune();
             if ((DEBUG >= 1) && (pruned > 0)) cerr << "\t  Pruned " << pruned << " hypotheses from gapless stack " << j << endl;
@@ -645,6 +650,7 @@ int Stack::recombine() {
     // - the end of the last source phrase
 
     int pruned = 0;
+    if (content.size() <= 1) return 0;
     
     //prevent exponential search, build a temporary hash map: O(2n) instead of O(n^2)
     unordered_map<size_t, multimap<double,TranslationHypothesis *> > tmpmap;
@@ -652,30 +658,46 @@ int Stack::recombine() {
         TranslationHypothesis*  h = *iter;
         tmpmap[h->recombinationhash()].insert(pair<double,TranslationHypothesis*>(h->score()*-1, h));               
     }
+    /*if (decoder->DEBUG >= 2) {
+        cerr << "\t\tRecombination of stack " << index << ": " << contents.size() << " to " << tmpmap.size() << endl; 
+    }*/
+    
     
     //process map of hashes
     for (unordered_map<size_t, multimap<double,TranslationHypothesis *> >::iterator iter = tmpmap.begin(); iter != tmpmap.end(); iter++) {
 
         for (multimap<double,TranslationHypothesis *>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+
             if (iter2 != iter->second.begin()) {
+                
                 //keep only the first one, best route
                 TranslationHypothesis * h = iter2->second;
                 list<TranslationHypothesis *>::iterator it = find(contents.begin(), contents.end(), h);
+                if (decoder->DEBUG >= 4) {
+                    cerr << "\tPruning due to recombination:" << (size_t) h << endl;
+                    h->report();
+                }
+                
                 contents.erase(it);
                 pruned++;
                 if (h->deletable()) {
                     if (decoder->DEBUG == 9) {
-                        cerr << "DEBUG: SCORE EXCEEDS CUTOFF, PRUNING BY DELETING " << (size_t) h << endl;                    
+                        cerr << "DEBUG: DELETING DUE TO RECOMBINATION: " << (size_t) h << endl;                    
                         h->cleanup();
                     } else {
                         delete h;
                     }
                 }
+            } else if (decoder->DEBUG >= 4) {
+                 
+                 TranslationHypothesis * h = iter2->second;
+                 cerr << "\t--RECOMBINATION TARGET: " << (size_t) h << endl;
+                 h->report();
             }
         }        
     } 
 
-    
+    return pruned;
 }
 
 
