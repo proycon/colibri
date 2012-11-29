@@ -1192,7 +1192,7 @@ class MTWrapper(object):
         locations = numpy.arange(len(scores))    # the x locations for the groups
         
         matplotlib.pyplot.grid(True)
-        p_bleu = matplotlib.pyplot.barh(locations ,  [x[0] for x in scores], align='right', hbarheight=0.2, color='b')                        
+        p_bleu = matplotlib.pyplot.barh(locations ,  [x[0] for x in scores], hbarheight=0.2, color='b')                        
         matplotlib.pyplot.ylabel('BLEU score')
         matplotlib.pyplot.title('BLEU scores for ' + title)
         matplotlib.pyplot.yticks(locations+hbarheight/2., names)# size='small')
