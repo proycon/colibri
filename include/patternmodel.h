@@ -411,7 +411,8 @@ class GraphRelations {
     t_relations rel_subsumption_children;        
     std::unordered_map<const EncAnyGram*,int> data_xcount;        
    
-   
+    virtual uint64_t id() =0;
+    
     t_relations rel_templates; //instance -> skipgram
     t_relations rel_instances; //skipgram -> instance
     
@@ -419,10 +420,12 @@ class GraphRelations {
     t_weightedrelations  rel_skipcontent; //skipgram -> skipcontent       
     
     t_weightedrelations  rel_successors;  
-    t_weightedrelations  rel_predecessors;  
+    t_weightedrelations  rel_predecessors;
+    
+    t_weightedrelations  rel_cooccurences;    
     
     void readrelations(std::istream * in,const EncAnyGram* = NULL, t_relations * = NULL, int ngramversion=1,bool ignore = false);
-    void readrelations(std::istream * in,const EncAnyGram* = NULL, t_weightedrelations * = NULL, int ngramversion=1,bool ignore = false);
+    void readweightedrelations(std::istream * in,const EncAnyGram* = NULL, t_weightedrelations * = NULL, int ngramversion=1,bool ignore = false);
     
     void getrelations(t_relations & relations, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram*> & container);
     void getrelations(t_weightedrelations & relations, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram*> & container);
@@ -534,8 +537,10 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
     
     void outputgraph(ClassDecoder & classdecoder, std::ostream *OUT);
     void outputgraph(ClassDecoder & classdecoder, std::ostream *OUT, const EncAnyGram *);
-    void outputgraphvizrelations( const EncAnyGram * anygram, t_relations & relationhash, const std::string & colour);
+    void outputgraphvizrelations( const EncAnyGram * anygram, std::ostream *OUT, t_relations & relationhash, const std::string & colour);
+    void outputgraphvizrelations( const EncAnyGram * anygram, std::ostream *OUT, t_weightedrelations & relationhash, const std::string & colour);
     void outputgraphvizrelations( const std::unordered_set<const EncAnyGram *> &, std::ostream *OUT, t_relations & relationhash, const std::string & colour);
+    void outputgraphvizrelations( const std::unordered_set<const EncAnyGram *> &, std::ostream *OUT, t_weightedrelations & relationhash, const std::string & colour);
     //void outputgraphvizrelations( const EncAnyGram * anygram, t_weightedrelations & relationhash, const std::string & colour);
     //void outputgraphvizrelations( const std::unordered_set<const EncAnyGram *> &, std::ostream *OUT, t_weightedrelations & relationhash, const std::string & colour);        
   
@@ -546,7 +551,8 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
     void outputcoverage(ClassDecoder & classdecoder, std::ostream *OUT);
     
     void findincomingnodes(const EncAnyGram * focus, std::unordered_set<const EncAnyGram *> & relatednodes);
-    void findincomingnodes(const EncAnyGram * focus, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram *> & relatednodes, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> >  & relationhash );
+    void findincomingnodes(const EncAnyGram * focus, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram *> & relatednodes, t_relations  & relationhash );
+    void findincomingnodes(const EncAnyGram * focus, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram *> & relatednodes, t_weightedrelations  & relationhash );
 };
 
 
