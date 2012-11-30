@@ -102,7 +102,6 @@ int main( int argc, char *argv[] ) {
     int DOSTATS = 0;
     int REMOVECONTEXT = 0;
     
-    int REMOVECONTEXT = 0;
     int bestn = 0;
     
     bool DOPARENTS = false;
