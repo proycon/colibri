@@ -9,7 +9,7 @@
 
 const unsigned char MAXN = 0xff;
 
-const short GRAPHPATTERNMODELVERSION = 2; //unsigned:1
+const short GRAPHPATTERNMODELVERSION = 3; //unsigned:1, withoutweighedrelations:2
 const short INDEXEDPATTERNMODELVERSION = 3; //unsigned:2
 const short UNINDEXEDPATTERNMODELVERSION = 2; //unsigned:1
 
@@ -359,6 +359,7 @@ class GraphFilter {
     bool DOSKIPCONTENT;
     bool DOSUCCESSORS;
     bool DOPREDECESSORS;
+    bool DOCOOCCURRENCE;
   
   GraphFilter() {
     DOPARENTS = false;
@@ -370,9 +371,14 @@ class GraphFilter {
     DOSKIPCONTENT = false;
     DOSUCCESSORS = false;
     DOPREDECESSORS = false;
+    DOCOOCCURRENCE = false;
   }
 };    
 
+
+
+typedef std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > t_relations;
+typedef std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, uint64_t> > t_weightedrelations;
 
 class GraphRelations {
    public:
@@ -385,7 +391,7 @@ class GraphRelations {
     bool DOSKIPCONTENT;
     bool DOSUCCESSORS;
     bool DOPREDECESSORS;
-    
+    bool DOCOOCCURRENCE;
     
     bool HASPARENTS;
     bool HASCHILDREN;
@@ -396,27 +402,33 @@ class GraphRelations {
     bool HASSKIPCONTENT;
     bool HASSUCCESSORS;
     bool HASPREDECESSORS;
+    bool HASCOOCCURRENCE;
     
     bool TRANSITIVE;
     bool secondpass;          
   
-    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_parents;
-    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_subsumption_children;        
+    t_relations rel_subsumption_parents;
+    t_relations rel_subsumption_children;        
     std::unordered_map<const EncAnyGram*,int> data_xcount;        
    
-   
-    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_templates; //instance -> skipgram
-    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_instances; //skipgram -> instance
+    virtual uint64_t id() =0;
     
-    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_skipusage; //skipcontent -> skipgram
-    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_skipcontent; //skipgram -> skipcontent       
+    t_relations rel_templates; //instance -> skipgram
+    t_relations rel_instances; //skipgram -> instance
     
-    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_successors;  
-    std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > rel_predecessors;  
+    t_weightedrelations  rel_skipusage; //skipcontent -> skipgram           
+    t_weightedrelations  rel_skipcontent; //skipgram -> skipcontent       
     
-    void readrelations(std::istream * in,const EncAnyGram* = NULL, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > * = NULL, int ngramversion=1,bool ignore = false);
+    t_weightedrelations  rel_successors;  
+    t_weightedrelations  rel_predecessors;
     
-    void getrelations(std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relations, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram*> & container);
+    t_weightedrelations  rel_cooccurences;    
+    
+    void readrelations(std::istream * in,const EncAnyGram* = NULL, t_relations * = NULL, int ngramversion=1,bool ignore = false);
+    void readweightedrelations(std::istream * in,const EncAnyGram* = NULL, t_weightedrelations * = NULL, int ngramversion=1,bool ignore = false);
+    
+    void getrelations(t_relations & relations, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram*> & container);
+    void getrelations(t_weightedrelations & relations, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram*> & container);
     
     int transitivereduction();
     
@@ -429,6 +441,7 @@ class GraphRelations {
     bool has_skipcontent() { return (HASSKIPCONTENT) ; }
     bool has_successors() { return (HASSUCCESSORS) ; }
     bool has_predecessors() { return (HASPREDECESSORS) ; }
+    bool has_cooccurrence() { return (HASCOOCCURRENCE) ; }
 
   void applyfilter(const GraphFilter & model) {
     DOPARENTS = model.DOPARENTS;
@@ -439,7 +452,8 @@ class GraphRelations {
     DOSKIPUSAGE = model.DOSKIPUSAGE;
     DOSKIPCONTENT = model.DOSKIPCONTENT;
     DOPREDECESSORS = model.DOPREDECESSORS;
-    DOSUCCESSORS = model.DOSUCCESSORS;  
+    DOSUCCESSORS = model.DOSUCCESSORS;
+    DOCOOCCURRENCE = model.DOCOOCCURRENCE;  
   }
     
    virtual const EncAnyGram* getkey(const EncAnyGram* key) =0;
@@ -451,8 +465,8 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
     
     bool DELETEMODEL;
     
-    //void readrelations(std::istream * in,const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > &, bool ignore = false);
-    void writerelations(std::ostream * out, const EncAnyGram*, std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & );
+    void writerelations(std::ostream * out, const EncAnyGram*, t_relations & );
+    void writerelations(std::ostream * out, const EncAnyGram*, t_weightedrelations & );
    public:
    
     IndexedPatternModel * model;
@@ -523,16 +537,22 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
     
     void outputgraph(ClassDecoder & classdecoder, std::ostream *OUT);
     void outputgraph(ClassDecoder & classdecoder, std::ostream *OUT, const EncAnyGram *);
-    void outputgraphvizrelations( const EncAnyGram * anygram, std::ostream *OUT, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour);
-    void outputgraphvizrelations( const std::unordered_set<const EncAnyGram *> &, std::ostream *OUT, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> > & relationhash, const std::string & colour);    
+    void outputgraphvizrelations( const EncAnyGram * anygram, std::ostream *OUT, t_relations & relationhash, const std::string & colour);
+    void outputgraphvizrelations( const EncAnyGram * anygram, std::ostream *OUT, t_weightedrelations & relationhash, const std::string & colour);
+    void outputgraphvizrelations( const std::unordered_set<const EncAnyGram *> &, std::ostream *OUT, t_relations & relationhash, const std::string & colour);
+    void outputgraphvizrelations( const std::unordered_set<const EncAnyGram *> &, std::ostream *OUT, t_weightedrelations & relationhash, const std::string & colour);
+    //void outputgraphvizrelations( const EncAnyGram * anygram, t_weightedrelations & relationhash, const std::string & colour);
+    //void outputgraphvizrelations( const std::unordered_set<const EncAnyGram *> &, std::ostream *OUT, t_weightedrelations & relationhash, const std::string & colour);        
   
     void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, const EncAnyGram * focusinput, bool outputquery=false);
     void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, std::unordered_set<const EncAnyGram*>   & relations );
+    void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, std::unordered_map<const EncAnyGram*,uint64_t>   & relations ); //weighted
 
     void outputcoverage(ClassDecoder & classdecoder, std::ostream *OUT);
     
     void findincomingnodes(const EncAnyGram * focus, std::unordered_set<const EncAnyGram *> & relatednodes);
-    void findincomingnodes(const EncAnyGram * focus, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram *> & relatednodes, std::unordered_map<const EncAnyGram *, std::unordered_set<const EncAnyGram*> >  & relationhash );
+    void findincomingnodes(const EncAnyGram * focus, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram *> & relatednodes, t_relations  & relationhash );
+    void findincomingnodes(const EncAnyGram * focus, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram *> & relatednodes, t_weightedrelations  & relationhash );
 };
 
 
