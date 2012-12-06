@@ -2587,6 +2587,7 @@ void GraphPatternModel::stats(std::ostream *OUT) {
     if (DOPARENTS) *OUT << " Parent subsumption relations: " << rel_subsumption_parents.size() << endl;
     if (DOSUCCESSORS) *OUT << " Successors found for " << rel_successors.size() << " patterns" << endl;
     if (DOPREDECESSORS) *OUT << " Predecessors found for " << rel_predecessors.size() << " patterns" << endl;
+    if (DOCOOCCURRENCE) *OUT << " Co-occurrences found for " << rel_cooccurences.size() << " patterns" << endl;
     if (DOSKIPCONTENT)  *OUT << " Content-relations found for " <<  rel_skipcontent.size() << " skipgrams" << endl;
     if (DOSKIPUSAGE)  *OUT << " Skipgram parents found for " <<  rel_skipusage.size() << " n-grams" << endl;
     if (DOTEMPLATES)  *OUT << " Templates found for " <<  rel_templates.size() << " patterns" << endl;
