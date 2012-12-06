@@ -49,6 +49,7 @@ int main( int argc, char *argv[] ) {
     bool DOSKIPUSAGE = false;
     bool DOOUTPUTRELATIONS = false;
     bool TRANSITIVEREDUCTION = false;
+    bool DOCOOCCURRENCE = true;
     
     bool DOTEMPLATES = false; 
     bool DOINSTANCES = false;
@@ -70,6 +71,7 @@ int main( int argc, char *argv[] ) {
         	DOPREDECESSORS = true;
         	DOSKIPCONTENT = true;
         	DOSKIPUSAGE = true;
+        	DOCOOCCURRENCE = true;
         	break;
         case 'c':
             classfile = optarg;
@@ -101,7 +103,10 @@ int main( int argc, char *argv[] ) {
 		case 'S':
         	DOSKIPCONTENT = true;
         	break;       
-		case 's':
+		case 'O':
+        	DOCOOCCURRENCE = true;
+        	break;       
+        case 's':
         	DOSKIPUSAGE = true;
         	break;     
         case 'I':
@@ -176,7 +181,8 @@ int main( int argc, char *argv[] ) {
         filter.DOSKIPUSAGE = DOSKIPUSAGE;
         filter.DOSKIPCONTENT = DOSKIPCONTENT;
         filter.DOSUCCESSORS = DOSUCCESSORS;
-        filter.DOPREDECESSORS = DOPREDECESSORS;        
+        filter.DOPREDECESSORS = DOPREDECESSORS;
+        filter.DOCOOCCURRENCE = DOCOOCCURRENCE;        
         GraphPatternModel graphmodel = GraphPatternModel(&patternmodel, filter);
         
         
@@ -218,6 +224,7 @@ int main( int argc, char *argv[] ) {
             filter.DOSKIPCONTENT = DOSKIPCONTENT;
             filter.DOSUCCESSORS = DOSUCCESSORS;
             filter.DOPREDECESSORS = DOPREDECESSORS;   
+            filter.DOCOOCCURRENCE = DOCOOCCURRENCE;
             GraphPatternModel graphmodel = GraphPatternModel(modelfile, filter, DEBUG);  
             
             graphmodel.stats( (ostream*) &cerr );
