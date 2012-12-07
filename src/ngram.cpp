@@ -1240,7 +1240,7 @@ EncData::~EncData() {
 }
 
 const int EncData::length() const {
-    char count = 1; 
+    int count = 1; 
     for (int i = 0; i < _size; i++) {
         if (data[i] == 0) count++;
     }    
