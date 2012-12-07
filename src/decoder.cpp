@@ -28,11 +28,12 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
         this->globalstats = globalstats;
         
         //init stacks
+        if (DEBUG >= 1) cerr << "Initialising " << inputlength <<  " stacks" << endl;
         for (unsigned int i = 0; i <= inputlength; i++) {
             stacks.push_back( Stack(this, i, stacksize, prunethreshold) );
             gappystacks.push_back( Stack(this, i, stacksize, prunethreshold) );
         }
-
+        
                 
         
         if (classifier != NULL) {
