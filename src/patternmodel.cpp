@@ -2764,6 +2764,7 @@ void GraphPatternModel::readheader(std::istream * in, bool ignore) {
 			in->read((char*) &HASSKIPCONTENT, sizeof(bool)); //1 byte, not 1 bit
 			in->read((char*) &HASSUCCESSORS, sizeof(bool)); //1 byte, not 1 bit
 			in->read((char*) &HASPREDECESSORS, sizeof(bool)); //1 byte, not 1 bit
+			if (model_id >= GRAPHPATTERNMODEL+3 ) in->read((char*) &HASCOOCCURRENCE, sizeof(bool)); //1 byte, not 1 bit
     	}
 	} else {
 		if (DEBUG) cerr << "NOT A GRAPHMODEL HEADER" << endl;
@@ -2776,6 +2777,7 @@ void GraphPatternModel::readheader(std::istream * in, bool ignore) {
 		HASSKIPCONTENT = false;
 		HASSUCCESSORS = false;
 		HASPREDECESSORS = false;
+		HASCOOCCURRENCE = false;
 	}	
 }
 
@@ -2789,6 +2791,7 @@ void GraphPatternModel::writeheader(std::ostream * out) {
     out->write((char*) &DOSKIPCONTENT, sizeof(bool)); //1 byte, not 1 bit
     out->write((char*) &DOSUCCESSORS, sizeof(bool)); //1 byte, not 1 bit
     out->write((char*) &DOPREDECESSORS, sizeof(bool)); //1 byte, not 1 bit
+    out->write((char*) &DOCOOCCURRENCE, sizeof(bool)); //1 byte, not 1 bit
 }
 
 void GraphPatternModel::readngramdata(std::istream * in, const EncNGram & ngram, int ngramversion, bool ignore) {
