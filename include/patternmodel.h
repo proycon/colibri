@@ -315,7 +315,7 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
 
 	void outputinstance(const EncAnyGram *, CorpusReference, ClassDecoder &);
     
-    virtual uint64_t id() { return UNINDEXEDPATTERNMODEL; }
+    virtual uint64_t id() { return UNINDEXEDPATTERNMODEL + UNINDEXEDPATTERNMODELVERSION; }
     virtual void readheader(std::istream * in,  bool ignore = false) {};
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, int ngramversion=1,bool ignore = false);
     virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram, int ngramversion=1,bool ignore = false);
@@ -622,7 +622,7 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier, public Gra
      uint64_t types() const { return ngrams.size() + skipgrams.size(); }
      uint64_t tokens() const { return totaltokens; }
      
-    virtual uint64_t id() { return 0; }
+    virtual uint64_t id() { return model_id; }
     
     int maxlength() const { return MAXLENGTH; }
     const EncAnyGram* getkey(const EncAnyGram* key);
