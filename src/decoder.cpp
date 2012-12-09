@@ -1359,6 +1359,10 @@ EncData TranslationHypothesis::getoutput(deque<TranslationHypothesis*> * path) {
                 outputtokens[i] = hyp->getoutputtoken(i);
             }                          
         }
+        if (outputtokens.empty()) {
+            cerr << "ERROR: No outputtokens found!!!!" << endl;
+            throw InternalError();            
+        }
         unsigned char buffer[8192];
         int cursor = 0;
         for (map<int, EncNGram *>::iterator iter = outputtokens.begin(); iter != outputtokens.end(); iter++) {
@@ -1800,46 +1804,51 @@ int main( int argc, char *argv[] ) {
             StackDecoder * decoder = new StackDecoder(*inputdata, transtable, &lm, stacksize, prunethreshold, tweights, dweight, lweight, dlimit, maxn, debug, &sourceclassdecoder, &targetclassdecoder, classifier, scorehandling,  (bool) GLOBALSTATS);
             if (debug >= 1) cerr << "Decoding ..." << endl;
             TranslationHypothesis * solution = decoder->decode();                    
-            if (solution != NULL) {
-                EncData s = solution->getoutput();
-                if (decoder->DEBUG >= 1) {
-                    TranslationHypothesis * h = solution;            
-                    cerr << "HISTORY=" << endl;
-                    while (h != NULL) {
-                        cerr << "\t";
-                        for (unsigned int i = 0; i < decoder->inputlength; i++) {
-                            cerr << h->inputcoveragemask[i];
-                        }
-                        cerr << "  [" << h->score() << "]" << endl;
-                        h = h->parent;
-                    }                
-                }
-                cerr << "GAPLESS STACKSIZES: ";
-                for (map<int,int>::iterator iter = decoder->stats.stacksizes.begin(); iter != decoder->stats.stacksizes.end(); iter++) {
-                    if (iter->first > 0) cerr << iter->second << ' ';
-                }
-                cerr << endl;
-                if (DOSKIPGRAMS) {
-                    cerr << "GAPPY STACKSIZES: ";
-                    for (map<int,int>::iterator iter = decoder->stats.gappystacksizes.begin(); iter != decoder->stats.gappystacksizes.end(); iter++) {
+            if (solution != NULL) {            
+                try {
+                    EncData s = solution->getoutput();
+                    if (decoder->DEBUG >= 1) {
+                        TranslationHypothesis * h = solution;            
+                        cerr << "HISTORY=" << endl;
+                        while (h != NULL) {
+                            cerr << "\t";
+                            for (unsigned int i = 0; i < decoder->inputlength; i++) {
+                                cerr << h->inputcoveragemask[i];
+                            }
+                            cerr << "  [" << h->score() << "]" << endl;
+                            h = h->parent;
+                        }                
+                    }
+                    cerr << "GAPLESS STACKSIZES: ";
+                    for (map<int,int>::iterator iter = decoder->stats.stacksizes.begin(); iter != decoder->stats.stacksizes.end(); iter++) {
                         if (iter->first > 0) cerr << iter->second << ' ';
                     }
-                }
-                cerr << endl;                
-                cerr << "STATS:\tTotal expansions: " << decoder->stats.expanded << endl;
-                cerr << "       \tof which rejected: " << decoder->stats.discarded << endl;
-                cerr << "       \tof which pruned: " << decoder->stats.pruned << endl;
-                cerr << "       \tof which gapresolutions: " << decoder->stats.gapresolutions << endl;
-                cerr << "SCORE=" << solution->score() << endl;
-                const string out = s.decode(targetclassdecoder);                 
-                cerr << "DONE. OUTPUT: " << out << endl; 
-                cout << out << endl;               
-                if ((STATS) && (!GLOBALSTATS)) solution->stats(); 
-                if (decoder->DEBUG == 99) {
-                    cerr << "DEBUG: SOLUTION DESTRUCTION. DELETING " << (size_t) solution << endl;
-                    solution->cleanup();
-                } else {
-                    delete solution;
+                    cerr << endl;
+                    if (DOSKIPGRAMS) {
+                        cerr << "GAPPY STACKSIZES: ";
+                        for (map<int,int>::iterator iter = decoder->stats.gappystacksizes.begin(); iter != decoder->stats.gappystacksizes.end(); iter++) {
+                            if (iter->first > 0) cerr << iter->second << ' ';
+                        }
+                    }
+                    cerr << endl;                
+                    cerr << "STATS:\tTotal expansions: " << decoder->stats.expanded << endl;
+                    cerr << "       \tof which rejected: " << decoder->stats.discarded << endl;
+                    cerr << "       \tof which pruned: " << decoder->stats.pruned << endl;
+                    cerr << "       \tof which gapresolutions: " << decoder->stats.gapresolutions << endl;
+                    cerr << "SCORE=" << solution->score() << endl;
+                    const string out = s.decode(targetclassdecoder);                 
+                    cerr << "DONE. OUTPUT: " << out << endl; 
+                    cout << out << endl;               
+                    if ((STATS) && (!GLOBALSTATS)) solution->stats(); 
+                    if (decoder->DEBUG == 99) {
+                        cerr << "DEBUG: SOLUTION DESTRUCTION. DELETING " << (size_t) solution << endl;
+                        solution->cleanup();
+                    } else {
+                        delete solution;
+                    }
+                } catch (exception &e) {
+                    cerr << "ERROR: An error occurred whilst getting output.. Outputting empty dummy sentence!!!!!!!!!!!!!!" << endl;
+                    cout << endl; 
                 }
             } else {
                 cerr << "ERROR: NO SOLUTION FOUND!!!" << endl;
