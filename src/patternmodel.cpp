@@ -3719,6 +3719,7 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
         if (HASSKIPCONTENT) readweightedrelations(in, (const EncAnyGram*) &ngram, &rel_skipcontent,ngramversion);
         if (HASSUCCESSORS) readweightedrelations(in, (const EncAnyGram*) &ngram, &rel_successors,ngramversion);
         if (HASPREDECESSORS) readweightedrelations(in, (const EncAnyGram*) &ngram, &rel_predecessors,ngramversion);
+        if (HASCOOCCURRENCE) readweightedrelations(in, (const EncAnyGram*) &ngram, &rel_cooccurences,ngramversion);
     } else {
     	if (HASPARENTS) readrelations(in); //read and ignore
     	if (HASCHILDREN) readrelations(in);  //read and ignore
@@ -3728,6 +3729,7 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
         if (HASSKIPCONTENT) readweightedrelations(in);
         if (HASSUCCESSORS) readweightedrelations(in);
         if (HASPREDECESSORS) readweightedrelations(in);
+        if (HASCOOCCURRENCE) readweightedrelations(in);
     }
     
     //THRESHOLD CHECK STAGE - deciding whether to ignore based on unreached thresholds
@@ -3807,6 +3809,7 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
         if (HASSKIPCONTENT) readweightedrelations(in, (const EncAnyGram*) &skipgram, &rel_skipcontent, ngramversion);
         if (HASSUCCESSORS) readweightedrelations(in, (const EncAnyGram*) &skipgram, &rel_successors, ngramversion);
         if (HASPREDECESSORS) readweightedrelations(in, (const EncAnyGram*) &skipgram, &rel_predecessors, ngramversion);
+        if (HASCOOCCURRENCE) readweightedrelations(in, (const EncAnyGram*) &skipgram, &rel_cooccurences, ngramversion);
     } else {
     	if (HASPARENTS) readrelations(in); //read and ignore
     	if (HASCHILDREN) readrelations(in);  //read and ignore
@@ -3815,7 +3818,8 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
         if (HASSKIPUSAGE) readweightedrelations(in);
         if (HASSKIPCONTENT) readweightedrelations(in);
         if (HASSUCCESSORS) readweightedrelations(in);
-        if (HASPREDECESSORS) readweightedrelations(in);    	
+        if (HASPREDECESSORS) readweightedrelations(in);
+        if (HASCOOCCURRENCE) readweightedrelations(in);    	    	
     }
             
     //THRESHOLD CHECK STAGE - deciding whether to ignore based on unreached thresholds
