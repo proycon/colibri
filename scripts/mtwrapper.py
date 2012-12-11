@@ -255,11 +255,19 @@ class MTWrapper(object):
             return default
         
 
-    def __init__(self, **kwargs):                
+    def __init__(self, *args, **kwargs):                
         self.batches = []
         self.logfile = None
         
-        self.confdata = kwargs
+        self.confdata = {}    
+        if args:
+            for arg in args:
+                eval('from ' + arg + ' import confdata')
+                for key, value in confdata.items():
+                    self.confdata[key] = value
+        
+        for key, value in kwargs:
+            self.confdata[key] = value        
         self.setargs(**self.confdata)    
     
 
