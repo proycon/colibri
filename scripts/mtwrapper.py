@@ -266,7 +266,7 @@ class MTWrapper(object):
                 for key, value in confdata.items():
                     self.confdata[key] = value
         
-        for key, value in kwargs:
+        for key, value in kwargs.items():
             self.confdata[key] = value        
         self.setargs(**self.confdata)    
     
