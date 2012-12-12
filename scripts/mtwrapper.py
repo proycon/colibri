@@ -261,8 +261,9 @@ class MTWrapper(object):
         self.logfile = None
         
         self.confdata = {}    
+        self.sources = args
         if args:
-            for arg in args:
+            for arg in self.sources:
                 exec 'from ' + arg + ' import confdata'
                 for key, value in confdata.items():
                     self.confdata[key] = value
@@ -2340,7 +2341,10 @@ WordPenalty: -0.5\n""")
                 f.write("sys.path.append('" + dir + "')\n")
         f.write("\n")
         f.write("from mtwrapper import MTWrapper\n")    
-        f.write("mtwrapper = MTWrapper(\n")
+        f.write("mtwrapper = MTWrapper(")
+        for source in self.sources:
+            f.write(source + ",")
+        f.write("\n")
         for key, default, help in MTWrapper.defaults:            
             if key == 'EXPERIMENTNAME': 
                 value = expname
