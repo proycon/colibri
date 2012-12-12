@@ -262,7 +262,7 @@ class MTWrapper(object):
         self.confdata = {}    
         if args:
             for arg in args:
-                eval('from ' + arg + ' import confdata')
+                exec 'from ' + arg + ' import confdata'
                 for key, value in confdata.items():
                     self.confdata[key] = value
         
