@@ -2336,9 +2336,9 @@ WordPenalty: -0.5\n""")
         f.write("#! /usr/bin/env python\n# -*- coding: utf8 -*-#\n\n")
         f.write("#Generated as branch of " + self.WORKDIR + "\n\n")         
         f.write('import sys\n')
-        for dir in sys.path:                
-            if dir:
-                f.write("sys.path.append('" + dir + "')\n")
+        #for dir in sys.path:                
+        #    if dir:
+        #        f.write("sys.path.append('" + dir + "')\n")
         f.write("\n")
         f.write("from mtwrapper import MTWrapper\n")    
         f.write("mtwrapper = MTWrapper(")
