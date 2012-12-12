@@ -148,6 +148,7 @@ class MTWrapper(object):
             ('BUILD_COLIBRI_MOSESPHRASETABLE', False,'Build a Moses-style phrasetable using colibri'),
             ('BUILD_COLIBRI_CLASSIFIERS', False,'Build and use classifiers. Also set COLIBRI_CLASSIFIER_OPTIONS to select a classifier method'),
             ('BUILD_COLIBRI_SKIPGRAMS', False,'Include support for skipgrams (automatically adds -s -B -E to patternfinder options, creates proper graph models if enabled, extracts skipgrams in alignment). If alignment is enabled, skipgrams will be extracted from the aligned models, do not use if skipgrams are already to be extracted during EM or Jaccard alignment.'),
+            ('BUILD_COLIBRI_GRAPHMODEL', False,'Build a graph model using colibri'),
             ('BUILD_COLIBRI', False,'Build for colibri decoder'),
             ('BUILD_PHRASAL', False,'Build phrasal configuration, necessary for decoding using phrasal'),
             ('BUILD_PHRASAL_MERT', False,'Do Minumum Error Rate Training for Phrasal (on development set)'),
@@ -460,6 +461,8 @@ class MTWrapper(object):
                 self.log("Configuration update: BUILD_COLIBRI_ALIGNMENT automatically enabled because BUILD_COLIBRI_TRANSTABLE is too",yellow)
                 self.BUILD_COLIBRI_ALIGNMENT = True
                 
+                        
+                
         if self.BUILD_COLIBRI_ALIGNMENT:
             if not self.EXEC_COLIBRI_PATTERNFINDER or not os.path.exists(self.EXEC_COLIBRI_PATTERNFINDER):
                 sane = False
@@ -473,7 +476,10 @@ class MTWrapper(object):
             if not self.EXEC_COLIBRI_CLASSENCODE or not os.path.exists(self.EXEC_COLIBRI_CLASSENCODE):
                 sane = False
                 self.log("Configuration error: EXEC_COLIBRI_CLASSENCODE not found ! Required for BUILD_COLIBRI_ALIGNMENT !",red)
-                
+        
+            if self.BUILD_COLIBRI_SKIPGRAMS:        
+                self.log("Configuration update: BUILD_COLIBRI_GRAPHMODEL automatically enabled because BUILD_COLIBRI_SKIPGRAMS and BUILD_COLIBRI_ALIGNMENT is too",yellow)
+                self.BUILD_COLIBRI_GRAPHMODEL = True
             
         if self.BUILD_PHRASAL_MERT:
             if not self.BUILD_PHRASAL: 
@@ -1586,9 +1592,12 @@ class MTWrapper(object):
             if self.COLIBRI_PATTERNFINDER_OPTIONS.find('-a') == -1 and self.COLIBRI_PATTERNFINDER_OPTIONS.find('-S') == -1:
                 grapher_extraoptions += ' -S'      
         
-        if not self.runcmd(self.EXEC_COLIBRI_GRAPHER + ' -f ' + self.getsourcefilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHER_OPTIONS + grapher_extraoptions, "Building source-side graph model",self.getsourcefilename('graphpatternmodel.colibri') ): return False
+        alignsource = 'indexedpatternmodel.colibri'
+        if self.BUILD_COLIBRI_GRAPHMODEL:
+            alignsource = 'graphpatternmodel.colibri'
+            if not self.runcmd(self.EXEC_COLIBRI_GRAPHER + ' -f ' + self.getsourcefilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHER_OPTIONS + grapher_extraoptions, "Building source-side graph model",self.getsourcefilename('graphpatternmodel.colibri') ): return False
 
-        if not self.runcmd(self.EXEC_COLIBRI_GRAPHER + ' -f ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHER_OPTIONS + grapher_extraoptions, "Building target-side graph model",self.gettargetfilename('graphpatternmodel.colibri') ): return False
+            if not self.runcmd(self.EXEC_COLIBRI_GRAPHER + ' -f ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' ' + self.COLIBRI_GRAPHER_OPTIONS + grapher_extraoptions, "Building target-side graph model",self.gettargetfilename('graphpatternmodel.colibri') ): return False
         
         aligner_extraoptions = ''
         if self.BUILD_COLIBRI_CLASSIFIERS:        
@@ -1600,16 +1609,16 @@ class MTWrapper(object):
                 if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -I 2 -N ' + self.COLIBRI_ALIGNER_OPTIONS + ' ' + aligner_extraoptions + ' -W ' + self.gets2tfilename('A3.final') + ':' + self.gett2sfilename('A3.final') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls'), "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
             else:
                 #semi-supervised
-                if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -t ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -I 2 -N ' + self.COLIBRI_ALIGNER_OPTIONS + ' ' + aligner_extraoptions + ' -W ' + self.gets2tfilename('A3.final') + ':' + self.gett2sfilename('A3.final') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls'), "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
+                if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename(alignsource) + ' -t ' + self.gettargetfilename(alignsource) + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -I 2 -N ' + self.COLIBRI_ALIGNER_OPTIONS + ' ' + aligner_extraoptions + ' -W ' + self.gets2tfilename('A3.final') + ':' + self.gett2sfilename('A3.final') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls'), "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
             #if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -t ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -s ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gett2sfilename('alignmodel.colibri') + ' -N ' + self.COLIBRI_ALIGNER_OPTIONS + ' -W ' + self.gett2sfilename('A3.final') + ':' + self.gets2tfilename('A3.final') + ' -T ' + self.getsourcefilename('cls') + ' -S ' + self.gettargetfilename('cls'), "Building alignment model",self.gett2sfilename('alignmodel.colibri') ): return False #TODO: This step can be computed from the previous rather than from scratch as done here
         else:  
             if self.BUILD_COLIBRI_CLASSIFIERS:
                 self.log("WARNING: No classifiers will be built! Only possible with Giza extraction method!",red)
-            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -t ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -I 2 ' + self.COLIBRI_ALIGNER_OPTIONS, "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
+            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -s ' + self.getsourcefilename(alignsource) + ' -t ' + self.gettargetfilename(alignsource) + ' -o ' + self.gets2tfilename('alignmodel.colibri') + ' -I 2 ' + self.COLIBRI_ALIGNER_OPTIONS, "Building alignment model",self.gets2tfilename('alignmodel.colibri') ): return False
             #if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -t ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -s ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gett2sfilename('alignmodel.colibri') + ' -N ' + self.COLIBRI_ALIGNER_OPTIONS, "Building reverse alignment model",self.gett2sfilename('alignmodel.colibri') ): return False
         
         if self.BUILD_COLIBRI_SKIPGRAMS:
-            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -U -d ' + self.gets2tfilename('alignmodel.colibri') + ' -s ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -t ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gets2tfilename('alignmodelS.colibri') + ' ' +  self.COLIBRI_ALIGNER_OPTIONS , "Extracting skipgrams",self.gets2tfilename('alignmodelS.colibri') ): return False
+            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -U -d ' + self.gets2tfilename('alignmodel.colibri') + ' -s ' + self.getsourcefilename(alignsource) + ' -t ' + self.gettargetfilename(alignsource) + ' -o ' + self.gets2tfilename('alignmodelS.colibri') + ' ' +  self.COLIBRI_ALIGNER_OPTIONS , "Extracting skipgrams",self.gets2tfilename('alignmodelS.colibri') ): return False
             #if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -U -d ' + self.gett2sfilename('alignmodel.colibri') + ' -t ' + self.getsourcefilename('graphpatternmodel.colibri') + ' -s ' + self.gettargetfilename('graphpatternmodel.colibri') + ' -o ' + self.gett2sfilename('alignmodelS.colibri') + ' ' +  self.COLIBRI_ALIGNER_OPTIONS, "Extracting skipgrams (for reverse model)",self.gett2sfilename('alignmodelS.colibri') ): return False            
         
         if self.BUILD_COLIBRI_MOSESPHRASETABLE:
