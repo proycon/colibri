@@ -820,7 +820,11 @@ class MTWrapper(object):
 
             branchdir, branchsettings = self.branch(expname, sys.argv[3:])                                        
                                     
-            os.system('vim ' + branchsettings)
+            if 'editor' in os.environ:
+                editor = os.environ['EDITOR']
+            else:
+                editor = 'vim'
+            os.system(editor + ' ' + branchsettings)
             
             open(self.WORKDIR + '/.frozen','w').close()
             print >>sys.stderr, "Current system automatically frozen after branching"
@@ -2602,7 +2606,11 @@ if __name__ == "__main__":
     f.write(")\nmtwrapper.start()\n")
     f.close()
     os.chmod(settingsfile, 0754)
-    os.system('vim ' + settingsfile)    
+    if 'editor' in os.environ:
+        editor = os.environ['EDITOR']
+    else:
+        editor = 'vim'
+    os.system(editor + ' ' + settingsfile)    
 
 
 
