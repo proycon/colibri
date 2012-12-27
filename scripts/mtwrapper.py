@@ -2342,31 +2342,36 @@ WordPenalty: -0.5\n""")
         f.write("\n")
         f.write("from mtwrapper import MTWrapper\n")    
         f.write("mtwrapper = MTWrapper(")
+        skip = {}
         for source in self.sources:
-            f.write(source + ",")
+            f.write("'" + source + "',")
+            exec 'from ' + source + ' import confdata'
+            for key in confdata:
+                skip[key] = True
         f.write("\n")
         for key, default, help in MTWrapper.defaults:            
-            if key == 'EXPERIMENTNAME': 
-                value = expname
-            elif key == 'WORKDIR':
-                value = workdir
-            else:
-                value = self.__getattribute__(key)
-            
-            if key[:5] == 'PATH_' and (value == default or value == ""): 
-                continue
-            if key[:5] == 'EXEC_' and (value == default or value == ""): 
-                continue
-            
-            if isinstance(value, str) or isinstance(value,  unicode):            
-                f.write("    " + key + "=\"" + value + "\"")
-            else:
-                f.write("    " + key + "=" + str(value))
-            
-            if help:
-                f.write(", #" + help + "\n")
-            else:
-                f.write(",\n")
+            if not key in skip:
+                if key == 'EXPERIMENTNAME': 
+                    value = expname
+                elif key == 'WORKDIR':
+                    value = workdir
+                else:
+                    value = self.__getattribute__(key)
+                
+                if key[:5] == 'PATH_' and (value == default or value == ""): 
+                    continue
+                if key[:5] == 'EXEC_' and (value == default or value == ""): 
+                    continue
+                
+                if isinstance(value, str) or isinstance(value,  unicode):            
+                    f.write("    " + key + "=\"" + value + "\"")
+                else:
+                    f.write("    " + key + "=" + str(value))
+                
+                if help:
+                    f.write(", #" + help + "\n")
+                else:
+                    f.write(",\n")
         f.write(")\n")
         if writebatches:
             for batch, conf in self.batches:                     
@@ -2437,6 +2442,7 @@ def usage():
     print >>sys.stderr,"\t-S <code>         Source language (iso-639-1 or 3)"
     print >>sys.stderr,"\t-T <code>         Target language (iso-639-1 or 3)"
     print >>sys.stderr,"\t-w <dir>          Work directory (by default: current dir)"
+    print >>sys.stderr,"\t-I <module>       Include settings module"
     print >>sys.stderr,"Optional Input:"
     print >>sys.stderr,"\t--testset=n          Extract a random sample of n lines as test set, and exclude from training"
     print >>sys.stderr,"\t--devset=n           Extract a random sample of n lines as development set, and exclude from training"
@@ -2451,17 +2457,19 @@ if __name__ == "__main__":
     
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hs:t:S:T:n:x:w:d:i:", ['testset=','devset=','trainset='])
+        opts, args = getopt.getopt(sys.argv[1:], "hs:t:S:T:n:x:w:d:i:I:", ['testset=','devset=','trainset='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
         sys.exit(2)
 
     parentdir = None
+    includemod = None
     sourcecorpusfile = targetcorpusfile = sourcelang = targetlang = corpusname = expname = workdir = ""
     devsourcecorpusfile = devtargetcorpusfile = testsourcecorpusfile = testtargetcorpusfile = ""
     trainset = testset = devset = 0
     includedirs = []
+    confdata = {}
 
     for o, a in opts:
         if o == '-s':
@@ -2480,6 +2488,13 @@ if __name__ == "__main__":
             workdir = a
         elif o == '-d':
             parentdir = a
+        elif o == '-I':
+            includemod = a
+            try:
+                exec 'from ' + includemod + ' import confdata'
+            except:
+                print >>sys.stderr,"Unable to import " + includemod
+                sys.exit(2)
         elif o == '-i':
             includedirs = a.split(':')
         elif o == '--testset':
@@ -2544,42 +2559,46 @@ if __name__ == "__main__":
             f.write("sys.path.append('" + dir + "')\n")
     f.write("\n")
     f.write("from mtwrapper import MTWrapper\n")    
-    f.write("mtwrapper = MTWrapper(\n")
+    f.write("mtwrapper = MTWrapper(")
+    if includemod:
+        f.write("'" + includemod + "',")
+    f.write("\n")
     for key, default, help in MTWrapper.defaults:            
-        if key == 'CORPUSNAME': 
-            default = corpusname
-        if key == 'EXPERIMENTNAME': 
-            default = expname
-        elif key == 'WORKDIR':
-            default = workdir
-        elif key == 'TRAINSOURCECORPUS':
-            default = sourcecorpusfile
-        elif key == 'TRAINTARGETCORPUS':
-            default = targetcorpusfile
-        elif key == 'SOURCELANG':
-            default = sourcelang
-        elif key == 'TARGETLANG':
-            default = targetlang
-        elif key == 'TESTSOURCECORPUS':
-            default = testsourcecorpusfile
-        elif key == 'TESTTARGETCORPUS':
-            default = testtargetcorpusfile            
-        elif key == 'DEVSOURCECORPUS':
-            default = devsourcecorpusfile
-        elif key == 'DEVTARGETCORPUS':
-            default = devtargetcorpusfile
-        
-    
-        
-        if isinstance(default, str) or isinstance(default,  unicode):            
-            f.write("    " + key + "=\"" + default + "\"")
-        else:
-            f.write("    " + key + "=" + str(default))
+        if not key in confdata:
+            if key == 'CORPUSNAME': 
+                default = corpusname
+            if key == 'EXPERIMENTNAME': 
+                default = expname
+            elif key == 'WORKDIR':
+                default = workdir
+            elif key == 'TRAINSOURCECORPUS':
+                default = sourcecorpusfile
+            elif key == 'TRAINTARGETCORPUS':
+                default = targetcorpusfile
+            elif key == 'SOURCELANG':
+                default = sourcelang
+            elif key == 'TARGETLANG':
+                default = targetlang
+            elif key == 'TESTSOURCECORPUS':
+                default = testsourcecorpusfile
+            elif key == 'TESTTARGETCORPUS':
+                default = testtargetcorpusfile            
+            elif key == 'DEVSOURCECORPUS':
+                default = devsourcecorpusfile
+            elif key == 'DEVTARGETCORPUS':
+                default = devtargetcorpusfile
             
-        if help:
-            f.write(", #" + help + "\n")
-        else:
-            f.write(",\n")
+        
+            
+            if isinstance(default, str) or isinstance(default,  unicode):            
+                f.write("    " + key + "=\"" + default + "\"")
+            else:
+                f.write("    " + key + "=" + str(default))
+                
+            if help:
+                f.write(", #" + help + "\n")
+            else:
+                f.write(",\n")
     f.write(")\nmtwrapper.start()\n")
     f.close()
     os.chmod(settingsfile, 0754)
