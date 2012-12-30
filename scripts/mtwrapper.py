@@ -701,8 +701,12 @@ class MTWrapper(object):
 
     def start(self):        
         print >>sys.stderr, repr(sys.argv)
-        
-        os.chdir(self.WORKDIR)
+        try:        
+            os.chdir(self.WORKDIR)
+        except:
+            if not os.path.exists(sys.argv[0]):
+                #not yet in working directory
+                print >>sys.stderr, "Unable to find working directory ", self.WORKDIR, ". Path does not exist or not an absolute path?"
         try:
             cmd = sys.argv[1]
         except:
@@ -820,7 +824,7 @@ class MTWrapper(object):
 
             branchdir, branchsettings = self.branch(expname, sys.argv[3:])                                        
                                     
-            if 'editor' in os.environ:
+            if 'EDITOR' in os.environ:
                 editor = os.environ['EDITOR']
             else:
                 editor = 'vim'
@@ -2606,7 +2610,7 @@ if __name__ == "__main__":
     f.write(")\nmtwrapper.start()\n")
     f.close()
     os.chmod(settingsfile, 0754)
-    if 'editor' in os.environ:
+    if 'EDITOR' in os.environ:
         editor = os.environ['EDITOR']
     else:
         editor = 'vim'
