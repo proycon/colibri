@@ -2530,7 +2530,7 @@ if __name__ == "__main__":
     if workdir and not os.path.isdir(workdir):            
         print>>sys.stderr, "Creating work directory " + workdir
         os.mkdir(workdir)
-        workdir = os.path.getcwd() + '/' + workdir
+        workdir = os.getcwd() + '/' + workdir
     elif workdir:
         print>>sys.stderr, yellow("WARNING: work directory " +  workdir + " already exists! Press ENTER to continue or ctrl-C to abort")
         raw_input()
