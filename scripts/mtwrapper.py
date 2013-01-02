@@ -364,16 +364,18 @@ class MTWrapper(object):
 
     def check_common(self):
         sane = True
+
+        if not os.path.isdir(self.WORKDIR):
+            self.log("Work directory does not exist, creating " + self.WORKDIR,yellow)
+            try:
+                os.mkdir(self.WORKDIR)
+            except:
+                self.log("Configuration error: Unable to create work directory " + self.WORKDIR,red)
+                sane = False
+
         if self.WORKDIR[-1] != '/':     
             self.WORKDIR += '/'
-            if not os.path.isdir(self.WORKDIR):
-                self.log("Work directory does not exist, creating " + self.WORKDIR,yellow)
-                try:
-                    os.mkdir(self.WORKDIR)
-                except:
-                    self.log("Configuration error: Unable to create work directory " + self.WORKDIR,red)
-                    sane = False
-        
+    
         sane = True
         if not self.CORPUSNAME:
             self.log("Configuration error: CORPUSNAME not specified!",red)
@@ -703,6 +705,7 @@ class MTWrapper(object):
         print >>sys.stderr, repr(sys.argv)
         try:        
             os.chdir(self.WORKDIR)
+            self.WORKDIR = os.getcwd()
         except:
             if not os.path.exists(sys.argv[0]):
                 #not yet in working directory
