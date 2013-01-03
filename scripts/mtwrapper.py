@@ -2195,9 +2195,14 @@ WordPenalty: -0.5\n""")
                             print >>sys.stderr,"NIST score: ", self.nist
                         if line[21:33] == "BLEU score =":
                             try:
+                                bleu2 = float(line[34:40].strip())
                                 if self.bleu == 0:
-                                    self.bleu = float(line[34:40].strip())
+                                    self.bleu = bleu2
                                     self.log("BLEU score: " + str(self.bleu), white)
+                                elif abs(self.bleu - bleu2) > 0.01:
+                                    self.log("blue score from MTEVAL scripts differs too much: " + str(self.bleu) + " vs " + str(bleu2) +  ", choosing highest score")
+                                    if bleu2 > self.bleu:
+                                        self.bleu = bleu2
                                 else:
                                     self.log("BLEU score (not stored): " + str(float(line[34:40].strip())))
                             except:
