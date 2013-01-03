@@ -2454,10 +2454,14 @@ def usage():
     print >>sys.stderr,"\t-T <code>         Target language (iso-639-1 or 3)"
     print >>sys.stderr,"\t-w <dir>          Work directory (by default: current dir)"
     print >>sys.stderr,"\t-I <module>       Include settings module"
-    print >>sys.stderr,"Optional Input:"
+    print >>sys.stderr,"Optional Input:"  
     print >>sys.stderr,"\t--testset=n          Extract a random sample of n lines as test set, and exclude from training"
     print >>sys.stderr,"\t--devset=n           Extract a random sample of n lines as development set, and exclude from training"
     print >>sys.stderr,"\t--trainset=n         Restrict the training set to a random sample of n lines"
+    print >>sys.stderr,"\t--srcdev=filename    Development corpus in source language (can not be used with --testset, --devset,--trainset)"
+    print >>sys.stderr,"\t--tgtdev=filename    Development corpus in target language  (can not be used with --testset, --devset,--trainset)"
+    print >>sys.stderr,"\t--srctst=filename    Test corpus in source language  (can not be used with --testset, --devset,--trainset)"
+    print >>sys.stderr,"\t--tgttst=filename    Target corpus in target language  (can not be used with --testset, --devset,--trainset)"
     print >>sys.stderr,"\t-i <dirs>         Colon-separated directories where python can find non-standard modules"
 
 
@@ -2468,7 +2472,7 @@ if __name__ == "__main__":
     
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hs:t:S:T:n:x:w:d:i:I:", ['testset=','devset=','trainset='])
+        opts, args = getopt.getopt(sys.argv[1:], "hs:t:S:T:n:x:w:d:i:I:", ['testset=','devset=','trainset=','srcdev=','tgtdev=','srctst=','tgttst='])
     except getopt.GetoptError, err:
         print str(err)
         usage()
@@ -2478,6 +2482,7 @@ if __name__ == "__main__":
     includemod = None
     sourcecorpusfile = targetcorpusfile = sourcelang = targetlang = corpusname = expname = workdir = ""
     devsourcecorpusfile = devtargetcorpusfile = testsourcecorpusfile = testtargetcorpusfile = ""
+    srcdev = tgtdev = srctst = tgttst = None
     trainset = testset = devset = 0
     includedirs = []
     confdata = {}
@@ -2514,6 +2519,14 @@ if __name__ == "__main__":
             devset = int(a)            
         elif o == '--trainset':
             trainset = int(a)
+        elif o == '--srcdev':
+            devsourcecorpusfile = a
+        elif o == '--tgtdev':
+            devtargetcorpusfile = a  
+        elif o == '--srctst':
+            testsourcecorpusfile = a
+        elif o == '--tgttst':
+            testtargetcorpusfile = a  
         elif o == '-h':            
             usage()
             sys.exit(0)
@@ -2555,7 +2568,7 @@ if __name__ == "__main__":
             sys.exit(2)
         
         sourcecorpusfile, targetcorpusfile, testsourcecorpusfile, testtargetcorpusfile, devsourcecorpusfile, devtargetcorpusfile = resource( sourcecorpusfile, targetcorpusfile, testset, devset, trainset, workdir, sourcelang, targetlang, corpusname)
-        
+   
      
                 
     if expname:
