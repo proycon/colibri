@@ -14,7 +14,7 @@ void usage() {
     cerr << " -C [id]      Classifier output prefix. The decoder takes this same ID to load your classifier." << endl;
     cerr << " -c [int]     Context threshold. Only create a classifier when at least this many different contexts exist. Defaults to 1." << endl;
     cerr << " -t [int]     Target threshold. Only create a classifier when at least this many different target options exist. Defaults to 1." << endl;
-    cerr << " -a [float]   Accuracy threshold for Construction experts (-X), only experts with a leave-one-out accuracy higher than specified will be included. Value between 0 and 1. Defaults to 1." << endl;
+    cerr << " -a [float]   Accuracy threshold for Construction experts (-X), only experts with a leave-one-out accuracy higher than specified will be included. Value between 0 and 1. Defaults to 0 (no threshold)." << endl;
     cerr << " -x           disable exemplar weighting" << endl;
     cerr << " -O [options] Timbl options" << endl;
     cerr << " -1           Represent the focus feature as a single entity, rather than individual tokens" << endl;
