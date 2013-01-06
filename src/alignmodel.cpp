@@ -1137,6 +1137,8 @@ void AlignmentModel::integratereverse(int computereverse) {
 
 
 int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a, int sentenceindex, int computereverse) {
+    int found = 0;
+
     int t_length = sentence_a.target->length();
     int s_length = sentence_a.source->length();
     
@@ -1259,6 +1261,7 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
         //add alignment
         if (alignmatrix[(const EncAnyGram *)sourcegram][targetgram].empty()) {
             alignmatrix[(const EncAnyGram *)sourcegram][targetgram].push_back(1);
+            found++;
         } else {
             alignmatrix[(const EncAnyGram *)sourcegram][targetgram][0] += 1;
         }
@@ -1272,7 +1275,7 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
         }
     }
     
-     
+    return found; 
     
 }
 
