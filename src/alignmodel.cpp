@@ -2102,8 +2102,10 @@ void AlignmentModel::save(const string & filename) {
     if (alignmatrix.count(NULLGRAM) > 0) sourcecount--;
     f.write( (char*) &sourcecount, sizeof(uint64_t));   
     
+    unsigned int i = 0;
 
     for (t_alignmatrix::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
+        i++;
     	if (iter->first == NULLGRAM) continue;
 
     	
@@ -2128,7 +2130,7 @@ void AlignmentModel::save(const string & filename) {
         for (t_aligntargets::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
         	const EncAnyGram* targetgram = gettargetkey(iter2->first);
         	if (targetgram == NULL) {
-        	    cerr << "AlignmentModel::save(): Target key not found! This should not happen!";
+        	    cerr << "AlignmentModel::save(): Target key not found! This should not happen! Error whilst processing source-pattern " << i << endl;
         	    throw InternalError();
         	}        	        	
         	        	
