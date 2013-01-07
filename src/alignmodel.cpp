@@ -1338,7 +1338,7 @@ GizaSentenceAlignment AlignmentModel::extractgiza_growdiag(GizaSentenceAlignment
     GizaSentenceAlignment sentence_a = sentence_s2t.intersect(sentence_t2s); //alignment starts with intersection
     GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
     do {
-        if (DEBUG) cerr << "\t\t[growdiag] Next iteration" << endl;
+        if (DEBUG) cerr << "\t[growdiag] Next iteration" << endl;
         added = 0;
         
         for (multimap<const unsigned char,const unsigned char>::iterator iter = sentence_a.alignment.begin(); iter != sentence_a.alignment.end(); iter++) {
@@ -1383,7 +1383,7 @@ GizaSentenceAlignment AlignmentModel::extractgiza_growdiag(GizaSentenceAlignment
                                         //yes, (x,y) found in union, add alignment point:
                                         sentence_a.alignment.insert(pair<const unsigned char, const unsigned char>(x,y));
                                         added += 1;
-                                        if (DEBUG) cerr << "\t\t[growdiag] added alignment point (" << x << "," << y << ")" << endl;
+                                        if (DEBUG) cerr << "\t[growdiag] added alignment point (" << x << "," << y << ")" << endl;
                                     } else {
                                         //no, break
                                         continue;
@@ -1396,7 +1396,7 @@ GizaSentenceAlignment AlignmentModel::extractgiza_growdiag(GizaSentenceAlignment
             } 
             
         }   
-        if (DEBUG) cerr << "\t\t[growdiag] " << added << " alignment points added this iteration" << endl;      
+        if (DEBUG) cerr << "\t[growdiag] " << added << " alignment points added this iteration" << endl;      
     } while (added > 0);    
     return sentence_a;
 }
