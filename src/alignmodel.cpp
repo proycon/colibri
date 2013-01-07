@@ -1338,18 +1338,25 @@ GizaSentenceAlignment AlignmentModel::extractgiza_growdiag(GizaSentenceAlignment
     GizaSentenceAlignment sentence_a = sentence_s2t.intersect(sentence_t2s); //alignment starts with intersection
     GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
     do {
+        if (DEBUG) cerr << "\t\t[growdiag] Next iteration" << endl;
         added = 0;
+        
         for (multimap<const unsigned char,const unsigned char>::iterator iter = sentence_a.alignment.begin(); iter != sentence_a.alignment.end(); iter++) {
-            //e aligned with f
+            //for each source word e
+            //for each target word f
+            //where e aligned with f
             
             //for each neighbouring point
             for (unsigned char x = -1; x <= 1; x++) {
                 for (unsigned char y = -1; y <= 1; y++) {
-                    if (!(( x == 0) && (y == 0))) { //not 0,0                        
+                    if (!(( x == 0) && (y == 0))) { //not 0,0      
+                        //check if e-new (y) not aligned or f-new (x) not aligned
+                                      
                         //is this neighbour aligned already?
-                        if (sentence_a.alignment.count(x) == 0) {
-                            continue; //yes, break
+                        if (sentence_a.alignment.count(x)) { //check x
+                            continue; //yes, aligned already, break
                         } else {
+                            //check y                                                   
                             bool found = false;
                             for (multimap<const unsigned char,const unsigned char>::iterator iter2 = sentence_a.alignment.lower_bound(x); iter2 != sentence_a.alignment.upper_bound(x); iter2++) {
                                 if (iter2->second == y) {
@@ -1358,12 +1365,13 @@ GizaSentenceAlignment AlignmentModel::extractgiza_growdiag(GizaSentenceAlignment
                                 } 
                             }
                             if (found) {
-                                continue; //yes, break
+                                continue; //yes, aligned already, break
                             } else {
-                                //not aligned already.. is it in the union?
-                                if (sentence_u.alignment.count(x) == 0) {                                    
-                                    continue; //no, break
+                                //not aligned yet.. is it in the union?
+                                if (sentence_u.alignment.count(x) == 0) { //check x                                    
+                                    continue; //no, therefore no candidate, break
                                 } else {
+                                    //check y in union
                                     found = false;
                                     for (multimap<const unsigned char,const unsigned char>::iterator iter2 = sentence_u.alignment.lower_bound(x); iter2 != sentence_u.alignment.upper_bound(x); iter2++) {
                                         if (iter2->second == y) {
@@ -1372,9 +1380,10 @@ GizaSentenceAlignment AlignmentModel::extractgiza_growdiag(GizaSentenceAlignment
                                         } 
                                     }     
                                     if (found) {
-                                        //yes, found in union, add alignment point:
+                                        //yes, (x,y) found in union, add alignment point:
                                         sentence_a.alignment.insert(pair<const unsigned char, const unsigned char>(x,y));
                                         added += 1;
+                                        if (DEBUG) cerr << "\t\t[growdiag] added alignment point (" << x << "," << y << ")" << endl;
                                     } else {
                                         //no, break
                                         continue;
@@ -1386,7 +1395,8 @@ GizaSentenceAlignment AlignmentModel::extractgiza_growdiag(GizaSentenceAlignment
                 }
             } 
             
-        } 
+        }   
+        if (DEBUG) cerr << "\t\t[growdiag] " << added << " alignment points added this iteration" << endl;      
     } while (added > 0);    
     return sentence_a;
 }
