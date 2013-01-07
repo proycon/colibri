@@ -1137,11 +1137,20 @@ void AlignmentModel::integratereverse(int computereverse) {
 
 
 int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a, int sentenceindex, int computereverse) {
+    //extracts phrases based on alignment point dataset
+    
+    
+    
+    //From statmt.org: We collect all aligned phrase pairs that are consistent with the word alignment: The words in a legal phrase pair are only aligned to each other, and not to words outside.
+    // See also Statistical Machine Translation (Philip Koehn), pag 133 
+
     int found = 0;
 
-    int t_length = sentence_a.target->length();
-    int s_length = sentence_a.source->length();
+    const int t_length = sentence_a.target->length();
+    const int s_length = sentence_a.source->length();
     
+    
+    //phrases will be stored here ((s_start,s_end),(t_start,t_end))
     vector< pair< pair<int,int>,pair<int,int> > > phrases;
     
     for (int t_start = 0; t_start < t_length; t_start++) {
@@ -1152,33 +1161,35 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
             for (multimap<const unsigned char,const unsigned char>::iterator iter = sentence_a.alignment.begin(); iter != sentence_a.alignment.end(); iter++) { 
                 const unsigned char s = iter->first;
                 const unsigned char t = iter->second;
-                if ((t_start <= t) && (t >= t_end)) {
+                if ((t_start <= t) && (t <= t_end)) {
                     if (s < s_start) s_start = s;
                     if (s > s_end) s_end = s;                    
                 }
                  
             }
+            
+            if ((s_end == 0) || (s_start > s_end)) continue; //nothing found
+            
             //extract phrase
-            if (s_end == 0) continue;
+            
             
             //check if alignment points violate consistency
-            bool valid = false;
+            bool valid = true;
             for (multimap<const unsigned char,const unsigned char>::iterator iter = sentence_a.alignment.begin(); iter != sentence_a.alignment.end(); iter++) {
                 const unsigned char s = iter->first;
                 const unsigned char t = iter->second;
                 if ( (s_start <= s) && (s_end >= s) && ((t < t_start) || (t > t_end))  ) {
-                    valid = true;
+                    valid = false;
                     break;
                 }  
             }
-            if (!valid) continue;
+            if (!valid) continue; //not valid!
 
+            //good, valid
             
-            //add phrase pairs (incl. additional unaligned s)
+            //add phrase pairs (incl. additional unaligned s; unaligned words on edges)
             bool s_startaligned = false;
             bool s_endaligned = false;
-            
-            
             
             int s_start2 = s_start;
             do {
@@ -1188,7 +1199,7 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
                     //add phrasepair
                     phrases.push_back(pair< pair<int,int>,pair<int,int> >( pair<int,int>(s_start2,s_end2), pair<int,int>(t_start,t_end) ) );                
                     s_end2++;
-                    if (s_end2 > s_length-1) break;
+                    if (s_end2 >= s_length) break;
                     //is s_end2 aligned?
                     s_endaligned= false;
                     for (vector< pair< pair<int,int>,pair<int,int> > >::iterator iter = phrases.begin(); iter != phrases.end(); iter++) {
