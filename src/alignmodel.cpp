@@ -1347,19 +1347,23 @@ GizaSentenceAlignment AlignmentModel::extractgiza_growdiag(GizaSentenceAlignment
             //where e aligned with f
             
             //for each neighbouring point
-            for (unsigned char x = -1; x <= 1; x++) {
-                for (unsigned char y = -1; y <= 1; y++) {
-                    if (!(( x == 0) && (y == 0))) { //not 0,0      
+            for (int x = iter->first - 1; x <= iter->first + 1; x++) {
+                for (int y = iter->second - 1; y <= iter->second + 1; y++) {
+                    if ((x < 0) || (x >= sentence_s2t.source->length())) continue; //impossible point
+                    if ((y < 0) || (y >= sentence_s2t.target->length())) continue; //impossible point
+                                    
+                    if (!(( x == (int) iter->first) && (y == (int) iter->second))) { //if not the same point (we only want neigbours)       
                         //check if e-new (y) not aligned or f-new (x) not aligned
+
                                       
                         //is this neighbour aligned already?
-                        if (sentence_a.alignment.count(x)) { //check x
+                        if (sentence_a.alignment.count( (unsigned char) x)) { //check x
                             continue; //yes, aligned already, break
                         } else {
                             //check y                                                   
                             bool found = false;
-                            for (multimap<const unsigned char,const unsigned char>::iterator iter2 = sentence_a.alignment.lower_bound(x); iter2 != sentence_a.alignment.upper_bound(x); iter2++) {
-                                if (iter2->second == y) {
+                            for (multimap<const unsigned char,const unsigned char>::iterator iter2 = sentence_a.alignment.lower_bound((unsigned char)  x); iter2 != sentence_a.alignment.upper_bound((unsigned char)  x); iter2++) {
+                                if (iter2->second == (unsigned char)  y) {
                                     found = true;
                                     break;
                                 } 
@@ -1368,20 +1372,20 @@ GizaSentenceAlignment AlignmentModel::extractgiza_growdiag(GizaSentenceAlignment
                                 continue; //yes, aligned already, break
                             } else {
                                 //not aligned yet.. is it in the union?
-                                if (sentence_u.alignment.count(x) == 0) { //check x                                    
+                                if (sentence_u.alignment.count( (unsigned char) x) == 0) { //check x                                    
                                     continue; //no, therefore no candidate, break
                                 } else {
                                     //check y in union
                                     found = false;
-                                    for (multimap<const unsigned char,const unsigned char>::iterator iter2 = sentence_u.alignment.lower_bound(x); iter2 != sentence_u.alignment.upper_bound(x); iter2++) {
-                                        if (iter2->second == y) {
+                                    for (multimap<const unsigned char,const unsigned char>::iterator iter2 = sentence_u.alignment.lower_bound((unsigned char)  x); iter2 != sentence_u.alignment.upper_bound((unsigned char)  x); iter2++) {
+                                        if (iter2->second == (unsigned char)  y) {
                                             found = true;
                                             break;
                                         } 
                                     }     
                                     if (found) {
                                         //yes, (x,y) found in union, add alignment point:
-                                        sentence_a.alignment.insert(pair<const unsigned char, const unsigned char>(x,y));
+                                        sentence_a.alignment.insert(pair<const unsigned char, const unsigned char>((unsigned char)  x, (unsigned char) y ));
                                         added += 1;
                                         if (DEBUG) cerr << "\t[growdiag] added alignment point (" << x << "," << y << ")" << endl;
                                     } else {
