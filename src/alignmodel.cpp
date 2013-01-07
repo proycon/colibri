@@ -1267,6 +1267,12 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
         }
         
         const EncAnyGram * targetgram = (const EncAnyGram *) sentence_a.target->slice(t_start,t_end - t_start + 1);
+        /*if (targetgram->isskipgram()) {
+            //ok, never happens, but perhaps for future
+            targetskipgrams.insert(*targetgram);
+        } else {
+            targetngrams.insert(*targetgram);
+        }*/
     
                                                 
         //add alignment
@@ -2223,6 +2229,7 @@ const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram * key,  bool al
 
 const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key) {
     if (targetmodel != NULL) return targetmodel->getkey(key);
+    if (targetngrams.empty() && targetskipgrams.empty()) return key; //no targetngrams/targetskipgrams, we'll just have to assume key is a valid pointer
     if (key->gapcount() == 0) {
         std::unordered_set<EncNGram>::iterator iter = targetngrams.find(*( (EncNGram*) key) );
         if (iter != targetngrams.end()) {
