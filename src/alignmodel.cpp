@@ -1299,7 +1299,7 @@ int AlignmentModel::extractgizapatterns_heur(GizaModel & gizamodel_s2t, GizaMode
         cerr << " @" << i << endl;
         
         
-        int found;    
+        int found = 0;    
         if ((phrasealignheuristic == PAH_GROWDIAG) || (phrasealignheuristic == PAH_GROWDIAGFINAL)) {
             GizaSentenceAlignment sentence_a = extractgiza_growdiag(sentence_s2t, sentence_t2s);            
             if (phrasealignheuristic == PAH_GROWDIAGFINAL) {
