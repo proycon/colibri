@@ -787,6 +787,282 @@ EncAnyGram * AlignmentModel::addcontext(const EncData * sentence, const EncAnyGr
 }
 
 
+
+int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold, int computereverse, bool bestonly, bool weighbyalignmentscore, bool expandunaligned, bool combine, bool intersectiononly, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
+        
+        /*
+        
+        Aligned pattern extraction on the basis of pattern models and GIZA++ Word Alignments
+            
+            - alignscorethreshold   - The threshold for the score measuring alignment strength, only patterns passing the threshold can be added 
+            - bestonly              - Consider only the strongest targe alignment for a given source pattern occurrence
+            - weighbyalignmentscore - Also include alignment scores rather than mere frequency in the phrase table scores
+            - expandunaligned       - Unaligned words at the end or beginning of a pattern are considered part of the pattern (only sensible without bestonly) //TODO: not implemented yet                        
+            - combine               - Post-processing step, if patterns X and Z are found in a sequence X Y Z where Y contains only unaligned words of max length min(|X|,|Z|), then add X Y Z as a new pattern (provided it passes the threshold)  //TODO: not implemented yet
+            - intersectiononly      - Do not attempt to improve scores using points from the union of word alignments
+            
+            
+        
+        
+        for all patterns s in source sentence:    
+            for all patterns t in target sentence:
+                maxpatternsize = max(|s|,|t|)
+                
+                - Is s consistent with t according to the GIZA word alignment? 
+                - count intersection points, compute intersectionscore: intersectionpoints / maxpatternsize                
+                
+                if intersectionscore < 1 and not intersectiononly :
+                    - count union points - intersectionpoints,  compute unionscore: unionpoints / maxpatternsize        
+                
+                score = max(intersectionscore + (1 - intersectionscore) * unionscore, 1)
+                
+                if not bestonly and score > alignscorethreshold:
+                    add pattern with score or with fixed value 1 if not weighbyalignmentscore                    
+                                                    
+            if bestonly and bestscore > alignscorethreshold:
+                add best pattern with score or with fixed value 1 if not weighbyalignmentscore
+        
+        */
+        
+        
+        
+        GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
+        GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
+        
+        int found = 0;
+
+        
+        //extract patterns in sentence pair
+
+
+        //get all patterns in the target sentence
+        vector<const EncAnyGram*> * sourcepatterns = &sourcemodel->reverseindex[sentenceindex];
+        vector<const EncAnyGram*> * targetpatterns = &targetmodel->reverseindex[sentenceindex];
+        
+        //reconstruct token-offset in reverse index (making up for not having full index anymore in SelectivePatternModel)
+        unordered_map<const EncAnyGram *, vector<int> > sourcetokenfwindex;
+        unordered_map<int, vector<const EncAnyGram *> > sourcetokenrevindex;
+        recompute_token_index(sourcetokenfwindex, sourcetokenrevindex, sentence_s2t.source, sourcepatterns);
+        unordered_map<const EncAnyGram *, vector<int> > targettokenfwindex;
+        unordered_map<int, vector<const EncAnyGram *> > targettokenrevindex;
+        recompute_token_index(targettokenfwindex, targettokenrevindex, sentence_s2t.target, targetpatterns);
+        
+        if (DEBUG) { 
+            cerr << "DEBUG source token rev index size: " << sourcetokenrevindex.size() << endl;
+            cerr << "DEBUG source token fw index size: " << sourcetokenfwindex.size() << endl;
+            cerr << "DEBUG target token rev index size: " << targettokenrevindex.size() << endl;
+            cerr << "DEBUG target token fw index size: " << targettokenfwindex.size() << endl;
+        }
+        
+        //iterate over source sentence word by word
+        for (int sourceindex = 0; sourceindex < sentence_s2t.source->length(); sourceindex++) {
+            int count_s = 0;  
+            const EncAnyGram * prevsourcepatternwithcontext = NULL;
+            //find source patterns valid at this position  
+            if (sourcetokenrevindex.count(sourceindex)) {
+                for (vector<const EncAnyGram*>::iterator iter_s = sourcetokenrevindex[sourceindex].begin(); iter_s !=  sourcetokenrevindex[sourceindex].end(); iter_s++) {
+
+                    count_s++;                
+                    
+                    const EncAnyGram * sourcepattern = *iter_s;
+                    unsigned char sourcepatternsize = sourcepattern->n();
+                    
+                    //grab context if applicable                                        
+                    const EncAnyGram * sourcepatternwithcontext = NULL;
+                    bool sourcepatternused = false; 
+                    if (leftsourcecontext || rightsourcecontext) {
+                        //extract context                        
+                        sourcepatternwithcontext = addcontext(sentence_s2t.source, sourcepattern, sourceindex);
+                        
+                        //make sure we re-use any previously used sourcepatternwithcontext rather than using this newly generated one
+                        const EncAnyGram * key = getsourcekey(sourcepatternwithcontext, false); // allowfallback=false (do not fall back to sourcemodel, which doesn't know contexts)
+                        if (key != NULL) {
+                            delete sourcepatternwithcontext; //delete generated one
+                            sourcepatternwithcontext = key; //use existing key
+                            //cout << "CONTEXT EXISTS @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
+                        //} else {
+                            //cout << "CONTEXT NEW @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
+                        }                        
+                    }                    
+                     
+                     
+                    //now find what target patterns are aligned, and how well the alignment is (expressed through a score)
+                    double bestscore = 0;             
+                    const EncAnyGram * besttargetpattern = NULL;
+                    int count_t = 0;                           
+                    
+                    multiset<uint32_t> * sourcesentenceindex = NULL; //used only if coocthreshold > 0                         
+                    if (coocthreshold > 0) {
+                        if (sourcepattern->isskipgram()) {                            
+                            sourcesentenceindex = &sourcemodel->skipgrams[*( (EncSkipGram*) sourcepattern)].sentences;    
+                        } else {
+                            sourcesentenceindex = &sourcemodel->ngrams[*( (EncNGram*) sourcepattern)].sentences;
+                        }
+                    }                    
+                    
+                    for (vector<const EncAnyGram*>::iterator iter_t = targetpatterns->begin(); iter_t != targetpatterns->end(); iter_t++) { //iterate over all target patterns IN THIS SENTENCE
+                         count_t++;                         
+                         const EncAnyGram * targetpattern = *iter_t;
+                         if (DEBUG) cerr << " @" << sentenceindex << "-" << count_s << "-" << count_t << endl;
+                         if (DEBUG) cerr << "   DEBUG: [" << sourcepattern->decode(*sourcedecoder) << "] vs [" << targetpattern->decode(*targetdecoder) << "]" << endl;
+                         
+                         const unsigned char targetpatternsize = targetpattern->n();
+                         const unsigned char maxpatternsize = (sourcepatternsize > targetpatternsize) ? sourcepatternsize : targetpatternsize;                         
+                          
+                         if (targettokenfwindex.count(targetpattern)) {
+                         
+                             if (coocthreshold > 0) {
+                                //filter by co-occurrence threshold
+                                multiset<uint32_t> * targetsentenceindex; //used only if coocthreshold > 0                         
+                                if (targetpattern->isskipgram()) {
+                                    targetsentenceindex = &targetmodel->skipgrams[*( (EncSkipGram*) targetpattern)].sentences;    
+                                } else {
+                                    targetsentenceindex = &targetmodel->ngrams[*( (EncNGram*) targetpattern)].sentences;
+                                }                                                                                        			
+                                double coocvalue = cooc(JACCARD, *sourcesentenceindex, *targetsentenceindex, coocthreshold);
+                                if (DEBUG) cerr << "     DEBUG COOC=" << coocvalue << endl;
+                                if (coocvalue < coocthreshold) {
+                                        continue; //threshold not reached, skipping
+                                }                                    
+                             }                               
+                             
+                             for (vector<int>::iterator iter2 = targettokenfwindex[targetpattern].begin(); iter2 != targettokenfwindex[targetpattern].end(); iter2++) { //loops over all occurences of the target pattern in the target sentence                         
+                                 const int targetindex = *iter2; //begin index of target pattern
+                                
+                                 int intersectionpoints = 0;                                 
+                                 bool firstsourcealigned = false;
+                                 bool firsttargetaligned = false;
+                                 bool lastsourcealigned = false;
+                                 bool lasttargetaligned = false;
+                                 //check alignment points in intersection                                                                      
+                                 for (multimap<const unsigned char, const unsigned char>::const_iterator alignmentiter = sentence_i.alignment.begin(); alignmentiter != sentence_i.alignment.end(); alignmentiter++) {
+                                    const unsigned char alignedsourceindex = alignmentiter->first -1; //-1 because of 1-based-indexing
+                                    const unsigned char alignedtargetindex = alignmentiter->second -1; //-1 because of 1-based-indexing
+                                 
+                                    const bool insource = (alignedsourceindex >= sourceindex) && (alignedsourceindex < sourceindex + sourcepattern->n());
+                                    const bool intarget = (alignedtargetindex >= targetindex) && (alignedtargetindex < targetindex + targetpattern->n());
+                                     
+                                     if ((insource) && (intarget)) {
+                                        intersectionpoints++;
+                                        if (alignedsourceindex == sourceindex) firstsourcealigned = true;
+                                        if (alignedsourceindex == sourceindex + (sourcepatternsize - 1) ) lastsourcealigned = true;
+                                        if (alignedtargetindex == targetindex) firsttargetaligned = true;
+                                        if (alignedtargetindex == targetindex + (targetpatternsize - 1) ) lasttargetaligned = true;
+                                     } else if ((insource) || (intarget)) {
+                                        //alignment point outside pattern, invalid alignment, discard
+                                        intersectionpoints = 0; break;                                        
+                                     }
+                                 }
+                                 if (DEBUG) cerr << "     DEBUG INTERSECTIONPOINTS=" << intersectionpoints << "  ENDS: " << (int) firstsourcealigned << " " << (int) lastsourcealigned << " " << (int) firsttargetaligned << " " << (int) lasttargetaligned << endl;
+                                 if ((intersectionpoints == 0) || (!firstsourcealigned)  || (!lastsourcealigned) || (!firsttargetaligned)  || (!lasttargetaligned)) break;
+                                 //if (DEBUG) cerr << "     DEBUG FOUND" << endl;
+                                                        
+                                 
+                                 const double intersectionscore = (double) intersectionpoints / maxpatternsize; //1.0 if all points are aligned
+
+                                 if (DEBUG) cerr << "     DEBUG intersectionscore(1): " << intersectionpoints << " / " << (int) maxpatternsize << " = " << intersectionscore << endl;
+                                 
+                                                                 
+                                 double unionscore = 0;
+                                 int unionpoints = 0;
+                                 if ((intersectionscore < 1) && (!intersectiononly)) {                                 
+                                     //check alignment points in union 
+                                     int unionpoints = 0; 
+                                     for (multimap<const unsigned char, const unsigned char>::const_iterator alignmentiter = sentence_u.alignment.begin(); alignmentiter != sentence_u.alignment.end(); alignmentiter++) {
+                                        const unsigned char alignedsourceindex = alignmentiter->first -1; //-1 because of 1-based-indexing
+                                        const unsigned char alignedtargetindex = alignmentiter->second -1; //-1 because of 1-based-indexing
+                                     
+                                        const bool insource = (alignedsourceindex >= sourceindex) && (alignedsourceindex < sourceindex + sourcepattern->n());
+                                        const bool intarget = (alignedtargetindex >= targetindex) && (alignedtargetindex < targetindex + targetpattern->n());
+                                         
+                                         if ((insource) && (intarget)) {
+                                            unionpoints++;
+                                         }                                   
+                                     }
+                                     unionpoints = unionpoints - intersectionpoints; //substract intersection points, we want only points in the union and not in the intersection                                     
+                                     if (unionpoints > 0) {
+                                        unionscore =  (double) unionpoints / maxpatternsize;
+                                        if (DEBUG) cerr << "     DEBUG unionscore(2): " << unionscore << endl;
+                                     }
+                                }
+
+                                double score = intersectionscore + (1 - intersectionscore) * unionscore;
+                                if (score > 1) score = 1;
+                                if (DEBUG) cerr << "     DEBUG score(2): " << score << endl;
+
+                                if (bestonly) {
+                                    if (score > bestscore) { 
+                                        //retain only the best target pattern given an occurrence of a source pattern
+                                        bestscore = score;
+                                        besttargetpattern = targetpattern;
+                                    }
+                                } else if (score > alignscorethreshold) {
+                                    addextractedpattern(sourcepattern, targetpattern, weighbyalignmentscore ? score : 1, computereverse, sourcepatternwithcontext);
+                                    sourcepatternused = true;
+                                    found++;
+                                    if ((sourcedecoder != NULL) && (targetdecoder != NULL)) {
+                                        cout << sourcepattern->decode(*sourcedecoder) << " ||| " << targetpattern->decode(*targetdecoder) << " ||| " << score << endl;
+                                    }
+                                }
+                            }
+                         }
+                    } //iteration over all target patterns    
+                                        
+                    if ((besttargetpattern != NULL) && (bestscore >= alignscorethreshold)) {
+                        addextractedpattern(sourcepattern, besttargetpattern, weighbyalignmentscore ? bestscore : 1, computereverse, sourcepatternwithcontext);
+                        sourcepatternused = true;
+                        found++; 
+                        if ((sourcedecoder != NULL) && (targetdecoder != NULL)) {
+                            cout << sourcepattern->decode(*sourcedecoder) << " ||| " << besttargetpattern->decode(*targetdecoder) << " ||| " << bestscore << endl;
+                        }
+                    }
+                    
+                    if (sourcepatternwithcontext != NULL) {
+                        if (sourcepatternused) {
+                            sourcecontexts[sourcepattern].insert(sourcepatternwithcontext);
+                        } else {
+                            //delete sourcepatternwithcontext; //TODO: Reenable: causes segfault... I think we already deleted this earlier, then this is not needed
+                        }
+                    }                                   
+                }
+             }
+          }  //sourceindex iterator
+         return found;
+}
+
+
+void AlignmentModel::addextractedpattern(const EncAnyGram * sourcepattern, const EncAnyGram * targetpattern, double score, int computereverse, const EncAnyGram * sourcepatternwithcontext) {
+
+            //use pattern-in-context or without context as key in alignmatrix?
+            const EncAnyGram * key;
+            if (sourcepatternwithcontext != NULL) {
+                key = sourcepatternwithcontext;
+                //cout << "KEY=CONTEXT @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
+
+            } else {
+                key = sourcepattern;
+                //cout << "KEY=NORMAL @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
+            }
+                            
+            //add alignment
+            if (alignmatrix[key][targetpattern].empty()) {
+                alignmatrix[key][targetpattern].push_back(score);
+            } else {
+                alignmatrix[key][targetpattern][0] +=score;
+            }
+            
+            if (computereverse) {
+                if (reversealignmatrix[targetpattern][key].empty()) {
+                    reversealignmatrix[targetpattern][key].push_back(score);
+                } else {
+                    reversealignmatrix[targetpattern][key][0] += score;
+                }
+            }
+            
+        
+}
+
+
 int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold, int computereverse, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
         //SUPERVISED
         GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
@@ -800,7 +1076,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
         /*
                     
                             
-           2)  
+           2)  (OLD IDEA)
             patterns_t = all patterns in sentence_t           
             for word_s in sentence_s:
                 patterns_s = find patterns BEGINNING WITH word_s
@@ -899,19 +1175,20 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
             //find source patterns valid at this position  
             if (sourcetokenrevindex.count(sourceindex)) {
                 for (vector<const EncAnyGram*>::iterator iter_s = sourcetokenrevindex[sourceindex].begin(); iter_s !=  sourcetokenrevindex[sourceindex].end(); iter_s++) {
-                    //now find what target patterns are aligned, and how well the aligment is (expressed through a score)
-                    count_s++;                    
+
+                    count_s++;                
                     
                     const EncAnyGram * sourcepattern = *iter_s;
                     unsigned char sourcepatternsize = sourcepattern->n();
                     
+                    //grab context if applicable                                        
                     const EncAnyGram * sourcepatternwithcontext = NULL;
                     bool sourcepatternused = false; 
                     if (leftsourcecontext || rightsourcecontext) {
-                        //extract context
+                        //extract context                        
+                        sourcepatternwithcontext = addcontext(sentence_s2t.source, sourcepattern, sourceindex);
                         
                         //make sure we re-use any previously used sourcepatternwithcontext rather than using this newly generated one
-                        sourcepatternwithcontext = addcontext(sentence_s2t.source, sourcepattern, sourceindex);
                         const EncAnyGram * key = getsourcekey(sourcepatternwithcontext, false); // allowfallback=false (do not fall back to sourcemodel, which doesn't know contexts)
                         if (key != NULL) {
                             delete sourcepatternwithcontext; //delete generated one
@@ -919,10 +1196,11 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                             //cout << "CONTEXT EXISTS @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
                         //} else {
                             //cout << "CONTEXT NEW @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
-                        }
-                        
+                        }                        
                     }                    
                      
+                     
+                    //now find what target patterns are aligned, and how well the alignment is (expressed through a score)
                     double bestscore = 0;             
                     const EncAnyGram * besttargetpattern = NULL;
                     int count_t = 0;                           
@@ -936,17 +1214,17 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                         }
                     }                    
                     
-                    for (vector<const EncAnyGram*>::iterator iter_t = targetpatterns->begin(); iter_t != targetpatterns->end(); iter_t++) {
+                    for (vector<const EncAnyGram*>::iterator iter_t = targetpatterns->begin(); iter_t != targetpatterns->end(); iter_t++) { //iterate over all target patterns IN THIS SENTENCE
                          count_t++;                         
                          const EncAnyGram * targetpattern = *iter_t;
                          if (DEBUG) cerr << " @" << sentenceindex << "-" << count_s << "-" << count_t << endl;
                          if (DEBUG) cerr << "   DEBUG: [" << sourcepattern->decode(*sourcedecoder) << "] vs [" << targetpattern->decode(*targetdecoder) << "]" << endl;
                          
                          const unsigned char targetpatternsize = targetpattern->n();
-                         const unsigned char maxpatternsize = (sourcepatternsize > targetpatternsize) ? sourcepatternsize : targetpatternsize;
-                         
+                         const unsigned char maxpatternsize = (sourcepatternsize > targetpatternsize) ? sourcepatternsize : targetpatternsize;                         
                           
                          if (targettokenfwindex.count(targetpattern)) {
+                         
                              if (coocthreshold > 0) {
                                 //filter by co-occurrence threshold
                                 multiset<uint32_t> * targetsentenceindex; //used only if coocthreshold > 0                         
@@ -976,7 +1254,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                                     const unsigned char alignedtargetindex = alignmentiter->second -1; //-1 because of 1-based-indexing
                                  
                                     const bool insource = (alignedsourceindex >= sourceindex) && (alignedsourceindex < sourceindex + sourcepattern->n());
-                                    const bool intarget = (alignedtargetindex >= targetindex) && (alignedtargetindex < targetindex + targetpattern->n());                                                                          
+                                    const bool intarget = (alignedtargetindex >= targetindex) && (alignedtargetindex < targetindex + targetpattern->n());
                                      
                                      if ((insource) && (intarget)) {
                                         aligned++;
@@ -985,7 +1263,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                                         if (alignedtargetindex == targetindex) firsttargetaligned = true;
                                         if (alignedtargetindex == targetindex + (targetpatternsize - 1) ) lasttargetaligned = true;
                                      } else if ((insource) || (intarget)) {
-                                        //alignment point outside pattern, discard
+                                        //alignment point outside pattern, invalid alignment, discard
                                         aligned = -1; break;                                        
                                      }
                                  }
@@ -1034,41 +1312,11 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                     
                     
                     if ((besttargetpattern != NULL) && (bestscore >= alignscorethreshold)) {
-                        
-                        //use pattern-in-context or without context as key in alignmatrix?
-                        const EncAnyGram * key;
-                        if (sourcepatternwithcontext != NULL) {
-                            key = sourcepatternwithcontext;
-                            //cout << "KEY=CONTEXT @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
-
-                        } else {
-                            key = sourcepattern;
-                            //cout << "KEY=NORMAL @" << (size_t) sourcepatternwithcontext << " #" << sourcepatternwithcontext->hash() << endl;
-                        }
-                                        
-                        //add alignment
-                        if (alignmatrix[key][besttargetpattern].empty()) {
-                            alignmatrix[key][besttargetpattern].push_back(1);
-                        } else {
-                            alignmatrix[key][besttargetpattern][0] += 1;
-                        }
-                        
-                        if (computereverse) {
-                            if (reversealignmatrix[besttargetpattern][key].empty()) {
-                                reversealignmatrix[besttargetpattern][key].push_back(1);
-                            } else {
-                                reversealignmatrix[besttargetpattern][key][0] += 1;
-                            }
-                        }
-                        
-                        /* DEBUG: if ((sourcepatternwithcontext != NULL) && (getsourcekey(key) != key)) {
-                                cerr << "ERROR: CAN NOT RETRIEVE KEY" << endl;
-                        } */
-                        
+                        addextractedpattern(sourcepattern, besttargetpattern, 1, computereverse, sourcepatternwithcontext);
                         sourcepatternused = true;
                         found++;
                         if ((sourcedecoder != NULL) && (targetdecoder != NULL)) {
-                            cout << key->decode(*sourcedecoder) << " ||| " << besttargetpattern->decode(*targetdecoder) << " ||| " << bestscore << endl;
+                            cout << sourcepattern->decode(*sourcedecoder) << " ||| " << besttargetpattern->decode(*targetdecoder) << " ||| " << bestscore << endl;
                         }
                     }
                     
@@ -1076,7 +1324,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                         if (sourcepatternused) {
                             sourcecontexts[sourcepattern].insert(sourcepatternwithcontext);
                         } else {
-                            //delete sourcepatternwithcontext; //TODO: Reenable: causes segfault
+                            //delete sourcepatternwithcontext; //TODO: Reenable: causes segfault... I think we already deleted this earlier, then this is not needed
                         }
                     }                                   
                 }
@@ -1085,6 +1333,32 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
          return found;
 }
 
+
+
+int AlignmentModel::extractgizapatterns2(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold, int computereverse, bool bestonly, bool weighbyalignmentscore, bool expandunaligned, bool combine, bool intersectiononly, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
+    unsigned int totalfound = 0;
+    while (!gizamodel_s2t.eof() && !gizamodel_t2s.eof()) {         
+        GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
+        GizaSentenceAlignment sentence_t2s = gizamodel_t2s.readsentence();    
+        const int i = gizamodel_s2t.index();
+        cerr << " @" << i << endl;
+        int found = extractgizapatterns2(sentence_s2t, sentence_t2s, i, pairoccurrencethreshold, coocthreshold, alignscorethreshold, computereverse, bestonly, weighbyalignmentscore, expandunaligned, combine, intersectiononly, sourcedecoder,targetdecoder);
+        totalfound += found;
+        cerr << "   found " << found << endl;
+      } //alignment read        
+      
+      
+      if (pairoccurrencethreshold > 0) prune(pairoccurrencethreshold);
+            
+      //normalize alignment matrix
+      normalize();
+      if (computereverse) {
+            cerr << "Integrating reverse model" << endl;
+            integratereverse(computereverse);
+      }
+      
+      return totalfound;      
+}
 
 
 int AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold, int computereverse, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
@@ -1111,6 +1385,7 @@ int AlignmentModel::extractgizapatterns(GizaModel & gizamodel_s2t, GizaModel & g
       
       return totalfound;      
 }
+
 
 
 void AlignmentModel::integratereverse(int computereverse) {
