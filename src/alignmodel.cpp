@@ -1197,26 +1197,31 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
                 
                 do {
                     //add phrasepair
-                    phrases.push_back(pair< pair<int,int>,pair<int,int> >( pair<int,int>(s_start2,s_end2), pair<int,int>(t_start,t_end) ) );                
+                    phrases.push_back(pair< pair<int,int>,pair<int,int> >( pair<int,int>(s_start2,s_end2), pair<int,int>(t_start,t_end) ) );
+                    
+                    //attempt to add free unaligned points (widen source phrase to the right):
                     s_end2++;
                     if (s_end2 >= s_length) break;
                     //is s_end2 aligned?
                     s_endaligned= false;
                     for (vector< pair< pair<int,int>,pair<int,int> > >::iterator iter = phrases.begin(); iter != phrases.end(); iter++) {
-                        int s_refstart = iter->first.first;
-                        int s_refend = iter->first.second;
+                        const int s_refstart = iter->first.first;
+                        const int s_refend = iter->first.second;
                         if ((s_end2 >= s_refstart) && (s_end2 <= s_refend)) {
                             s_endaligned = true;
                             break;
                         }
                     }
+                    
                 } while (!s_endaligned);
+                
+                //attempt to add free unaligned points (widen source phrase to the left):
                 s_start2--;
                 if (s_start2 < 0) break;
                 s_startaligned= false;
                 for (vector< pair< pair<int,int>,pair<int,int> > >::iterator iter = phrases.begin(); iter != phrases.end(); iter++) {
-                    int s_refstart = iter->first.first;
-                    int s_refend = iter->first.second;
+                    const int s_refstart = iter->first.first;
+                    const int s_refend = iter->first.second;
                     if ((s_start2 >= s_refstart) && (s_start2 <= s_refend)) {
                         s_startaligned = true;
                         break;
