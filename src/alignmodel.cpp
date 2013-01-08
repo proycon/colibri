@@ -1155,9 +1155,11 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
     
     for (int t_start = 0; t_start < t_length; t_start++) {
         for (int t_end = t_start; t_end < t_length; t_end++) {
-            //find the minimally matching source phrase
+            
+            
+            //find the minimally matching source phrase given t_tstart,t_end
             int s_start = s_length;
-            int s_end = 0;
+            int s_end = 0;            
             for (multimap<const unsigned char,const unsigned char>::iterator iter = sentence_a.alignment.begin(); iter != sentence_a.alignment.end(); iter++) { 
                 const unsigned char s = iter->first;
                 const unsigned char t = iter->second;
@@ -1203,30 +1205,13 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
                     s_end2++;
                     if (s_end2 >= s_length) break;
                     //is s_end2 aligned?
-                    s_endaligned= false;
-                    for (vector< pair< pair<int,int>,pair<int,int> > >::iterator iter = phrases.begin(); iter != phrases.end(); iter++) {
-                        const int s_refstart = iter->first.first;
-                        const int s_refend = iter->first.second;
-                        if ((s_end2 >= s_refstart) && (s_end2 <= s_refend)) {
-                            s_endaligned = true;
-                            break;
-                        }
-                    }
-                    
+                    s_endaligned= (sentence_a.alignment.count((unsigned char) s_end2) > 0);                    
                 } while (!s_endaligned);
                 
                 //attempt to add free unaligned points (widen source phrase to the left):
                 s_start2--;
                 if (s_start2 < 0) break;
-                s_startaligned= false;
-                for (vector< pair< pair<int,int>,pair<int,int> > >::iterator iter = phrases.begin(); iter != phrases.end(); iter++) {
-                    const int s_refstart = iter->first.first;
-                    const int s_refend = iter->first.second;
-                    if ((s_start2 >= s_refstart) && (s_start2 <= s_refend)) {
-                        s_startaligned = true;
-                        break;
-                    }
-                }                
+                s_startaligned= (sentence_a.alignment.count((unsigned char) s_start2) > 0);
             } while (!s_startaligned); 
             
             
