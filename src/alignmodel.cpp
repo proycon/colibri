@@ -1401,6 +1401,14 @@ void AlignmentModel::integratereverse(int computereverse) {
                 cerr << "INTERNAL ERROR: Expected one score for pair in reverse matrix, got " << iter2->second.size() << endl;
                 throw InternalError();
             }
+            if ( alignmatrix.count(source) == 0) {
+                cerr << "INTERNAL ERROR: [integratereverse] Source pattern not found, this should not happen" << endl;
+                throw InternalError();
+            }
+            if ( alignmatrix[source].count(target) == 0) {
+                cerr << "INTERNAL ERROR: [integratereverse] Target pattern not found, this should not happen" << endl;
+                throw InternalError();
+            }
             if ( alignmatrix[source][target].size() != 1) {
                 cerr << "INTERNAL ERROR: Expected one score for pair in alignmatrix, got " <<alignmatrix[source][target].size() << endl;
                 throw InternalError();
