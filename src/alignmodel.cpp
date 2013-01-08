@@ -11,7 +11,9 @@ AlignmentModel::AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePat
     this->sourcemodel = sourcemodel;
     this->targetmodel = targetmodel;
     this->leftsourcecontext = leftsourcecontext;
-    this->rightsourcecontext = rightsourcecontext;     
+    this->rightsourcecontext = rightsourcecontext;
+    this->debug_sourceclassdecoder = NULL;
+    this->debug_targetclassdecoder = NULL;     
 }
 
 
@@ -20,6 +22,8 @@ AlignmentModel::AlignmentModel(unsigned char leftsourcecontext, unsigned char ri
     this->DEBUG = DEBUG;
     this->leftsourcecontext = leftsourcecontext;
     this->rightsourcecontext = rightsourcecontext;     
+    this->debug_sourceclassdecoder = NULL;
+    this->debug_targetclassdecoder = NULL;
 }
 
 void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthreshold, int bestn) {
@@ -1346,6 +1350,9 @@ GizaSentenceAlignment AlignmentModel::extractgiza_growdiag(GizaSentenceAlignment
     int added;
     GizaSentenceAlignment sentence_a = sentence_s2t.intersect(sentence_t2s); //alignment starts with intersection
     GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
+    
+    
+    
     do {
         if (DEBUG) cerr << "\t[growdiag] Next iteration" << endl;
         added = 0;
@@ -1759,7 +1766,9 @@ AlignmentModel::AlignmentModel(const string & s2tfilename, const string & t2sfil
     sourcemodel = NULL;
     targetmodel = NULL;
     this->leftsourcecontext = s2tmodel.leftsourcecontext;
-    this->rightsourcecontext = s2tmodel.rightsourcecontext;     
+    this->rightsourcecontext = s2tmodel.rightsourcecontext;
+    this->debug_sourceclassdecoder = NULL;
+    this->debug_targetclassdecoder = NULL;     
     load(s2tmodel, t2smodel, s2tthreshold, t2sthreshold, productthreshold);    
 }
 
@@ -1768,6 +1777,8 @@ AlignmentModel::AlignmentModel(AlignmentModel & s2tmodel, AlignmentModel & t2smo
     this->DEBUG = DEBUG;
     sourcemodel = NULL;
     targetmodel = NULL;
+    this->debug_sourceclassdecoder = NULL;
+    this->debug_targetclassdecoder = NULL;
     load(s2tmodel, t2smodel, s2tthreshold, t2sthreshold, productthreshold);
 }
 
@@ -1820,6 +1831,8 @@ AlignmentModel::AlignmentModel(const string & filename, bool logprobs, bool allo
     this->DEBUG = DEBUG;
     sourcemodel = NULL;
     targetmodel = NULL; 
+    this->debug_sourceclassdecoder = NULL;
+    this->debug_targetclassdecoder = NULL;
     load(filename,logprobs, allowskipgrams, bestn);
 }
 
@@ -2005,7 +2018,9 @@ AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sour
     //load from moses-style phrasetable file
     this->DEBUG = DEBUG;
     sourcemodel = NULL;
-    targetmodel = NULL;    
+    targetmodel = NULL;
+    this->debug_sourceclassdecoder = NULL;
+    this->debug_targetclassdecoder = NULL;    
     leftsourcecontext = rightsourcecontext = 0;
 		
     ifstream f;

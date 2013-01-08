@@ -48,6 +48,9 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     SelectivePatternModel * sourcemodel;
     SelectivePatternModel * targetmodel; 
    
+    ClassDecoder * debug_sourceclassdecoder;
+    ClassDecoder * debug_targetclassdecoder;
+   
     unsigned char leftsourcecontext;
     unsigned char rightsourcecontext;
     
@@ -84,7 +87,7 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     void decode(ClassDecoder & sourceclassdecoder, ClassDecoder & targetclassdecoder, std::ostream * OUT, bool mosesformat = false);
     
     
-    void enabledebug() { DEBUG = true; }
+    void enabledebug(ClassDecoder * s = NULL, ClassDecoder * t = NULL) { DEBUG = true; debug_sourceclassdecoder = s; debug_targetclassdecoder = t; }
     
     const EncAnyGram * getsourcekey(const EncAnyGram* key, bool allowfallback=true);
     const EncAnyGram * gettargetkey(const EncAnyGram* key);
