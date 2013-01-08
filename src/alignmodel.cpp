@@ -1448,6 +1448,7 @@ void AlignmentModel::extractgiza_final(GizaSentenceAlignment & sentence_a ,GizaS
         const bool t_aligned = targets_a.count(t);
         if (!s_aligned || !t_aligned) {
             sentence_a.alignment.insert(pair<const unsigned char, const unsigned char>(s,t));
+            if (DEBUG) cerr << "\t[final] added alignment point (" << s << "," << t << ")" << endl;            
             targets_a.insert(t);
         }
     }
@@ -1461,7 +1462,8 @@ void AlignmentModel::extractgiza_final(GizaSentenceAlignment & sentence_a ,GizaS
         const bool t_aligned = targets_a.count(t);;
         const bool s_aligned = sentence_a.alignment.count(s);
         if (!s_aligned || !t_aligned) {
-            sentence_a.alignment.insert(pair<const unsigned char, const unsigned char>(s,t));                
+            sentence_a.alignment.insert(pair<const unsigned char, const unsigned char>(s,t));
+            if (DEBUG) cerr << "\t[final inverse] added alignment point (" << s << "," << t << ")" << endl;                            
         }
     }    
 }
