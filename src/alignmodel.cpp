@@ -1003,6 +1003,7 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                     if ((sourcedecoder != NULL) && (targetdecoder != NULL)) {
                                         cout << sourcepattern->decode(*sourcedecoder) << " ||| " << targetpattern->decode(*targetdecoder) << " ||| " << score << endl;
                                     }
+                                    
                                 }
                             }
                          }

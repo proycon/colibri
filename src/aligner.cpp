@@ -39,10 +39,14 @@ void usage() {
     cerr << "\t-v n				         Convergence delta value (for EM method, default: 0.001)" << endl;
     cerr << "\t-N                        Do not extract skip-grams in EM-process" << endl;
     cerr << "\t--null                    Take into account zero-fertility words (null alignments) in EM" << endl;    
-    cerr << " GIZA Alignment Options:" << endl;
+    cerr << " Pattern extraction from GIZA Alignment Options:" << endl;
+    cerr << "\t-2                        Use new pattern extraction from GIZA alignment algorithm" << endl;    
     cerr << "\t-a                        Alignment threshold (0 <= x <= 1). Specifies how strong word alignments have to be if phrases are to be extracted from them (default 0.5)" << endl;
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a jaccard co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
     cerr << "\t-c pair-count-threshold   Prune phrase pairs that occur less than specified" << endl;
+    cerr << "\t--intersectiononly        Consider only intersection data, no union data (implies -2)" << endl;
+    cerr << "\t-A                        Collect all results instead of only a single best alignment per source pattern occurrence (implies -2)" << endl;
+    cerr << "\t-w                        Weigh phrase table score according to phrase alignment score (implies -2)" << endl;                        
     cerr << " Input filtering:" << endl;
     cerr << "\t-O occurence-threshold    Consider only patterns occuring more than specified (absolute occurrence). Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
     cerr << "\t-F freq-threshold         Consider only patterns occuring more than specified (relative frequency of all patterns).  Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
@@ -121,6 +125,10 @@ int main( int argc, char *argv[] ) {
     double alignthreshold = 0.5;
     int pairthreshold = 1;
     
+    bool DOGIZA2 = false;
+    bool EXTRACTGIZAPATTERNS_BESTONLY = true; 
+    int EXTRACTGIZAPATTERNS_USEINTERSECTIONONLY = 0;
+    bool weighbyalignmentscore = false;
     
     string outputprefix = "";
     
@@ -131,7 +139,8 @@ int main( int argc, char *argv[] ) {
        {"moses", no_argument,             &MOSESFORMAT, 1},
        {"stats", no_argument,             &DOSTATS, 1},
        {"null", no_argument,             &EM_NULL, 1}, 
-        {"removecontext", no_argument,             &REMOVECONTEXT, 1},                      
+       {"intersectiononly",no_argument, &EXTRACTGIZAPATTERNS_USEINTERSECTIONONLY,1},
+       {"removecontext", no_argument,             &REMOVECONTEXT, 1},                      
        {0, 0, 0, 0}
      };
     /* getopt_long stores the option index here. */
@@ -144,7 +153,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:wA",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -187,11 +196,8 @@ int main( int argc, char *argv[] ) {
         	DO_EM = true;
         	break;
         case '2':
-        	DO_EM2 = true;
-        	break;               	
-        case '3':
-        	DO_ITEREM = true;
-        	break;        	
+            DOGIZA2 = true;
+        	break;               	                	
 		case 'G':
 			graphweightfactor = atof(optarg);
 			break;        	
@@ -269,6 +275,14 @@ int main( int argc, char *argv[] ) {
         case 'z':
         	DONORM = false;
         	break;    
+        case 'A':
+            DOGIZA2 = true;
+            EXTRACTGIZAPATTERNS_BESTONLY = false;
+            break;
+        case 'w':
+            DOGIZA2 = true;
+            weighbyalignmentscore = true;
+            break;
         case 'H':
             a = string(optarg);
             if (a == "growdiagfinal") {
@@ -291,6 +305,7 @@ int main( int argc, char *argv[] ) {
             abort ();
         }
         
+    if (EXTRACTGIZAPATTERNS_USEINTERSECTIONONLY) DOGIZA2 = true;    
 	
 	AlignmentModel * alignmodel = NULL;
     AlignmentModel * reversealignmodel = NULL; 
@@ -480,6 +495,8 @@ int main( int argc, char *argv[] ) {
 			}	    			    		
 		}	
 			
+
+		    
 		if (DOGIZA) {
 		    //************ BUILD / GIZA ****************
 			cerr << "Loading source class encoder " << sourceclassfile << endl;
@@ -493,11 +510,24 @@ int main( int argc, char *argv[] ) {
 	        GizaModel gizamodelt2s = GizaModel(gizats, &targetclassencoder, &sourceclassencoder);
 
 
-		    if (usepatternmodels) {   
+		    if (usepatternmodels) {
+		        if (DOGIZA2) {   
 		        		    
-		        cerr << "Extracting phrases based on GIZA++ Word Alignments and pattern models (semi-supervised)" << endl;
-		        int found = alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold, DOBIDIRECTIONAL);
-		        cerr << "\tFound " << found << " pairs, " << alignmodel->size()  << " source patterns." << endl;
+		            cerr << "Extracting phrases based on GIZA++ Word Alignments and pattern models (semi-supervised, algorithm 2)" << endl;
+		            const bool expandunaligned = false; //TODO: implement later
+		            const bool combine = false; //TODO: implement later
+		            int found = alignmodel->extractgizapatterns2(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold, DOBIDIRECTIONAL, EXTRACTGIZAPATTERNS_BESTONLY, weighbyalignmentscore, expandunaligned, combine, (bool) EXTRACTGIZAPATTERNS_USEINTERSECTIONONLY);
+		            cerr << "\tFound " << found << " pairs, " << alignmodel->size()  << " source patterns." << endl;
+		        
+		        } else {
+
+		            cerr << "Extracting phrases based on GIZA++ Word Alignments and pattern models (semi-supervised)" << endl;
+		            int found = alignmodel->extractgizapatterns(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold, DOBIDIRECTIONAL);
+		            cerr << "\tFound " << found << " pairs, " << alignmodel->size()  << " source patterns." << endl;
+		        
+		        
+		        }
+		        
 		    } else {
 		        cerr << "Extracting phrases based on GIZA++ Word Alignments and heuristics (unsupervised)" << endl;
 		        int found = alignmodel->extractgizapatterns_heur(gizamodels2t, gizamodelt2s, phrasealignheuristic, DOBIDIRECTIONAL);
