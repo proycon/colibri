@@ -143,15 +143,15 @@ int main( int argc, char *argv[] ) {
 	                if ((sentence >= begin) && ((sentence <= end) || (end == 0))) {
 	                    cout << "<div>" << endl;	
 	                    cout << "<h3>" << sentence << "</h3>" << endl;         
-                        sentence_s2t.out( (ostream*) &cout,  sourceclassdecoder, targetclassdecoder);
-                        sentence_t2s.out( (ostream*) &cout,  targetclassdecoder, sourceclassdecoder);
+                        sentence_s2t.htmlout( (ostream*) &cout,  sourceclassdecoder, targetclassdecoder);
+                        sentence_t2s.htmlout( (ostream*) &cout,  targetclassdecoder, sourceclassdecoder);
                         if (INTERSECTION) {
                             GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
-                            sentence_i.out( (ostream*) &cout, sourceclassdecoder, targetclassdecoder);
+                            sentence_i.htmlout( (ostream*) &cout, sourceclassdecoder, targetclassdecoder);
                         }
                         if (UNION) {
                             GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
-                            sentence_u.out( (ostream*) &cout, sourceclassdecoder, targetclassdecoder);
+                            sentence_u.htmlout( (ostream*) &cout, sourceclassdecoder, targetclassdecoder);
                         }
                         cout << "</div>" << endl;
                         cout << "<pre>" << endl;
@@ -170,15 +170,15 @@ int main( int argc, char *argv[] ) {
 	                
 	                if ((sentence >= begin) && ((sentence <= end) || (end == 0))) {
 	                    cout << "<div>" << endl;	            
-                        sentence_s2t.out( (ostream*) &cout,  sourceclassdecoder, targetclassdecoder);
-                        sentence_t2s.out( (ostream*) &cout,  targetclassdecoder, sourceclassdecoder);
+                        sentence_s2t.htmlout( (ostream*) &cout,  sourceclassdecoder, targetclassdecoder);
+                        sentence_t2s.htmlout( (ostream*) &cout,  targetclassdecoder, sourceclassdecoder);
                         if (INTERSECTION) {
                             GizaSentenceAlignment sentence_i = sentence_s2t.intersect(sentence_t2s);
-                            sentence_i.out( (ostream*) &cout, sourceclassdecoder, targetclassdecoder);
+                            sentence_i.htmlout( (ostream*) &cout, sourceclassdecoder, targetclassdecoder);
                         }
                         if (UNION) {
                             GizaSentenceAlignment sentence_u = sentence_s2t.unify(sentence_t2s);
-                            sentence_u.out( (ostream*) &cout, sourceclassdecoder, targetclassdecoder);
+                            sentence_u.htmlout( (ostream*) &cout, sourceclassdecoder, targetclassdecoder);
                         }
                         cout << "</div><hr />" << endl;
                     }                    	       
@@ -190,7 +190,7 @@ int main( int argc, char *argv[] ) {
                 GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
                 if ((sentence >= begin) && ((sentence <= end) || (end == 0))) {
                     cout << "<div>" << endl;
-                    sentence_s2t.out( (ostream*) &cout,  sourceclassdecoder, targetclassdecoder);
+                    sentence_s2t.htmlout( (ostream*) &cout,  sourceclassdecoder, targetclassdecoder);
                     cout << "</div><hr />" << endl;
                 }
                        

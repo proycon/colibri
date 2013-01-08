@@ -1328,6 +1328,8 @@ int AlignmentModel::extractgizapatterns_heur(GizaModel & gizamodel_s2t, GizaMode
 }
 
 
+
+
 GizaSentenceAlignment AlignmentModel::extractgiza_growdiag(GizaSentenceAlignment & sentence_s2t ,GizaSentenceAlignment & sentence_t2s) {
     /*
      GROW-DIAG():

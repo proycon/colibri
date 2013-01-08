@@ -153,7 +153,7 @@ GizaSentenceAlignment GizaSentenceAlignment::unify(const GizaSentenceAlignment &
     return unified;
 }  
 
-void GizaSentenceAlignment::out(std::ostream* OUT, ClassDecoder & sourcedecoder, ClassDecoder & targetdecoder) {
+void GizaSentenceAlignment::htmlout(std::ostream* OUT, ClassDecoder & sourcedecoder, ClassDecoder & targetdecoder) {
     //OUT << "<html><head><title>Word Alignments</title></head><body>" << endl;
     *OUT << "<table>";
     *OUT << "<tr><td></td>";
