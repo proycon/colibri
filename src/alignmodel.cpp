@@ -2137,12 +2137,13 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
     
     uint64_t model_id;       
     uint64_t sourcecount = 0;    
-    f.read( (char*) &model_id, sizeof(uint64_t));
+    f.read( (char*) &model_id, sizeof(uint64_t));    
     bool multiscore;
     if ((model_id < (unsigned int) ALIGNMENTMODEL) || (model_id > (unsigned int) ALIGNMENTMODEL + 99))  {
         cerr << "File '" << filename << "' is not an alignment model" << endl;
         exit(6);
     }
+    if (DEBUG) cerr << "model_id=" << model_id << endl;
     if ((model_id >= (unsigned int) ALIGNMENTMODEL) && (model_id <= 101))  { 
         multiscore = false; //backward compatibility with old models
     } else {
@@ -2270,7 +2271,9 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
            		    if ((sourcegram == NULL) || (targetgram == NULL)) {
 		             	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
 		            	throw InternalError();
-		            }		 		      
+		            }
+		            alignmatrix[sourcegram];
+		            alignmatrix[sourcegram][targetgram];		 		      
 		            alignmatrix[sourcegram][targetgram].push_back(p);
 		        }		    
 		    }		  			    
