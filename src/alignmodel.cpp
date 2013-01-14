@@ -1349,9 +1349,13 @@ int AlignmentModel::extractgizapatterns2(GizaModel & gizamodel_s2t, GizaModel & 
       } //alignment read        
       
       
-      if (pairoccurrencethreshold > 0) prune(pairoccurrencethreshold);
+      if (pairoccurrencethreshold > 0) {
+        cerr << "Pruning according to pair occurrence threshold (" << pairoccurrencethreshold << ")" << endl; 
+        prune(pairoccurrencethreshold);
+      }
             
       //normalize alignment matrix
+      cerr << "Normalising" << endl;
       normalize();
       if (computereverse) {
             cerr << "Integrating reverse model" << endl;
