@@ -2184,6 +2184,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
         if (gapcount == 0) {
             if (DEBUG)  cerr << "\tNGRAM";
             const EncNGram * ngram = new EncNGram(&f, ngramversion); //read from file
+            if (DEBUG)  cerr << " n=" << ngram->n() << " size=" << ngram->size();
             sourcegram = getsourcekey((EncAnyGram*) ngram); //does the key already exist?
             if (sourcegram == NULL) {            
                 //no
@@ -2236,7 +2237,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
 		    if (gapcount == 0) {
 		        if (DEBUG)  cerr << "\tNGRAM";
 		        EncNGram ngram = EncNGram(&f, ngramversion); //read from file
-		        if (DEBUG)  cerr << "\tread";
+		        if (DEBUG)  cerr << " n=" << ngram.n() << " size=" << ngram.size();
 		        if (!gettargetkey((EncAnyGram*) &ngram)) {
 		        	targetngrams.insert(ngram);		        	
 		        }   
