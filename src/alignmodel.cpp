@@ -2273,7 +2273,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
 		            	throw InternalError();
 		            }
 		            alignmatrix[sourcegram];
-		            alignmatrix[sourcegram][targetgram];		 		      
+		            cerr << "h=" << targetgram->hash() << endl;	 		      
 		            alignmatrix[sourcegram][targetgram].push_back(p);
 		        }		    
 		    }		  			    
