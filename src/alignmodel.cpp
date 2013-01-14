@@ -2255,6 +2255,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
 		    char scores;
 		    if (multiscore) {
 		        f.read((char*) &scores, sizeof(char));
+		        if (DEBUG) cerr << "scores=" << scores << endl;
 		    } else {
 		        scores = 1;
 		    }		    
@@ -2262,6 +2263,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
             double p;
 		    for (int i = 0; i < scores; i++) {            
 		        f.read((char*) &p, sizeof(double));
+		        if (DEBUG) cerr << "score: " << p << endl;
 		        if ((p > 0) && (logprobs)) p = log(p); //base e		        
 		        if ((allowskipgrams) || ((!sourceisskipgram) && (!targetisskipgram))) {  
            		    if ((sourcegram == NULL) || (targetgram == NULL)) {
