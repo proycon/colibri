@@ -559,7 +559,7 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
 class AlignConstraintInterface {
 	public: 
 	  virtual const EncAnyGram * getsourcekey(const EncAnyGram* key, bool allowfallback=true) =0;
-      virtual const EncAnyGram * gettargetkey(const EncAnyGram* key) =0;
+      virtual const EncAnyGram * gettargetkey(const EncAnyGram* key, bool returnselfifnotfound=false) =0;
 };
 
 class IndexCountData {

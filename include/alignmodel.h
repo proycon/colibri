@@ -90,7 +90,7 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     void enabledebug(ClassDecoder * s = NULL, ClassDecoder * t = NULL) { DEBUG = true; debug_sourceclassdecoder = s; debug_targetclassdecoder = t; }
     
     const EncAnyGram * getsourcekey(const EncAnyGram* key, bool allowfallback=true);
-    const EncAnyGram * gettargetkey(const EncAnyGram* key);
+    const EncAnyGram * gettargetkey(const EncAnyGram* key, bool returnselfifnotfound=false);
     const EncAnyGram * getkey(const EncAnyGram* key) { return getsourcekey(key); } //alias for getsourcekey, needed by ModelQuerier
     const EncAnyGram * getfocuskey(const EncAnyGram* key); //alias for getsourcekey, wITHOUT context, needed by ModelQuerier
     

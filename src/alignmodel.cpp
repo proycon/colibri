@@ -2271,9 +2271,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
            		    if ((sourcegram == NULL) || (targetgram == NULL)) {
 		             	cerr << "SOURCEGRAM or TARGETGRAM is NULL";
 		            	throw InternalError();
-		            }
-		            alignmatrix[sourcegram];
-		            cerr << "h=" << targetgram->hash() << endl;	 		      
+		            }		      
 		            alignmatrix[sourcegram][targetgram].push_back(p);
 		        }		    
 		    }		  			    
@@ -2437,7 +2435,7 @@ void AlignmentModel::save(const string & filename) {
     	f.write( (char*) &targetcount, sizeof(uint64_t));
     	            
         for (t_aligntargets::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-        	const EncAnyGram* targetgram = gettargetkey(iter2->first);
+        	const EncAnyGram* targetgram = gettargetkey(iter2->first, true);
         	if (targetgram == NULL) {
         	    cerr << "AlignmentModel::save(): Target key not found! This should not happen! Error whilst processing source-pattern " << i << endl;
         	    throw InternalError();
@@ -2530,9 +2528,9 @@ const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram * key,  bool al
 }
 
 
-const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key) {
+const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key, bool returnselfifnotfound) {
     if (targetmodel != NULL) return targetmodel->getkey(key);
-    if (targetngrams.empty() && targetskipgrams.empty()) return key; //no targetngrams/targetskipgrams, we'll just have to assume key is a valid pointer
+    if (returnselfifnotfound && targetngrams.empty() && targetskipgrams.empty()) return key; //no targetngrams/targetskipgrams, we'll just have to assume key is a valid pointer
     if (key->gapcount() == 0) {
         std::unordered_set<EncNGram>::iterator iter = targetngrams.find(*( (EncNGram*) key) );
         if (iter != targetngrams.end()) {
