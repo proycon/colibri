@@ -996,8 +996,8 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                         bestscore = score;
                                         besttargetpattern = targetpattern;
                                     }
-                                } else if (score > alignscorethreshold) {
-                                    addextractedpattern(sourcepattern, targetpattern, weighbyalignmentscore ? score : 1, computereverse, sourcepatternwithcontext);
+                                } else if (score > alignscorethreshold) {                                   
+                                    addextractedpattern(sourcepattern, targetpattern, (weighbyalignmentscore ? score : 1), computereverse, sourcepatternwithcontext);
                                     sourcepatternused = true;
                                     found++;
                                     if ((sourcedecoder != NULL) && (targetdecoder != NULL)) {
@@ -1010,7 +1010,7 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                     } //iteration over all target patterns    
                                         
                     if ((besttargetpattern != NULL) && (bestscore >= alignscorethreshold)) {
-                        addextractedpattern(sourcepattern, besttargetpattern, weighbyalignmentscore ? bestscore : 1, computereverse, sourcepatternwithcontext);
+                        addextractedpattern(sourcepattern, besttargetpattern, (weighbyalignmentscore ? bestscore : 1), computereverse, sourcepatternwithcontext);
                         sourcepatternused = true;
                         found++; 
                         if ((sourcedecoder != NULL) && (targetdecoder != NULL)) {
