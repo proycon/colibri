@@ -903,8 +903,8 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                     for (vector<const EncAnyGram*>::iterator iter_t = targetpatterns->begin(); iter_t != targetpatterns->end(); iter_t++) { //iterate over all target patterns IN THIS SENTENCE
                          count_t++;                         
                          const EncAnyGram * targetpattern = *iter_t;
-                         if (DEBUG) cerr << " @" << sentenceindex << "-" << count_s << "-" << count_t << endl;
-                         if (DEBUG) cerr << "   DEBUG: [" << sourcepattern->decode(*sourcedecoder) << "] vs [" << targetpattern->decode(*targetdecoder) << "]" << endl;
+                         if (DEBUG) cerr << " @" << sentenceindex << "-" << count_s << "-" << count_t << endl;                         
+                         if ((DEBUG) && (sourcedecoder != NULL) && (targetdecoder != NULL)) cerr << "   DEBUG: [" << sourcepattern->decode(*sourcedecoder) << "] vs [" << targetpattern->decode(*targetdecoder) << "]" << endl;
                          
                          const unsigned char targetpatternsize = targetpattern->n();
                          const unsigned char maxpatternsize = (sourcepatternsize > targetpatternsize) ? sourcepatternsize : targetpatternsize;                         
@@ -964,7 +964,6 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                  
                                                                  
                                  double unionscore = 0;
-                                 int unionpoints = 0;
                                  if ((intersectionscore < 1) && (!intersectiononly)) {                                 
                                      //check alignment points in union 
                                      int unionpoints = 0; 
@@ -1219,7 +1218,7 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
                          count_t++;                         
                          const EncAnyGram * targetpattern = *iter_t;
                          if (DEBUG) cerr << " @" << sentenceindex << "-" << count_s << "-" << count_t << endl;
-                         if (DEBUG) cerr << "   DEBUG: [" << sourcepattern->decode(*sourcedecoder) << "] vs [" << targetpattern->decode(*targetdecoder) << "]" << endl;
+                         if ((DEBUG) && (sourcedecoder != NULL) && (targetdecoder != NULL)) cerr << "   DEBUG: [" << sourcepattern->decode(*sourcedecoder) << "] vs [" << targetpattern->decode(*targetdecoder) << "]" << endl;
                          
                          const unsigned char targetpatternsize = targetpattern->n();
                          const unsigned char maxpatternsize = (sourcepatternsize > targetpatternsize) ? sourcepatternsize : targetpatternsize;                         
