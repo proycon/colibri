@@ -44,7 +44,7 @@ void usage() {
     cerr << "\t-a                        Alignment threshold (0 <= x <= 1). Specifies how strong word alignments have to be if phrases are to be extracted from them (default 0.5)" << endl;
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a jaccard co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
     cerr << "\t-c pair-count-threshold   Prune phrase pairs that occur less than specified" << endl;
-    cerr << "\t-u weight                 Weight by which each union points increases the score. Should be > 1 (default: 1.1, implies -2)" << endl;
+    cerr << "\t-u weight                 Weight by which each union points increases the score. Should a small value above 1 (default: 1.05, implies -2)" << endl;
     cerr << "\t--intersectiononly        Consider only intersection data, no union data, equal to -u 1 (implies -2)" << endl;
     cerr << "\t-A                        Collect all results instead of only a single best alignment per source pattern occurrence (implies -2)" << endl;
     cerr << "\t-w                        Weigh phrase table score according to phrase alignment score (implies -2)" << endl;                        
@@ -132,7 +132,7 @@ int main( int argc, char *argv[] ) {
     bool weighbyalignmentscore = false;
     
     string outputprefix = "";
-    double unionweight = 1.1;
+    double unionweight = 1.05;
     
     static struct option long_options[] = {      
        //{"simplelex", no_argument,       &DOSIMPLELEX, 1},
