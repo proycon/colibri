@@ -46,6 +46,7 @@ void usage() {
     cerr << "\t-c pair-count-threshold   Prune phrase pairs that occur less than specified" << endl;
     cerr << "\t-u weight                 Weight by which each union points increases the score. Should a small value above 1 (default: 1.05, implies -2)" << endl;
     cerr << "\t--intersectiononly        Consider only intersection data, no union data, equal to -u 1 (implies -2)" << endl;
+    cerr << "\t-e                        Expand target-side patterns using unaligned points (implies -2 -A)" << endl;
     cerr << "\t-A                        Collect all results instead of only a single best alignment per source pattern occurrence (implies -2)" << endl;
     cerr << "\t-w                        Weigh phrase table score according to phrase alignment score (implies -2)" << endl;                        
     cerr << " Input filtering:" << endl;
@@ -127,7 +128,8 @@ int main( int argc, char *argv[] ) {
     int pairthreshold = 1;
     
     bool DOGIZA2 = false;
-    bool EXTRACTGIZAPATTERNS_BESTONLY = true; 
+    bool EXTRACTGIZAPATTERNS_BESTONLY = true;
+    bool EXTRACTGIZAPATTERNS_EXPAND = false; 
     int EXTRACTGIZAPATTERNS_USEINTERSECTIONONLY = 0;
     bool weighbyalignmentscore = false;
     
@@ -155,7 +157,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:wAu:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:wAu:e",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -288,7 +290,12 @@ int main( int argc, char *argv[] ) {
         case 'u':
             DOGIZA2 = true;
             unionweight = atof(optarg);
-            break;            
+            break;          
+        case 'e':
+            DOGIZA2 = true;
+            EXTRACTGIZAPATTERNS_BESTONLY = false;
+            EXTRACTGIZAPATTERNS_EXPAND = true;
+            break;  
         case 'H':
             a = string(optarg);
             if (a == "growdiagfinal") {
@@ -523,9 +530,8 @@ int main( int argc, char *argv[] ) {
 		        if (DOGIZA2) {   
 		        		    
 		            cerr << "Extracting phrases based on GIZA++ Word Alignments and pattern models (semi-supervised, algorithm 2)" << endl;
-		            const bool expandunaligned = false; //TODO: implement later
 		            const bool combine = false; //TODO: implement later
-		            int found = alignmodel->extractgizapatterns2(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold, DOBIDIRECTIONAL, EXTRACTGIZAPATTERNS_BESTONLY, weighbyalignmentscore, expandunaligned, combine, unionweight);
+		            int found = alignmodel->extractgizapatterns2(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold, DOBIDIRECTIONAL, EXTRACTGIZAPATTERNS_BESTONLY, weighbyalignmentscore, EXTRACTGIZAPATTERNS_EXPAND, combine, unionweight);
 		            cerr << "\tFound " << found << " pairs, " << alignmodel->size()  << " source patterns." << endl;
 		        
 		        } else {
