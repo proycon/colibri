@@ -1846,6 +1846,7 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
                     cerr << "\t[extractgizapatterns_heur] targetgram == NULL _after_ insertion! should not happen!" << endl;
                     const EncNGram * t = &(*(returnvalue.first));                
                     cerr << "\t[extractgizapatterns_heur] h2=" << t->hash() << endl;
+                    cerr << targetgram << " vs " << t << endl;
                     throw InternalError();
                 }
             }
