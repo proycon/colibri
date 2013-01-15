@@ -1839,7 +1839,7 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
             } else {
                 if (DEBUG) cerr << "\t[extractgizapatterns_heur] targetgram is new, adding" << endl;
                 //pair<unordered_set<EncNGram>::iterator, bool> returnvalue;
-                insertreturn = targetngrams.insert(  *( (const EncNGram *) targetgram) );
+                targetngrams.insert(  *( (const EncNGram *) targetgram) );
                 targetgram = gettargetkey(targetgram);
                 if (targetgram == NULL) {
                     cerr << "\t[extractgizapatterns_heur] targetgram == NULL _after_ insertion! should not happen!" << endl;
