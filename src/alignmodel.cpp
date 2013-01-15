@@ -2796,21 +2796,28 @@ const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram * key,  bool al
 
 
 const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key, bool returnselfifnotfound) {
-    if (targetmodel != NULL) return targetmodel->getkey(key);
+    if (targetmodel != NULL) {
+        const EncAnyGram * modelkey = targetmodel->getkey(key);
+        if (modelkey != NULL) {
+            return modelkey;
+        } else {
+            return returnselfifnotfound ? key : NULL;
+        }
+    }
     if (returnselfifnotfound && targetngrams.empty() && targetskipgrams.empty()) return key; //no targetngrams/targetskipgrams, we'll just have to assume key is a valid pointer
     if (key->gapcount() == 0) {
         std::unordered_set<EncNGram>::iterator iter = targetngrams.find(*( (EncNGram*) key) );
         if (iter != targetngrams.end()) {
             return &(*iter);
         } else {
-            return NULL;
+            return returnselfifnotfound ? key : NULL;
         }
     } else {
         std::unordered_set<EncSkipGram>::iterator iter = targetskipgrams.find(*( (EncSkipGram*) key) );
         if (iter != targetskipgrams.end()) {
             return &(*iter);
         } else {
-            return NULL;
+            return returnselfifnotfound ? key : NULL;
         }        
     }
 }
