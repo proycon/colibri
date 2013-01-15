@@ -1757,6 +1757,7 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
                 
                 do {
                     //add phrasepair
+                    if (DEBUG) cerr << "\t[extractgizapatterns_heur] found phrase (" << s_start2 << "," << s_end2 << ") -> (" << t_start << "," << t_end << ")" << endl;
                     phrases.push_back(pair< pair<int,int>,pair<int,int> >( pair<int,int>(s_start2,s_end2), pair<int,int>(t_start,t_end) ) );
                     
                     //attempt to add free unaligned points (widen source phrase to the right):
@@ -1816,12 +1817,14 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
         
         const EncAnyGram * sourcegramkey = getsourcekey(sourcegram);
         if (sourcegramkey != NULL) {
+            if (DEBUG) cerr << "\t[extractgizapatterns_heur] sourcegram has been used earlier, reusing" << endl;
             delete sourcegram;
             sourcegram = (EncNGram *) sourcegramkey;        
         }
 
 
         if (context) {
+            if (DEBUG) cerr << "\t[extractgizapatterns_heur] context" << endl;
             sourcecontexts[(const EncAnyGram *) sourcegramnocontext].insert((const EncAnyGram *) sourcegram);
         }         
         
@@ -1831,13 +1834,14 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
         if (targetgramkey == NULL) {
             if (targetgram->isskipgram()) {
                 //ok, never happens, but perhaps for future
-                cerr << "targetgram is skipgram? not possible!";
+                cerr << "targetgram is skipgram? not possible!" << endl;
                 throw InternalError();                               
             } else {
                 targetngrams.insert(  *((const EncNGram *) targetgram) );
                 targetgram = gettargetkey(targetgram);
             }
         } else {
+            if (DEBUG) cerr << "\t[extractgizapatterns_heur] targetgram has been used earlier, reusing" << endl;
             delete targetgram;
             targetgram = targetgramkey;
         }
