@@ -1838,8 +1838,13 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
                 throw InternalError();                               
             } else {
                 if (DEBUG) cerr << "\t[extractgizapatterns_heur] targetgram is new, adding" << endl;
-                targetngrams.insert(  *( (const EncNGram *) targetgram) );
+                //pair<unordered_set<EncNGram>::iterator, bool> returnvalue;
+                insertreturn = targetngrams.insert(  *( (const EncNGram *) targetgram) );
                 targetgram = gettargetkey(targetgram);
+                if (targetgram == NULL) {
+                    cerr << "\t[extractgizapatterns_heur] targetgram == NULL _after_ insertion! should not happen!" << endl;
+                    throw InternalError();
+                }
             }
         } else {
             if (DEBUG) cerr << "\t[extractgizapatterns_heur] targetgram has been used earlier, reusing" << endl;
