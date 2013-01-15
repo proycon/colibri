@@ -1790,7 +1790,8 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
   
         EncNGram * sourcegramnocontext = sentence_a.source->slice(s_start,s_end - s_start + 1);
         EncNGram * sourcegram;
-                
+
+        bool context = true;                
         s_start = s_start - leftsourcecontext;
         s_end = s_end + rightsourcecontext;
         if ((s_start < 0) && (s_end > s_length)) {
@@ -1809,6 +1810,7 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
             sourcegram = new EncNGram(*sourcegramnocontext + eos);
         } else {
             sourcegram = sourcegramnocontext;
+            context = false;
         }
                     
         
@@ -1819,7 +1821,7 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
         }
 
 
-        if (sourcegramnocontext != sourcegram) {
+        if (context) {
             sourcecontexts[(const EncAnyGram *) sourcegramnocontext].insert((const EncAnyGram *) sourcegram);
         }         
         
