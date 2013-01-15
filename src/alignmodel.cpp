@@ -1845,6 +1845,10 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
             delete targetgram;
             targetgram = targetgramkey;
         }
+                       
+        //sanity check
+        sourcegram->hash();
+        targetgram->hash();                       
                                                 
         //add alignment
         if (alignmatrix[(const EncAnyGram *)sourcegram][targetgram].empty()) {
