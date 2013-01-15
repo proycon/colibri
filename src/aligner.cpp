@@ -31,15 +31,15 @@ void usage() {
     cerr << "\t-B probability-threshold  Probability threshold used when computing bidirectional alignment (intersection) of alignment model and reverse alignment model (-I, -i)" << endl;
     cerr << "\t-z				         No normalisation" << endl;
     cerr << "\t-U                        Extract skip-grams from n-grams (requires source and target models to be graph models with template and instance relations)" << endl;    
-    cerr << " Co-occurrence alignment options:" << endl;       
+    cerr << " Co-occurrence alignment options (-J):" << endl;       
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;   
-    cerr << " EM Alignment Options:" << endl;
+    cerr << " EM Alignment Options (-E):" << endl;
     cerr << "\t-P probability-threshold  Prune all alignments with an alignment probability lower than specified (0 <= x <= 1)" << endl;
     cerr << "\t-M n				         Maximum number of iterations (for EM method, default: 10000)" << endl;
     cerr << "\t-v n				         Convergence delta value (for EM method, default: 0.001)" << endl;
     cerr << "\t-N                        Do not extract skip-grams in EM-process" << endl;
     cerr << "\t--null                    Take into account zero-fertility words (null alignments) in EM" << endl;    
-    cerr << " Pattern extraction from GIZA Alignment Options:" << endl;
+    cerr << " Pattern extraction from GIZA Alignment Options (-W):" << endl;
     cerr << "\t-2                        Use new pattern extraction from GIZA alignment algorithm" << endl;    
     cerr << "\t-a                        Alignment threshold (0 <= x <= 1). Specifies how strong word alignments have to be if phrases are to be extracted from them (default 0.5)" << endl;
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a jaccard co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;

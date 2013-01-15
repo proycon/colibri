@@ -1032,13 +1032,12 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                             firstrightaligned = alignedtargetindex;
                                         } 
                                     }
-                                    if (DEBUG) cerr << "     DEBUG lastleftaligned=" << lastleftaligned << endl;
-                                    if (DEBUG) cerr << "     DEBUG firstrightaligned=" << firstrightaligned << endl;
+                                    if (DEBUG) cerr << "     DEBUG lastleftaligned=" << lastleftaligned << " firstrightaligned=" << firstrightaligned << " targetindex=" << targetindex << " +targetpatternsize-1=" << targetindex + (targetpatternsize - 1) << endl;
                                     
                                     for (int begin = lastleftaligned+1; begin <= targetindex; begin++) {
                                         for (int end = targetindex + targetpatternsize; end <= firstrightaligned-1; end++) {
                                             if (!((begin == targetindex) && (end == targetindex + (targetpatternsize - 1)))) { //exclude the non-expanded pattern we already have anyway
-                                                if (DEBUG) cerr << "     DEBUG Found expansions using unaligned points from " << begin << " to " << end << endl;
+                                                if (DEBUG) cerr << "     DEBUG Found expansion using unaligned points from " << begin << " to " << end << endl;
                                                 const int length = end-begin + 1;                                                
                                                 EncNGram * newtargetpattern = sentence_s2t.target->slice(begin, length);
                                                 const EncAnyGram * targetkey = gettargetkey(newtargetpattern);
@@ -1060,6 +1059,8 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                                 if (DEBUG) cerr << "     DEBUG score2=" << score2 << endl;                                          
                                                 if ((score2 >= alignscorethreshold) && (score2 > 0)) {
                                                     addextractedpattern(sourcepattern, newtargetpattern, (weighbyalignmentscore ? score2 : 1), computereverse, sourcepatternwithcontext);
+                                                    sourcepatternused = true;
+                                                    found++;                                                    
                                                 } else if (targetkey == NULL) {
                                                     delete newtargetpattern;
                                                 }                                                
