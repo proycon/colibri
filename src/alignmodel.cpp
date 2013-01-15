@@ -1790,6 +1790,7 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
   
         EncNGram * sourcegramnocontext = sentence_a.source->slice(s_start,s_end - s_start + 1);
         EncNGram * sourcegram;
+                
         s_start = s_start - leftsourcecontext;
         s_end = s_end + rightsourcecontext;
         if ((s_start < 0) && (s_end > s_length)) {
@@ -1809,19 +1810,35 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
         } else {
             sourcegram = sourcegramnocontext;
         }
+                    
         
+        const EncAnyGram * sourcegramkey = getsourcekey(sourcegram);
+        if (sourcegramkey != NULL) {
+            delete sourcegram;
+            sourcegram = (EncNGram *) sourcegramkey;        
+        }
+
+
         if (sourcegramnocontext != sourcegram) {
             sourcecontexts[(const EncAnyGram *) sourcegramnocontext].insert((const EncAnyGram *) sourcegram);
-        }
+        }         
+        
         
         const EncAnyGram * targetgram = (const EncAnyGram *) sentence_a.target->slice(t_start,t_end - t_start + 1);
-        /*if (targetgram->isskipgram()) {
-            //ok, never happens, but perhaps for future
-            targetskipgrams.insert(*targetgram);
+        const EncAnyGram * targetgramkey = gettargetkey(targetgram);
+        if (targetgramkey == NULL) {
+            if (targetgram->isskipgram()) {
+                //ok, never happens, but perhaps for future
+                cerr << "targetgram is skipgram? not possible!";
+                throw InternalError();                               
+            } else {
+                targetngrams.insert(  *((const EncNGram *) targetgram) );
+                targetgram = gettargetkey(targetgram);
+            }
         } else {
-            targetngrams.insert(*targetgram);
-        }*/
-    
+            delete targetgram;
+            targetgram = targetgramkey;
+        }
                                                 
         //add alignment
         if (alignmatrix[(const EncAnyGram *)sourcegram][targetgram].empty()) {
