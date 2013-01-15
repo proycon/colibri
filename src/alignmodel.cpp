@@ -1054,9 +1054,11 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                                     score2 = score2 * pow(unionweight,unionpoints);                                                    
                                                 }     
                                                 if (score2 > 1) score2 = 1;
-                                                //substract penalty for unaligned points (-5% per unaligned point), which implies 19 unaligned points is the max (otherwise score2 <= 0)
-                                                score2 = score2 * (1 - (unaligned * 0.05));      
-                                                if (DEBUG) cerr << "     DEBUG score2=" << score2 << endl;                                          
+                                                
+                                                //substract penalty for unaligned points. The size of the penalty depends on the length of the SOURCE patterns, the longer the source, the lower the penalty for unaligned points, the shorter the source, the higher the penalty for adding unaligned points (up to -50% per unaligned point).. score2 drops to 0 quite fast if more points are added
+                                                const double penaltyweight = (double) 1 / (sourcepatternsize+1);   
+                                                score2 = score2 * (1 - (unaligned * penaltyweight));      
+                                                if (DEBUG) cerr << "     DEBUG score2=" << score2 << " penaltyweight=" << penaltyweight << endl;                                          
                                                 if ((score2 >= alignscorethreshold) && (score2 > 0)) {
                                                     addextractedpattern(sourcepattern, newtargetpattern, (weighbyalignmentscore ? score2 : 1), computereverse, sourcepatternwithcontext);
                                                     sourcepatternused = true;
