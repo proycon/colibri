@@ -45,10 +45,11 @@ void usage() {
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a jaccard co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
     cerr << "\t-c pair-count-threshold   Prune phrase pairs that occur less than specified" << endl;
     cerr << "\t-u weight                 Weight by which each union points increases the score. Should a small value above 1 (default: 1.05, implies -2)" << endl;
-    cerr << "\t--intersectiononly        Consider only intersection data, no union data, equal to -u 1 (implies -2)" << endl;
-    cerr << "\t-e                        Expand target-side patterns using unaligned points (implies -2 -A)" << endl;
+    cerr << "\t--intersectiononly        Consider only intersection data, no union data, equal to -u 1 (implies -2)" << endl;    
     cerr << "\t-A                        Collect all results instead of only a single best alignment per source pattern occurrence (implies -2)" << endl;
-    cerr << "\t-w                        Weigh phrase table score according to phrase alignment score (implies -2)" << endl;                        
+    cerr << "\t-w                        Weigh phrase table score according to phrase alignment score (implies -2)" << endl;
+    cerr << "\t-e                        Expand target-side patterns using unaligned points (implies -2 -A)" << endl;
+    cerr << "\t-R                        Attempt to recombine extracted patterns to form larger patterns (implies -2)" << endl;                        
     cerr << " Input filtering:" << endl;
     cerr << "\t-O occurence-threshold    Consider only patterns occuring more than specified (absolute occurrence). Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
     cerr << "\t-F freq-threshold         Consider only patterns occuring more than specified (relative frequency of all patterns).  Note: The model you load may already be pruned up to a certain value, only higher numbers have effect." << endl;
@@ -129,7 +130,8 @@ int main( int argc, char *argv[] ) {
     
     bool DOGIZA2 = false;
     bool EXTRACTGIZAPATTERNS_BESTONLY = true;
-    bool EXTRACTGIZAPATTERNS_EXPAND = false; 
+    bool EXTRACTGIZAPATTERNS_EXPAND = false;
+    bool EXTRACTGIZAPATTERNS_RECOMBINE = false;  
     int EXTRACTGIZAPATTERNS_USEINTERSECTIONONLY = 0;
     bool weighbyalignmentscore = false;
     
@@ -157,7 +159,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:wAu:e",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:wAu:eR",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -296,6 +298,10 @@ int main( int argc, char *argv[] ) {
             EXTRACTGIZAPATTERNS_BESTONLY = false;
             EXTRACTGIZAPATTERNS_EXPAND = true;
             break;  
+        case 'R':
+            DOGIZA2 = true;
+            EXTRACTGIZAPATTERNS_RECOMBINE = true;
+            break;
         case 'H':
             a = string(optarg);
             if (a == "growdiagfinal") {
@@ -530,8 +536,7 @@ int main( int argc, char *argv[] ) {
 		        if (DOGIZA2) {   
 		        		    
 		            cerr << "Extracting phrases based on GIZA++ Word Alignments and pattern models (semi-supervised, algorithm 2)" << endl;
-		            const bool combine = false; //TODO: implement later
-		            int found = alignmodel->extractgizapatterns2(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold, DOBIDIRECTIONAL, EXTRACTGIZAPATTERNS_BESTONLY, weighbyalignmentscore, EXTRACTGIZAPATTERNS_EXPAND, combine, unionweight);
+		            int found = alignmodel->extractgizapatterns2(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold, DOBIDIRECTIONAL, EXTRACTGIZAPATTERNS_BESTONLY, weighbyalignmentscore, EXTRACTGIZAPATTERNS_EXPAND, EXTRACTGIZAPATTERNS_RECOMBINE, unionweight);
 		            cerr << "\tFound " << found << " pairs, " << alignmodel->size()  << " source patterns." << endl;
 		        
 		        } else {
