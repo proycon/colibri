@@ -1837,7 +1837,8 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
                 cerr << "targetgram is skipgram? not possible!" << endl;
                 throw InternalError();                               
             } else {
-                targetngrams.insert(  *((const EncNGram *) targetgram) );
+                if (DEBUG) cerr << "\t[extractgizapatterns_heur] targetgram is new, adding" << endl;
+                targetngrams.insert(  *( (const EncNGram *) targetgram) );
                 targetgram = gettargetkey(targetgram);
             }
         } else {
@@ -1850,6 +1851,8 @@ int AlignmentModel::extractgizapatterns_heur(GizaSentenceAlignment & sentence_a,
         sourcegram->hash();
         targetgram->hash();                       
                                                 
+        if (DEBUG) cerr << "\t[extractgizapatterns_heur] adding alignment" << endl;
+        
         //add alignment
         if (alignmatrix[(const EncAnyGram *)sourcegram][targetgram].empty()) {
             alignmatrix[(const EncAnyGram *)sourcegram][targetgram].push_back(1);
