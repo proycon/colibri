@@ -44,7 +44,8 @@ void usage() {
     cerr << "\t-a                        Alignment threshold (0 <= x <= 1). Specifies how strong word alignments have to be if phrases are to be extracted from them (default 0.5)" << endl;
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a jaccard co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;
     cerr << "\t-c pair-count-threshold   Prune phrase pairs that occur less than specified" << endl;
-    cerr << "\t--intersectiononly        Consider only intersection data, no union data (implies -2)" << endl;
+    cerr << "\t-u weight                 Weight by which each union points increases the score. Should be > 1 (default: 1.1, implies -2)" << endl;
+    cerr << "\t--intersectiononly        Consider only intersection data, no union data, equal to -u 1 (implies -2)" << endl;
     cerr << "\t-A                        Collect all results instead of only a single best alignment per source pattern occurrence (implies -2)" << endl;
     cerr << "\t-w                        Weigh phrase table score according to phrase alignment score (implies -2)" << endl;                        
     cerr << " Input filtering:" << endl;
@@ -131,6 +132,7 @@ int main( int argc, char *argv[] ) {
     bool weighbyalignmentscore = false;
     
     string outputprefix = "";
+    double unionweight = 1.1;
     
     static struct option long_options[] = {      
        //{"simplelex", no_argument,       &DOSIMPLELEX, 1},
@@ -153,7 +155,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:wA",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:wAu:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -283,6 +285,10 @@ int main( int argc, char *argv[] ) {
             DOGIZA2 = true;
             weighbyalignmentscore = true;
             break;
+        case 'u':
+            DOGIZA2 = true;
+            unionweight = atof(optarg);
+            break;            
         case 'H':
             a = string(optarg);
             if (a == "growdiagfinal") {
@@ -305,7 +311,10 @@ int main( int argc, char *argv[] ) {
             abort ();
         }
         
-    if (EXTRACTGIZAPATTERNS_USEINTERSECTIONONLY) DOGIZA2 = true;    
+    if (EXTRACTGIZAPATTERNS_USEINTERSECTIONONLY) {
+        DOGIZA2 = true;
+        unionweight = 1;
+    }    
 	
 	AlignmentModel * alignmodel = NULL;
     AlignmentModel * reversealignmodel = NULL; 
@@ -516,7 +525,7 @@ int main( int argc, char *argv[] ) {
 		            cerr << "Extracting phrases based on GIZA++ Word Alignments and pattern models (semi-supervised, algorithm 2)" << endl;
 		            const bool expandunaligned = false; //TODO: implement later
 		            const bool combine = false; //TODO: implement later
-		            int found = alignmodel->extractgizapatterns2(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold, DOBIDIRECTIONAL, EXTRACTGIZAPATTERNS_BESTONLY, weighbyalignmentscore, expandunaligned, combine, (bool) EXTRACTGIZAPATTERNS_USEINTERSECTIONONLY);
+		            int found = alignmodel->extractgizapatterns2(gizamodels2t, gizamodelt2s, pairthreshold, coocprunevalue, alignthreshold, DOBIDIRECTIONAL, EXTRACTGIZAPATTERNS_BESTONLY, weighbyalignmentscore, expandunaligned, combine, unionweight);
 		            cerr << "\tFound " << found << " pairs, " << alignmodel->size()  << " source patterns." << endl;
 		        
 		        } else {

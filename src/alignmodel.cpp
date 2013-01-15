@@ -788,7 +788,7 @@ EncAnyGram * AlignmentModel::addcontext(const EncData * sentence, const EncAnyGr
 
 
 
-int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold, int computereverse, bool bestonly, bool weighbyalignmentscore, bool expandunaligned, bool combine, bool intersectiononly, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
+int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold, int computereverse, bool bestonly, bool weighbyalignmentscore, bool expandunaligned, bool combine, double unionweight, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
         
         /*
         
@@ -799,7 +799,7 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
             - weighbyalignmentscore - Also include alignment scores rather than mere frequency in the phrase table scores
             - expandunaligned       - Unaligned words at the end or beginning of a pattern are considered part of the pattern (only sensible without bestonly) //TODO: not implemented yet                        
             - combine               - Post-processing step, if patterns X and Z are found in a sequence X Y Z where Y contains only unaligned words of max length min(|X|,|Z|), then add X Y Z as a new pattern (provided it passes the threshold)  //TODO: not implemented yet
-            - intersectiononly      - Do not attempt to improve scores using points from the union of word alignments
+            - double unionweight    - Value > 1 determining the increase in score per extra union point (set to 1 for intersectiononly) 
             
             
         
@@ -963,10 +963,11 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                  if (DEBUG) cerr << "     DEBUG intersectionscore(1): " << intersectionpoints << " / " << (int) maxpatternsize << " = " << intersectionscore << endl;
                                  
                                                                  
-                                 double unionscore = 0;
-                                 if ((intersectionscore < 1) && (!intersectiononly)) {                                 
+                                 
+                                 int unionpoints = 0; 
+                                 if ((intersectionscore < 1) && (unionweight != 1)) {                                 
                                      //check alignment points in union 
-                                     int unionpoints = 0; 
+                                     
                                      for (multimap<const unsigned char, const unsigned char>::const_iterator alignmentiter = sentence_u.alignment.begin(); alignmentiter != sentence_u.alignment.end(); alignmentiter++) {
                                         const unsigned char alignedsourceindex = alignmentiter->first -1; //-1 because of 1-based-indexing
                                         const unsigned char alignedtargetindex = alignmentiter->second -1; //-1 because of 1-based-indexing
@@ -980,16 +981,17 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                      }
                                      unionpoints = unionpoints - intersectionpoints; //substract intersection points, we want only points in the union and not in the intersection             
                                      if (DEBUG) cerr << "     DEBUG UNIONPOINTS=" << unionpoints << endl;
-                                     if (unionpoints > 0) {
+                                     /*if (unionpoints > 0) {
                                         unionscore =  (double) unionpoints / maxpatternsize;
                                         
-                                        if (DEBUG) cerr << "     DEBUG unionscore(2): " << unionpoints << " / " << maxpatternsize << " = " << unionscore << endl;
-                                     }
+                                        if (DEBUG) cerr << "     DEBUG unionscore(2): " << unionpoints << " / " << (int) maxpatternsize << " = " << unionscore << endl;
+                                     }*/
                                 }
 
-                                double score = intersectionscore + (1 - intersectionscore) * unionscore;
+                                double score = intersectionscore;
+                                if (unionweight != 1) score = score * pow(unionweight,unionpoints);
                                 if (score > 1) score = 1;
-                                if (DEBUG) cerr << "     DEBUG score(2): " << intersectionscore << " + (1 - " << intersectionscore << ") * " << unionscore << " = " << score << endl;
+                                if (DEBUG) cerr << "     DEBUG score(2): " << intersectionscore << " * " << unionweight << "^" << unionpoints << " = " << score << endl;
 
                                 if (bestonly) {
                                     if (score > bestscore) { 
@@ -1337,14 +1339,14 @@ int AlignmentModel::extractgizapatterns(GizaSentenceAlignment & sentence_s2t, Gi
 
 
 
-int AlignmentModel::extractgizapatterns2(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold, int computereverse, bool bestonly, bool weighbyalignmentscore, bool expandunaligned, bool combine, bool intersectiononly, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
+int AlignmentModel::extractgizapatterns2(GizaModel & gizamodel_s2t, GizaModel & gizamodel_t2s, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold, int computereverse, bool bestonly, bool weighbyalignmentscore, bool expandunaligned, bool combine, double unionweight, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {
     unsigned int totalfound = 0;
     while (!gizamodel_s2t.eof() && !gizamodel_t2s.eof()) {         
         GizaSentenceAlignment sentence_s2t = gizamodel_s2t.readsentence();
         GizaSentenceAlignment sentence_t2s = gizamodel_t2s.readsentence();    
         const int i = gizamodel_s2t.index();
         cerr << " @" << i << endl;
-        int found = extractgizapatterns2(sentence_s2t, sentence_t2s, i, pairoccurrencethreshold, coocthreshold, alignscorethreshold, computereverse, bestonly, weighbyalignmentscore, expandunaligned, combine, intersectiononly, sourcedecoder,targetdecoder);
+        int found = extractgizapatterns2(sentence_s2t, sentence_t2s, i, pairoccurrencethreshold, coocthreshold, alignscorethreshold, computereverse, bestonly, weighbyalignmentscore, expandunaligned, combine, unionweight, sourcedecoder,targetdecoder);
         totalfound += found;
         cerr << "   found " << found << endl;
       } //alignment read        
