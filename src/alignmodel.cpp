@@ -804,6 +804,8 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
             
         
         
+        basic algorithm: (without expansion and recombination)
+        
         for all patterns s in source sentence:    
             for all patterns t in target sentence:
                 maxpatternsize = max(|s|,|t|)
@@ -848,9 +850,41 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
         recompute_token_index(targettokenfwindex, targettokenrevindex, sentence_s2t.target, targetpatterns);
         
         
-        unordered_map<int, set<const EncAnyGram *> > sourcetokenextracted;
-        unordered_map<int, set<const EncAnyGram *> > targettokenextracted;
+        struct extractedpair {
+            const EncAnyGram * source;
+            unsigned char sourceindex;
+            const EncAnyGram * target;
+            unsigned char targetindex;
+            int intersectionpoints;
+            int unionpoints;            
+            int unaligned;
+            
+            extractedpair(const EncAnyGram *  source, unsigned char sourceindex, const EncAnyGram *  target, unsigned char targetindex, int intersectionpoints, int unionpoints, int unaligned = 0) {
+                this->source = source;
+                this->sourceindex = sourceindex;
+                this->target = target;
+                this->targetindex = targetindex;
+                this->intersectionpoints = intersectionpoints;
+                this->unionpoints = unionpoints;
+                this->unaligned = unaligned;
+            }
+            extractedpair(const extractedpair &other) {
+                this->source = other.source;
+                this->sourceindex = other.sourceindex;
+                this->target = other.target;
+                this->targetindex = other.targetindex;
+                this->intersectionpoints = other.intersectionpoints;
+                this->unionpoints = other.unionpoints;
+                this->unaligned = other.unaligned;
+            } 
+            bool operator==(const extractedpair &other) const {
+                return ((source == other.source) && (target == other.target) && (sourceindex == other.sourceindex) && (targetindex == other.targetindex));
+            }
+        };        
         
+        vector<extractedpair> extractedpairs;        
+        //unordered_map<int, vector<extractedpair> > sourcetokenextracted;
+        //unordered_map<int, vector<extractedpair> > targettokenextracted;
         
         
         if (DEBUG) { 
@@ -895,6 +929,9 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                     //now find what target patterns are aligned, and how well the alignment is (expressed through a score)
                     double bestscore = 0;             
                     const EncAnyGram * besttargetpattern = NULL;
+                    int besttargetindex = 0;
+                    int bestintersectionpoints = 0;
+                    int bestunionpoints = 0;
                     int count_t = 0;                           
                     
                     multiset<uint32_t> * sourcesentenceindex = NULL; //used only if coocthreshold > 0                         
@@ -1004,9 +1041,15 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                         //retain only the best target pattern given an occurrence of a source pattern
                                         bestscore = score;
                                         besttargetpattern = targetpattern;
+                                        besttargetindex = targetindex;
+                                        bestintersectionpoints = intersectionpoints;
+                                        bestunionpoints = unionpoints;
                                     }
                                 } else if (score >= alignscorethreshold) {                                   
                                     addextractedpattern(sourcepattern, targetpattern, (weighbyalignmentscore ? score : 1), computereverse, sourcepatternwithcontext);
+                                    if (combine) {
+                                        extractedpairs.push_back(extractedpair(sourcepattern, sourceindex, targetpattern, targetindex, intersectionpoints, unionpoints));  
+                                    }
                                     sourcepatternused = true;
                                     found++;
                                     if ((sourcedecoder != NULL) && (targetdecoder != NULL)) {
@@ -1022,7 +1065,7 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                     int lastleftaligned = -1;
                                     int firstrightaligned = sentence_s2t.target->size();
                                     
-                                    //(using union instead of intersection, strictes sense of it means to be 'unaligned')
+                                    //(using union instead of intersection, strictest sense of what it means to be 'unaligned')
                                     for (multimap<const unsigned char, const unsigned char>::const_iterator alignmentiter = sentence_u.alignment.begin(); alignmentiter != sentence_u.alignment.end(); alignmentiter++) {
                                         const unsigned char alignedtargetindex = alignmentiter->second -1; //-1 because of 1-based-indexing      
                                         if ((alignedtargetindex > lastleftaligned) && (alignedtargetindex < targetindex)) {
@@ -1049,7 +1092,7 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                                 const unsigned char maxpatternsize2 = ( length > maxpatternsize) ? length : maxpatternsize;  
                                                 const int unaligned = length - targetpatternsize;
                                                 
-                                                double score2 = (double) intersectionpoints / maxpatternsize;
+                                                double score2 = (double) intersectionpoints / maxpatternsize2;
                                                 if ((intersectionscore < 1) && (unionweight != 1)) {
                                                     score2 = score2 * pow(unionweight,unionpoints);                                                    
                                                 }     
@@ -1080,7 +1123,9 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                         
                     if ((besttargetpattern != NULL) && (bestscore >= alignscorethreshold)) {
                         addextractedpattern(sourcepattern, besttargetpattern, (weighbyalignmentscore ? bestscore : 1), computereverse, sourcepatternwithcontext);
-                        
+                        if (combine) {                            
+                            extractedpairs.push_back(extractedpair(sourcepattern, sourceindex, besttargetpattern, besttargetindex, bestintersectionpoints, bestunionpoints));
+                        }                        
                         
                         sourcepatternused = true;
                         found++; 
@@ -1099,6 +1144,156 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                 }
              }
           }  //sourceindex iterator
+          
+          
+         //------ RECOMBINATION STEP -----------
+         // if two patterns can be combined into a larger one, on both source and target side, then add the larger one too
+         //      patterns may be combined if they follow eachother and have none or only unaligned points in between (for both sides)  (swap order is allowed)
+         //      the maximum size of a gap between patterns is limited by the smallest pattern
+               
+               
+         if ((combine) && (leftsourcecontext || rightsourcecontext)) {
+            // TODO: context not yet supported with recombination!
+            cerr << "ERROR: Context and recombination can not be mixed (not implemented yet)" << endl;
+            throw InternalError(); 
+         }
+         
+         if (combine) {
+              map<int,bool> sourcecoverage;
+              map<int,bool> targetcoverage;
+              for (vector<extractedpair>::iterator iter = extractedpairs.begin(); iter != extractedpairs.end(); iter++) {
+                 for (int i = iter->sourceindex; i < iter->sourceindex + iter->source->n(); i++) sourcecoverage[i] = true;
+                 for (int i = iter->targetindex; i < iter->targetindex + iter->source->n(); i++) targetcoverage[i] = true;
+              }      
+              for (multimap<const unsigned char, const unsigned char>::const_iterator alignmentiter = sentence_u.alignment.begin(); alignmentiter != sentence_u.alignment.end(); alignmentiter++) {
+                const unsigned char alignedsourceindex = alignmentiter->second -1; //-1 because of 1-based-indexing
+                const unsigned char alignedtargetindex = alignmentiter->second -1; //-1 because of 1-based-indexing
+                sourcecoverage[(int) alignedsourceindex] = true;
+                targetcoverage[(int) alignedtargetindex] = true;
+              }              
+              
+              for (vector<extractedpair>::iterator iter = extractedpairs.begin(); iter != extractedpairs.end(); iter++) {
+                    const int n1 = iter->source->n();
+                    for (vector<extractedpair>::iterator iter2 = extractedpairs.begin(); iter2 != extractedpairs.end(); iter2++) {                
+                        if (iter2->sourceindex >= iter->sourceindex + n1) { //does iter2 occur after iter1?
+                            const int n2 = iter2->source->n();
+                            const int minsize = (n1 > n2) ? n1 : n2;                            
+                            const int gapsize = iter2->sourceindex - (iter->sourceindex + n1);
+                            if (gapsize > minsize) {
+                                //gap is too big, skip
+                                continue;
+                            } else if (gapsize > 0) {
+                                //if there is a gap between iter and iter2, make sure it is not already covered by a third extraction OR an alignment
+                                bool gapalreadycovered = false;
+                                for (int i = iter->sourceindex + n1; i < iter2->sourceindex; i++) {
+                                    if (sourcecoverage.count(i)) {
+                                        gapalreadycovered = true;
+                                        break;
+                                    }
+                                }
+                                if (gapalreadycovered) continue;
+                            }
+                            
+                            const unsigned char s_begin = iter->sourceindex;
+                            const unsigned char s_length = (iter2->sourceindex + n2) - s_begin;                            
+                            const EncAnyGram * recombinedsource = sentence_s2t.source->slice(s_begin, s_length);
+                            const EncAnyGram * recombinedsourcekey = getsourcekey(recombinedsource);
+                            
+                            if (recombinedsourcekey != NULL) {
+                                delete recombinedsource;
+                                recombinedsource = recombinedsourcekey;
+                                
+                                //check if the pattern was already extracted:
+                                double duplicate = false;
+                                for (vector<extractedpair>::iterator iter3 = extractedpairs.begin(); iter3 != extractedpairs.end(); iter3++) {
+                                    if (iter3->source->hash() == iter->source->hash()) {
+                                        duplicate = true;
+                                        break;
+                                    }
+                                }   
+                                if (duplicate) {
+                                    if (DEBUG) cerr << "     DEBUG recombination yields source that has already been extracted, skipping" << endl;
+                                    continue; //if so, skip
+                                }                                
+                            }
+                            
+
+                            
+                            //ok, we have two good source patterns, not extracted yet, now check if the target side holds up too
+                            const int t_n1 = iter->target->n();
+                            const int t_n2 = iter2->target->n();
+                            const int t_minsize = (t_n1 > t_n2) ? t_n1 : t_n2;                            
+                            unsigned char t_begin = 0;
+                            unsigned char t_length = 0;
+                            int t_gapsize = 0;
+                            if ((iter2->targetindex >= iter->targetindex + t_n1)) {
+                                //t_iter2 after t_iter
+                                t_gapsize = iter2->targetindex - (iter->targetindex + t_n1);
+                                bool gapalreadycovered = false;
+                                for (int i = iter->targetindex + n1; i < iter2->targetindex; i++) {
+                                    if (targetcoverage.count(i)) {
+                                        gapalreadycovered = true;
+                                        break;
+                                    }
+                                }
+                                if (gapalreadycovered) continue;          
+                                t_begin = iter->targetindex;
+                                t_length = (iter2->targetindex + t_n2) - t_begin;
+                            } else if (iter->targetindex >= iter2->targetindex + t_n2) {
+                                //t_iter after t_iter2 (swapped order)
+                                t_gapsize = iter->targetindex - (iter2->targetindex + t_n2);
+                                bool gapalreadycovered = false;
+                                for (int i = iter2->targetindex + n2; i < iter->targetindex; i++) {
+                                    if (targetcoverage.count(i)) {
+                                        gapalreadycovered = true;
+                                        break;
+                                    }
+                                }
+                                if (gapalreadycovered) continue;
+                                t_begin = iter2->targetindex;
+                                t_length = (iter->targetindex + t_n1) - t_begin;                                
+                            }
+                            
+                            if (t_length > 0) {
+                                //we have a recombination!
+                                const EncAnyGram * recombinedtarget = sentence_s2t.target->slice(t_begin, t_length);
+                                const unsigned char maxpatternsize2 = ( s_length > t_length) ? s_length : t_length;
+                                
+                                //check if it happens to already occur as pattern
+                                const EncAnyGram * recombinedtargetkey = gettargetkey(recombinedtarget);                                
+                                if (recombinedtargetkey != NULL) {
+                                    delete recombinedtarget;
+                                    recombinedtarget = recombinedtargetkey;
+                                }
+                                
+                                //compute new score                        
+                                double score2 = (double) (iter->intersectionpoints + iter2->intersectionpoints) / maxpatternsize2;
+                                if ((score2 < 1) && (unionweight != 1)) {
+                                    score2 = score2 * pow(unionweight,iter->unionpoints + iter2->unionpoints);                                                    
+                                }     
+                                if (score2 > 1) score2 = 1;
+                                
+                                //substract penalty for unaligned points. The size of the penalty depends on the length of the SOURCE patterns, the longer the source, the lower the penalty for unaligned points, the shorter the source, the higher the penalty for adding unaligned points (up to -50% per unaligned point).. score2 drops to 0 quite fast if more points are added
+                                const int unaligned = iter->unaligned + iter2->unaligned + t_gapsize;
+                                const double penaltyweight = (double) 1 / (s_length+1);   
+                                score2 = score2 * (1 - (unaligned * penaltyweight));      
+                                if (DEBUG) cerr << "     DEBUG recombination found, score=" << score2 << " penaltyweight=" << penaltyweight << endl;                                          
+                                if ((score2 >= alignscorethreshold) && (score2 > 0)) {
+                                    addextractedpattern(recombinedsource, recombinedtarget, (weighbyalignmentscore ? score2 : 1), computereverse);
+                                    found++;                                                    
+                                } else {
+                                    if (recombinedsourcekey == NULL) delete recombinedsource;
+                                    if (recombinedtargetkey == NULL) delete recombinedtarget;
+                                }        
+                                
+                                
+                            }
+                        }
+                    }
+              } 
+               
+         } 
+          
          return found;
 }
 
