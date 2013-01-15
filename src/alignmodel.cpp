@@ -978,16 +978,18 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                             unionpoints++;
                                          }                                   
                                      }
-                                     unionpoints = unionpoints - intersectionpoints; //substract intersection points, we want only points in the union and not in the intersection                                     
+                                     unionpoints = unionpoints - intersectionpoints; //substract intersection points, we want only points in the union and not in the intersection             
+                                     if (DEBUG) cerr << "     DEBUG UNIONPOINTS=" << unionpoints << endl;
                                      if (unionpoints > 0) {
                                         unionscore =  (double) unionpoints / maxpatternsize;
-                                        if (DEBUG) cerr << "     DEBUG unionscore(2): " << unionscore << endl;
+                                        
+                                        if (DEBUG) cerr << "     DEBUG unionscore(2): " << unionpoints << " / " << maxpatternsize << " = " << unionscore << endl;
                                      }
                                 }
 
                                 double score = intersectionscore + (1 - intersectionscore) * unionscore;
                                 if (score > 1) score = 1;
-                                if (DEBUG) cerr << "     DEBUG score(2): " << score << endl;
+                                if (DEBUG) cerr << "     DEBUG score(2): " << intersectionscore << " + (1 - " << intersectionscore << ") * " << unionscore << " = " << score << endl;
 
                                 if (bestonly) {
                                     if (score > bestscore) { 
