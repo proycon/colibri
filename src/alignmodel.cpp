@@ -847,6 +847,12 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
         unordered_map<int, vector<const EncAnyGram *> > targettokenrevindex;
         recompute_token_index(targettokenfwindex, targettokenrevindex, sentence_s2t.target, targetpatterns);
         
+        
+        unordered_map<int, set<const EncAnyGram *> > sourcetokenextracted;
+        unordered_map<int, set<const EncAnyGram *> > targettokenextracted;
+        
+        
+        
         if (DEBUG) { 
             cerr << "DEBUG source token rev index size: " << sourcetokenrevindex.size() << endl;
             cerr << "DEBUG source token fw index size: " << sourcetokenfwindex.size() << endl;
@@ -960,7 +966,7 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                  
                                  const double intersectionscore = (double) intersectionpoints / maxpatternsize; //1.0 if all points are aligned
 
-                                 if (DEBUG) cerr << "     DEBUG intersectionscore(1): " << intersectionpoints << " / " << (int) maxpatternsize << " = " << intersectionscore << endl;
+                                 if (DEBUG) cerr << "     DEBUG intersectionscore(1): " << intersectionpoints << " / " << (int) targetpatternsize << " = " << intersectionscore << endl;
                                  
                                                                  
                                  
@@ -991,7 +997,7 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                 double score = intersectionscore;
                                 if (unionweight != 1) score = score * pow(unionweight,unionpoints);
                                 if (score > 1) score = 1;
-                                if (DEBUG) cerr << "     DEBUG score(2): " << intersectionscore << " * " << unionweight << "^" << unionpoints << " = " << score << endl;
+                                if (DEBUG) cerr << "     DEBUG score(2): " << intersectionscore << " * " << unionweight << "^" << unionpoints << " (max 1) = " << score << endl;
 
                                 if (bestonly) {
                                     if (score > bestscore) { 
@@ -999,7 +1005,7 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                         bestscore = score;
                                         besttargetpattern = targetpattern;
                                     }
-                                } else if (score > alignscorethreshold) {                                   
+                                } else if (score >= alignscorethreshold) {                                   
                                     addextractedpattern(sourcepattern, targetpattern, (weighbyalignmentscore ? score : 1), computereverse, sourcepatternwithcontext);
                                     sourcepatternused = true;
                                     found++;
@@ -1008,12 +1014,71 @@ int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, G
                                     }
                                     
                                 }
+                                
+                                if ((!bestonly) && (expandunaligned)) {
+                                    //try and expand the pattern with unaligned points to the target pattern, on both ends
+                                    
+                                    //target indices
+                                    int lastleftaligned = -1;
+                                    int firstrightaligned = sentence_s2t.target->size();
+                                    
+                                    //(using union instead of intersection, strictes sense of it means to be 'unaligned')
+                                    for (multimap<const unsigned char, const unsigned char>::const_iterator alignmentiter = sentence_u.alignment.begin(); alignmentiter != sentence_u.alignment.end(); alignmentiter++) {
+                                        const unsigned char alignedtargetindex = alignmentiter->second -1; //-1 because of 1-based-indexing      
+                                        if ((alignedtargetindex > lastleftaligned) && (alignedtargetindex < targetindex)) {
+                                            lastleftaligned = alignedtargetindex;
+                                        } 
+                                        if ((alignedtargetindex < firstrightaligned) && (alignedtargetindex > targetindex + (targetpatternsize - 1))) {
+                                            firstrightaligned = alignedtargetindex;
+                                        } 
+                                    }
+                                    if (DEBUG) cerr << "     DEBUG lastleftaligned=" << lastleftaligned << endl;
+                                    if (DEBUG) cerr << "     DEBUG firstrightaligned=" << firstrightaligned << endl;
+                                    
+                                    for (int begin = lastleftaligned+1; begin <= targetindex; begin++) {
+                                        for (int end = targetindex + targetpatternsize; end <= firstrightaligned-1; end++) {
+                                            if (!((begin == targetindex) && (end == targetindex + (targetpatternsize - 1)))) { //exclude the non-expanded pattern we already have anyway
+                                                if (DEBUG) cerr << "     DEBUG Found expansions using unaligned points from " << begin << " to " << end << endl;
+                                                const int length = end-begin + 1;                                                
+                                                EncNGram * newtargetpattern = sentence_s2t.target->slice(begin, length);
+                                                const EncAnyGram * targetkey = gettargetkey(newtargetpattern);
+                                                if (targetkey != NULL) { //check if not found in pattern model (most will be new patterns)
+                                                    //found in pattern model anyway, use that one
+                                                    delete newtargetpattern;
+                                                    newtargetpattern = (EncNGram *) targetkey; 
+                                                }
+                                                const unsigned char maxpatternsize2 = ( length > maxpatternsize) ? length : maxpatternsize;  
+                                                const int unaligned = length - targetpatternsize;
+                                                
+                                                double score2 = (double) intersectionpoints / maxpatternsize;
+                                                if ((intersectionscore < 1) && (unionweight != 1)) {
+                                                    score2 = score2 * pow(unionweight,unionpoints);                                                    
+                                                }     
+                                                if (score2 > 1) score2 = 1;
+                                                //substract penalty for unaligned points (-5% per unaligned point), which implies 19 unaligned points is the max (otherwise score2 <= 0)
+                                                score2 = score2 * (1 - (unaligned * 0.05));      
+                                                if (DEBUG) cerr << "     DEBUG score2=" << score2 << endl;                                          
+                                                if ((score2 >= alignscorethreshold) && (score2 > 0)) {
+                                                    addextractedpattern(sourcepattern, newtargetpattern, (weighbyalignmentscore ? score2 : 1), computereverse, sourcepatternwithcontext);
+                                                } else if (targetkey == NULL) {
+                                                    delete newtargetpattern;
+                                                }                                                
+                                                                                                
+                                            }                                            
+                                        }
+                                    } 
+                                    
+                                    
+                                }
+                                
                             }
                          }
                     } //iteration over all target patterns    
                                         
                     if ((besttargetpattern != NULL) && (bestscore >= alignscorethreshold)) {
                         addextractedpattern(sourcepattern, besttargetpattern, (weighbyalignmentscore ? bestscore : 1), computereverse, sourcepatternwithcontext);
+                        
+                        
                         sourcepatternused = true;
                         found++; 
                         if ((sourcedecoder != NULL) && (targetdecoder != NULL)) {
