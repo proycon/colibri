@@ -1,6 +1,6 @@
 AM_CPPFLAGS = -I@top_srcdir@/include
 
-bin_PROGRAMS = classdecode classencode patternfinder grapher aligner querier giza2html decoder trainclassifiers test
+bin_PROGRAMS = classdecode classencode patternfinder grapher aligner querier giza2html decoder trainclassifiers contextmoses test
 
 lib_LTLIBRARIES = libcolibri.la
 
@@ -54,6 +54,12 @@ giza2html_CXXFLAGS = -Wall -std=c++0x
 giza2html_LDADD = libcolibri.la
 giza2html_SOURCES = giza2html.cpp
 giza2html_LDFLAGS = -static
+
+
+contextmoses_CXXFLAGS = -Wall -std=c++0x
+contextmoses_LDADD = libcolibri.la
+contextmoses_SOURCES = contextmoses.cpp
+contextmoses_LDFLAGS = -static
 
 
 test_CXXFLAGS = -Wall -std=c++0x

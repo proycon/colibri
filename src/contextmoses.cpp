@@ -6,8 +6,8 @@
 using namespace std;
 
 void usage() {
-    cerr << "Training usage: contextmoses -f source-traindatafile [-N|-X|-M] [-t mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
-    cerr << "Training usage: contextmoses -T testdatafile [-t mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
+    cerr << "Training usage: contextmoses -f source-traindatafile [-N|-X|-M] [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
+    cerr << "Training usage: contextmoses -F testdatafile [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
     cerr << "Classifier types: (pick one)" << endl;
     cerr << " -N           N-Classifier Array, one classifier per pattern size group" << endl;
     cerr << " -X           Construction experts, one classifier per construction" << endl;
@@ -66,12 +66,9 @@ int main( int argc, char *argv[] ) {
     bool singlefocusfeature = false;
     double accuracythreshold = 0;
     
-    EncNGram bos = EncNGram(&BOSCLASS, 1);
-    EncNGram eos = EncNGram(&EOSCLASS, 1);
-    
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:t:T:l:r:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:t:l:r:F:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -122,14 +119,14 @@ int main( int argc, char *argv[] ) {
         case '1':
             singlefocusfeature = true;
             break;
-        case 'f':
+        case 'm':
             mosesphrasetable = optarg;
             break; 	
         case 'f':
             TRAIN = true;
             trainfile = optarg;
             break;
-        case 'T':
+        case 'F':
             TEST = true;
             testfile = optarg;
             break;            
@@ -147,7 +144,7 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
-    if (!sourceclassfile.empty() && (!targetclassfile.empty()) {
+    if ( (!sourceclassfile.empty()) && (!targetclassfile.empty()) ) {
         cerr << "ERROR: Specify class files (-S -T)" << endl;
         usage();
         exit(2);
@@ -155,8 +152,8 @@ int main( int argc, char *argv[] ) {
     
     ClassDecoder * sourceclassdecoder = NULL;
     ClassDecoder * targetclassdecoder = NULL;
-    ClassDecoder * sourceclassencoder = NULL;
-    ClassDecoder * targetclassencoder = NULL;
+    ClassEncoder * sourceclassencoder = NULL;
+    ClassEncoder * targetclassencoder = NULL;
     AlignmentModel * alignmodel = NULL;
     
 
@@ -171,7 +168,7 @@ int main( int argc, char *argv[] ) {
     cerr << "Loading alignment model " << alignmodelfile << endl;
     if (!alignmodelfile.empty()) {
         alignmodel = new AlignmentModel(alignmodelfile,false,true,0, false);
-    } else if (!mosesphrasetable.empty)) {
+    } else if (!mosesphrasetable.empty()) {
 	    cerr << "Loading target class encoder " << targetclassfile << endl;
 	    targetclassencoder = new ClassEncoder(targetclassfile);  
 
@@ -184,7 +181,9 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
-    if ((TRAIN) && (!trainfile.empty()) {
+    ClassifierInterface * classifiers = NULL;
+    
+    if ((TRAIN) && (!trainfile.empty())) {
         /*
         train) 
 	    - read moses phrasetable or colibri alignment model
@@ -195,13 +194,41 @@ int main( int argc, char *argv[] ) {
 	    - train classifiers	
 		*/
 		
+		
+		
+		if (mode == CLASSIFIERTYPE_NARRAY) {
+    
+            cerr << "Building N-Array classifiers" << endl;
+            classifiers = new NClassifierArray(outputprefix, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+            
+        } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
+    
+            cerr << "Building construction expert classifiers" << endl;
+            classifiers = new ConstructionExperts(outputprefix, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
+		
+		} else if (mode == CLASSIFIERTYPE_MONO) {
+		
+            if (!singlefocusfeature) {
+                    cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
+                    exit(2);
+            }
+            
+            cerr << "Building monolithic classifier" << endl;
+            classifiers = new MonoClassifier(outputprefix, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);  
+            
+        }
+		
+		const int BUFFERSIZE = 65536;
         unsigned char linebuffer[BUFFERSIZE];
-        ifstream *IN =  new ifstream( corpusfile.c_str() );
+        unsigned char tmpbuffer[BUFFERSIZE];
+        
+        ifstream *IN =  new ifstream( trainfile.c_str() );
         if (!IN->good()) {
-        	cerr << "ERROR: Unable to open file " << corpusfile << endl;
+        	cerr << "ERROR: Unable to open file " << trainfile << endl;
         	exit(5);
         }        
         vector<unsigned int> words;
+        int sentence = 0;
         while (IN->good()) {
             const int linesize = readline(IN, linebuffer, BUFFERSIZE );            
                     
@@ -230,22 +257,20 @@ int main( int argc, char *argv[] ) {
                     do {
                         found = false;
                         EncNGram * ngram = line.slice(i,n);    
-                        key = alignmodel->getsourcepattern((const EncAnyGram *) ngram));
+                        const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
                         if (key != NULL) {
                             //match found!
-                        
-                            //extract context
-                            EncNGram * left = NULL;
-                            EncNGram * right = NULL;
-                            if (i - leftsourcecontext < 0) 
-                                 
-                            } 
-                            if (i + n + rightsourcecontext > l) {
-                                
+                            const EncAnyGram * incontext = alignmodel->addcontext(&line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);
+                            
+                            //add to classifier 
+                            if (mode == CLASSIFIERTYPE_NARRAY) {                  
+                                ((NClassifierArray *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[*ngram], leftcontextsize, rightcontextsize);                                                
+                            } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
+                                ((ConstructionExperts *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[*ngram], leftcontextsize, rightcontextsize);                        
+                            } else if (mode == CLASSIFIERTYPE_MONO) {
+                                ((MonoClassifier *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[*ngram], leftcontextsize, rightcontextsize);
                             }
-                            
-                            
-                            //add to classifier
+                            delete incontext;
                         }  
                         delete ngram;                  
                         n++;
@@ -256,63 +281,34 @@ int main( int argc, char *argv[] ) {
             
         }
 		
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mode == CLASSIFIERTYPE_NARRAY) {
-    
-        cerr << "Building N-Array classifiers" << endl;
-        NClassifierArray classifiers = NClassifierArray(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
-        classifiers.build(&alignmodel, sourceclassdecoder, targetclassdecoder);
-
-        cerr << "Training classifiers" << endl;
-        cerr << "   Timbl options: " << timbloptions << endl;
-        classifiers.train(timbloptions);
-    
-    } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
-    
-        cerr << "Building construction expert classifiers" << endl;
-        ConstructionExperts classifiers = ConstructionExperts(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
-        classifiers.build(&alignmodel, sourceclassdecoder, targetclassdecoder);
+		
+		cerr << "Training classifiers" << endl;
+        cerr << "   Timbl options: " << timbloptions << endl; 
         
-        classifiers.accuracythreshold = accuracythreshold;
-        
-        cerr << "Training classifiers" << endl;
-        cerr << "   Timbl options: " << timbloptions << endl;
-        classifiers.train(timbloptions);
-    
-    } else if (mode == CLASSIFIERTYPE_MONO) {
+        if (mode == CLASSIFIERTYPE_NARRAY) {
 
-        if (!singlefocusfeature) {
-                cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
-                exit(2);
+            classifiers->train(timbloptions);
+        
+        } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
+        
+            
+            classifiers->accuracythreshold = accuracythreshold;
+            
+            cerr << "Training classifiers" << endl;
+            cerr << "   Timbl options: " << timbloptions << endl;
+            classifiers->train(timbloptions);
+        
+        } else if (mode == CLASSIFIERTYPE_MONO) {
+            
+            cerr << "Training classifiers" << endl;
+            cerr << "   Timbl options: " << timbloptions << endl;
+            classifiers->train(timbloptions);
+            
         }
         
-        cerr << "Building monolithic classifier" << endl;
-        MonoClassifier classifiers = MonoClassifier(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
-        classifiers.build(&alignmodel, sourceclassdecoder, targetclassdecoder);
-        
-        cerr << "Training classifiers" << endl;
-        cerr << "   Timbl options: " << timbloptions << endl;
-        classifiers.train(timbloptions);
-        
+        writeclassifierconf(outputprefix, mode, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+        cerr << "Training all done" << endl;
     }
     
-    writeclassifierconf(outputprefix, mode, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
-    
-
-    
-    cerr << "All done" << endl;
+   
 }
-    
