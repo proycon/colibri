@@ -13,6 +13,9 @@ void usage() {
     cerr << " -X           Construction experts, one classifier per construction" << endl;
     cerr << " -M           Monolithic joined classifier, focus words are joined (-1)" << endl;
     cerr << "Options:" << endl;
+    cerr << " -l [size]    Left context size" << endl;
+    cerr << " -r [size]    Right context size" << endl;
+    cerr << " -1           Represent the focus feature as a single entity, rather than individual tokens" << endl;
     cerr << " -C [id]      Classifier prefix." << endl;
     cerr << " -c [int]     Context threshold. Only create a classifier when at least this many different contexts exist. Defaults to 1." << endl;
     cerr << " -t [int]     Target threshold. Only create a classifier when at least this many different target options exist. Defaults to 1." << endl;
@@ -20,6 +23,7 @@ void usage() {
     cerr << " -x           disable exemplar weighting" << endl;
     cerr << " -O [options] Timbl options" << endl;
     cerr << " -1           Represent the focus feature as a single entity, rather than individual tokens" << endl;
+    
     //cerr << "\t-C number                 Classifier mode" << endl;
     //cerr << "\t   1 - Local context with Classifier Array" << endl;
 }
@@ -52,23 +56,28 @@ int main( int argc, char *argv[] ) {
     string trainfile = "";
     string testfile = "";
     string mosesphrasetable = "";
-    string alignmodel = "";
+    string alignmodelfile = "";
+
+    int leftcontextsize = 1;
+    int rightcontextsize = 1;
 
     int contextthreshold = 1;
     int targetthreshold = 1;
     bool singlefocusfeature = false;
     double accuracythreshold = 0;
     
+    EncNGram bos = EncNGram(&BOSCLASS, 1);
+    EncNGram eos = EncNGram(&EOSCLASS, 1);
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:t:T:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:t:T:l:r:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
                break;
         case 'd':
-        	modelfile = optarg;
+        	alignmodelfile = optarg;
         	break;
         case 'h':
         	usage();
@@ -124,27 +133,142 @@ int main( int argc, char *argv[] ) {
             TEST = true;
             testfile = optarg;
             break;            
+        case 'l':
+            leftcontextsize = atoi(optarg);
+            break;
+        case 'r':
+            rightcontextsize = atoi(optarg);
+            break;                
         }
     }
     
-    if ((!alignmodel.empty()) && (!sourceclassfile.empty()) || (!targetclassfile.empty()) || (mode == CLASSIFIERTYPE_NONE)) {
+    if ((!TRAIN && !TEST)) {
+        usage();
+        exit(2);
+    }
+    
+    if (!sourceclassfile.empty() && (!targetclassfile.empty()) {
+        cerr << "ERROR: Specify class files (-S -T)" << endl;
         usage();
         exit(2);
     }
     
     ClassDecoder * sourceclassdecoder = NULL;
     ClassDecoder * targetclassdecoder = NULL;
+    ClassDecoder * sourceclassencoder = NULL;
+    ClassDecoder * targetclassencoder = NULL;
     AlignmentModel * alignmodel = NULL;
     
-    
+
     cerr << "Loading source class decoder " << sourceclassfile << endl;
 	sourceclassdecoder = new ClassDecoder(sourceclassfile);
 
 	cerr << "Loading target class decoder " << targetclassfile << endl;
 	targetclassdecoder = new ClassDecoder(targetclassfile);   
+
+
 		
-    cerr << "Loading alignment model " << alignmodel << endl;
-    alignmodel = new AlignmentModel(alignmodel,false,true,0, false);
+    cerr << "Loading alignment model " << alignmodelfile << endl;
+    if (!alignmodelfile.empty()) {
+        alignmodel = new AlignmentModel(alignmodelfile,false,true,0, false);
+    } else if (!mosesphrasetable.empty)) {
+	    cerr << "Loading target class encoder " << targetclassfile << endl;
+	    targetclassencoder = new ClassEncoder(targetclassfile);  
+
+        cerr << "Loading source class encoder " << sourceclassfile << endl;
+        sourceclassencoder = new ClassEncoder(sourceclassfile);
+    
+        alignmodel = new AlignmentModel(alignmodelfile, sourceclassencoder, targetclassencoder);    
+    } else {
+        cerr << "ERROR: No moses phrasetable (-t) or colibri alignment model (-d) specified!" << endl;
+        exit(2);
+    }
+    
+    if ((TRAIN) && (!trainfile.empty()) {
+        /*
+        train) 
+	    - read moses phrasetable or colibri alignment model
+	    - read source-side training data
+	    - match with phrasetable
+		     - extract context and features
+			    - add to classifier training data
+	    - train classifiers	
+		*/
+		
+        unsigned char linebuffer[BUFFERSIZE];
+        ifstream *IN =  new ifstream( corpusfile.c_str() );
+        if (!IN->good()) {
+        	cerr << "ERROR: Unable to open file " << corpusfile << endl;
+        	exit(5);
+        }        
+        vector<unsigned int> words;
+        while (IN->good()) {
+            const int linesize = readline(IN, linebuffer, BUFFERSIZE );            
+                    
+            sentence++;
+
+            if (sentence % 10000 == 0) {
+                cerr << "\t@" << sentence << endl;
+            }
+                            
+            
+            const int l = countwords(linebuffer, linesize);            
+            if (l >= 256) {
+                cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping!" << endl;
+                continue;
+            } else if (l == 0) {
+            	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping!" << endl;
+                continue;
+            }
+  
+                                    
+            if (linesize > 0) {
+                EncData line = EncData(linebuffer, linesize);            
+                for (unsigned char i = 0; ((i < l) && (i < 256)); i++) {
+                    bool found;
+                    unsigned char n = 1;
+                    do {
+                        found = false;
+                        EncNGram * ngram = line.slice(i,n);    
+                        key = alignmodel->getsourcepattern((const EncAnyGram *) ngram));
+                        if (key != NULL) {
+                            //match found!
+                        
+                            //extract context
+                            EncNGram * left = NULL;
+                            EncNGram * right = NULL;
+                            if (i - leftsourcecontext < 0) 
+                                 
+                            } 
+                            if (i + n + rightsourcecontext > l) {
+                                
+                            }
+                            
+                            
+                            //add to classifier
+                        }  
+                        delete ngram;                  
+                        n++;
+                    } while (found);  
+                }
+            }
+            
+            
+        }
+		
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     if (mode == CLASSIFIERTYPE_NARRAY) {
     

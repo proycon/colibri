@@ -101,7 +101,7 @@ int main( int argc, char *argv[] ) {
             break;
         case '1':
             singlefocusfeature = true;
-            break; 	
+            break; 	        
         }
     }
     
