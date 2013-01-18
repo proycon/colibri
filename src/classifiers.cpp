@@ -412,7 +412,8 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
     for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
         const EncAnyGram * focus = iter->first;
         //cerr << "DEBUG: " << focus->decode(*sourceclassdecoder) << endl;
-                        
+            
+                    
         if (iter->second.size() >= contextthreshold) { //only use classifier if contextsthreshold is met (by default 1, so it always is)
             const int n = focus->n();
             stringstream newid;
@@ -432,55 +433,9 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
             if (targets.size() >= targetthreshold) {
                 for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                     const EncAnyGram * withcontext = *iter2;
-                    const int nwithcontext = withcontext->n();
-                    
-                    vector<const EncAnyGram *> featurevector;
 
-                    if (singlefocusfeature) {                    
-                        //left context
-                        for (int i = 0; i < leftcontextsize; i++) {
-                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                            featurevector.push_back(unigram);                    
-                        }         
-                        
-                        featurevector.push_back(focus);
-                        
-                        //right context
-                        for (int i = nwithcontext - rightcontextsize; i < nwithcontext; i++) {
-                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                            featurevector.push_back(unigram);                    
-                        }         
-                    } else {
-                        for (int i = 0; i < nwithcontext; i++) {
-                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                            featurevector.push_back(unigram);                    
-                        }                             
-                    }                    
+                    add(focus, withcontext, ttable->alignmatrix[withcontext], leftcontextsize, rightcontextsize);
                     
-                    for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
-                        const EncAnyGram * label = iter3->first;
-                        
-                        if (exemplarweights) {
-                            //add exemplar weight         
-                            double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
-                            classifierarray[n]->addinstance(featurevector, label, exemplarweight);
-                        } else {
-                            classifierarray[n]->addinstance(featurevector, label);
-                        }
-                    }                        
-                    //cleanup
-                    if (singlefocusfeature) {    
-                        for (int i = 0; i < leftcontextsize; i++) {
-                            delete featurevector[i];
-                        }
-                        for (int i = leftcontextsize + 1; i < leftcontextsize + rightcontextsize + 1; i++) {
-                            delete featurevector[i];
-                        }
-                    } else {
-                        for (int i = 0; i < nwithcontext; i++) {
-                            delete featurevector[i];
-                        }
-                    }
                 }
             }   
             if (classifierarray[n]->empty()) {
@@ -495,7 +450,57 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
     }*/
 }
 
+void NClassifierArray::add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize) {
+        vector<const EncAnyGram *> featurevector;
+        const int n = focus->n();
+        const int nwithcontext = withcontext->n();
 
+        if (singlefocusfeature) {                    
+            //left context
+            for (int i = 0; i < leftcontextsize; i++) {
+                const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                featurevector.push_back(unigram);                    
+            }         
+            
+            featurevector.push_back(focus);
+            
+            //right context
+            for (int i = nwithcontext - rightcontextsize; i < nwithcontext; i++) {
+                const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                featurevector.push_back(unigram);                    
+            }         
+        } else {
+            for (int i = 0; i < nwithcontext; i++) {
+                const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                featurevector.push_back(unigram);                    
+            }                             
+        }                    
+        
+        for (t_aligntargets::const_iterator iter3 = targets.begin(); iter3 != targets.end(); iter3++) {
+            const EncAnyGram * label = iter3->first;
+            
+            if (exemplarweights) {
+                //add exemplar weight         
+                double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
+                classifierarray[n]->addinstance(featurevector, label, exemplarweight);
+            } else {
+                classifierarray[n]->addinstance(featurevector, label);
+            }
+        }                        
+        //cleanup
+        if (singlefocusfeature) {    
+            for (int i = 0; i < leftcontextsize; i++) {
+                delete featurevector[i];
+            }
+            for (int i = leftcontextsize + 1; i < leftcontextsize + rightcontextsize + 1; i++) {
+                delete featurevector[i];
+            }
+        } else {
+            for (int i = 0; i < nwithcontext; i++) {
+                delete featurevector[i];
+            }
+        }
+}
 
 
 
@@ -752,62 +757,63 @@ void MonoClassifier::build(AlignmentModel * ttable, ClassDecoder * sourceclassde
             if (targets.size() >= targetthreshold) {
                 for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                     const EncAnyGram * withcontext = *iter2;
-                    const int nwithcontext = withcontext->n();
-                    
-                    vector<const EncAnyGram *> featurevector;
-                    
-                    if (singlefocusfeature) {                    
-                        //left context
-                        for (int i = 0; i < leftcontextsize; i++) {
-                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                            featurevector.push_back(unigram);                    
-                        }         
-                        
-                        featurevector.push_back(focus);
-                        
-                        //right context
-                        for (int i = nwithcontext - rightcontextsize ; i < nwithcontext; i++) {
-                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                            featurevector.push_back(unigram);                    
-                        }         
-                    } else {
-                        for (int i = 0; i < nwithcontext; i++) {
-                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                            featurevector.push_back(unigram);                    
-                        }                             
-                    }
-
-                    for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
-                        const EncAnyGram * label = iter3->first;
-                        
-                        if (exemplarweights) {
-                            //add exemplar weight         
-                            double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
-                            classifier->addinstance(featurevector, label, exemplarweight);
-                        } else {
-                            classifier->addinstance(featurevector, label);
-                        }
-                    }                        
-                    //cleanup
-                    if (singlefocusfeature) {    
-                        for (int i = 0; i < leftcontextsize; i++) {
-                            delete featurevector[i];
-                        }
-                        for (int i = leftcontextsize + 1; i < leftcontextsize + rightcontextsize + 1; i++) {
-                            delete featurevector[i];
-                        }
-                    } else {
-                        for (int i = 0; i < nwithcontext; i++) {
-                            delete featurevector[i];
-                        }
-                    }
+                    add(focus, withcontext, ttable->alignmatrix[withcontext], leftcontextsize, rightcontextsize);                    
                 }
             }   
         }
     }    
 }
 
+void MonoClassifier::add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize) {
+        vector<const EncAnyGram *> featurevector;
+        const int nwithcontext = withcontext->n();
+        if (singlefocusfeature) {                    
+            //left context
+            for (int i = 0; i < leftcontextsize; i++) {
+                const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                featurevector.push_back(unigram);                    
+            }         
+            
+            featurevector.push_back(focus);
+            
+            //right context
+            for (int i = nwithcontext - rightcontextsize ; i < nwithcontext; i++) {
+                const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                featurevector.push_back(unigram);                    
+            }         
+        } else {
+            for (int i = 0; i < nwithcontext; i++) {
+                const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                featurevector.push_back(unigram);                    
+            }                             
+        }
 
+        for (t_aligntargets::const_iterator iter3 = targets.begin(); iter3 != targets.end(); iter3++) {
+            const EncAnyGram * label = iter3->first;
+            
+            if (exemplarweights) {
+                //add exemplar weight         
+                double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
+                classifier->addinstance(featurevector, label, exemplarweight);
+            } else {
+                classifier->addinstance(featurevector, label);
+            }
+        }                        
+        //cleanup
+        if (singlefocusfeature) {    
+            for (int i = 0; i < leftcontextsize; i++) {
+                delete featurevector[i];
+            }
+            for (int i = leftcontextsize + 1; i < leftcontextsize + rightcontextsize + 1; i++) {
+                delete featurevector[i];
+            }
+        } else {
+            for (int i = 0; i < nwithcontext; i++) {
+                delete featurevector[i];
+            }
+        }
+
+}
 
 
 
@@ -885,56 +891,8 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
                 cerr << "Building classifier hash=" << hash << "..." << endl;
                 for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                     const EncAnyGram * withcontext = *iter2;
-            
-                    const int nwithcontext = withcontext->n();
-                    vector<const EncAnyGram *> featurevector;
-    
-                    if (singlefocusfeature) {                    
-                        //left context
-                        for (int i = 0; i < leftcontextsize; i++) {
-                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                            featurevector.push_back(unigram);                    
-                        }         
-                        
-                        featurevector.push_back(focus);
-                        
-                        //right context
-                        for (int i = nwithcontext - rightcontextsize; i < nwithcontext; i++) {
-                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                            featurevector.push_back(unigram);                    
-                        }         
-                    } else {
-                        for (int i = 0; i < nwithcontext; i++) {
-                            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                            featurevector.push_back(unigram);                    
-                        }                             
-                    }
-                    
-                                        
-                    for (t_aligntargets::const_iterator iter3 = ttable->alignmatrix[withcontext].begin(); iter3 != ttable->alignmatrix[withcontext].end(); iter3++) {
-                        const EncAnyGram * label = iter3->first;
-                        cerr << "Adding to classifier hash=" << hash << "..." << endl;
-                        if (exemplarweights) {
-                            //add exemplar weight         
-                            double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
-                            classifierarray[hash]->addinstance(featurevector, label, exemplarweight);
-                        } else {
-                            classifierarray[hash]->addinstance(featurevector, label);
-                        }
-                    }                        
-                    //cleanup
-                    if (singlefocusfeature) {    
-                        for (int i = 0; i < leftcontextsize; i++) {
-                            delete featurevector[i];
-                        }
-                        for (int i = leftcontextsize + 1; i < leftcontextsize + rightcontextsize + 1; i++) {
-                            delete featurevector[i];
-                        }
-                    } else {
-                        for (int i = 0; i < nwithcontext; i++) {
-                            delete featurevector[i];
-                        }
-                    }
+                    add(focus, withcontext, ttable->alignmatrix[withcontext], leftcontextsize, rightcontextsize);
+
                 }
             }
             
@@ -953,6 +911,59 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
     }*/
 }
 
+
+void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize) {
+    const int nwithcontext = withcontext->n();
+    vector<const EncAnyGram *> featurevector;
+    const uint64_t hash = focus->hash();
+    
+    if (singlefocusfeature) {                    
+        //left context
+        for (int i = 0; i < leftcontextsize; i++) {
+            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+            featurevector.push_back(unigram);                    
+        }         
+        
+        featurevector.push_back(focus);
+        
+        //right context
+        for (int i = nwithcontext - rightcontextsize; i < nwithcontext; i++) {
+            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+            featurevector.push_back(unigram);                    
+        }         
+    } else {
+        for (int i = 0; i < nwithcontext; i++) {
+            const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+            featurevector.push_back(unigram);                    
+        }                             
+    }
+    
+                        
+    for (t_aligntargets::const_iterator iter3 = targets.begin(); iter3 != targets.end(); iter3++) {
+        const EncAnyGram * label = iter3->first;
+        cerr << "Adding to classifier hash=" << hash << "..." << endl;
+        if (exemplarweights) {
+            //add exemplar weight         
+            double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
+            classifierarray[hash]->addinstance(featurevector, label, exemplarweight);
+        } else {
+            classifierarray[hash]->addinstance(featurevector, label);
+        }
+    }                        
+    //cleanup
+    if (singlefocusfeature) {    
+        for (int i = 0; i < leftcontextsize; i++) {
+            delete featurevector[i];
+        }
+        for (int i = leftcontextsize + 1; i < leftcontextsize + rightcontextsize + 1; i++) {
+            delete featurevector[i];
+        }
+    } else {
+        for (int i = 0; i < nwithcontext; i++) {
+            delete featurevector[i];
+        }
+    }
+}
 
 
 t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
