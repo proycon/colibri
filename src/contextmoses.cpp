@@ -1,3 +1,4 @@
+
 #include <getopt.h>
 #include "alignmodel.h"
 #include "classifiers.h"
@@ -5,13 +6,14 @@
 using namespace std;
 
 void usage() {
-    cerr << "Usage: trainclassifiers [-N|-X|-M] -d alignmentmodel -S source-class-file -T target-class-file" << endl;
+    cerr << "Training usage: contextmoses -f source-traindatafile [-N|-X|-M] [-t mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
+    cerr << "Training usage: contextmoses -T testdatafile [-t mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
     cerr << "Classifier types: (pick one)" << endl;
     cerr << " -N           N-Classifier Array, one classifier per pattern size group" << endl;
     cerr << " -X           Construction experts, one classifier per construction" << endl;
-    cerr << " -M           Monolithic joined classifier, focus words are joined" << endl;
+    cerr << " -M           Monolithic joined classifier, focus words are joined (-1)" << endl;
     cerr << "Options:" << endl;
-    cerr << " -C [id]      Classifier output prefix. The decoder takes this same ID to load your classifier." << endl;
+    cerr << " -C [id]      Classifier prefix." << endl;
     cerr << " -c [int]     Context threshold. Only create a classifier when at least this many different contexts exist. Defaults to 1." << endl;
     cerr << " -t [int]     Target threshold. Only create a classifier when at least this many different target options exist. Defaults to 1." << endl;
     cerr << " -a [float]   Accuracy threshold for Construction experts (-X), only experts with a leave-one-out accuracy higher than specified will be included. Value between 0 and 1. Defaults to 0 (no threshold)." << endl;
@@ -24,14 +26,13 @@ void usage() {
 
 int main( int argc, char *argv[] ) {
     string sourceclassfile = "";
-    string targetclassfile = "";
-    string modelfile="";
+    string targetclassfile = "";    
     string outputprefix="classifier";
     bool exemplarweights = true;
     
     static struct option long_options[] = {                        
        {0, 0, 0, 0}
-     };
+    };
     /* getopt_long stores the option index here. */
     int option_index = 0;
     
@@ -45,13 +46,23 @@ int main( int argc, char *argv[] ) {
     
     ClassifierType mode = CLASSIFIERTYPE_NONE;
     
+    bool TRAIN = false;
+    bool TEST = false;
+    
+    string trainfile = "";
+    string testfile = "";
+    string mosesphrasetable = "";
+    string alignmodel = "";
+
     int contextthreshold = 1;
     int targetthreshold = 1;
     bool singlefocusfeature = false;
     double accuracythreshold = 0;
     
+    
+    
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:t:T:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -101,29 +112,45 @@ int main( int argc, char *argv[] ) {
             break;
         case '1':
             singlefocusfeature = true;
+            break;
+        case 'f':
+            mosesphrasetable = optarg;
             break; 	
+        case 'f':
+            TRAIN = true;
+            trainfile = optarg;
+            break;
+        case 'T':
+            TEST = true;
+            testfile = optarg;
+            break;            
         }
     }
     
-    if ((modelfile.empty()) || (sourceclassfile.empty()) || (targetclassfile.empty()) || (mode == CLASSIFIERTYPE_NONE)) {
+    if ((!alignmodel.empty()) && (!sourceclassfile.empty()) || (!targetclassfile.empty()) || (mode == CLASSIFIERTYPE_NONE)) {
         usage();
         exit(2);
     }
     
+    ClassDecoder * sourceclassdecoder = NULL;
+    ClassDecoder * targetclassdecoder = NULL;
+    AlignmentModel * alignmodel = NULL;
+    
+    
     cerr << "Loading source class decoder " << sourceclassfile << endl;
-	ClassDecoder sourceclassdecoder = ClassDecoder(sourceclassfile);
+	sourceclassdecoder = new ClassDecoder(sourceclassfile);
 
 	cerr << "Loading target class decoder " << targetclassfile << endl;
-	ClassDecoder targetclassdecoder = ClassDecoder(targetclassfile);   
+	targetclassdecoder = new ClassDecoder(targetclassfile);   
 		
-    cerr << "Loading alignment model " << modelfile << endl;
-    AlignmentModel alignmodel = AlignmentModel(modelfile,false,true,0, false);
+    cerr << "Loading alignment model " << alignmodel << endl;
+    alignmodel = new AlignmentModel(alignmodel,false,true,0, false);
     
     if (mode == CLASSIFIERTYPE_NARRAY) {
     
         cerr << "Building N-Array classifiers" << endl;
         NClassifierArray classifiers = NClassifierArray(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
-        classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder);
+        classifiers.build(&alignmodel, sourceclassdecoder, targetclassdecoder);
 
         cerr << "Training classifiers" << endl;
         cerr << "   Timbl options: " << timbloptions << endl;
@@ -133,7 +160,7 @@ int main( int argc, char *argv[] ) {
     
         cerr << "Building construction expert classifiers" << endl;
         ConstructionExperts classifiers = ConstructionExperts(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
-        classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder);
+        classifiers.build(&alignmodel, sourceclassdecoder, targetclassdecoder);
         
         classifiers.accuracythreshold = accuracythreshold;
         
@@ -150,7 +177,7 @@ int main( int argc, char *argv[] ) {
         
         cerr << "Building monolithic classifier" << endl;
         MonoClassifier classifiers = MonoClassifier(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
-        classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder);
+        classifiers.build(&alignmodel, sourceclassdecoder, targetclassdecoder);
         
         cerr << "Training classifiers" << endl;
         cerr << "   Timbl options: " << timbloptions << endl;
