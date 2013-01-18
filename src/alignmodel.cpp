@@ -701,7 +701,6 @@ int AlignmentModel::prune(const double prunethreshold) {
 }
 
 EncAnyGram * AlignmentModel::addcontext(const EncData * sentence, const EncAnyGram * focus, int sourceindex) {
-    
 
     EncNGram * leftcontext;
     {
@@ -786,6 +785,92 @@ EncAnyGram * AlignmentModel::addcontext(const EncData * sentence, const EncAnyGr
     return result;
 }
 
+
+
+EncAnyGram * AlignmentModel::addcontext(const EncData * sentence, const EncAnyGram * focus, int sourceindex, int leftsourcecontext, int rightsourcecontext) {
+
+    EncNGram * leftcontext;
+    {
+        EncNGram * leftcontext_body = NULL;
+        EncNGram * leftcontext_dummies = NULL;
+        int begin = sourceindex - leftsourcecontext;
+        int length = leftsourcecontext;
+        int leftdummies = 0;
+        if (begin < 0) {
+            leftdummies = -1 * begin;
+            length = length - leftdummies;
+            begin = 0;
+        }                         
+        if (length > 0) {
+            leftcontext_body = sentence->slice(begin, length);                                                        
+        } 
+        if (leftdummies > 0) {
+            unsigned char * buffer = new unsigned char[1024];
+            char buffersize = 0;
+            for (int i = 0; i < leftdummies; i++) { buffer[buffersize++] = BOSCLASS; buffer[buffersize++] = 0; } 
+            leftcontext_dummies = new EncNGram(buffer, buffersize-1);
+            delete [] buffer;
+        } else {
+            leftcontext = leftcontext_body;
+        }                 
+        
+        if ((leftcontext_body != NULL) && (leftcontext_dummies != NULL)) {
+            leftcontext = new EncNGram(*leftcontext_dummies + *leftcontext_body);
+        } else if (leftcontext_body == NULL) {
+            leftcontext = leftcontext_dummies;
+        } else if (leftcontext_dummies == NULL) {
+            leftcontext = leftcontext_body;
+        }
+                    
+        if ((leftcontext_body != NULL) && (leftcontext != leftcontext_body)) delete leftcontext_body;
+        if ((leftcontext_dummies != NULL) && (leftcontext != leftcontext_dummies)) delete leftcontext_dummies;
+    }
+    
+    EncNGram * rightcontext;
+    {
+        EncNGram * rightcontext_body = NULL;
+        EncNGram * rightcontext_dummies = NULL;
+        int begin = sourceindex + focus->n(); //begin of the rightcontext
+        int length = rightsourcecontext; 
+        int rightdummies = 0;
+        if (begin + length >= sentence->length()) {
+            rightdummies = (begin + length) - sentence->length();
+            length = length - rightdummies;
+        }                         
+        if (length > 0) {
+            rightcontext_body = sentence->slice(begin, length);                                                        
+        } 
+        if (rightdummies > 0) {
+            unsigned char * buffer = new unsigned char[1024];
+            char buffersize = 0;
+            for (int i = 0; i < rightdummies; i++) { buffer[buffersize++] = EOSCLASS; buffer[buffersize++] = 0; } 
+            rightcontext_dummies = new EncNGram(buffer, buffersize-1);
+            delete [] buffer;
+        } else {
+            rightcontext = rightcontext_body;
+        }                 
+        
+        if ((rightcontext_body != NULL) && (rightcontext_dummies != NULL)) {
+            rightcontext = new EncNGram(*rightcontext_body + *rightcontext_dummies);
+        } else if (rightcontext_body == NULL) {
+            rightcontext = rightcontext_dummies;
+        } else if (rightcontext_dummies == NULL) {
+            rightcontext = rightcontext_body;
+        }
+                    
+        if ((rightcontext_body != NULL) && (rightcontext != rightcontext_body)) delete rightcontext_body;
+        if ((rightcontext_dummies != NULL) && (rightcontext != rightcontext_dummies)) delete rightcontext_dummies;
+    }
+    
+    
+    
+    EncAnyGram * result = focus->addcontext(leftcontext, rightcontext);
+    
+    delete leftcontext;
+    delete rightcontext;    
+    
+    return result;
+}
 
 
 int AlignmentModel::extractgizapatterns2(GizaSentenceAlignment & sentence_s2t, GizaSentenceAlignment & sentence_t2s, int sentenceindex, int pairoccurrencethreshold, const double coocthreshold, const double alignscorethreshold, int computereverse, bool bestonly, bool weighbyalignmentscore, bool expandunaligned, bool combine, double unionweight, ClassDecoder * sourcedecoder, ClassDecoder * targetdecoder) {

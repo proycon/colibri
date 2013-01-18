@@ -141,6 +141,8 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 	int extractskipgrams(const int absolutecoocthreshold = 2);
 	
 	EncAnyGram * addcontext(const EncData * sentence, const EncAnyGram * focus, int sourceindex);
+	EncAnyGram * addcontext(const EncData * sentence, const EncAnyGram * focus, int sourceindex, int leftsourcecontext, int rightsourcecontext);
+	
 	
 	unsigned int prunepatternmodel(IndexedPatternModel & patternmodel, double threshold);
 	
