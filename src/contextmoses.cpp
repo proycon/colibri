@@ -264,11 +264,11 @@ int main( int argc, char *argv[] ) {
                             
                             //add to classifier 
                             if (mode == CLASSIFIERTYPE_NARRAY) {                  
-                                ((NClassifierArray *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[*ngram], leftcontextsize, rightcontextsize);                                                
+                                ((NClassifierArray *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[((const EncAnyGram *) ngram)], leftcontextsize, rightcontextsize);                                                
                             } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
-                                ((ConstructionExperts *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[*ngram], leftcontextsize, rightcontextsize);                        
+                                ((ConstructionExperts *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[((const EncAnyGram *) ngram)], leftcontextsize, rightcontextsize);                        
                             } else if (mode == CLASSIFIERTYPE_MONO) {
-                                ((MonoClassifier *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[*ngram], leftcontextsize, rightcontextsize);
+                                ((MonoClassifier *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[((const EncAnyGram *) ngram)], leftcontextsize, rightcontextsize);
                             }
                             delete incontext;
                         }  
@@ -287,22 +287,22 @@ int main( int argc, char *argv[] ) {
         
         if (mode == CLASSIFIERTYPE_NARRAY) {
 
-            classifiers->train(timbloptions);
+            ((NClassifierArray *) classifiers)->train(timbloptions);
         
         } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
         
             
-            classifiers->accuracythreshold = accuracythreshold;
+            ((ConstructionExperts *) classifiers)->accuracythreshold = accuracythreshold;
             
             cerr << "Training classifiers" << endl;
             cerr << "   Timbl options: " << timbloptions << endl;
-            classifiers->train(timbloptions);
+            ((ConstructionExperts *) classifiers)->train(timbloptions);
         
         } else if (mode == CLASSIFIERTYPE_MONO) {
             
             cerr << "Training classifiers" << endl;
             cerr << "   Timbl options: " << timbloptions << endl;
-            classifiers->train(timbloptions);
+            ((MonoClassifier *) classifiers)->train(timbloptions);
             
         }
         
