@@ -293,15 +293,10 @@ int main( int argc, char *argv[] ) {
         
             
             ((ConstructionExperts *) classifiers)->accuracythreshold = accuracythreshold;
-            
-            cerr << "Training classifiers" << endl;
-            cerr << "   Timbl options: " << timbloptions << endl;
             ((ConstructionExperts *) classifiers)->train(timbloptions);
         
         } else if (mode == CLASSIFIERTYPE_MONO) {
             
-            cerr << "Training classifiers" << endl;
-            cerr << "   Timbl options: " << timbloptions << endl;
             ((MonoClassifier *) classifiers)->train(timbloptions);
             
         }
