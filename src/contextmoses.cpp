@@ -23,6 +23,7 @@ void usage() {
     cerr << " -x           disable exemplar weighting" << endl;
     cerr << " -O [options] Timbl options" << endl;
     cerr << " -1           Represent the focus feature as a single entity, rather than individual tokens" << endl;
+    cerr << " -D           Enable debug" << endl;
     
     //cerr << "\t-C number                 Classifier mode" << endl;
     //cerr << "\t   1 - Local context with Classifier Array" << endl;
@@ -31,7 +32,7 @@ void usage() {
 int main( int argc, char *argv[] ) {
     string sourceclassfile = "";
     string targetclassfile = "";    
-    string outputprefix="classifier";
+    string classifierid="classifier";
     bool exemplarweights = true;
     
     static struct option long_options[] = {                        
@@ -52,6 +53,7 @@ int main( int argc, char *argv[] ) {
     
     bool TRAIN = false;
     bool TEST = false;
+    bool debug = false;
     
     string trainfile = "";
     string testfile = "";
@@ -68,7 +70,7 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:t:l:r:F:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:t:l:r:F:D",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -86,7 +88,7 @@ int main( int argc, char *argv[] ) {
             targetclassfile = optarg;
             break;    
         case 'C':
-            outputprefix = optarg;
+            classifierid = optarg;
             break;
         case 'X':
             mode = CLASSIFIERTYPE_CONSTRUCTIONEXPERTS;
@@ -135,6 +137,9 @@ int main( int argc, char *argv[] ) {
             break;
         case 'r':
             rightcontextsize = atoi(optarg);
+            break;
+        case 'D':
+            debug = true;
             break;                
         }
     }
@@ -199,12 +204,12 @@ int main( int argc, char *argv[] ) {
 		if (mode == CLASSIFIERTYPE_NARRAY) {
     
             cerr << "Building N-Array classifiers" << endl;
-            classifiers = new NClassifierArray(outputprefix, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+            classifiers = new NClassifierArray(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
             
         } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
     
             cerr << "Building construction expert classifiers" << endl;
-            classifiers = new ConstructionExperts(outputprefix, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
+            classifiers = new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
 		
 		} else if (mode == CLASSIFIERTYPE_MONO) {
 		
@@ -214,7 +219,7 @@ int main( int argc, char *argv[] ) {
             }
             
             cerr << "Building monolithic classifier" << endl;
-            classifiers = new MonoClassifier(outputprefix, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);  
+            classifiers = new MonoClassifier(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);  
             
         }
 		
@@ -301,9 +306,71 @@ int main( int argc, char *argv[] ) {
             
         }
         
-        writeclassifierconf(outputprefix, mode, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+        writeclassifierconf(classifierid, mode, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
         cerr << "Training all done" << endl;
     }
     
-   
+    if (TEST) {    
+        if (!classifierid.empty()) {
+            ScoreHandling scorehandling;
+            //Load classifiers
+        
+            //cerr << "Computing reverse indexM for translation table" << endl;
+            //transtable->computereverse(); //not necessary 
+            cerr << "Loading classifiers" << endl;
+            cerr << "   ID: " << classifierid << endl;
+            cerr << "   Timbl options: " << timbloptions << endl;
+            cerr << "   Score handling: ";
+            if (scorehandling == SCOREHANDLING_WEIGHED) {
+                cerr << "weighed" << endl;
+            } else if (scorehandling == SCOREHANDLING_APPEND) {
+                cerr << "append" << endl;
+            } else if (scorehandling == SCOREHANDLING_REPLACE) {
+                cerr << "replace" << endl;
+            }
+            /*
+            int contextthreshold; //will be set by getclassifiertype
+            int targetthreshold; //will be set by getclassifiertype
+            bool exemplarweights; //will be set by getclassifiertype
+            bool singlefocusfeature; //will be set by getclassifiertype
+            */        
+            ClassifierType classifiertype = getclassifierconf(classifierid, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+            if (classifiertype == CLASSIFIERTYPE_NARRAY) {        
+                classifiers = (ClassifierInterface*) new NClassifierArray(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                classifiers->load(timbloptions, sourceclassdecoder, targetclassencoder, debug);
+            } else if (classifiertype == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
+                classifiers = (ClassifierInterface*) new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                 classifiers->load(timbloptions, sourceclassdecoder, targetclassencoder, debug);                    
+            } else if (classifiertype == CLASSIFIERTYPE_MONO) {
+                if (!singlefocusfeature) {
+                    cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
+                    throw InternalError();
+                }
+                classifiers = (ClassifierInterface*) new MonoClassifier(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                classifiers->load(timbloptions, sourceclassdecoder, targetclassencoder, debug);            
+            } else {
+                cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;
+                throw InternalError();            
+            }
+            if (debug > 0) classifiers->enabledebug(debug,sourceclassdecoder, targetclassdecoder); 
+            
+            /*
+            - read moses phrasetable or colibri alignment model	(-t)
+	        - read test data (--test=) (-c classfile)
+	        - match with phrasetable
+		        - extract context and features
+			        - classify
+			        - replace source words with unique IDs
+			        - write intermediate phrasetable with IDs instead of source words, store map IDs->words
+	        - run decoder with intermediate phrasetable
+	        - read decoding results
+	        - lookup 
+	        */
+            
+            
+            
+            
+        }   
+
+    }
 }
