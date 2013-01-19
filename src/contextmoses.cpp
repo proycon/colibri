@@ -394,16 +394,55 @@ int main( int argc, char *argv[] ) {
             string input;
             unsigned char buffer[8192]; 
             int size;
+            int sentence = 0;
             while (getline(*IN, input)) {        
-                if (input.length() > 0) {                    
+                if (input.length() > 0) {
+                    sentence++;                    
                     cerr << "INPUT: " << input << endl;
                     if (debug >= 1) cerr << "Processing input" ;        
                     size = sourceclassencoder->encodestring(input, buffer, true, true) - 1; //weird patch: - 1  to get n() right later
+                    
                     if (debug >= 1) cerr << " (" << size << ") " << endl;
-                    const EncData * const inputdata = new EncData(buffer,size);
+                    const EncData * line = new EncData(buffer,size);
                     if (debug >= 1) cerr << "Processing unknown words" << endl; 
                     addunknownwords(sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder);
                     //if (debug >= 1) cerr << "Setting up decoder (" << inputdata->length() << " stacks)" << endl;
+                    
+                    const int l = line->length();                        
+                    for (unsigned char i = 0; ((i < l) && (i < 256)); i++) {
+                        bool found;
+                        unsigned char n = 1;
+                        do {
+                            found = false;
+                            EncNGram * ngram = line->slice(i,n);    
+                            const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
+                            if (key != NULL) {
+                                //match found!
+                                const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);
+                                
+                                alignmodel->alignmatrix[key];
+                                
+                                t_aligntargets * reftranslationoptions = &(alignmodel->alignmatrix[key]);
+                                t_aligntargets translationoptions;
+                                
+                                //are there enough targets for this source to warrant a classifier?
+                                if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
+                                    translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize);
+                                } else {
+                                    translationoptions = *reftranslationoptions;
+                                }
+                                
+                                delete incontext;
+                            }  
+                            delete ngram;                  
+                            n++;
+                        } while (found);  
+                        
+                        
+                        
+                    }    
+                                    
+                    
                 }
             }      
             
