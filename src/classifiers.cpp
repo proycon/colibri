@@ -567,7 +567,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                 //extract anygram in context for classifier test input
                 const EncAnyGram * withcontext = translationtable->addcontext(&input,anygram, (int) ref.token);
                 
-                classifyfragment(anygram, withcontext, reftranslationoptions, scorehandling, translationtable->leftsourcecontext, translationtable->rightsourcecontext);
+                translationoptions = classifyfragment(anygram, withcontext, reftranslationoptions, scorehandling, translationtable->leftsourcecontext, translationtable->rightsourcecontext);
 
             } else {
                 if (DEBUG >= 2) cerr << "\t\t\t\tBypassing classifier... number of reference target options is less than set threshold: " << reftranslationoptions.size() << " < " << targetthreshold << endl;
@@ -600,7 +600,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
      }     
 }
 
-void ClassifierInterface::classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationoptions, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize) {
+t_aligntargets & ClassifierInterface::classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationoptions, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize) {
         const int nwithcontext = withcontext->n();
 
          
@@ -670,6 +670,7 @@ void ClassifierInterface::classifyfragment(const EncAnyGram * focus, const EncAn
         }
                                         
         delete withcontext;
+        return translationoptions;
 }
 
 

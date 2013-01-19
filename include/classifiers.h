@@ -102,7 +102,7 @@ class ClassifierInterface {
         virtual void train(const std::string & timbloptions) =0;
         virtual void load( const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG =0) =0;
         virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling); //decoder will call this
-        virtual void classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize);
+        virtual t_aligntargets & classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize);
         virtual t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0;
         virtual t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0; 
         virtual void reset() {};         
