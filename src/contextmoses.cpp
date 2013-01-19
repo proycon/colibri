@@ -5,6 +5,22 @@
 
 using namespace std;
 
+int addunknownwords(ClassEncoder * sourceclassencoder, ClassDecoder * sourceclassdecoder,  ClassEncoder * targetclassencoder, ClassDecoder * targetclassdecoder) {
+    //Sync sourceclassdecoder with sourceclassencoder, which may have added with unknown words 
+    int added = 0;
+    if (sourceclassencoder->gethighestclass() > sourceclassdecoder->gethighestclass()) {
+        for (unsigned int i = sourceclassdecoder->gethighestclass() + 1; i <= sourceclassencoder->gethighestclass(); i++) {
+            added++;
+            unsigned int cls = i;
+            const string word = sourceclassencoder->added[cls];
+            sourceclassdecoder->add(cls, word);            
+            cerr << "NOTICE: Unknown word in input: '" << word << "'" << endl; //, assigning classes (" << cls << ", " << targetcls << ")" << endl;                        
+        }
+    }
+    sourceclassencoder->added.clear();
+    return added;    
+}
+
 void usage() {
     cerr << "Training usage: contextmoses -f source-traindatafile [-N|-X|-M] [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
     cerr << "Training usage: contextmoses -F testdatafile [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
@@ -355,8 +371,8 @@ int main( int argc, char *argv[] ) {
             if (debug > 0) classifiers->enabledebug(debug,sourceclassdecoder, targetclassdecoder); 
             
             /*
-            - read moses phrasetable or colibri alignment model	(-t)
-	        - read test data (--test=) (-c classfile)
+            - read moses phrasetable or colibri alignment model
+	        - read test data
 	        - match with phrasetable
 		        - extract context and features
 			        - classify
@@ -367,8 +383,29 @@ int main( int argc, char *argv[] ) {
 	        - lookup 
 	        */
             
-            
-            
+            cerr << "Reading test file" << endl;
+    
+            ifstream *IN =  new ifstream( testfile.c_str() );
+            if (!IN->good()) {
+            	cerr << "ERROR: Unable to open file " << trainfile << endl;
+            	exit(5);
+            }        
+    
+            string input;
+            unsigned char buffer[8192]; 
+            int size;
+            while (getline(*IN, input)) {        
+                if (input.length() > 0) {                    
+                    cerr << "INPUT: " << input << endl;
+                    if (debug >= 1) cerr << "Processing input" ;        
+                    size = sourceclassencoder->encodestring(input, buffer, true, true) - 1; //weird patch: - 1  to get n() right later
+                    if (debug >= 1) cerr << " (" << size << ") " << endl;
+                    const EncData * const inputdata = new EncData(buffer,size);
+                    if (debug >= 1) cerr << "Processing unknown words" << endl; 
+                    addunknownwords(sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder);
+                    //if (debug >= 1) cerr << "Setting up decoder (" << inputdata->length() << " stacks)" << endl;
+                }
+            }      
             
         }   
 
