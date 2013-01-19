@@ -456,7 +456,8 @@ int main( int argc, char *argv[] ) {
                                 for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
                                     *TMPTABLE << encodedngram << " ||| " << iter->first->decode(*targetclassdecoder) << " ||| ";
                                     for (vector<double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-                                        *TMPTABLE << *iter2 <<  " ";
+                                        if (iter2 != iter->second.begin()) *TMPTABLE << " ";
+                                        *TMPTABLE << *iter2;
                                     }
                                     *TMPTABLE << endl;
                                 }
