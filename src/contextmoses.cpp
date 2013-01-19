@@ -437,9 +437,7 @@ int main( int argc, char *argv[] ) {
                             const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
                             if (key != NULL) {
                                 //match found!
-                                const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);
-                                
-                                
+                                const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);                                
                                 alignmodel->alignmatrix[key];
                                 
                                 t_aligntargets * reftranslationoptions = &(alignmodel->alignmatrix[key]);
@@ -475,8 +473,13 @@ int main( int argc, char *argv[] ) {
                     
                 }
             }      
+
+            TMPTABLE->close();
+            TMPTEST->close(); 
             
-        }   
+        }  
+        
+
 
     }
 }
