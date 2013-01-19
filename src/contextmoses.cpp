@@ -391,6 +391,9 @@ int main( int argc, char *argv[] ) {
             	exit(5);
             }        
     
+            ofstream *TMPTEST = new ofstream( "tmp.txt" ); //intermediate test file (IDs instead of words)
+            ofstream *TMPTABLE = new ofstream( "tmp.phrasetable" ); //intermediate phrase table
+
             string input;
             unsigned char buffer[8192]; 
             int size;
@@ -408,17 +411,34 @@ int main( int argc, char *argv[] ) {
                     addunknownwords(sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder);
                     //if (debug >= 1) cerr << "Setting up decoder (" << inputdata->length() << " stacks)" << endl;
                     
-                    const int l = line->length();                        
+                    const int l = line->length();
+                    
+                    for (int i = 0; i < l; i++) {
+                        if (i > 0) *TMPTEST << " ";
+                        *TMPTEST << sentence << "_" << i;
+                    }
+                    *TMPTEST << endl;
+                                            
                     for (unsigned char i = 0; ((i < l) && (i < 256)); i++) {
                         bool found;
                         unsigned char n = 1;
                         do {
                             found = false;
-                            EncNGram * ngram = line->slice(i,n);    
+                            EncNGram * ngram = line->slice(i,n);
+                            
+                            stringstream ss;
+                            for (int j = i; j < j+n; j++) {
+                                if (j > i) ss << " ";
+                                ss << sentence << "_" << j; 
+                            } 
+                            const string encodedngram = ss.str();
+                            
+                                  
                             const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
                             if (key != NULL) {
                                 //match found!
                                 const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);
+                                
                                 
                                 alignmodel->alignmatrix[key];
                                 
@@ -430,6 +450,15 @@ int main( int argc, char *argv[] ) {
                                     translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize);
                                 } else {
                                     translationoptions = *reftranslationoptions;
+                                }
+                                
+                                //write intermediate phrasetable
+                                for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
+                                    *TMPTABLE << encodedngram << " ||| " << iter->first->decode(*targetclassdecoder) << " ||| ";
+                                    for (vector<double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                                        *TMPTABLE << *iter2 <<  " ";
+                                    }
+                                    *TMPTABLE << endl;
                                 }
                                 
                                 delete incontext;
