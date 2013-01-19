@@ -508,14 +508,15 @@ int main( int argc, char *argv[] ) {
             	exit(5);
             } */       
 
-            cerr << "Invoking moses..." << endl;
+            cerr << "Invoking moses: ";
             stringstream ss;
             for (int i = 0; i < scorecount; i++) {
                 if (i > 0) ss << " ";
                 ss << 1;
             }
             stringstream cmd;
-            cmd << "moses -config moses.ini -ttable-file \"0 0 0 " << scorecount << " tmp.phrasetable\" -weight-t \"" << ss.str() << "\" < tmp.txt";            
+            cmd << "moses -config moses.ini -ttable-file \"0 0 0 " << scorecount << " tmp.phrasetable\" -weight-t \"" << ss.str() << "\" < tmp.txt";          
+            cerr << cmd << endl;  
             system(cmd.str().c_str());
 
         }  
