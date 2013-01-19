@@ -28,6 +28,12 @@ void usage() {
     cerr << " -N           N-Classifier Array, one classifier per pattern size group" << endl;
     cerr << " -X           Construction experts, one classifier per construction" << endl;
     cerr << " -M           Monolithic joined classifier, focus words are joined (-1)" << endl;
+    cerr << "Scorehandling:" << endl;
+    cerr << " -H " << endl;
+	cerr << "       weighed            Apply classifier score as weight to original scores (default)" << endl;
+    cerr << "       append             Append classifier score to translation score vector (make sure to specify an extra weight using -W)" << endl;
+    cerr << "       replace            Use only classifier score, replacing translation table scores (make to specify only one weight using -W)" << endl;
+    cerr << "       ignore             Ignore, do not use classifiers" << endl;
     cerr << "Options:" << endl;
     cerr << " -l [size]    Left context size" << endl;
     cerr << " -r [size]    Right context size" << endl;
@@ -66,6 +72,7 @@ int main( int argc, char *argv[] ) {
     
     
     ClassifierType mode = CLASSIFIERTYPE_NONE;
+    ScoreHandling scorehandling;
     
     bool TRAIN = false;
     bool TEST = false;
@@ -86,7 +93,8 @@ int main( int argc, char *argv[] ) {
     
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:t:l:r:F:D",long_options,&option_index)) != -1) {
+    string s;
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:t:l:r:F:DH:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -156,7 +164,22 @@ int main( int argc, char *argv[] ) {
             break;
         case 'D':
             debug = true;
-            break;                
+            break;  
+        case 'H':
+            s = optarg;
+            if (s == "weighed") {
+                scorehandling = SCOREHANDLING_WEIGHED;
+            } else if (s == "append") {
+                scorehandling = SCOREHANDLING_APPEND;
+            } else if (s == "replace") {
+                scorehandling = SCOREHANDLING_REPLACE;
+            } else if (s == "ignore") {
+                scorehandling = SCOREHANDLING_IGNORE;                
+            } else {
+                cerr << "Invalid value for -x: '" << s << "'" << endl;
+                exit(2);    
+            }
+            break;   
         }
     }
     
@@ -326,11 +349,11 @@ int main( int argc, char *argv[] ) {
         cerr << "Training all done" << endl;
     }
     
-    if (TEST) {    
+    if (TEST) {   
         if (!classifierid.empty()) {
-            ScoreHandling scorehandling;
+            
             //Load classifiers
-        
+            int scorecount = 0;
             //cerr << "Computing reverse indexM for translation table" << endl;
             //transtable->computereverse(); //not necessary 
             cerr << "Loading classifiers" << endl;
@@ -444,6 +467,7 @@ int main( int argc, char *argv[] ) {
                                 t_aligntargets translationoptions;
                                 
                                 //are there enough targets for this source to warrant a classifier?
+                                if (alignmodel->alignmatrix[key].size() > scorecount) scorecount = alignmodel->alignmatrix[key].size(); 
                                 if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
                                     translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize);
                                 } else {
@@ -476,10 +500,24 @@ int main( int argc, char *argv[] ) {
 
             TMPTABLE->close();
             TMPTEST->close(); 
-            
+
+            /*cerr << "Updating moses configuration..." << endl;
+            ifstream *MOSESINI =  new ifstream( "moses.ini" );
+            if (!IN->good()) {
+            	cerr << "ERROR: Unable to open moses.ini" << endl;
+            	exit(5);
+            } */       
+
+            cerr << "Invoking moses..." << endl;
+            stringstream ss;
+            for (int i = 0; i < scorecount; i++) {
+                if (i > 0) ss << " ";
+                ss << 1;
+            }
+            stringstream cmd;
+            cmd << "moses -config moses.ini -ttable-file \"0 0 0 " << scorecount << " tmp.phrasetable\" -weight-t \"" << ss.str() << "\" < tmp.txt";            
+            system(cmd.str().c_str());
+
         }  
-        
-
-
     }
 }
