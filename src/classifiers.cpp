@@ -566,77 +566,9 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
             
                 //extract anygram in context for classifier test input
                 const EncAnyGram * withcontext = translationtable->addcontext(&input,anygram, (int) ref.token);
-                const int nwithcontext = withcontext->n();
+                
+                classifyfragment(anygram, withcontext, reftranslationoptions, scorehandling, translationtable->leftsourcecontext, translationtable->rightsourcecontext);
 
-                 
-                vector<const EncAnyGram *> featurevector;
-
-                if (singlefocusfeature) {                    
-                    //left context
-                    for (int i = 0; i < translationtable->leftsourcecontext; i++) {
-                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                        featurevector.push_back(unigram);                    
-                    }         
-                    
-                    featurevector.push_back(anygram);
-                    
-                    //right context
-                    for (int i = nwithcontext - translationtable->rightsourcecontext; i < nwithcontext; i++) {
-                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                        featurevector.push_back(unigram);                    
-                    }         
-                } else {
-                    for (int i = 0; i < nwithcontext; i++) {
-                        const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                        featurevector.push_back(unigram);                    
-                    }                             
-                }
-                
-                translationoptions = classify(anygram, featurevector, scorehandling, reftranslationoptions);
-                
-                
-                
-                if (DEBUG >= 2) {
-                    multimap<double,string> ordered;
-                
-                    for (t_aligntargets::iterator iter2 = translationoptions.begin(); iter2 != translationoptions.end(); iter2++) {
-                        stringstream optionsout;
-                        const EncAnyGram * targetkey = iter2->first;                       
-                        if (targetkey->isskipgram()) {
-                            optionsout << ((const EncSkipGram*) targetkey)->decode(*targetclassdecoder) << " [ ";                            
-                        } else {
-                            optionsout <<  ((const EncNGram*) targetkey)->decode(*targetclassdecoder) << " [ ";
-                        }  
-                        
-                        if (reftranslationoptions.count(targetkey)) {
-                            for (vector<double>::iterator iter3 = reftranslationoptions[targetkey].begin(); iter3 != reftranslationoptions[targetkey].end(); iter3++) {
-                                optionsout << *iter3 << " ";
-                            }                             
-                        }
-                        optionsout << "] --> [ ";
-                        double totalscore = 0;
-                        for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
-                            optionsout << *iter3 << " ";
-                            totalscore += *iter3;
-                        }                                                
-                        optionsout << "]; ";
-                        
-                                       
-                        ordered.insert( pair<double,string>( -1 * totalscore, optionsout.str() ));                                                                  
-                    }
-                    
-                    for (multimap<double,string>::iterator iter2 = ordered.begin(); iter2 != ordered.end(); iter2++) {
-                        cerr << iter2->second;
-                    }
-                    cerr << endl;                
-                }
-                
-                //cleanup                
-                for (int i = 0; i < featurevector.size(); i++) {
-                    if (featurevector[i] != anygram) delete featurevector[i];
-                }
-                                                
-                delete withcontext;
             } else {
                 if (DEBUG >= 2) cerr << "\t\t\t\tBypassing classifier... number of reference target options is less than set threshold: " << reftranslationoptions.size() << " < " << targetthreshold << endl;
                 bypass = true;
@@ -666,6 +598,78 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
         }
         sourcefragments.push_back(SourceFragmentData(anygram, ref, translationoptions));
      }     
+}
+
+void ClassifierInterface::classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationoptions, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize) {
+        const int nwithcontext = withcontext->n();
+
+         
+        vector<const EncAnyGram *> featurevector;
+
+        if (singlefocusfeature) {                    
+            //left context
+            for (int i = 0; i < leftcontextsize; i++) {
+                const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                featurevector.push_back(unigram);                    
+            }         
+            
+            featurevector.push_back(focus);
+            
+            //right context
+            for (int i = nwithcontext - rightcontextsize; i < nwithcontext; i++) {
+                const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                featurevector.push_back(unigram);                    
+            }         
+        } else {
+            for (int i = 0; i < nwithcontext; i++) {
+                const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
+                featurevector.push_back(unigram);                    
+            }                             
+        }
+        
+        t_aligntargets translationoptions = classify(focus, featurevector, scorehandling, reftranslationoptions);
+        
+        if (DEBUG >= 2) {
+            multimap<double,string> ordered;
+        
+            for (t_aligntargets::iterator iter2 = translationoptions.begin(); iter2 != translationoptions.end(); iter2++) {
+                stringstream optionsout;
+                const EncAnyGram * targetkey = iter2->first;                       
+                if (targetkey->isskipgram()) {
+                    optionsout << ((const EncSkipGram*) targetkey)->decode(*targetclassdecoder) << " [ ";                            
+                } else {
+                    optionsout <<  ((const EncNGram*) targetkey)->decode(*targetclassdecoder) << " [ ";
+                }  
+                
+                if (reftranslationoptions.count(targetkey)) {
+                    for (vector<double>::iterator iter3 = reftranslationoptions[targetkey].begin(); iter3 != reftranslationoptions[targetkey].end(); iter3++) {
+                        optionsout << *iter3 << " ";
+                    }                             
+                }
+                optionsout << "] --> [ ";
+                double totalscore = 0;
+                for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
+                    optionsout << *iter3 << " ";
+                    totalscore += *iter3;
+                }                                                
+                optionsout << "]; ";
+                
+                               
+                ordered.insert( pair<double,string>( -1 * totalscore, optionsout.str() ));                                                                  
+            }
+            
+            for (multimap<double,string>::iterator iter2 = ordered.begin(); iter2 != ordered.end(); iter2++) {
+                cerr << iter2->second;
+            }
+            cerr << endl;                
+        }
+        
+        //cleanup                
+        for (int i = 0; i < featurevector.size(); i++) {
+            if (featurevector[i] != focus) delete featurevector[i];
+        }
+                                        
+        delete withcontext;
 }
 
 
