@@ -94,7 +94,7 @@ int main( int argc, char *argv[] ) {
     
     char c;    
     string s;
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:t:l:r:F:DH:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:t:l:r:F:DH:m:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -221,7 +221,7 @@ int main( int argc, char *argv[] ) {
     
         alignmodel = new AlignmentModel(alignmodelfile, sourceclassencoder, targetclassencoder);    
     } else {
-        cerr << "ERROR: No moses phrasetable (-t) or colibri alignment model (-d) specified!" << endl;
+        cerr << "ERROR: No moses phrasetable (-m) or colibri alignment model (-d) specified!" << endl;
         exit(2);
     }
     
