@@ -26,6 +26,14 @@ Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecode
     std::remove(trainfile.c_str()); //remove pre-existing trainfile (no exception if file does not exist)         
     featurevectorsize = 0;    
     this->exemplarweights = exemplarweights;
+    if (sourceclassdecoder == NULL) {
+        cerr << "ERROR: Classifier(): sourceclassdecoder is null!" << endl;
+        throw InternalError();
+    }
+    if (targetclassdecoder == NULL) {
+        cerr << "ERROR: Classifier(): targetclassdecoder is null!" << endl;
+        throw InternalError();
+    }    
     this->sourceclassdecoder = sourceclassdecoder;
     this->targetclassdecoder = targetclassdecoder;
     this->DEBUG = debug;
@@ -40,6 +48,15 @@ Classifier::Classifier(const std::string & _id, const string & timbloptions, Cla
 
     ibasefile = string(_id + ".ibase");
     wgtfile = string(_id + ".ibase.wgt");           
+    if (sourceclassdecoder == NULL) {
+        cerr << "ERROR: Classifier(): sourceclassdecoder is null!" << endl;
+        throw InternalError();
+    }
+    if (targetclassencoder == NULL) {
+        cerr << "ERROR: Classifier(): targetclassencoder is null!" << endl;
+        throw InternalError();
+    }
+    
     this->sourceclassdecoder = sourceclassdecoder;
     this->targetclassencoder = targetclassencoder;
     this->DEBUG = debug;
@@ -103,7 +120,6 @@ void Classifier::addinstance(vector<const EncAnyGram *> & featurevector, const E
     vector<string> featurevector_s;
     for (vector<const EncAnyGram *>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         const EncAnyGram * anygram = *iter;
-        cerr << sourceclassdecoder->size() << endl;
         const string feature = anygram->decode(*sourceclassdecoder);        
         featurevector_s.push_back(feature);        
     }
