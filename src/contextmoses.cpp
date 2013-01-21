@@ -311,15 +311,19 @@ int main( int argc, char *argv[] ) {
                         EncNGram * ngram = line.slice(i,n);    
                         const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
                         if (key != NULL) {
+                            if (debug) cerr << "found match" << endl;
                             //match found!
                             const EncAnyGram * incontext = alignmodel->addcontext(&line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);
                             
                             //add to classifier 
-                            if (mode == CLASSIFIERTYPE_NARRAY) {                  
+                            if (mode == CLASSIFIERTYPE_NARRAY) {
+                                if (debug) cerr << "adding to n-array classifier" << endl;                  
                                 ((NClassifierArray *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[((const EncAnyGram *) ngram)], leftcontextsize, rightcontextsize);                                                
                             } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
+                                if (debug) cerr << "adding to expert classifier" << endl;
                                 ((ConstructionExperts *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[((const EncAnyGram *) ngram)], leftcontextsize, rightcontextsize);                        
                             } else if (mode == CLASSIFIERTYPE_MONO) {
+                                if (debug) cerr << "adding to monolithic classifier" << endl;
                                 ((MonoClassifier *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[((const EncAnyGram *) ngram)], leftcontextsize, rightcontextsize);
                             }
                             delete incontext;
@@ -399,7 +403,7 @@ int main( int argc, char *argv[] ) {
                 cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;
                 throw InternalError();            
             }
-            if (debug > 0) classifiers->enabledebug(debug,sourceclassdecoder, targetclassdecoder); 
+            if (debug) classifiers->enabledebug(debug,sourceclassdecoder, targetclassdecoder); 
             
             /*
             - read moses phrasetable or colibri alignment model
@@ -433,12 +437,12 @@ int main( int argc, char *argv[] ) {
                 if (input.length() > 0) {
                     sentence++;                    
                     cerr << "INPUT: " << input << endl;
-                    if (debug >= 1) cerr << "Processing input" ;        
+                    if (debug) cerr << "Processing input" ;        
                     size = sourceclassencoder->encodestring(input, buffer, true, true) - 1; //weird patch: - 1  to get n() right later
                     
-                    if (debug >= 1) cerr << " (" << size << ") " << endl;
+                    if (debug) cerr << " (" << size << ") " << endl;
                     const EncData * line = new EncData(buffer,size);
-                    if (debug >= 1) cerr << "Processing unknown words" << endl; 
+                    if (debug) cerr << "Processing unknown words" << endl; 
                     addunknownwords(sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder);
                     //if (debug >= 1) cerr << "Setting up decoder (" << inputdata->length() << " stacks)" << endl;
                     
