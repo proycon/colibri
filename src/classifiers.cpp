@@ -454,6 +454,11 @@ void NClassifierArray::add(const EncAnyGram * focus, const EncAnyGram * withcont
         vector<const EncAnyGram *> featurevector;
         const int n = focus->n();
         const int nwithcontext = withcontext->n();
+        stringstream newid;
+        newid << this->id() << ".n" << n;
+        if (!classifierarray.count(n)) {
+            classifierarray[n] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder, exemplarweights);
+        }
 
         if (singlefocusfeature) {                    
             //left context
@@ -921,6 +926,11 @@ void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withc
     const int nwithcontext = withcontext->n();
     vector<const EncAnyGram *> featurevector;
     const uint64_t hash = focus->hash();
+    stringstream newid;
+    newid << this->id() << "." << focus->hash();
+    if (!classifierarray.count(hash)) {
+        classifierarray[hash] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder, exemplarweights);
+    }    
     
     if (singlefocusfeature) {                    
         //left context
