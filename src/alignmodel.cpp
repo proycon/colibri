@@ -2522,7 +2522,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
     if ((!f) || (!f.good())) {
-       cerr << "File does not exist: " << filename << endl;
+       cerr << "Aligment model file does not exist: " << filename << endl;
        exit(3);
     }
     
@@ -2711,7 +2711,7 @@ AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sour
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
     if ((!f) || (!f.good())) {
-       cerr << "File does not exist: " << filename << endl;
+       cerr << "Aligment model file does not exist: " << filename << endl;
        exit(3);
     }
     
@@ -2786,7 +2786,7 @@ void AlignmentModel::save(const string & filename) {
     ofstream f;
     f.open(filename.c_str(), ios::out | ios::binary);
     if ((!f) || (!f.good())) {
-       cerr << "File does not exist: " << filename << endl;
+       cerr << "Aligment model file unable to save: " << filename << endl;
        exit(3);
     }
     
