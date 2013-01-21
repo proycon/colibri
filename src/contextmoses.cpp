@@ -188,7 +188,7 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
-    if ( (!sourceclassfile.empty()) && (!targetclassfile.empty()) ) {
+    if ( (sourceclassfile.empty() || targetclassfile.empty()) ) {
         cerr << "ERROR: Specify class files (-S -T)" << endl;
         usage();
         exit(2);
