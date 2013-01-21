@@ -137,6 +137,7 @@ class MTWrapper(object):
             ('BUILD_MOSES_WORDTRANSTABLE', False,'Build lexical translation table'),
             ('BUILD_MOSES_PHRASEEXTRACT', False,'Extract phrases'),            
             ('BUILD_MOSES_PHRASETRANSTABLE', False,'Build phrase translation table'),
+            ('BUILD_MOSES_CLASSIFIERS', False, 'Use context-aware classifiers. Set COLIBRI_CLASSIFIER_OPTIONS to select a classifier method.'),
             ('BUILD_MOSES_MEMSCORE', False,'Use memscore to score phrases rather than the default phrase-extract scorer'),            
             ('BUILD_MOSES', False,'Build moses configuration, necessary for decoding using moses'),
             ('BUILD_MOSES_MERT', False,'Do Minimum Error Rate Training for Moses (on development set)'),                       
@@ -146,7 +147,7 @@ class MTWrapper(object):
             ('BUILD_COLIBRI_GIZA', False,'Base aligner on word-alignments using giza (do not manually specify -W -s -t in COLIBRI_ALIGNER_OPTIONS)'),
             ('BUILD_COLIBRI_TRANSTABLE', False,'Build a translation table using colibri'),
             ('BUILD_COLIBRI_MOSESPHRASETABLE', False,'Build a Moses-style phrasetable using colibri'),
-            ('BUILD_COLIBRI_CLASSIFIERS', False,'Build and use classifiers. Also set COLIBRI_CLASSIFIER_OPTIONS to select a classifier method'),
+            ('BUILD_COLIBRI_CLASSIFIERS', False,'Build and use classifiers. Also set MOSES_CLASSIFIER_OPTIONS to select a classifier method'),
             ('BUILD_COLIBRI_SKIPGRAMS', False,'Include support for skipgrams (automatically adds -s -B -E to patternfinder options, creates proper graph models if enabled, extracts skipgrams in alignment). If alignment is enabled, skipgrams will be extracted from the aligned models, do not use if skipgrams are already to be extracted during EM or Jaccard alignment.'),
             ('BUILD_COLIBRI_GRAPHMODEL', False,'Build a graph model using colibri'),
             ('BUILD_COLIBRI', False,'Build for colibri decoder'),
@@ -194,6 +195,7 @@ class MTWrapper(object):
             ('EXEC_PBMBMT_INSTANCEGENERATOR','instancegenerator.py',''),
             ('EXEC_COLIBRI_CLASSENCODE','classencode',''),
             ('EXEC_COLIBRI_PATTERNFINDER','patternfinder',''),
+            ('EXEC_COLIBRI_CONTEXTMOSES','contextmoses',''),
             ('EXEC_COLIBRI_GRAPHER','grapher',''),
             ('EXEC_COLIBRI_ALIGNER','aligner',''),
             ('EXEC_COLIBRI_DECODER','decoder',''),
@@ -223,7 +225,10 @@ class MTWrapper(object):
             ('COLIBRI_DECODER_OPTIONS','','Options for the colibri decoder, see decoder -h'),
             ('COLIBRI_LEFTCONTEXTSIZE',1,'For use with BUILD_COLIBRI_CLASSIFIERS=True'),
             ('COLIBRI_RIGHTCONTEXTSIZE',1,'For use with BUILD_COLIBRI_CLASSIFIERS=True'),
-            ('COLIBRI_CLASSIFIER_OPTIONS','-N','For use with BUILD_COLIBRI_CLASSIFIERS=True. Make sure to select at least a classifier here (-N, -X)'),
+            ('COLIBRI_CLASSIFIER_OPTIONS','-N','For use with BUILD_COLIBRI_CLASSIFIERS=True. Make sure to select at least a classifier here (-N, -X,-M). See trainclassifiers -h for all options'),
+            ('MOSES_LEFTCONTEXTSIZE',1,'For use with BUILD_MOSES_CLASSIFIERS=True'),
+            ('MOSES_RIGHTCONTEXTSIZE',1,'For use with BUILD_MOSES_CLASSIFIERS=True'),
+            ('MOSES_CLASSIFIER_OPTIONS','-N','For use with BUILD_MOSES_CLASSIFIERS=True. Make sure to select at least a classifier (-N, -X,-M) here. See contextmoses -h for all options.'),
             ('PHRASAL_MAXMEM', '4g', 'Memory allocated for word alignment, phrase extraction and decoding using phrasal (java)'),
             ('PHRASAL_WITHGAPS', True, 'Consider gaps if using Phrasal?'),
             ('PHRASAL_MAXSOURCEPHRASESPAN', 15, 'Maximum span for a source-side phrase with gaps (phrasal)'),
@@ -322,6 +327,7 @@ class MTWrapper(object):
         self.EXEC_COLIBRI_ALIGNER = self.findpath(self.EXEC_COLIBRI_ALIGNER , self.PATH_COLIBRI)
         self.EXEC_COLIBRI_DECODER = self.findpath(self.EXEC_COLIBRI_DECODER , self.PATH_COLIBRI)
         self.EXEC_COLIBRI_TRAINCLASSIFIERS = self.findpath(self.EXEC_COLIBRI_TRAINCLASSIFIERS , self.PATH_COLIBRI)
+        self.EXEC_COLIBRI_CONTEXTMOSES = self.findpath(self.EXEC_COLIBRI_CONTEXTMOSES , self.PATH_COLIBRI)
         
         self.EXEC_PBMBMT_DECODER = self.findpath(self.EXEC_PBMBMT_DECODER, self.PATH_PBMBMT)
         self.EXEC_PBMBMT_INSTANCEGENERATOR = self.findpath(self.EXEC_PBMBMT_INSTANCEGENERATOR, self.PATH_PBMBMT)
@@ -389,7 +395,7 @@ class MTWrapper(object):
         return sane
 
 
-    def check_run(self):        
+    def check_run(self):                
         if self.BUILD_MOSES:
             if not self.EXEC_MOSES or not os.path.isfile(self.EXEC_MOSES):
                 self.log("Error: Moses not found! (" + self.EXEC_MOSES+")",red,True)
@@ -525,6 +531,12 @@ class MTWrapper(object):
         if self.BUILD_PHRASAL_WORDALIGN and not self.JAR_BERKELEYALIGNER: 
             sane = False
             self.log("Berkeley Aligner (v2.1+) not found! Set JAR_BERKELEYALIGNER or PATH_PHRASAL !",red)
+
+
+        if self.BUILD_MOSES_CLASSIFIERS:
+            if not self.BUILD_MOSES: 
+                self.log("Configuration update: BUILD_MOSES automatically enabled because BUILD_MOSES_CLASSIFIERS is too",yellow)
+                self.BUILD_MOSES = True            
 
         if self.BUILD_MOSES_MERT:
             if not self.BUILD_MOSES: 
@@ -1472,6 +1484,7 @@ class MTWrapper(object):
         if self.BUILD_PHRASAL_MERT and not self.build_phrasal_mert(): return False
         
         if self.BUILD_MOSES and not self.build_moses(): return False
+        if self.BUILD_MOSES_CLASSIFIERS and not self.build_moses_classifiers(): return False
         if self.BUILD_MOSES_MERT and not self.build_moses_mert(): return False
         
         if self.BUILD_PBMBMT and not self.build_pbmbmt(): return False
@@ -1791,12 +1804,22 @@ class MTWrapper(object):
         if self.BUILD_MOSES_PHRASETRANSTABLE:
             f.write('[weight-t]\n1\n1\n1\n1\n1\n\n')
         elif self.BUILD_COLIBRI_MOSESPHRASETABLE:
-            f.write('[weight-t]\n1\n1\n1\n\n')
+            f.write('[weight-t]\n1\n1\n1\n\n') 
         f.write('[weight-w]\n0\n\n')        
         f.close()
         return self.footer('Build Moses Configuration', 0, *outputfiles)
+
+    def build_moses_classifiers(self):
+        if not self.runcmd(self.EXEC_COLIBRI_CLASSENCODE + ' -f ' + self.getsourcefilename('txt'), "Encoding source corpus for Colibri",self.getsourcefilename('cls'), self.getsourcefilename('clsenc') ): return False
+        
+        if not self.runcmd(self.EXEC_COLIBRI_CLASSENCODE + ' -f ' + self.gettargetfilename('txt'), "Encoding target corpus for Colibri",self.gettargetfilename('cls'), self.gettargetfilename('clsenc') ): return False        
+        
+        if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('txt') + ' -m ' +  self.gets2tfilename('phrasetable') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS, "Training classifiers for context-aware moses"): return False        
+        
+        return True
     
     def build_moses_mert(self):            
+        #TODO: Add MOSES_CLASSIFIERS
         if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/moses.ini', 'Parameter tuning for Moses using MERT'): return False         
         return True
     
@@ -2014,7 +2037,8 @@ WordPenalty: -0.5\n""")
                 os.unlink( self.WORKDIR + '/input.txt' )
             os.symlink(inputfile, self.WORKDIR + '/input.txt' )
         
-        if self.BUILD_MOSES and not self.run_moses(): return False
+        if self.BUILD_MOSES_CLASSIFIERS and not self.run_moses_classifiers(): return False        
+        if self.BUILD_MOSES and not self.BUILD_MOSES_CLASSIFIERS and not self.run_moses(): return False
         if self.BUILD_PBMBMT and not self.run_pbmbmt(): return False
         if self.BUILD_PHRASAL and not self.run_phrasal(): return False
         if self.BUILD_COLIBRI and not self.run_colibri(): return False
@@ -2027,6 +2051,10 @@ WordPenalty: -0.5\n""")
     
     def run_moses(self):
         if not self.runcmd(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini < input.txt > output.txt','Moses Decoder'): return False
+        return True 
+    
+    def run_moses_classifiers(self):
+        if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m ' +  self.gets2tfilename('phrasetable') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS, "Testing classifiers and running context-aware moses decoder"): return False      
         return True 
     
     def run_phrasal(self):
