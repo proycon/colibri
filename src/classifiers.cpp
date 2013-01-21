@@ -103,8 +103,7 @@ void Classifier::addinstance(vector<const EncAnyGram *> & featurevector, const E
     vector<string> featurevector_s;
     for (vector<const EncAnyGram *>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         const EncAnyGram * anygram = *iter;
-        *sourceclassdecoder;
-        *anygram;
+        cerr << sourceclassdecoder->size() << endl;
         const string feature = anygram->decode(*sourceclassdecoder);        
         featurevector_s.push_back(feature);        
     }
