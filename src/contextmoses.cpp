@@ -209,8 +209,9 @@ int main( int argc, char *argv[] ) {
 
 
 		
-    cerr << "Loading alignment model " << alignmodelfile << endl;
+    
     if (!alignmodelfile.empty()) {
+        cerr << "Loading alignment model " << alignmodelfile << endl;
         alignmodel = new AlignmentModel(alignmodelfile,false,true,0, false);
     } else if (!mosesphrasetable.empty()) {
 	    cerr << "Loading target class encoder " << targetclassfile << endl;
@@ -219,6 +220,7 @@ int main( int argc, char *argv[] ) {
         cerr << "Loading source class encoder " << sourceclassfile << endl;
         sourceclassencoder = new ClassEncoder(sourceclassfile);
     
+        cerr << "Loading moses phrasetable " << mosesphrasetable << endl;
         alignmodel = new AlignmentModel(mosesphrasetable, sourceclassencoder, targetclassencoder);    
     } else {
         cerr << "ERROR: No moses phrasetable (-m) or colibri alignment model (-d) specified!" << endl;
