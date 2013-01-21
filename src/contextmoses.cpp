@@ -194,6 +194,12 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
+    if (mode == CLASSIFIERTYPE_NONE) {
+        cerr << "ERROR: Choose a classifier type" << endl;
+        usage();
+        exit(2);
+    }
+    
     ClassDecoder * sourceclassdecoder = NULL;
     ClassDecoder * targetclassdecoder = NULL;
     ClassEncoder * sourceclassencoder = NULL;
