@@ -333,8 +333,9 @@ int main( int argc, char *argv[] ) {
                             //add to context-aware alignment model (classifier training data will be constructed on the basis of this)
                             for (t_aligntargets::iterator iter = alignmodel->alignmatrix[key].begin(); iter !=  alignmodel->alignmatrix[key].end(); iter++) {
                                 const EncAnyGram * targetgram = iter->first;
+                                const EncAnyGram * targetgramkey = contextalignmodel->gettargetkey(targetgram);
                                 const double score = (exemplarweights) ?  (  (iter->second[0] < 0) ? pow(exp(1), iter->second[0]) : iter->second[0] ) : 1; //no logprob
-                                contextalignmodel->addextractedpattern(key, targetgram, score, 1, (contextkey != NULL) ? contextkey : incontext );
+                                contextalignmodel->addextractedpattern(key, (targetgramkey != NULL) ? targetgramkey : targetgram, score, 1, (contextkey != NULL) ? contextkey : incontext );
                             }
 
                             contextalignmodel->sourcecontexts[key].insert((contextkey != NULL) ? contextkey : incontext);
