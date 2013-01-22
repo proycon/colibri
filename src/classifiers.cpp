@@ -526,7 +526,6 @@ void NClassifierArray::add(const EncAnyGram * focus, const EncAnyGram * withcont
 
 
 
-
 t_aligntargets NClassifierArray::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
     const int n = featurevector.size() - leftcontextsize - rightcontextsize;  
     if ((classifierarray.count(n)) && (classifierarray[n] != NULL)) {

@@ -252,16 +252,16 @@ int main( int argc, char *argv[] ) {
 	    - train classifiers	
 		*/
 		
-		
+		AlignmentModel * contextalignmodel = new AlignmentModel((unsigned char) leftcontextsize, (unsigned char) rightcontextsize);
 		
 		if (mode == CLASSIFIERTYPE_NARRAY) {
     
-            cerr << "Building N-Array classifiers" << endl;
+            cerr << "Initialising N-Array classifiers" << endl;
             classifiers = new NClassifierArray(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
             
         } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
     
-            cerr << "Building construction expert classifiers" << endl;
+            cerr << "Initialising construction expert classifiers" << endl;
             classifiers = new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
 		
 		} else if (mode == CLASSIFIERTYPE_MONO) {
@@ -271,10 +271,12 @@ int main( int argc, char *argv[] ) {
                     exit(2);
             }
             
-            cerr << "Building monolithic classifier" << endl;
+            cerr << "Initialising monolithic classifier" << endl;
             classifiers = new MonoClassifier(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);  
             
         }
+		
+		cerr << "Extracting context on training set" << endl;
 		
 		const int BUFFERSIZE = 65536;
         unsigned char linebuffer[BUFFERSIZE];
@@ -322,8 +324,19 @@ int main( int argc, char *argv[] ) {
                             if (debug) cerr << "found match" << endl;
                             //match found!
                             const EncAnyGram * incontext = alignmodel->addcontext(&line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);
+                            //see if this one already exists:
+                            const EncAnyGram * contextkey = contextalignmodel->getsourcekey(incontext);
                             
+                            
+                            //add to context-aware alignment model (classifier training data will be constructed on the basis of this)
+                            for (t_aligntargets::iterator iter = alignmodel->alignmatrix[key].begin(); iter !=  alignmodel->alignmatrix[key].end(); iter++) {
+                                const EncAnyGram * targetgram = iter->first;
+                                const double score = (iter->second[0] < 0) ? pow(exp(1), iter->second[0]) : iter->second[0]; //no logprob
+                                contextalignmodel->addextractedpattern(key, targetgram, score, 1, (contextkey != NULL) ? contextkey : incontext );
+                            }
+
                             //add to classifier 
+                            /*
                             if (mode == CLASSIFIERTYPE_NARRAY) {
                                 if (debug) cerr << "adding to n-array classifier" << endl;                  
                                 ((NClassifierArray *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[key], leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder);                                                
@@ -333,8 +346,11 @@ int main( int argc, char *argv[] ) {
                             } else if (mode == CLASSIFIERTYPE_MONO) {
                                 if (debug) cerr << "adding to monolithic classifier" << endl;
                                 ((MonoClassifier *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[key], leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder);
+                            }*/
+                            
+                            if (contextkey != NULL) { 
+                                delete incontext; 
                             }
-                            delete incontext; 
                         } 
                         delete ngram;                  
                         n++;
@@ -345,6 +361,22 @@ int main( int argc, char *argv[] ) {
             cerr << foundcount << endl;
             
             
+        }
+		
+		
+		cerr << "Building classifiers" << endl;
+		
+		
+        
+        if (mode == CLASSIFIERTYPE_NARRAY) {
+            if (debug) cerr << "Building n-array classifier" << endl;                  
+            ((NClassifierArray *) classifiers)->build(contextalignmodel, sourceclassdecoder, targetclassdecoder);                                                            
+        } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
+            if (debug) cerr << "Building expert classifier" << endl;
+            ((ConstructionExperts *) classifiers)->build(contextalignmodel, sourceclassdecoder, targetclassdecoder);
+        } else if (mode == CLASSIFIERTYPE_MONO) {
+            if (debug) cerr << "Building monolithic classifier" << endl;
+            ((MonoClassifier *) classifiers)->build(contextalignmodel, sourceclassdecoder, targetclassdecoder);
         }
 		
 		
