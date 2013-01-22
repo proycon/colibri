@@ -333,11 +333,11 @@ int main( int argc, char *argv[] ) {
                             } else if (mode == CLASSIFIERTYPE_MONO) {
                                 if (debug) cerr << "adding to monolithic classifier" << endl;
                                 ((MonoClassifier *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[key], leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder);
-                            } else {
-                                cerr << "no match" << endl;
                             }
                             delete incontext;
-                        }  
+                        } else {
+                                cerr << "no match" << endl; 
+                        } 
                         delete ngram;                  
                         n++;
                     } while ((found) && (i+n <= l) && (n <= maxn));  
