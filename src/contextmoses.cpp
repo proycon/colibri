@@ -297,7 +297,7 @@ int main( int argc, char *argv[] ) {
 
 
             if ((sentence % 1000 == 0) || (debug))  { 
-                cerr << "\t@" << sentence << " ";
+                cerr << "\t@" << sentence << endl;
             }
                             
             
@@ -349,7 +349,7 @@ int main( int argc, char *argv[] ) {
                 }
             }
             
-            cerr << foundcount << endl;
+
             
             
         }
