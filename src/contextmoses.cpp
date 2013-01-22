@@ -286,7 +286,7 @@ int main( int argc, char *argv[] ) {
                     
             sentence++;
 
-            if ((sentence % 1000 == 0) || (DEBUG))  { 
+            if ((sentence % 1000 == 0) || (debug))  { 
                 cerr << "\t@" << sentence << endl;
             }
                             
