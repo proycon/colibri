@@ -503,8 +503,8 @@ void NClassifierArray::add(const EncAnyGram * focus, const EncAnyGram * withcont
             
             if (exemplarweights) {
                 //add exemplar weight         
-                double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
-                classifierarray[n]->addinstance(featurevector, label, exemplarweight);
+                double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?
+                if (exemplarweight > 0) classifierarray[n]->addinstance(featurevector, label, exemplarweight); //(don't output if exemplarweight is zero)
             } else {
                 classifierarray[n]->addinstance(featurevector, label);
             }
