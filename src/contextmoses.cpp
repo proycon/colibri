@@ -290,10 +290,9 @@ int main( int argc, char *argv[] ) {
         vector<unsigned int> words;
         int sentence = 0;
         while (IN->good()) {
-            const int linesize = readline(IN, linebuffer, BUFFERSIZE );            
-            if (!IN->good()) break;
-            
-            sentence++;
+            int linesize = readline(IN, linebuffer, BUFFERSIZE );            
+
+            if (!IN->good()) linesize--; //silly fix, don't know why, but works
 
             //if ((sentence % 1000 == 0) || (debug))  { 
             cerr << "\t@" << sentence << " ";
