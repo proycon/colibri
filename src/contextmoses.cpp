@@ -286,7 +286,7 @@ int main( int argc, char *argv[] ) {
                     
             sentence++;
 
-            if (sentence % 10000 == 0) {
+            if ((sentence % 1000 == 0) || (DEBUG))  { 
                 cerr << "\t@" << sentence << endl;
             }
                             
@@ -366,7 +366,7 @@ int main( int argc, char *argv[] ) {
             
             //Load classifiers
             int scorecount = 0;
-            //cerr << "Computing reverse indexM for translation table" << endl;
+            //cerr << "Computing reverse index for translation table" << endl;
             //transtable->computereverse(); //not necessary 
             cerr << "Loading classifiers" << endl;
             cerr << "   ID: " << classifierid << endl;
