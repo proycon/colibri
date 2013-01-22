@@ -296,9 +296,9 @@ int main( int argc, char *argv[] ) {
             if (!IN->good()) linesize--; //silly fix, don't know why, but works
 
 
-            //if ((sentence % 1000 == 0) || (debug))  { 
-            cerr << "\t@" << sentence << " ";
-            //}
+            if ((sentence % 1000 == 0) || (debug))  { 
+                cerr << "\t@" << sentence << " ";
+            }
                             
             
             const int l = countwords(linebuffer, linesize);            
