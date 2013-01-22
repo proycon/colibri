@@ -425,8 +425,13 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
     } else if (ttable->rightsourcecontext != rightcontextsize)  {
         cerr << "Translation table has right context size: " << ttable->rightsourcecontext << ", not " << rightcontextsize << endl;
         exit(3);
-    } 
+    }
+    int count = 0; 
     for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
+        count++;
+        if (count % 1000 == 0) {
+            cerr << "(building training data) @" << count << endl;
+        } 
         const EncAnyGram * focus = iter->first;
         //cerr << "DEBUG: " << focus->decode(*sourceclassdecoder) << endl;
             
@@ -764,8 +769,13 @@ void MonoClassifier::build(AlignmentModel * ttable, ClassDecoder * sourceclassde
         exit(3);
     } 
     classifier = new Classifier(this->id(), sourceclassdecoder, targetclassdecoder, exemplarweights);
+    int count = 0;
     for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
         const EncAnyGram * focus = iter->first;
+        count++;
+        if (count % 1000 == 0) {
+            cerr << "(building training data) @" << count << endl;
+        } 
                         
         if (iter->second.size() >= contextthreshold) { //only use classifier if contextsthreshold is met (by default 1, so it always is)
             const int n = focus->n();
@@ -894,7 +904,13 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
         cerr << "Translation table has right context size: " << ttable->rightsourcecontext << ", not " << rightcontextsize << endl;
         exit(3);
     } 
+    int count = 0;
     for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
+        count++;
+        if (count % 1000 == 0) {
+            cerr << "(building training data) @" << count << endl;
+        } 
+    
         const EncAnyGram * focus = iter->first;                
         if (iter->second.size() >= contextthreshold) { //only use classifier if contextssthreshold is met (by default 1, so it always is)
             stringstream newid;
