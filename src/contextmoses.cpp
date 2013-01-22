@@ -337,6 +337,8 @@ int main( int argc, char *argv[] ) {
                                 contextalignmodel->addextractedpattern(key, targetgram, score, 1, (contextkey != NULL) ? contextkey : incontext );
                             }
 
+                            contextalignmodel->sourcecontexts[key].insert((contextkey != NULL) ? contextkey : incontext);
+                            
                             if (contextkey != NULL) { 
                                 delete incontext; 
                             }
@@ -353,18 +355,15 @@ int main( int argc, char *argv[] ) {
         }
 		
 		
-		cerr << "Building classifiers" << endl;
-		
-		
         
         if (mode == CLASSIFIERTYPE_NARRAY) {
-            if (debug) cerr << "Building n-array classifier" << endl;                  
+            cerr << "Building n-array classifier" << endl;                  
             ((NClassifierArray *) classifiers)->build(contextalignmodel, sourceclassdecoder, targetclassdecoder);                                                            
         } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
-            if (debug) cerr << "Building expert classifier" << endl;
+            cerr << "Building expert classifier" << endl;
             ((ConstructionExperts *) classifiers)->build(contextalignmodel, sourceclassdecoder, targetclassdecoder);
         } else if (mode == CLASSIFIERTYPE_MONO) {
-            if (debug) cerr << "Building monolithic classifier" << endl;
+            cerr << "Building monolithic classifier" << endl;
             ((MonoClassifier *) classifiers)->build(contextalignmodel, sourceclassdecoder, targetclassdecoder);
         }
 		
