@@ -334,9 +334,7 @@ int main( int argc, char *argv[] ) {
                                 if (debug) cerr << "adding to monolithic classifier" << endl;
                                 ((MonoClassifier *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[key], leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder);
                             }
-                            delete incontext;
-                        } else {
-                                cerr << "no match" << endl; 
+                            delete incontext; 
                         } 
                         delete ngram;                  
                         n++;
