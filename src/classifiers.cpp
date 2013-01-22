@@ -451,7 +451,7 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
                 for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                     const EncAnyGram * withcontext = *iter2;
 
-                    add(focus, withcontext, ttable->alignmatrix[withcontext], leftcontextsize, rightcontextsize);
+                    add(focus, withcontext, ttable->alignmatrix[withcontext], leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder);
                     
                 }
             }   
@@ -467,7 +467,7 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
     }*/
 }
 
-void NClassifierArray::add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize) {
+void NClassifierArray::add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
         vector<const EncAnyGram *> featurevector;
         const int n = focus->n();
         const int nwithcontext = withcontext->n();
@@ -784,14 +784,14 @@ void MonoClassifier::build(AlignmentModel * ttable, ClassDecoder * sourceclassde
             if (targets.size() >= targetthreshold) {
                 for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                     const EncAnyGram * withcontext = *iter2;
-                    add(focus, withcontext, ttable->alignmatrix[withcontext], leftcontextsize, rightcontextsize);                    
+                    add(focus, withcontext, ttable->alignmatrix[withcontext], leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder);                    
                 }
             }   
         }
     }    
 }
 
-void MonoClassifier::add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize) {
+void MonoClassifier::add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
         vector<const EncAnyGram *> featurevector;
         const int nwithcontext = withcontext->n();
         if (singlefocusfeature) {                    
@@ -918,7 +918,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
                 cerr << "Building classifier hash=" << hash << "..." << endl;
                 for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                     const EncAnyGram * withcontext = *iter2;
-                    add(focus, withcontext, ttable->alignmatrix[withcontext], leftcontextsize, rightcontextsize);
+                    add(focus, withcontext, ttable->alignmatrix[withcontext], leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder);
 
                 }
             }
@@ -939,7 +939,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
 }
 
 
-void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize) {
+void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
     const int nwithcontext = withcontext->n();
     vector<const EncAnyGram *> featurevector;
     const uint64_t hash = focus->hash();

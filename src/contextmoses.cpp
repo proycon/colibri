@@ -318,13 +318,13 @@ int main( int argc, char *argv[] ) {
                             //add to classifier 
                             if (mode == CLASSIFIERTYPE_NARRAY) {
                                 if (debug) cerr << "adding to n-array classifier" << endl;                  
-                                ((NClassifierArray *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[key], leftcontextsize, rightcontextsize);                                                
+                                ((NClassifierArray *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[key], leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder);                                                
                             } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
                                 if (debug) cerr << "adding to expert classifier" << endl;
-                                ((ConstructionExperts *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[key], leftcontextsize, rightcontextsize);                        
+                                ((ConstructionExperts *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[key], leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder);                        
                             } else if (mode == CLASSIFIERTYPE_MONO) {
                                 if (debug) cerr << "adding to monolithic classifier" << endl;
-                                ((MonoClassifier *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[key], leftcontextsize, rightcontextsize);
+                                ((MonoClassifier *) classifiers)->add((const EncAnyGram*) ngram, incontext, alignmodel->alignmatrix[key], leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder);
                             }
                             delete incontext;
                         }  
