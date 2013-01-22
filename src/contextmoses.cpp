@@ -286,9 +286,9 @@ int main( int argc, char *argv[] ) {
                     
             sentence++;
 
-            if ((sentence % 1000 == 0) || (debug))  { 
-                cerr << "\t@" << sentence << endl;
-            }
+            //if ((sentence % 1000 == 0) || (debug))  { 
+            cerr << "\t@" << sentence << " ";
+            //}
                             
             
             const int l = countwords(linebuffer, linesize);            
@@ -299,10 +299,10 @@ int main( int argc, char *argv[] ) {
             	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping!" << endl;
                 continue;
             }
-  
+            int foundcount = 0;    
                                     
             if (linesize > 0) {
-                EncData line = EncData(linebuffer, linesize);            
+                EncData line = EncData(linebuffer, linesize);                        
                 for (unsigned char i = 0; ((i < l) && (i < 256)); i++) {
                     bool found;
                     unsigned char n = 1;
@@ -311,6 +311,7 @@ int main( int argc, char *argv[] ) {
                         EncNGram * ngram = line.slice(i,n);    
                         const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
                         if (key != NULL) {
+                            foundcount++;
                             found = true;
                             if (debug) cerr << "found match" << endl;
                             //match found!
@@ -334,6 +335,8 @@ int main( int argc, char *argv[] ) {
                     } while (found);  
                 }
             }
+            
+            cerr << foundcount << endl;
             
             
         }
