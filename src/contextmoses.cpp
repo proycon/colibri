@@ -291,7 +291,6 @@ int main( int argc, char *argv[] ) {
         int sentence = 0;
         while (IN->good()) {
             const int linesize = readline(IN, linebuffer, BUFFERSIZE );            
-            if (!IN->good()) break;
             
             sentence++;
 
