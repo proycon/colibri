@@ -311,6 +311,7 @@ int main( int argc, char *argv[] ) {
                         EncNGram * ngram = line.slice(i,n);    
                         const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
                         if (key != NULL) {
+                            found = true;
                             if (debug) cerr << "found match" << endl;
                             //match found!
                             const EncAnyGram * incontext = alignmodel->addcontext(&line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);
