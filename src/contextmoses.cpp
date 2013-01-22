@@ -233,6 +233,12 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
+    int maxn = 0;
+    for (t_alignmatrix::iterator iter  = alignmodel->alignmatrix.begin(); iter != alignmodel->alignmatrix.end(); iter++) {
+        const int n = iter->first->n();
+        if (n > maxn) maxn = n;
+    }
+    
     ClassifierInterface * classifiers = NULL;
     
     if ((TRAIN) && (!trainfile.empty())) {
@@ -332,7 +338,7 @@ int main( int argc, char *argv[] ) {
                         }  
                         delete ngram;                  
                         n++;
-                    } while (found);  
+                    } while ((found) && (i+n <= l) && (n <= maxn));  
                 }
             }
             
