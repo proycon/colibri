@@ -325,7 +325,7 @@ int main( int argc, char *argv[] ) {
                             //match found!
                             const EncAnyGram * incontext = alignmodel->addcontext(&line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);
                             //see if this one already exists:
-                            const EncAnyGram * contextkey = contextalignmodel->getsourcekey(incontext);
+                            const EncAnyGram * contextkey = contextalignmodel->getsourcekey(incontext, false);
                             
                             
                             //add to context-aware alignment model (classifier training data will be constructed on the basis of this)
