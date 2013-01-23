@@ -492,7 +492,7 @@ int main( int argc, char *argv[] ) {
                             EncNGram * ngram = line->slice(i,n);
                             
                             stringstream ss;
-                            for (int j = i; j < j+n; j++) {
+                            for (int j = i; j < i+n; j++) {
                                 if (j > i) ss << " ";
                                 ss << sentence << "_" << j; 
                             } 
