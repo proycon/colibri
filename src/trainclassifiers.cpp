@@ -49,6 +49,7 @@ int main( int argc, char *argv[] ) {
     int targetthreshold = 1;
     bool singlefocusfeature = false;
     double accuracythreshold = 0;
+    bool timbloptionsset = false;
     
     char c;    
     while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:",long_options,&option_index)) != -1) {
@@ -81,6 +82,7 @@ int main( int argc, char *argv[] ) {
             mode = CLASSIFIERTYPE_MONO;
             break;
         case 'O':
+            timbloptionsset = true;
             if (exemplarweights) {
                 timbloptions = "-s -F Tabbed " + std::string(optarg);
             } else {
@@ -97,6 +99,11 @@ int main( int argc, char *argv[] ) {
             accuracythreshold = atof(optarg);
             break; 
         case 'x':
+            if (timbloptionsset) {
+                cerr << "ERROR: Only specify -x before -O, not after" << endl;
+                exit(2);
+            }        
+            timbloptions = "-a 1 -F Tabbed";
             exemplarweights = false;
             break;
         case '1':

@@ -91,6 +91,7 @@ int main( int argc, char *argv[] ) {
     bool singlefocusfeature = false;
     double accuracythreshold = 0;
     
+    bool timbloptionsset = false;
     
     char c;    
     string s;
@@ -124,6 +125,7 @@ int main( int argc, char *argv[] ) {
             mode = CLASSIFIERTYPE_MONO;
             break;
         case 'O':
+            timbloptionsset = true;
             if (exemplarweights) {
                 timbloptions = "-s -F Tabbed " + std::string(optarg);
             } else {
@@ -140,6 +142,11 @@ int main( int argc, char *argv[] ) {
             accuracythreshold = atof(optarg);
             break; 
         case 'x':
+            if (timbloptionsset) {
+                cerr << "ERROR: Only specify -x before -O, not after" << endl;
+                exit(2);
+            }
+            timbloptions = "-a 1 -F Tabbed";
             exemplarweights = false;
             break;
         case '1':
