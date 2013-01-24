@@ -63,11 +63,12 @@ int main( int argc, char *argv[] ) {
     /* getopt_long stores the option index here. */
     int option_index = 0;
     
-    string timbloptions;
+    string traintimbloptions;
+    string testtimbloptions = "-a 1 -F Tabbed";
     if (exemplarweights) {
-        timbloptions = "-a 1 -s -F Tabbed";
+        traintimbloptions = "-a 1 -s -F Tabbed";
     } else {
-        timbloptions = "-a 1 -F Tabbed";
+        traintimbloptions = "-a 1 -F Tabbed";
     }
     
     
@@ -127,9 +128,11 @@ int main( int argc, char *argv[] ) {
         case 'O':
             timbloptionsset = true;
             if (exemplarweights) {
-                timbloptions = "-s -F Tabbed " + std::string(optarg);
+                traintimbloptions = "-s -F Tabbed " + std::string(optarg);
+                testtimbloptions = "-s -F Tabbed " + std::string(optarg);
             } else {
-                timbloptions = "-F Tabbed " + std::string(optarg);
+                traintimbloptions = "-F Tabbed " + std::string(optarg);
+                testtimbloptions = "-F Tabbed " + std::string(optarg);
             }
             break;
         case 'c':
@@ -146,7 +149,7 @@ int main( int argc, char *argv[] ) {
                 cerr << "ERROR: Only specify -x before -O, not after" << endl;
                 exit(2);
             }
-            timbloptions = "-a 1 -F Tabbed";
+            traintimbloptions = "-a 1 -F Tabbed";
             exemplarweights = false;
             break;
         case '1':
@@ -376,21 +379,21 @@ int main( int argc, char *argv[] ) {
 		
 		
 		cerr << "Training classifiers" << endl;
-        cerr << "   Timbl options: " << timbloptions << endl; 
+        cerr << "   Timbl options: " << traintimbloptions << endl; 
         
         if (mode == CLASSIFIERTYPE_NARRAY) {
 
-            ((NClassifierArray *) classifiers)->train(timbloptions);
+            ((NClassifierArray *) classifiers)->train(traintimbloptions);
         
         } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
         
             
             ((ConstructionExperts *) classifiers)->accuracythreshold = accuracythreshold;
-            ((ConstructionExperts *) classifiers)->train(timbloptions);
+            ((ConstructionExperts *) classifiers)->train(traintimbloptions);
         
         } else if (mode == CLASSIFIERTYPE_MONO) {
             
-            ((MonoClassifier *) classifiers)->train(timbloptions);
+            ((MonoClassifier *) classifiers)->train(traintimbloptions);
             
         }
         
@@ -407,7 +410,7 @@ int main( int argc, char *argv[] ) {
             //transtable->computereverse(); //not necessary 
             cerr << "Loading classifiers" << endl;
             cerr << "   ID: " << classifierid << endl;
-            cerr << "   Timbl options: " << timbloptions << endl;
+            cerr << "   Timbl options: " << testtimbloptions << endl;
             cerr << "   Score handling: ";
             if (scorehandling == SCOREHANDLING_WEIGHED) {
                 cerr << "weighed" << endl;
@@ -425,17 +428,17 @@ int main( int argc, char *argv[] ) {
             ClassifierType classifiertype = getclassifierconf(classifierid, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
             if (classifiertype == CLASSIFIERTYPE_NARRAY) {        
                 classifiers = (ClassifierInterface*) new NClassifierArray(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
-                classifiers->load(timbloptions, sourceclassdecoder, targetclassencoder, debug);
+                classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
             } else if (classifiertype == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
                 classifiers = (ClassifierInterface*) new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
-                 classifiers->load(timbloptions, sourceclassdecoder, targetclassencoder, debug);                    
+                 classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);                    
             } else if (classifiertype == CLASSIFIERTYPE_MONO) {
                 if (!singlefocusfeature) {
                     cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
                     throw InternalError();
                 }
                 classifiers = (ClassifierInterface*) new MonoClassifier(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
-                classifiers->load(timbloptions, sourceclassdecoder, targetclassencoder, debug);            
+                classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);            
             } else {
                 cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;
                 throw InternalError();            
