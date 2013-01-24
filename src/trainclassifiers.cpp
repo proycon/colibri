@@ -37,9 +37,9 @@ int main( int argc, char *argv[] ) {
     
     string timbloptions;
     if (exemplarweights) {
-        timbloptions = "-a 1 -s -F Tabbed";
+        timbloptions = "-a 0 -s -F Tabbed";
     } else {
-        timbloptions = "-a 1 -F Tabbed";
+        timbloptions = "-a 0 -F Tabbed";
     }
     
     
@@ -103,7 +103,7 @@ int main( int argc, char *argv[] ) {
                 cerr << "ERROR: Only specify -x before -O, not after" << endl;
                 exit(2);
             }        
-            timbloptions = "-a 1 -F Tabbed";
+            timbloptions = "-a 0 -F Tabbed";
             exemplarweights = false;
             break;
         case '1':

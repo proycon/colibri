@@ -64,11 +64,11 @@ int main( int argc, char *argv[] ) {
     int option_index = 0;
     
     string traintimbloptions;
-    string testtimbloptions = "-a 1 -F Tabbed";
+    string testtimbloptions = "-a 0 -F Tabbed";
     if (exemplarweights) {
-        traintimbloptions = "-a 1 -s -F Tabbed";
+        traintimbloptions = "-a 0 -s -F Tabbed";
     } else {
-        traintimbloptions = "-a 1 -F Tabbed";
+        traintimbloptions = "-a 0 -F Tabbed";
     }
     
     
@@ -149,7 +149,7 @@ int main( int argc, char *argv[] ) {
                 cerr << "ERROR: Only specify -x before -O, not after" << endl;
                 exit(2);
             }
-            traintimbloptions = "-a 1 -F Tabbed";
+            traintimbloptions = "-a 0 -F Tabbed";
             exemplarweights = false;
             break;
         case '1':
