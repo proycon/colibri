@@ -54,6 +54,7 @@ class Classifier {
     double crossvalidate(const std::string & timbloptions); //returns accuracy (measured using leave one out cross validation)
     const std::string id() { return ID; };
     bool empty() { return !added; }
+    bool enabledebug() { DEBUG = true; }
     void close() { outputfile.close(); }
     void flush() { outputfile.flush(); }
     void load();

@@ -534,6 +534,7 @@ void NClassifierArray::add(const EncAnyGram * focus, const EncAnyGram * withcont
 t_aligntargets NClassifierArray::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
     const int n = featurevector.size() - leftcontextsize - rightcontextsize;  
     if ((classifierarray.count(n)) && (classifierarray[n] != NULL)) {
+        if (DEBUG >= 2) classifierarray[n]->enabledebug();
         return classifierarray[n]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
         cerr << "INTERNAL ERROR: NClassifierArray::classify invokes classifier " << n << ", but it does not exist" << endl;
@@ -544,6 +545,7 @@ t_aligntargets NClassifierArray::classify(const EncAnyGram * focus, std::vector<
 t_aligntargets NClassifierArray::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
     const int n = featurevector.size() - leftcontextsize - rightcontextsize; 
     if ((classifierarray.count(n)) && (classifierarray[n] != NULL)) {
+        if (DEBUG >= 2) classifierarray[n]->enabledebug();
         return classifierarray[n]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
         cerr << "INTERNAL ERROR: NClassifierArray::classify invokes classifier " << n << ", but it does not exist" << endl;
@@ -566,6 +568,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
         //returned anygram will be contextless:
         const EncAnyGram * anygram = iter->first;
         const CorpusReference ref = iter->second;
+        
         
         if (DEBUG >= 2) {
             cerr << "\t\t\tClassifying " << anygram->decode(*sourceclassdecoder) << " @" <<  (int) ref.token << ":" << (int) anygram->n() << ": ";     
@@ -592,7 +595,6 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
             
                 //extract anygram in context for classifier test input
                 const EncAnyGram * withcontext = translationtable->addcontext(&input,anygram, (int) ref.token);
-                
                 translationoptions = classifyfragment(anygram, withcontext, reftranslationoptions, scorehandling, translationtable->leftsourcecontext, translationtable->rightsourcecontext);
 
             } else {
@@ -652,6 +654,8 @@ t_aligntargets & ClassifierInterface::classifyfragment(const EncAnyGram * focus,
                 featurevector.push_back(unigram);                    
             }                             
         }
+        
+        
         
         t_aligntargets translationoptions = classify(focus, featurevector, scorehandling, reftranslationoptions);
         
@@ -854,11 +858,13 @@ void MonoClassifier::add(const EncAnyGram * focus, const EncAnyGram * withcontex
 
 
 
-t_aligntargets MonoClassifier::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {  
+t_aligntargets MonoClassifier::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+        if (DEBUG >= 2) classifier->enabledebug();  
         return classifier->classify(featurevector, scorehandling, originaltranslationoptions);
 }
 
 t_aligntargets MonoClassifier::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+        if (DEBUG >= 2) classifier->enabledebug();
         return classifier->classify(featurevector, scorehandling, originaltranslationoptions);
 }
 
@@ -1016,6 +1022,7 @@ void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withc
 t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
     const uint64_t hash = focus->hash();   
     if ((classifierarray.count(hash)) && (classifierarray[hash] != NULL)) {
+        if (DEBUG >= 2) classifierarray[hash]->enabledebug();
         return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
         if (DEBUG >= 2) cerr << "Classifier " << hash << " does not exist... falling back to statistical model   ";
@@ -1037,6 +1044,7 @@ t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vect
 t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
     const uint64_t hash = focus->hash(); 
     if ((classifierarray.count(hash)) && (classifierarray[hash] != NULL)) {
+        if (DEBUG >= 2) classifierarray[hash]->enabledebug();
         return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions);
     } else {
         if (DEBUG >= 2) cerr << "Classifier " << hash << " does not exist... falling back to statistical model    ";
