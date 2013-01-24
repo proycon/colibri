@@ -440,7 +440,7 @@ int main( int argc, char *argv[] ) {
                 cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;
                 throw InternalError();            
             }
-            if (debug) classifiers->enabledebug(debug,sourceclassdecoder, targetclassdecoder); 
+            if (debug) classifiers->enabledebug(2,sourceclassdecoder, targetclassdecoder); 
             
             /*
             - read moses phrasetable or colibri alignment model
@@ -509,6 +509,7 @@ int main( int argc, char *argv[] ) {
                             const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
                             if (key != NULL) {
                                 //match found!
+                                if (debug) cerr << "found match" << endl;
                                 const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);                                
                                 alignmodel->alignmatrix[key];
                                 
