@@ -539,7 +539,7 @@ int main( int argc, char *argv[] ) {
                                     *TMPTABLE << endl;
                                 }
                                 
-                                delete incontext;
+                                //delete incontext; //TODO: reenable? segfault
                             }  
                             delete ngram;                  
                             n++;
