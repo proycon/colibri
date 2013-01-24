@@ -628,7 +628,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
      }     
 }
 
-t_aligntargets & ClassifierInterface::classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationoptions, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize) {
+t_aligntargets ClassifierInterface::classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationoptions, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize) {
         const int nwithcontext = withcontext->n();
 
          
