@@ -519,8 +519,10 @@ int main( int argc, char *argv[] ) {
                                 //are there enough targets for this source to warrant a classifier?
                                 if (alignmodel->alignmatrix[key].size() > scorecount) scorecount = alignmodel->alignmatrix[key].size(); 
                                 if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
+                                    if (debug) cerr << "classifying" << endl;
                                     translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize);
                                 } else {
+                                    if (debug) cerr << "not classifying, targetthreshold too low" << endl;
                                     translationoptions = *reftranslationoptions;
                                 }
                                 
