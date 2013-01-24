@@ -223,7 +223,7 @@ concerning p(t|s) only
     if (!loaded) load();
     used = true;
     
-    if (DEBUG) cerr << "\t\t\tClassifier input: " << endl;
+    if (DEBUG) cerr << "\t\t\tClassifier " << ID << " input ("<< featurevector.size() << "): " << endl;
     stringstream features_ss;
     for (vector<string>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         features_ss << *iter << "\t";
