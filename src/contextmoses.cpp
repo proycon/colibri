@@ -574,8 +574,19 @@ int main( int argc, char *argv[] ) {
                                     //match found!
                                     if (debug) cerr << "found match" << endl;
                                     const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);                                
+
                                     
                                     t_aligntargets * reftranslationoptions = &(alignmodel->alignmatrix[key]);
+                                    if (debug) {
+                                        for (t_aligntargets::iterator iter = reftranslationoptions->begin(); iter != reftranslationoptions->end(); iter++) {
+                                            cerr << "BEFORE CLASSIFICATION: " << encodedngram << " ||| " << iter->first->decode(*targetclassdecoder) << " ||| ";
+                                            for (vector<double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                                                if (iter2 != iter->second.begin()) cerr << " ";
+                                               cerr << pow(exp(1), *iter2);
+                                            }
+                                            cerr << endl;
+                                        }
+                                    }
                                     t_aligntargets translationoptions;
                                     
                                     //are there enough targets for this source to warrant a classifier?
@@ -591,11 +602,17 @@ int main( int argc, char *argv[] ) {
                                     //write intermediate phrasetable
                                     for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
                                         *TMPTABLE << encodedngram << " ||| " << iter->first->decode(*targetclassdecoder) << " ||| ";
+                                        if (debug) cerr << "AFTER CLASSIFICATION: " << encodedngram << " ||| " << iter->first->decode(*targetclassdecoder) << " ||| ";
                                         for (vector<double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-                                            if (iter2 != iter->second.begin()) *TMPTABLE << " ";
+                                            if (iter2 != iter->second.begin()) {
+                                                *TMPTABLE << " ";
+                                                if (debug) cerr << " ";
+                                            }
                                             *TMPTABLE << pow(exp(1), *iter2);
+                                            if (debug) cerr << pow(exp(1), *iter2);
                                         }
                                         *TMPTABLE << endl;
+                                        if (debug) cerr << endl;
                                     }
                                     
                                     //delete incontext; //TODO: reenable? segfault
