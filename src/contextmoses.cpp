@@ -22,7 +22,7 @@ int addunknownwords(ClassEncoder * sourceclassencoder, ClassDecoder * sourceclas
 }
 
 void usage() {
-    cerr << "Training usage: contextmoses -f source-traindatafile [-N|-X|-M] [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
+    cerr << "Training usage: contextmoses -f source-traindatafile -g target-traindatafile [-N|-X|-M] [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
     cerr << "Training usage: contextmoses -F testdatafile [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
     cerr << "Classifier types: (pick one)" << endl;
     cerr << " -N           N-Classifier Array, one classifier per pattern size group" << endl;
@@ -80,6 +80,7 @@ int main( int argc, char *argv[] ) {
     bool debug = false;
     
     string trainfile = "";
+    string targettrainfile = "";
     string testfile = "";
     string mosesphrasetable = "";
     string alignmodelfile = "";
@@ -96,7 +97,7 @@ int main( int argc, char *argv[] ) {
     
     char c;    
     string s;
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:t:l:r:F:DH:m:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -162,6 +163,10 @@ int main( int argc, char *argv[] ) {
             TRAIN = true;
             trainfile = optarg;
             break;
+        case 'g':
+            TRAIN = true;
+            targettrainfile = optarg;
+            break;            
         case 'F':
             TEST = true;
             testfile = optarg;
@@ -265,7 +270,7 @@ int main( int argc, char *argv[] ) {
 
     ClassifierInterface * classifiers = NULL;
     
-    if ((TRAIN) && (!trainfile.empty())) {
+    if ((TRAIN) && (!trainfile.empty()) && (!targettrainfile.empty())) {
         /*
         train) 
 	    - read moses phrasetable or colibri alignment model
@@ -304,20 +309,29 @@ int main( int argc, char *argv[] ) {
 		
 		const int BUFFERSIZE = 65536;
         unsigned char linebuffer[BUFFERSIZE];
+        unsigned char targetlinebuffer[BUFFERSIZE];
         unsigned char tmpbuffer[BUFFERSIZE];
         
-        ifstream *IN =  new ifstream( trainfile.c_str() );
-        if (!IN->good()) {
+        ifstream *INSOURCE =  new ifstream( trainfile.c_str() );
+        if (!INSOURCE->good()) {
         	cerr << "ERROR: Unable to open file " << trainfile << endl;
         	exit(5);
         }        
+        ifstream *INTARGET =  new ifstream( targettrainfile.c_str() );
+        if (!INTARGET->good()) {
+        	cerr << "ERROR: Unable to open file " << trainfile << endl;
+        	exit(5);
+        }                
+        
         vector<unsigned int> words;
         int sentence = 0;
-        while (IN->good()) {
+        while (INSOURCE->good()) {
             sentence++;
-            int linesize = readline(IN, linebuffer, BUFFERSIZE );            
+            int linesize = readline(INSOURCE, linebuffer, BUFFERSIZE );
+            int targetlinesize = readline(INTARGET, targetlinebuffer, BUFFERSIZE );    
+                    
 
-            if (!IN->good()) linesize--; //silly fix, don't know why, but works
+            if (!INSOURCE->good()) linesize--; //silly fix, don't know why, but works
 
 
             if ((sentence % 1000 == 0) || (debug))  { 
@@ -326,18 +340,18 @@ int main( int argc, char *argv[] ) {
                             
             
             const int l = countwords(linebuffer, linesize);            
-            if (l >= 256) {
-                cerr << "WARNING: Sentence " << sentence << " exceeds maximum word-length 256, skipping!" << endl;
-                continue;
-            } else if (l == 0) {
+            if (l == 0) {
             	cerr << "WARNING: Sentence " << sentence << " contains no words, skipping!" << endl;
                 continue;
             }
             int foundcount = 0;    
+            
+            const int ltarget = countwords(targetlinebuffer,targetlinesize); 
                                     
             if (linesize > 0) {
-                EncData line = EncData(linebuffer, linesize);                        
-                for (unsigned char i = 0; ((i < l) && (i < 256)); i++) {
+                EncData line = EncData(linebuffer, linesize);
+                EncData targetline = EncData(targetlinebuffer, targetlinesize);                        
+                for (unsigned char i = 0; i < l; i++) {
                     bool found;
                     unsigned char n = 1;
                     do {
@@ -353,15 +367,28 @@ int main( int argc, char *argv[] ) {
                             //see if this one already exists:
                             const EncAnyGram * contextkey = contextalignmodel->getsourcekey(incontext, false);
                             
-                            
-                            //add to context-aware alignment model (classifier training data will be constructed on the basis of this)
+                            //see what targets the the target sentence match with the translation options (only one alignment is right, but if there is ambiguity we add them all as we don't have alignment data at this point).. 
+                            bool targetfound = false;
                             for (t_aligntargets::iterator iter = alignmodel->alignmatrix[key].begin(); iter !=  alignmodel->alignmatrix[key].end(); iter++) {
                                 const EncAnyGram * targetgram = iter->first;
-                                const double score = (exemplarweights) ?  (  (iter->second[0] < 0) ? pow(exp(1), iter->second[0]) : iter->second[0] ) : 1; //no logprob
-                                contextalignmodel->addextractedpattern(key, targetgram, score, 1, (contextkey != NULL) ? contextkey : incontext );
+                                unsigned char targetn = targetgram->n();
+                                
+                                if (targetline.contains((const EncNGram *) targetgram)) {
+                                    //add to context-aware alignment model (classifier training data will be constructed on the basis of this)
+                                    targetfound = true;
+                                    const EncAnyGram * targetgram = iter->first;
+                                    const double score = (exemplarweights) ?  (  (iter->second[0] < 0) ? pow(exp(1), iter->second[0]) : iter->second[0] ) : 1; //no logprob
+                                    contextalignmodel->addextractedpattern(key, targetgram, score, 1, (contextkey != NULL) ? contextkey : incontext );
+                                }
+                                
                             }
-
-                            contextalignmodel->sourcecontexts[key].insert((contextkey != NULL) ? contextkey : incontext);
+                            
+                            if (targetfound) {
+                                contextalignmodel->sourcecontexts[key].insert((contextkey != NULL) ? contextkey : incontext);
+                            } else {
+                                cerr << "WARNING: No alignment targets found for source fragment, shouldn't really happen" << endl;
+                            }
+                            
                             
                             if (contextkey != NULL) { 
                                 delete incontext; 
