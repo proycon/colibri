@@ -206,6 +206,7 @@ class EncData {
 
     bool match(const EncNGram * ngram, const int offset);
     bool match(const EncSkipGram * skipgram, const int offset);
+    bool contains(const EncNGram * ngram);
     
     EncNGram * slice(const int begin,const int length) const;
     
