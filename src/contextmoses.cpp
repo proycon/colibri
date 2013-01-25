@@ -371,12 +371,11 @@ int main( int argc, char *argv[] ) {
                             bool targetfound = false;
                             for (t_aligntargets::iterator iter = alignmodel->alignmatrix[key].begin(); iter !=  alignmodel->alignmatrix[key].end(); iter++) {
                                 const EncAnyGram * targetgram = iter->first;
-                                unsigned char targetn = targetgram->n();
+                                const unsigned char targetn = targetgram->n();
                                 
                                 if (targetline.contains((const EncNGram *) targetgram)) {
                                     //add to context-aware alignment model (classifier training data will be constructed on the basis of this)
                                     targetfound = true;
-                                    const EncAnyGram * targetgram = iter->first;
                                     const double score = (exemplarweights) ?  (  (iter->second[0] < 0) ? pow(exp(1), iter->second[0]) : iter->second[0] ) : 1; //no logprob
                                     contextalignmodel->addextractedpattern(key, targetgram, score, 1, (contextkey != NULL) ? contextkey : incontext );
                                 }
