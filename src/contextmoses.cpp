@@ -430,7 +430,7 @@ int main( int argc, char *argv[] ) {
                 scorecount = 4;
             }
             
-            if (testexists) {
+            if (!testexists) {
             
                 //Load classifiers
                
