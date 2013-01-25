@@ -218,12 +218,12 @@ int main( int argc, char *argv[] ) {
     
     bool testexists = false;
     if (TEST) {
-        ifstream *TEST1 =  new ifstream( "tmp.txt" );
-        ifstream *TEST2 =  new ifstream( "tmp.phrasetable"  );
+        ifstream TEST1( "tmp.txt" );
+        ifstream TEST2( "tmp.phrasetable"  );
         testexists = (TEST1 && TEST2);
         if (testexists) {                       
-            TEST1->close();
-            TEST2->close();
+            TEST1.close();
+            TEST2.close();
         }
     }
     
