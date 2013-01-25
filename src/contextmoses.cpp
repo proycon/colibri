@@ -421,13 +421,13 @@ int main( int argc, char *argv[] ) {
             cerr << "Score handling: ";
             if (scorehandling == SCOREHANDLING_WEIGHED) {
                 cerr << "weighed" << endl;
-                scorecount = 4;
+                scorecount = 5;
             } else if (scorehandling == SCOREHANDLING_APPEND) {
                 cerr << "append" << endl;
-                scorecount = 5;
+                scorecount = 6;
             } else if (scorehandling == SCOREHANDLING_REPLACE) {
                 cerr << "replace" << endl;
-                scorecount = 4;
+                scorecount = 5;
             }
             
             if (!testexists) {
@@ -559,7 +559,7 @@ int main( int argc, char *argv[] ) {
                                         *TMPTABLE << encodedngram << " ||| " << iter->first->decode(*targetclassdecoder) << " ||| ";
                                         for (vector<double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                                             if (iter2 != iter->second.begin()) *TMPTABLE << " ";
-                                            *TMPTABLE << *iter2;
+                                            *TMPTABLE << pow(exp(1), *iter2);
                                         }
                                         *TMPTABLE << endl;
                                     }
