@@ -600,7 +600,7 @@ int main( int argc, char *argv[] ) {
             }
             stringstream cmd;
             cmd << "moses -config moses.ini -ttable-file \"0 0 0 " << scorecount << " tmp.phrasetable\" -weight-t \"" << ss.str() << "\" < tmp.txt";          
-            cerr << cmd << endl;  
+            cerr << cmd.str() << endl;  
             system(cmd.str().c_str());
 
         }  
