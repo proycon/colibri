@@ -574,7 +574,6 @@ int main( int argc, char *argv[] ) {
                                     //match found!
                                     if (debug) cerr << "found match" << endl;
                                     const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);                                
-                                    alignmodel->alignmatrix[key];
                                     
                                     t_aligntargets * reftranslationoptions = &(alignmodel->alignmatrix[key]);
                                     t_aligntargets translationoptions;
