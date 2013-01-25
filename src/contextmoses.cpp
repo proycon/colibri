@@ -216,6 +216,17 @@ int main( int argc, char *argv[] ) {
     ClassEncoder * targetclassencoder = NULL;
     AlignmentModel * alignmodel = NULL;
     
+    bool testexists = false;
+    if (TEST) {
+        ifstream *TEST1 =  new ifstream( "tmp.txt" );
+        ifstream *TEST2 =  new ifstream( "tmp.phrasetable"  );
+        testexists = (TEST1 && TEST2);
+        if (testexists) {                       
+            TEST1->close();
+            TEST2->close();
+        }
+    }
+    
 
     cerr << "Loading source class decoder " << sourceclassfile << endl;
 	sourceclassdecoder = new ClassDecoder(sourceclassfile);
@@ -223,32 +234,34 @@ int main( int argc, char *argv[] ) {
 	cerr << "Loading target class decoder " << targetclassfile << endl;
 	targetclassdecoder = new ClassDecoder(targetclassfile);   
 
-
-		
-    
-    if (!alignmodelfile.empty()) {
-        cerr << "Loading alignment model " << alignmodelfile << endl;
-        alignmodel = new AlignmentModel(alignmodelfile,false,true,0, false);
-    } else if (!mosesphrasetable.empty()) {
-	    cerr << "Loading target class encoder " << targetclassfile << endl;
-	    targetclassencoder = new ClassEncoder(targetclassfile);  
-
-        cerr << "Loading source class encoder " << sourceclassfile << endl;
-        sourceclassencoder = new ClassEncoder(sourceclassfile);
-    
-        cerr << "Loading moses phrasetable " << mosesphrasetable << endl;
-        alignmodel = new AlignmentModel(mosesphrasetable, sourceclassencoder, targetclassencoder);    
-    } else {
-        cerr << "ERROR: No moses phrasetable (-m) or colibri alignment model (-d) specified!" << endl;
-        exit(2);
-    }
-    
     int maxn = 0;
-    for (t_alignmatrix::iterator iter  = alignmodel->alignmatrix.begin(); iter != alignmodel->alignmatrix.end(); iter++) {
-        const int n = iter->first->n();
-        if (n > maxn) maxn = n;
+		
+    if (!  ((!TRAIN) && (TEST) && (testexists))) {
+        
+        if (!alignmodelfile.empty()) {
+            cerr << "Loading alignment model " << alignmodelfile << endl;
+            alignmodel = new AlignmentModel(alignmodelfile,false,true,0, false);
+        } else if (!mosesphrasetable.empty()) {
+	        cerr << "Loading target class encoder " << targetclassfile << endl;
+	        targetclassencoder = new ClassEncoder(targetclassfile);  
+
+            cerr << "Loading source class encoder " << sourceclassfile << endl;
+            sourceclassencoder = new ClassEncoder(sourceclassfile);
+
+            alignmodel = new AlignmentModel(mosesphrasetable, sourceclassencoder, targetclassencoder);
+        } else {
+            cerr << "ERROR: No moses phrasetable (-m) or colibri alignment model (-d) specified!" << endl;
+            exit(2);
+        }
+        
+        for (t_alignmatrix::iterator iter  = alignmodel->alignmatrix.begin(); iter != alignmodel->alignmatrix.end(); iter++) {
+            const int n = iter->first->n();
+            if (n > maxn) maxn = n;
+        }        
     }
     
+    
+
     ClassifierInterface * classifiers = NULL;
     
     if ((TRAIN) && (!trainfile.empty())) {
@@ -463,14 +476,8 @@ int main( int argc, char *argv[] ) {
             
             cerr << "Reading test file" << endl;
     
-            ifstream *TEST1 =  new ifstream( "tmp.txt" );
-            ifstream *TEST2 =  new ifstream( "tmp.phrasetable"  );
-            bool exists = (TEST1 && TEST2);
-            if (!exists) {
-                
-                
-                TEST1->close();
-                TEST2->close();
+
+            if (testexists) {
                 
         
         
