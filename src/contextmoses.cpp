@@ -405,7 +405,7 @@ int main( int argc, char *argv[] ) {
         if (!classifierid.empty()) {
             
             //Load classifiers
-            int scorecount = 0;
+            int scorecount;
             //cerr << "Computing reverse index for translation table" << endl;
             //transtable->computereverse(); //not necessary 
             cerr << "Loading classifiers" << endl;
@@ -414,10 +414,13 @@ int main( int argc, char *argv[] ) {
             cerr << "   Score handling: ";
             if (scorehandling == SCOREHANDLING_WEIGHED) {
                 cerr << "weighed" << endl;
+                scorecount = 4;
             } else if (scorehandling == SCOREHANDLING_APPEND) {
                 cerr << "append" << endl;
+                scorecount = 5;
             } else if (scorehandling == SCOREHANDLING_REPLACE) {
                 cerr << "replace" << endl;
+                scorecount = 4;
             }
             /*
             int contextthreshold; //will be set by getclassifiertype
@@ -460,101 +463,116 @@ int main( int argc, char *argv[] ) {
             
             cerr << "Reading test file" << endl;
     
-            ifstream *IN =  new ifstream( testfile.c_str() );
-            if (!IN->good()) {
-            	cerr << "ERROR: Unable to open file " << trainfile << endl;
-            	exit(5);
-            }        
-    
-            ofstream *TMPTEST = new ofstream( "tmp.txt" ); //intermediate test file (IDs instead of words)
-            ofstream *TMPTABLE = new ofstream( "tmp.phrasetable" ); //intermediate phrase table
+            ifstream *TEST1 =  new ifstream( "tmp.txt" );
+            ifstream *TEST2 =  new ifstream( "tmp.phrasetable"  );
+            bool exists = (TEST1 && TEST2);
+            if (!exists) {
+                
+                
+                TEST1->close();
+                TEST2->close();
+                
+        
+        
+                ifstream *IN =  new ifstream( testfile.c_str() );
+                if (!IN->good()) {
+                	cerr << "ERROR: Unable to open file " << trainfile << endl;
+                	exit(5);
+                }        
+        
+                ofstream *TMPTEST = new ofstream( "tmp.txt" ); //intermediate test file (IDs instead of words)
+                ofstream *TMPTABLE = new ofstream( "tmp.phrasetable" ); //intermediate phrase table
 
-            string input;
-            unsigned char buffer[8192]; 
-            int size;
-            int sentence = 0;
-            while (getline(*IN, input)) {        
-                if (input.length() > 0) {
-                    sentence++;                    
-                    cerr << "INPUT: " << input << endl;
-                    if (debug) cerr << "Processing input" ;        
-                    size = sourceclassencoder->encodestring(input, buffer, true, true) - 1; //weird patch: - 1  to get n() right later
-                    
-                    if (debug) cerr << " (" << size << ") " << endl;
-                    const EncData * line = new EncData(buffer,size);
-                    if (debug) cerr << "Processing unknown words" << endl; 
-                    addunknownwords(sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder);
-                    //if (debug >= 1) cerr << "Setting up decoder (" << inputdata->length() << " stacks)" << endl;
-                    
-                    const int l = line->length();
-                    
-                    for (int i = 0; i < l; i++) {
-                        if (i > 0) *TMPTEST << " ";
-                        *TMPTEST << sentence << "_" << i;
-                    }
-                    *TMPTEST << endl;
-                                            
-                    for (unsigned char i = 0; ((i < l) && (i < 256)); i++) {
-                        bool found;
-                        unsigned char n = 1;
-                        do {
-                            found = false;
-                            EncNGram * ngram = line->slice(i,n);
-                            
-                            stringstream ss;
-                            for (int j = i; j < i+n; j++) {
-                                if (j > i) ss << " ";
-                                ss << sentence << "_" << j; 
-                            } 
-                            const string encodedngram = ss.str();
-                            
-                                  
-                            const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
-                            if (key != NULL) {
-                                //match found!
-                                if (debug) cerr << "found match" << endl;
-                                const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);                                
-                                alignmodel->alignmatrix[key];
-                                
-                                t_aligntargets * reftranslationoptions = &(alignmodel->alignmatrix[key]);
-                                t_aligntargets translationoptions;
-                                
-                                //are there enough targets for this source to warrant a classifier?
-                                if (alignmodel->alignmatrix[key].size() > scorecount) scorecount = alignmodel->alignmatrix[key].size(); 
-                                if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
-                                    if (debug) cerr << "classifying" << endl;
-                                    translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize);
-                                } else {
-                                    if (debug) cerr << "not classifying, targetthreshold too low" << endl;
-                                    translationoptions = *reftranslationoptions;
-                                }
-                                
-                                //write intermediate phrasetable
-                                for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
-                                    *TMPTABLE << encodedngram << " ||| " << iter->first->decode(*targetclassdecoder) << " ||| ";
-                                    for (vector<double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-                                        if (iter2 != iter->second.begin()) *TMPTABLE << " ";
-                                        *TMPTABLE << *iter2;
-                                    }
-                                    *TMPTABLE << endl;
-                                }
-                                
-                                //delete incontext; //TODO: reenable? segfault
-                            }  
-                            delete ngram;                  
-                            n++;
-                        } while (found);  
+                string input;
+                unsigned char buffer[8192]; 
+                int size;
+                int sentence = 0;
+                while (getline(*IN, input)) {        
+                    if (input.length() > 0) {
+                        sentence++;                    
+                        cerr << "INPUT: " << input << endl;
+                        if (debug) cerr << "Processing input" ;        
+                        size = sourceclassencoder->encodestring(input, buffer, true, true) - 1; //weird patch: - 1  to get n() right later
                         
+                        if (debug) cerr << " (" << size << ") " << endl;
+                        const EncData * line = new EncData(buffer,size);
+                        if (debug) cerr << "Processing unknown words" << endl; 
+                        addunknownwords(sourceclassencoder, sourceclassdecoder, targetclassencoder, targetclassdecoder);
+                        //if (debug >= 1) cerr << "Setting up decoder (" << inputdata->length() << " stacks)" << endl;
                         
+                        const int l = line->length();
                         
-                    }    
+                        for (int i = 0; i < l; i++) {
+                            if (i > 0) *TMPTEST << " ";
+                            *TMPTEST << sentence << "_" << i;
+                        }
+                        *TMPTEST << endl;
+                                                
+                        for (unsigned char i = 0; ((i < l) && (i < 256)); i++) {
+                            bool found;
+                            unsigned char n = 1;
+                            do {
+                                found = false;
+                                EncNGram * ngram = line->slice(i,n);
+                                
+                                stringstream ss;
+                                for (int j = i; j < i+n; j++) {
+                                    if (j > i) ss << " ";
+                                    ss << sentence << "_" << j; 
+                                } 
+                                const string encodedngram = ss.str();
+                                
+                                      
+                                const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
+                                if (key != NULL) {
+                                    //match found!
+                                    if (debug) cerr << "found match" << endl;
+                                    const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);                                
+                                    alignmodel->alignmatrix[key];
                                     
-                    
-                }
-            }      
+                                    t_aligntargets * reftranslationoptions = &(alignmodel->alignmatrix[key]);
+                                    t_aligntargets translationoptions;
+                                    
+                                    //are there enough targets for this source to warrant a classifier?
+                                    if (alignmodel->alignmatrix[key].size() > scorecount) scorecount = alignmodel->alignmatrix[key].size(); 
+                                    if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
+                                        if (debug) cerr << "classifying" << endl;
+                                        translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize);
+                                    } else {
+                                        if (debug) cerr << "not classifying, targetthreshold too low" << endl;
+                                        translationoptions = *reftranslationoptions;
+                                    }
+                                    
+                                    //write intermediate phrasetable
+                                    for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
+                                        *TMPTABLE << encodedngram << " ||| " << iter->first->decode(*targetclassdecoder) << " ||| ";
+                                        for (vector<double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                                            if (iter2 != iter->second.begin()) *TMPTABLE << " ";
+                                            *TMPTABLE << *iter2;
+                                        }
+                                        *TMPTABLE << endl;
+                                    }
+                                    
+                                    //delete incontext; //TODO: reenable? segfault
+                                }  
+                                delete ngram;                  
+                                n++;
+                            } while (found);  
+                            
+                            
+                            
+                        }    
+                                        
+                        
+                    }
+                }      
 
-            TMPTABLE->close();
-            TMPTEST->close(); 
+                TMPTABLE->close();
+                TMPTEST->close(); 
+
+            } else {
+                cerr << "Classifier already tested (tmp.phrasetable and tmp.txt exist), not overwriting, proceeding with decoding..." << endl;
+            }
 
             /*cerr << "Updating moses configuration..." << endl;
             ifstream *MOSESINI =  new ifstream( "moses.ini" );
