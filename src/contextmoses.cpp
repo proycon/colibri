@@ -418,7 +418,7 @@ int main( int argc, char *argv[] ) {
     if (TEST) {   
         if (!classifierid.empty()) {
 
-            int scorecount;
+            int scorecount = 0;
             cerr << "Score handling: ";
             if (scorehandling == SCOREHANDLING_WEIGHED) {
                 cerr << "weighed" << endl;
@@ -460,7 +460,7 @@ int main( int argc, char *argv[] ) {
                         throw InternalError();
                     }
                     classifiers = (ClassifierInterface*) new MonoClassifier(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
-                    classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);            
+                    classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
                 } else {
                     cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;
                     throw InternalError();            
@@ -536,7 +536,15 @@ int main( int argc, char *argv[] ) {
                                 
                                       
                                 const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
-                                if (key != NULL) {
+                                if ((n == 1) && (key == NULL)) {
+                                    //unknown word!! Add to phrasetable
+                                    *TMPTABLE << encodedngram << " ||| " << encodedngram << " ||| ";
+                                    for (int i = 0; i < scorecount; i++) {
+                                        if (i > 0) *TMPTABLE << " ";
+                                        *TMPTABLE << "0.001";
+                                    }                 
+                                    *TMPTABLE << endl;                                     
+                                } else if (key != NULL) {
                                     //match found!
                                     if (debug) cerr << "found match" << endl;
                                     const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);                                
@@ -570,6 +578,7 @@ int main( int argc, char *argv[] ) {
                                 delete ngram;                  
                                 n++;
                             } while (found);  
+                            
                             
                             
                             
