@@ -416,15 +416,9 @@ int main( int argc, char *argv[] ) {
     
     if (TEST) {   
         if (!classifierid.empty()) {
-            
-            //Load classifiers
+
             int scorecount;
-            //cerr << "Computing reverse index for translation table" << endl;
-            //transtable->computereverse(); //not necessary 
-            cerr << "Loading classifiers" << endl;
-            cerr << "   ID: " << classifierid << endl;
-            cerr << "   Timbl options: " << testtimbloptions << endl;
-            cerr << "   Score handling: ";
+            cerr << "Score handling: ";
             if (scorehandling == SCOREHANDLING_WEIGHED) {
                 cerr << "weighed" << endl;
                 scorecount = 4;
@@ -435,50 +429,60 @@ int main( int argc, char *argv[] ) {
                 cerr << "replace" << endl;
                 scorecount = 4;
             }
-            /*
-            int contextthreshold; //will be set by getclassifiertype
-            int targetthreshold; //will be set by getclassifiertype
-            bool exemplarweights; //will be set by getclassifiertype
-            bool singlefocusfeature; //will be set by getclassifiertype
-            */        
-            ClassifierType classifiertype = getclassifierconf(classifierid, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
-            if (classifiertype == CLASSIFIERTYPE_NARRAY) {        
-                classifiers = (ClassifierInterface*) new NClassifierArray(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
-                classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
-            } else if (classifiertype == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
-                classifiers = (ClassifierInterface*) new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
-                 classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);                    
-            } else if (classifiertype == CLASSIFIERTYPE_MONO) {
-                if (!singlefocusfeature) {
-                    cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
-                    throw InternalError();
-                }
-                classifiers = (ClassifierInterface*) new MonoClassifier(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
-                classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);            
-            } else {
-                cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;
-                throw InternalError();            
-            }
-            if (debug) classifiers->enabledebug(2,sourceclassdecoder, targetclassdecoder); 
             
-            /*
-            - read moses phrasetable or colibri alignment model
-	        - read test data
-	        - match with phrasetable
-		        - extract context and features
-			        - classify
-			        - replace source words with unique IDs
-			        - write intermediate phrasetable with IDs instead of source words, store map IDs->words
-	        - run decoder with intermediate phrasetable
-	        - read decoding results
-	        - lookup 
-	        */
-            
-            cerr << "Reading test file" << endl;
-    
-
             if (testexists) {
+            
+                //Load classifiers
+               
+                //cerr << "Computing reverse index for translation table" << endl;
+                //transtable->computereverse(); //not necessary 
+                cerr << "Loading classifiers" << endl;
+                cerr << "   ID: " << classifierid << endl;
+                cerr << "   Timbl options: " << testtimbloptions << endl;
+
+                /*
+                int contextthreshold; //will be set by getclassifiertype
+                int targetthreshold; //will be set by getclassifiertype
+                bool exemplarweights; //will be set by getclassifiertype
+                bool singlefocusfeature; //will be set by getclassifiertype
+                */        
+                ClassifierType classifiertype = getclassifierconf(classifierid, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                if (classifiertype == CLASSIFIERTYPE_NARRAY) {        
+                    classifiers = (ClassifierInterface*) new NClassifierArray(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                    classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
+                } else if (classifiertype == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
+                    classifiers = (ClassifierInterface*) new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                     classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);                    
+                } else if (classifiertype == CLASSIFIERTYPE_MONO) {
+                    if (!singlefocusfeature) {
+                        cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
+                        throw InternalError();
+                    }
+                    classifiers = (ClassifierInterface*) new MonoClassifier(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                    classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);            
+                } else {
+                    cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;
+                    throw InternalError();            
+                }
+                if (debug) classifiers->enabledebug(2,sourceclassdecoder, targetclassdecoder); 
                 
+                /*
+                - read moses phrasetable or colibri alignment model
+	            - read test data
+	            - match with phrasetable
+		            - extract context and features
+			            - classify
+			            - replace source words with unique IDs
+			            - write intermediate phrasetable with IDs instead of source words, store map IDs->words
+	            - run decoder with intermediate phrasetable
+	            - read decoding results
+	            - lookup 
+	            */
+                
+                cerr << "Reading test file" << endl;
+        
+
+
         
         
                 ifstream *IN =  new ifstream( testfile.c_str() );
