@@ -1258,7 +1258,8 @@ EncNGram * EncData::slice(const int begin,const int length) const {
 bool EncData::contains(const EncNGram * ngram) {
     for (int i = 0; i < _size; i++) {
         bool match = true;
-        for (int j = 0; j < ngram->size(); j++) {
+        const int s = ngram->size();
+        for (int j = 0; j < s; j++) {
             if ((i+j >= _size) || (data[i+j] != ngram->data[j])) {
                 match = false;
                 break;
@@ -1266,6 +1267,7 @@ bool EncData::contains(const EncNGram * ngram) {
         }
         if (match) return true;
     }
+    return false;
 }
 
 bool EncData::match(const EncNGram * ngram, const int offset) {

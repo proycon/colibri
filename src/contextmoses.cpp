@@ -361,7 +361,7 @@ int main( int argc, char *argv[] ) {
                         if (key != NULL) {
                             foundcount++;
                             found = true;
-                            if (debug) cerr << "found match" << endl;
+                            if (debug) cerr << "found match @" << sentence << " " << i << ":" << n << endl;
                             //match found!
                             const EncAnyGram * incontext = alignmodel->addcontext(&line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);
                             //see if this one already exists:
