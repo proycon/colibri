@@ -351,7 +351,7 @@ int main( int argc, char *argv[] ) {
             if (linesize > 0) {
                 EncData line = EncData(linebuffer, linesize);
                 EncData targetline = EncData(targetlinebuffer, targetlinesize);                        
-                for (unsigned char i = 0; i < l; i++) {
+                for (int i = 0; i < l; i++) {
                     bool found;
                     unsigned char n = 1;
                     do {
@@ -361,7 +361,7 @@ int main( int argc, char *argv[] ) {
                         if (key != NULL) {
                             foundcount++;
                             found = true;
-                            if (debug) cerr << "found match @" << sentence << " " << (int) i << ":" << (int) n << endl;
+                            if (debug) cerr << "found match @" << sentence << " " << i << ":" << (int) n << endl;
                             //match found!
                             const EncAnyGram * incontext = alignmodel->addcontext(&line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);
                             //see if this one already exists:
