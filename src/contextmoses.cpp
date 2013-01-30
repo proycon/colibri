@@ -384,9 +384,9 @@ int main( int argc, char *argv[] ) {
                             
                             if (targetfound) {
                                 contextalignmodel->sourcecontexts[key].insert((contextkey != NULL) ? contextkey : incontext);
-                            } else {
-                                cerr << "WARNING: No alignment targets found for source fragment, shouldn't really happen" << endl;
-                            }
+                            //} else {
+                                //cerr << "WARNING: No alignment targets found for source fragment " <<  << ", shouldn't really happen" << endl;  //can happen!
+                            } 
                             
                             
                             if (contextkey != NULL) { 
