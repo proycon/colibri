@@ -261,7 +261,7 @@ int main( int argc, char *argv[] ) {
                 for (t_alignmatrix::iterator iter = alignmodel->alignmatrix.begin(); iter != alignmodel->alignmatrix.end(); iter++) {
                     const EncAnyGram * source = iter->first; 
                     for (t_aligntargets::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-                        const EncAnyGram * target = iter->first;
+                        const EncAnyGram * target = iter2->first;
                         cerr << source->decode(*sourceclassdecoder) << " ||| " << target->decode(*targetclassdecoder) << " ||| ";
                         for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
                             cerr << *iter3 << " ";
