@@ -2721,29 +2721,32 @@ AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sour
         int mode = 0;
         string source = "";
         string target = "";
+        string scores_s;
         vector<double> scores;
         int begin = 0;        
         for (unsigned int i = 0; i < line.size(); i++) {
-            if ((mode == 2) && (line[i] == ' ')) {
-                double score = atof(line.substr(begin, i - begin).c_str());
-                if ((score > 0) && (logprobs)) score = log(score); //base e
-                scores.push_back(score);
-                begin = i + 1;
-            }
             if (line.substr(i,5) == " ||| ") {
                 if (mode == 0) {
                     source = line.substr(begin, i - begin);
                 } else if (mode == 1) {
                     target = line.substr(begin, i - begin);
+                } else if (mode == 2) {
+                    scores_s = line.substr(begin, i - begin);
                 }
                 begin = i+5;
                 mode++; 
             }
         }
-        if ((mode == 2) && ((size_t) begin < line.size())) {
-            double score = atof(line.substr(begin, line.size() - begin).c_str());
-            if ((score > 0) && (logprobs)) score = log(score); //base e
-            scores.push_back(score);            
+        //TODO: add scores
+        scores_s = scores_s + " "; 
+        begin = 0;
+        for (unsigned int i = 0; i < scores_s.size(); i++) {
+            if ((line[i] == ' ')  && (i > begin)) {
+                double score = atof(scores_s.substr(begin, i - begin).c_str());
+                if ((score > 0) && (logprobs)) score = log(score); //base e
+                scores.push_back(score);
+                begin = i + 1;                
+            }            
         }
         if ((!source.empty()) && (!target.empty()) && (!scores.empty())) {
             //add to phrasetable
