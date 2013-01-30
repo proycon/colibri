@@ -2724,6 +2724,12 @@ AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sour
         vector<double> scores;
         int begin = 0;        
         for (unsigned int i = 0; i < line.size(); i++) {
+            if ((mode == 2) && (line[i] == ' ')) {
+                double score = atof(line.substr(begin, i - begin).c_str());
+                if ((score > 0) && (logprobs)) score = log(score); //base e
+                scores.push_back(score);
+                begin = i + 1;
+            }
             if (line.substr(i,5) == " ||| ") {
                 if (mode == 0) {
                     source = line.substr(begin, i - begin);
@@ -2731,12 +2737,7 @@ AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sour
                     target = line.substr(begin, i - begin);
                 }
                 begin = i+5;
-                mode++;
-            } else if ((mode == 2) && (line[i] == ' ')) {
-                double score = atof(line.substr(begin, i - begin).c_str());
-                if ((score > 0) && (logprobs)) score = log(score); //base e
-                scores.push_back(score);
-                begin = i + 1;
+                mode++; 
             }
         }
         if ((mode == 2) && ((size_t) begin < line.size())) {
