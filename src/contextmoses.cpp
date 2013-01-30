@@ -564,7 +564,7 @@ int main( int argc, char *argv[] ) {
                                 const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
                                 if ((n == 1) && (key == NULL)) {
                                     //unknown word!! Add to phrasetable
-                                    *TMPTABLE << encodedngram << " ||| " << ngram << " ||| ";
+                                    *TMPTABLE << encodedngram << " ||| " << ngram->decode(*sourceclassdecoder) << " ||| ";
                                     for (int i = 0; i < scorecount; i++) {
                                         if (i > 0) *TMPTABLE << " ";
                                         *TMPTABLE << "0.001";
