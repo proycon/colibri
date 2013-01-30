@@ -2742,7 +2742,7 @@ AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sour
         begin = 0;
         cerr << "DEBUG: scores_s=" << scores_s << endl;       
         for (unsigned int i = 0; i < scores_s.size(); i++) {
-            if ((line[i] == ' ')  && (i > begin)) {
+            if ((scores_s[i] == ' ')  && (i > begin)) {
                 double score = atof(scores_s.substr(begin, i - begin).c_str());
                 cerr << scores_s.substr(begin, i - begin) << " -> " << score << endl;
                 if ((score > 0) && (logprobs)) score = log(score); //base e
