@@ -564,7 +564,7 @@ int main( int argc, char *argv[] ) {
                                 const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
                                 if ((n == 1) && (key == NULL)) {
                                     //unknown word!! Add to phrasetable
-                                    *TMPTABLE << encodedngram << " ||| " << encodedngram << " ||| ";
+                                    *TMPTABLE << encodedngram << " ||| " << ngram << " ||| ";
                                     for (int i = 0; i < scorecount; i++) {
                                         if (i > 0) *TMPTABLE << " ";
                                         *TMPTABLE << "0.001";
@@ -590,7 +590,6 @@ int main( int argc, char *argv[] ) {
                                     t_aligntargets translationoptions;
                                     
                                     //are there enough targets for this source to warrant a classifier?
-                                    if (alignmodel->alignmatrix[key].size() > scorecount) scorecount = alignmodel->alignmatrix[key].size(); 
                                     if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
                                         if (debug) cerr << "classifying" << endl;
                                         translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize);
@@ -601,6 +600,7 @@ int main( int argc, char *argv[] ) {
                                     
                                     //write intermediate phrasetable
                                     for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
+                                        if (iter->second.size() > scorecount) scorecount = iter->second.size();
                                         *TMPTABLE << encodedngram << " ||| " << iter->first->decode(*targetclassdecoder) << " ||| ";
                                         if (debug) cerr << "AFTER CLASSIFICATION: " << encodedngram << " ||| " << iter->first->decode(*targetclassdecoder) << " ||| ";
                                         for (vector<double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
