@@ -607,7 +607,7 @@ int main( int argc, char *argv[] ) {
                                     *TMPTABLE << endl;                                     
                                 } else if (key != NULL) {
                                     //match found!
-                                    if (debug) cerr << "found match (n=" << n << ")" << endl;
+                                    if (debug) cerr << "found match (n=" << (int) n << ")" << endl;
                                     const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);                                
 
                                     
