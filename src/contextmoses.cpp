@@ -586,8 +586,10 @@ int main( int argc, char *argv[] ) {
                             int n = 1;
                             do {
                                 found = false;
-                                EncNGram * ngram = line->slice(i,n);
+                                if (i + n > l) break;
                                 
+                                const EncNGram * ngram = line->slice(i,n);
+                                                                
                                 stringstream ss;
                                 for (int j = i; j < i+n; j++) {
                                     if (j > i) ss << " ";
@@ -608,7 +610,7 @@ int main( int argc, char *argv[] ) {
                                 } else if (key != NULL) {
                                     //match found!
                                     found = true;
-                                    if (debug) cerr << "found match (n=" << (int) n << ")" << endl;
+                                    if (debug) cerr << "found match (i=" << i << ",n=" << (int) n << "): " << ngram->decode(*sourceclassdecoder) << endl;
                                     const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);                                
 
                                     
