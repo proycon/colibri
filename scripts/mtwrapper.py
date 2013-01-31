@@ -2054,7 +2054,7 @@ WordPenalty: -0.5\n""")
         return True 
     
     def run_moses_classifiers(self):
-        if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m ' +  self.gets2tfilename('phrasetable') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS, "Testing classifiers and running context-aware moses decoder"): return False      
+        if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m ' +  self.gets2tfilename('phrasetable') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt', "Testing classifiers and running context-aware moses decoder"): return False      
         return True 
     
     def run_phrasal(self):
