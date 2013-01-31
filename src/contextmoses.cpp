@@ -637,8 +637,22 @@ int main( int argc, char *argv[] ) {
                                             if (debug) cerr << "classifying" << endl;
                                             translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize);
                                         } else {
-                                            if (debug) cerr << "not classifying, targetthreshold too low" << endl;
-                                            translationoptions = *reftranslationoptions;
+                                            if (debug) cerr << "bypassing classifier, targetthreshold too low" << endl;
+
+                                            for (t_aligntargets::iterator iter = reftranslationoptions->begin(); iter != reftranslationoptions->end(); iter++) {
+                                                const EncAnyGram * target = iter->first;
+                                                
+                                                if (scorehandling == SCOREHANDLING_REPLACE) {
+                                                    translationoptions[target].push_back((*reftranslationoptions)[target][0]); //fall back to first statistical value    
+                                                } else if (scorehandling == SCOREHANDLING_APPEND) {
+                                                    translationoptions[target] = (*reftranslationoptions)[target];
+                                                    translationoptions[target].push_back((*reftranslationoptions)[target][0]); //fall back to first statistical value
+                                                } else {
+                                                    translationoptions[target] = (*reftranslationoptions)[target];
+                                                }
+                                             }
+
+                                            
                                         }
                                     }
                                     
