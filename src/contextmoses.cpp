@@ -695,7 +695,7 @@ int main( int argc, char *argv[] ) {
                 *MOSESINI << "#Moses INI, produced by contextmoses\n";
                 *MOSESINI << "[input-factors]\n0\n\n";
                 *MOSESINI << "[mapping]\nT 0\n\n";
-                *MOSESINI << "[ttable-file]\n0 0 0 " << scorecount << " tmp.phasetable\n\n";
+                *MOSESINI << "[ttable-file]\n0 0 0 " << scorecount << " tmp.phrasetable\n\n";
                 *MOSESINI << "[lmodel-file]\n0 0 3 tmp.srilm\n\n";
                 *MOSESINI << "[ttable-limit]\n20\n\n";
                 *MOSESINI << "[weight-d]\n1\n\n";
