@@ -28,6 +28,7 @@ void usage() {
     cerr << " -N           N-Classifier Array, one classifier per pattern size group" << endl;
     cerr << " -X           Construction experts, one classifier per construction" << endl;
     cerr << " -M           Monolithic joined classifier, focus words are joined (-1)" << endl;
+    cerr << " -I           Ignore classifier (only allowed when testing)" << endl;
     cerr << "Scorehandling:" << endl;
     cerr << " -H " << endl;
 	cerr << "       weighed            Apply classifier score as weight to original scores (default)" << endl;
@@ -97,7 +98,7 @@ int main( int argc, char *argv[] ) {
     
     char c;    
     string s;
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:I",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -116,6 +117,9 @@ int main( int argc, char *argv[] ) {
             break;    
         case 'C':
             classifierid = optarg;
+            break;
+        case 'I':
+            mode = CLASSIFIERTYPE_IGNORE;
             break;
         case 'X':
             mode = CLASSIFIERTYPE_CONSTRUCTIONEXPERTS;
@@ -317,8 +321,11 @@ int main( int argc, char *argv[] ) {
             }
             
             cerr << "Initialising monolithic classifier" << endl;
-            classifiers = new MonoClassifier(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);  
+            classifiers = new MonoClassifier(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
             
+        } else if (mode == CLASSIFIERTYPE_IGNORE) {
+            cerr << "ERROR: Can't ignore classifier when training!" << endl;
+            exit(2);
         }
 		
 		cerr << "Extracting context on training set" << endl;
@@ -471,6 +478,9 @@ int main( int argc, char *argv[] ) {
             } else if (scorehandling == SCOREHANDLING_REPLACE) {
                 cerr << "replace" << endl;
                 scorecount = 5;
+            } else if (scorehandling == SCOREHANDLING_IGNORE) {
+                cerr << "ignore" << endl;
+                scorecount = 5;                
             }
             
             if (!testexists) {
@@ -503,11 +513,13 @@ int main( int argc, char *argv[] ) {
                     }
                     classifiers = (ClassifierInterface*) new MonoClassifier(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
                     classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
+                } else if (classifiertype == CLASSIFIERTYPE_IGNORE) {
+                    cerr << "Ignoring classifiers" << endl;                 
                 } else {
                     cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;
                     throw InternalError();            
                 }
-                if (debug) classifiers->enabledebug(2,sourceclassdecoder, targetclassdecoder); 
+                if (debug && classifiers != NULL) classifiers->enabledebug(2,sourceclassdecoder, targetclassdecoder); 
                 
                 /*
                 - read moses phrasetable or colibri alignment model
@@ -605,13 +617,19 @@ int main( int argc, char *argv[] ) {
                                     }
                                     t_aligntargets translationoptions;
                                     
-                                    //are there enough targets for this source to warrant a classifier?
-                                    if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
-                                        if (debug) cerr << "classifying" << endl;
-                                        translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize);
-                                    } else {
-                                        if (debug) cerr << "not classifying, targetthreshold too low" << endl;
+                                    
+                                    if (classifiers == NULL) {
+                                        //ignore classifiers
                                         translationoptions = *reftranslationoptions;
+                                    } else {
+                                        //are there enough targets for this source to warrant a classifier?
+                                        if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
+                                            if (debug) cerr << "classifying" << endl;
+                                            translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize);
+                                        } else {
+                                            if (debug) cerr << "not classifying, targetthreshold too low" << endl;
+                                            translationoptions = *reftranslationoptions;
+                                        }
                                     }
                                     
                                     //write intermediate phrasetable

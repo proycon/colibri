@@ -19,7 +19,8 @@ enum ClassifierType {
     CLASSIFIERTYPE_NONE = 0, 
     CLASSIFIERTYPE_NARRAY = 1, 
     CLASSIFIERTYPE_CONSTRUCTIONEXPERTS = 2,
-    CLASSIFIERTYPE_MONO = 3
+    CLASSIFIERTYPE_MONO = 3,
+    CLASSIFIERTYPE_IGNORE = 254,
 };
 
 ClassifierType getclassifierconf(const std::string & ID, int & contextthreshold, int & targetthreshold, bool & exemplarweight, bool & singlefocusfeature);
