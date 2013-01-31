@@ -581,9 +581,9 @@ int main( int argc, char *argv[] ) {
                         }
                         *TMPTEST << endl;
                                                 
-                        for (unsigned char i = 0; ((i < l) && (i < 256)); i++) {
+                        for (int i = 0; ((i < l) && (i < 256)); i++) {
                             bool found;
-                            unsigned char n = 1;
+                            int n = 1;
                             do {
                                 found = false;
                                 EncNGram * ngram = line->slice(i,n);
@@ -600,8 +600,8 @@ int main( int argc, char *argv[] ) {
                                 if ((n == 1) && (key == NULL)) {
                                     //unknown word!! Add to phrasetable
                                     *TMPTABLE << encodedngram << " ||| " << ngram->decode(*sourceclassdecoder) << " ||| ";
-                                    for (int i = 0; i < scorecount; i++) {
-                                        if (i > 0) *TMPTABLE << " ";
+                                    for (int j = 0; j < scorecount; j++) {
+                                        if (j > 0) *TMPTABLE << " ";
                                         *TMPTABLE << "0.001";
                                     }                 
                                     *TMPTABLE << endl;                                     
