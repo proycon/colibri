@@ -255,7 +255,7 @@ int main( int argc, char *argv[] ) {
             cerr << "Loading moses phrasetable " << mosesphrasetable << endl;
             alignmodel = new AlignmentModel(mosesphrasetable, sourceclassencoder, targetclassencoder);
             
-            if (debug) {
+            /*if (debug) {
                 cerr << "Outputting phrasetable"<< endl;
                 for (t_alignmatrix::iterator iter = alignmodel->alignmatrix.begin(); iter != alignmodel->alignmatrix.end(); iter++) {
                     const EncAnyGram * source = iter->first; 
@@ -268,7 +268,7 @@ int main( int argc, char *argv[] ) {
                         cerr << endl;
                     }
                 }
-            } 
+            }*/ 
             
         } else {
             cerr << "ERROR: No moses phrasetable (-m) or colibri alignment model (-d) specified!" << endl;
