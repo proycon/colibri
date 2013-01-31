@@ -480,7 +480,7 @@ int main( int argc, char *argv[] ) {
                 scorecount = 6;
             } else if (scorehandling == SCOREHANDLING_REPLACE) {
                 cerr << "replace" << endl;
-                scorecount = 5;
+                scorecount = 1;
             } else if (scorehandling == SCOREHANDLING_IGNORE) {
                 cerr << "ignore" << endl;
                 scorecount = 5;                
