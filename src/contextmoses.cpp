@@ -24,11 +24,11 @@ int addunknownwords(ClassEncoder * sourceclassencoder, ClassDecoder * sourceclas
 void usage() {
     cerr << "Training usage: contextmoses -f source-traindatafile -g target-traindatafile [-N|-X|-M] [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
     cerr << "Training usage: contextmoses -F testdatafile [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
-    cerr << "Classifier types: (pick one)" << endl;
+    cerr << "Classifier types: (pick one, for training only)" << endl;
     cerr << " -N           N-Classifier Array, one classifier per pattern size group" << endl;
     cerr << " -X           Construction experts, one classifier per construction" << endl;
     cerr << " -M           Monolithic joined classifier, focus words are joined (-1)" << endl;
-    cerr << " -I           Ignore classifier (only allowed when testing)" << endl;
+    cerr << " -I           Ignore classifier (this one can be specified when testing only, in which case the classifier will be ignored)" << endl;
     cerr << "Scorehandling:" << endl;
     cerr << " -H " << endl;
 	cerr << "       weighed            Apply classifier score as weight to original scores (default)" << endl;
@@ -74,7 +74,7 @@ int main( int argc, char *argv[] ) {
     
     
     ClassifierType mode = CLASSIFIERTYPE_NONE;
-    ScoreHandling scorehandling;
+    ScoreHandling scorehandling = SCOREHANDLING_WEIGHED;
     
     bool TRAIN = false;
     bool TEST = false;
@@ -213,12 +213,7 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
-    if (mode == CLASSIFIERTYPE_NONE) {
-        cerr << "ERROR: Choose a classifier type" << endl;
-        usage();
-        exit(2);
-    }
-    
+
     ClassDecoder * sourceclassdecoder = NULL;
     ClassDecoder * targetclassdecoder = NULL;
     ClassEncoder * sourceclassencoder = NULL;
@@ -291,6 +286,7 @@ int main( int argc, char *argv[] ) {
     ClassifierInterface * classifiers = NULL;
     
     if ((TRAIN) && (!trainfile.empty()) && (!targettrainfile.empty())) {
+    
         /*
         train) 
 	    - read moses phrasetable or colibri alignment model
@@ -300,6 +296,13 @@ int main( int argc, char *argv[] ) {
 			    - add to classifier training data
 	    - train classifiers	
 		*/
+		
+		if (mode == CLASSIFIERTYPE_NONE) {
+            cerr << "ERROR: Choose a classifier type" << endl;
+            usage();
+            exit(2);
+        }
+    
 		
 		AlignmentModel * contextalignmodel = new AlignmentModel((unsigned char) leftcontextsize, (unsigned char) rightcontextsize);
 		
@@ -499,27 +502,31 @@ int main( int argc, char *argv[] ) {
                 bool exemplarweights; //will be set by getclassifiertype
                 bool singlefocusfeature; //will be set by getclassifiertype
                 */        
-                ClassifierType classifiertype = getclassifierconf(classifierid, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
-                if (classifiertype == CLASSIFIERTYPE_NARRAY) {        
-                    classifiers = (ClassifierInterface*) new NClassifierArray(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
-                    classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
-                } else if (classifiertype == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
-                    classifiers = (ClassifierInterface*) new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
-                     classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);                    
-                } else if (classifiertype == CLASSIFIERTYPE_MONO) {
-                    if (!singlefocusfeature) {
-                        cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
-                        throw InternalError();
+                ClassifierType classifiertype;
+                if (mode != CLASSIFIERTYPE_IGNORE) {
+                    classifiertype = getclassifierconf(classifierid, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                    if (classifiertype == CLASSIFIERTYPE_NARRAY) {        
+                        classifiers = (ClassifierInterface*) new NClassifierArray(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                        classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
+                    } else if (classifiertype == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
+                        classifiers = (ClassifierInterface*) new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                         classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);                    
+                    } else if (classifiertype == CLASSIFIERTYPE_MONO) {
+                        if (!singlefocusfeature) {
+                            cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
+                            throw InternalError();
+                        }
+                        classifiers = (ClassifierInterface*) new MonoClassifier(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                        classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
+                    } else if (classifiertype == CLASSIFIERTYPE_IGNORE) {
+                        cerr << "Ignoring classifiers" << endl;                 
+                    } else {
+                        cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;
+                        throw InternalError();            
                     }
-                    classifiers = (ClassifierInterface*) new MonoClassifier(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
-                    classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
-                } else if (classifiertype == CLASSIFIERTYPE_IGNORE) {
-                    cerr << "Ignoring classifiers" << endl;                 
-                } else {
-                    cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;
-                    throw InternalError();            
-                }
-                if (debug && classifiers != NULL) classifiers->enabledebug(2,sourceclassdecoder, targetclassdecoder); 
+                    
+                    if (debug && classifiers != NULL) classifiers->enabledebug(2,sourceclassdecoder, targetclassdecoder);
+                } 
                 
                 /*
                 - read moses phrasetable or colibri alignment model

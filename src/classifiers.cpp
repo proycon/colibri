@@ -731,10 +731,11 @@ void writeclassifierconf(const string & ID, ClassifierType type, int contextthre
 
 
 ClassifierType getclassifierconf(const string & ID, int & contextthreshold, int & targetthreshold, bool & exemplarweight, bool & singlefocusfeature) {
+
     const string filename = ID + ".classifierconf";
     ifstream * f = new ifstream(ID + ".classifierconf");
     string input;
-    int type;
+    int type = 0;
     if (f->good()) {        
         *f >> input; 
         istringstream buffer(input);
@@ -751,6 +752,8 @@ ClassifierType getclassifierconf(const string & ID, int & contextthreshold, int 
         *f >> input;
         istringstream buffer5(input);
         buffer5 >> singlefocusfeature;
+    } else {
+        cerr << "ERROR: Classifier configuration " << ID << ".classifierconf not found! Did you forget to train the system?" << endl;
     }
     f->close();
     delete f;
