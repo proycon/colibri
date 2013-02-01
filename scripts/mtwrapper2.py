@@ -608,41 +608,6 @@ class MTWrapper(object):
                 self.log("Configuration update: BUILD_MOSES_PHRASETRANSTABLE automatically enabled because BUILD_MOSES_MEMSCORE is too",yellow)
                 self.BUILD_MOSES_PHRASETRANSTABLE = True  
             
-        if self.BUILD_MOSES_PHRASETRANSTABLE:
-            if not self.BUILD_MOSES_PHRASEEXTRACT:
-                self.log("Configuration update: BUILD_MOSES_PHRASEEXTRACT automatically enabled because BUILD_MOSES_PHRASECORE is too",yellow)
-                self.BUILD_MOSES_PHRASEEXTRACT = True        
-                
-        
-        if self.BUILD_MOSES_PHRASEEXTRACT:
-            if not self.BUILD_MOSES_SYMAL:
-                self.log("Configuration update: BUILD_MOSES_WORDTRANSTABLE automatically enabled because BUILD_MOSES_PHRASEEXTRACT is too",yellow)
-                self.BUILD_MOSES_WORDTRANSTABLE = True
-                
-        
-        if self.BUILD_MOSES_WORDTRANSTABLE:
-            if not self.BUILD_MOSES_SYMAL:
-                self.log("Configuration update: BUILD_MOSES_SYMAL automatically enabled because BUILD_MOSES_WORDTRANSTABLE is too",yellow)
-                self.BUILD_MOSES_SYMAL = True
-        
-                
-        if self.BUILD_MOSES_SYMAL:            
-            if not self.BUILD_GIZA_WORDALIGNMENT and not self.BUILD_PHRASAL_WORDALIGN:
-                self.log("Configuration update: BUILD_GIZA_WORDALIGNMENT automatically enabled because BUILD_MOSES_SYMAL is too",yellow)
-                self.BUILD_GIZA_WORDALIGNMENT = True
-            if not self.BUILD_GIZA_WORDALIGNMENT_REV and not self.BUILD_PHRASAL_WORDALIGN:
-                self.log("Configuration update: BUILD_GIZA_WORDALIGNMENT_REV automatically enabled because BUILD_MOSES_SYMAL is too",yellow)
-                self.BUILD_GIZA_WORDALIGNMENT_REV = True                            
-
-            if not self.EXEC_MOSES_GIZA2BAL or not os.path.isfile(self.EXEC_MOSES_GIZA2BAL):
-                sane = False
-                self.log("Dependency error: giza2bal.pl (provided by Moses) not found (EXEC_MOSES_GIZA2BAL=" + self.EXEC_MOSES_GIZA2BAL + ")",red)
-            
-            
-            if not self.EXEC_MOSES_SYMAL or not os.path.isfile(self.EXEC_MOSES_SYMAL):
-                sane = False
-                self.log("Dependency error: symal (provided by Moses) not found (EXEC_MOSES_SYMAL=" + self.EXEC_MOSES_SYMAL + ")",red)
-            
 
         if self.BUILD_COLIBRI_GIZA:
             if not self.BUILD_GIZA_WORDALIGNMENT:
@@ -658,12 +623,7 @@ class MTWrapper(object):
         if self.BUILD_GIZA_WORDALIGNMENT and (not self.EXEC_GIZA_PLAIN2SNT or not os.path.isfile(self.EXEC_GIZA_PLAIN2SNT)): 
             self.log("Dependency error: plain2snt.out (provided by GIZA++) not found (EXEC_GIZA_PLAIN2SNT=" + self.EXEC_GIZA_PLAIN2SNT + ")",red)            
             sane = False
-        if self.BUILD_GIZA_WORDALIGNMENT_COOC and (not self.EXEC_GIZA_SNT2COOC or not os.path.isfile(self.EXEC_GIZA_SNT2COOC)): 
-            self.log("Dependency error: snt2cooc.out (provided by GIZA++) not found (EXEC_GIZA_SNT2COOC=" + self.EXEC_GIZA_SNT2COOC + ")",red)            
-            sane = False                        
-        if self.BUILD_GIZA_WORDALIGNMENT and (not self.EXEC_GIZA_MKCLS or not os.path.isfile(self.EXEC_GIZA_MKCLS)): 
-            self.log("Dependency error: mkcls (provided by GIZA++) not found (EXEC_GIZA_MKCLS=" + self.EXEC_GIZA_MKCLS + ")",red)            
-            sane = False                            
+                                    
         if (self.BUILD_SRILM_TARGETMODEL or self.BUILD_SRILM_SOURCEMODEL) and (not self.EXEC_SRILM or not os.path.isfile(self.EXEC_SRILM)):
             self.log("Dependency error: ngram-count (provided by SRILM) not found (EXEC_SRILM=" + self.EXEC_SRILM + ")",red)
             sane = False
@@ -1475,10 +1435,10 @@ class MTWrapper(object):
         
         if self.BUILD_PHRASAL_PHRASEEXTRACT and not self.build_phrasal_phraseextract(): return False
         
-        if self.BUILD_MOSES_SYMAL and not self.build_moses_symal(): return False
-        if self.BUILD_MOSES_WORDTRANSTABLE and not self.build_moses_wordtranstable(): return False
-        if self.BUILD_MOSES_PHRASEEXTRACT and not self.build_moses_phraseextract(): return False
-        if self.BUILD_MOSES_PHRASETRANSTABLE and not self.build_moses_phrasescore(): return False
+        #if self.BUILD_MOSES_SYMAL and not self.build_moses_symal(): return False
+        #if self.BUILD_MOSES_WORDTRANSTABLE and not self.build_moses_wordtranstable(): return False
+        #if self.BUILD_MOSES_PHRASEEXTRACT and not self.build_moses_phraseextract(): return False
+        #if self.BUILD_MOSES_PHRASETRANSTABLE and not self.build_moses_phrasescore(): return False
         
         #TODO: Moses reordering model and generation model
         
