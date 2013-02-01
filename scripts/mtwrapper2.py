@@ -1707,9 +1707,9 @@ class MTWrapper(object):
         os.system("gunzip model/phrase-table.gz")
         os.symlink("model/phrase-table",self.gets2tfilename('phrasetable'))
         
-        os.symlink("giza." + self.SOURCELANG + "-" self.TARGETLANG + "/" + self.SOURCELANG + "-" + self.TARGETLANG + ".A3.final" ,self.gets2tfilename('A3.final'))
+        os.symlink("giza." + self.SOURCELANG + "-" + self.TARGETLANG + "/" + self.SOURCELANG + "-" + self.TARGETLANG + ".A3.final" ,self.gets2tfilename('A3.final'))
         
-        os.symlink("giza." + self.TARGETLANG + "-" self.SOURCELANG + "/" + self.TARGETLANG + "-" + self.SOURCELANG + ".A3.final" ,self.gett2sfilename('A3.final'))
+        os.symlink("giza." + self.TARGETLANG + "-" + self.SOURCELANG + "/" + self.TARGETLANG + "-" + self.SOURCELANG + ".A3.final" ,self.gett2sfilename('A3.final'))
         
         
         
