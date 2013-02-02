@@ -1702,7 +1702,7 @@ class MTWrapper(object):
             pass
         
         
-        if not self.runcmd(self.EXEC_MOSES_TRAINMODEL + ' -external-bin-dir ' + self.PATH_MOSES_EXTERNALBIN + " -root-dir . --corpus train --f " + self.SOURCELANG + " --e " + self.TARGETLANG + " --first-step " + str(firststep) + " --last-step " + str(laststep) + " --lm 0:3:" + self.gettargetfilename('srilm') ,"Training model (moses)", "model/phrase-table.gz", "moses.ini"): return False
+        if not self.runcmd(self.EXEC_MOSES_TRAINMODEL + ' -external-bin-dir ' + self.PATH_MOSES_EXTERNALBIN + " -root-dir . --corpus train --f " + self.SOURCELANG + " --e " + self.TARGETLANG + " --first-step " + str(firststep) + " --last-step " + str(laststep) + " --lm 0:3:" + self.gettargetfilename('srilm') ,"Training model (moses)", "model/phrase-table.gz", "model/moses.ini"): return False
         
         #os.system("gunzip model/phrase-table.gz")
         #if os.path.exists(self.gets2tfilename('phrasetable')): os.unlink(self.gets2tfilename('phrasetable'))
@@ -1995,7 +1995,7 @@ WordPenalty: -0.5\n""")
 
     
     def run_moses(self):
-        if not self.runcmd(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini < input.txt > output.txt','Moses Decoder'): return False
+        if not self.runcmd(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini < input.txt > output.txt','Moses Decoder'): return False
         return True 
     
     def run_moses_classifiers(self):
