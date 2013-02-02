@@ -405,7 +405,7 @@ class MTWrapper(object):
             elif not os.path.exists(self.WORKDIR + '/model/moses.ini'):
                 self.log("Error: No Moses configuration found. Did you forget to train the system first?",red,True)
                 return False
-            elif not os.path.exists(self.gets2tfilename('phrasetable')) and not not os.path.exists('model/' + self.gets2tfilename('phrase-table.gz')):
+            elif not os.path.exists(self.gets2tfilename('phrasetable')) and not not os.path.exists('model/' + self.gets2tfilename('phrase-table')):
                 self.log("Error: No Moses phrasetable found ("+ self.gets2tfilename('phrasetable')+") . Did you forget to train the system first?",red,True)
                 return False
         elif self.BUILD_PBMBMT:
@@ -1702,10 +1702,14 @@ class MTWrapper(object):
             pass
         
         
-        if not self.runcmd(self.EXEC_MOSES_TRAINMODEL + ' -external-bin-dir ' + self.PATH_MOSES_EXTERNALBIN + " -root-dir . --corpus train --f " + self.SOURCELANG + " --e " + self.TARGETLANG + " --first-step " + str(firststep) + " --last-step " + str(laststep) + " --lm 0:3:" + self.gettargetfilename('srilm') ,"Training model (moses)", "model/phrase-table.gz", "model/moses.ini"): return False
+        if not os.path.exists("model/phrase-table"):
+            if not self.runcmd(self.EXEC_MOSES_TRAINMODEL + ' -external-bin-dir ' + self.PATH_MOSES_EXTERNALBIN + " -root-dir . --corpus train --f " + self.SOURCELANG + " --e " + self.TARGETLANG + " --first-step " + str(firststep) + " --last-step " + str(laststep) + " --lm 0:3:" + self.gettargetfilename('srilm') ,"Training model (moses)", "model/phrase-table.gz", "model/moses.ini"): return False
+            os.system("gunzip -f model/phrase-table.gz")
+            os.system("sed -i s/phrase-table\.gz/phrase-table model/moses.ini")
+        else:
+            print >>sys.stderr,yellow("Skipping training model (moses), phrasetable already exists")   
         
-        os.system("gunzip -f model/phrase-table.gz")
-        os.system("sed -i s/phrase-table\.gz/phrase-table model/moses.ini")
+        
         
         #if os.path.exists(self.gets2tfilename('phrasetable')): os.unlink(self.gets2tfilename('phrasetable'))
         
