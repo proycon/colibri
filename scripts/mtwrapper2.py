@@ -2319,7 +2319,7 @@ WordPenalty: -0.5\n""")
         #    if dir:
         #        f.write("sys.path.append('" + dir + "')\n")
         f.write("\n")
-        f.write("from mtwrapper import MTWrapper\n")    
+        f.write("from mtwrapper2 import MTWrapper\n")    
         f.write("mtwrapper = MTWrapper(")
         skip = {}
         for source in self.sources:
