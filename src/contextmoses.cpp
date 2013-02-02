@@ -698,23 +698,7 @@ int main( int argc, char *argv[] ) {
                 TMPTABLE->close();
                 TMPTEST->close(); 
                 
-                ofstream * MOSESINI = new ofstream("moses.ini");
-                *MOSESINI << "#Moses INI, produced by contextmoses\n";
-                *MOSESINI << "[input-factors]\n0\n\n";
-                *MOSESINI << "[mapping]\nT 0\n\n";
-                *MOSESINI << "[ttable-file]\n0 0 0 " << scorecount << " tmp.phrasetable\n\n";
-                *MOSESINI << "[lmodel-file]\n0 0 3 tmp.srilm\n\n";
-                *MOSESINI << "[ttable-limit]\n20\n\n";
-                *MOSESINI << "[weight-d]\n1\n\n";
-                *MOSESINI << "[weight-l]\n1\n\n";
-                *MOSESINI << "[weight-t]\n";
-                for (int i = 0; i < scorecount; i++) {                
-                    *MOSESINI << "1\n";
-                }            
-                *MOSESINI << "\n";
-                *MOSESINI << "[weight-w]\n1\n";
-                MOSESINI->close();                
-
+                system("makecontextmosesini.py " + scorecount + " > model/contextmoses.ini");
             } else {
                 cerr << "Classifier already tested (tmp.phrasetable and tmp.txt exist), not overwriting, proceeding with decoding..." << endl;
             }
@@ -727,7 +711,7 @@ int main( int argc, char *argv[] ) {
             } */       
 
             stringstream cmd;
-            cmd << "moses -config moses.ini < tmp.txt";          
+            cmd << "moses -config model/contextmoses.ini < tmp.txt";          
             cerr << cmd.str() << endl;  
             system(cmd.str().c_str());
 
