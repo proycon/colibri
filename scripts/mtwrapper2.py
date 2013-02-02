@@ -1684,16 +1684,12 @@ class MTWrapper(object):
     def build_moses(self):
         
         steps = []
-        if self.BUILD_GIZA_WORDALIGNMENT:
-            steps.append(1)
-        else:
-            steps.append(3)
         if self.BUILD_MOSES_PHRASETRANSTABLE:
             steps.append(8)
         if self.BUILD_MOSES:
             steps.append(9)
         
-        firststep = min(steps)
+        firststep = 1
         laststep = max(steps)
         
         try: 
