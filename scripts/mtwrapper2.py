@@ -2010,7 +2010,7 @@ WordPenalty: -0.5\n""")
     def run_moses_classifiers(self):
         if not os.path.exists('tmp.srilm'):
             os.symlink(self.gettargetfilename('srilm'), 'tmp.srilm')
-        if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m ' +  self.gets2tfilename('phrasetable') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt', "Testing classifiers and running context-aware moses decoder"): return False      
+        if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt', "Testing classifiers and running context-aware moses decoder"): return False      
         return True 
     
     def run_phrasal(self):
