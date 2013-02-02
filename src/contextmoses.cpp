@@ -260,7 +260,7 @@ int main( int argc, char *argv[] ) {
             sourceclassencoder = new ClassEncoder(sourceclassfile);
 
             cerr << "Loading moses phrasetable " << mosesphrasetable << endl;
-            alignmodel = new AlignmentModel(mosesphrasetable, sourceclassencoder, targetclassencoder, false, ptsfield);
+            alignmodel = new AlignmentModel(mosesphrasetable, sourceclassencoder, targetclassencoder, true, ptsfield);
             
             /*if (debug) {
                 cerr << "Outputting phrasetable"<< endl;
