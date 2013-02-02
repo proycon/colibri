@@ -1693,11 +1693,11 @@ class MTWrapper(object):
         laststep = max(steps)
         
         try: 
-            os.symlink(self.getsourcefilename('.txt') ,  "train." + self.SOURCELANG)
+            os.symlink(self.getsourcefilename('txt') ,  "train." + self.SOURCELANG)
         except: 
             pass
         try:
-            os.symlink(self.gettargetfilename('.txt') ,  "train." + self.TARGETLANG)
+            os.symlink(self.gettargetfilename('txt') ,  "train." + self.TARGETLANG)
         except:            
             pass
         
