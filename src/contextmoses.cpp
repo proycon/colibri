@@ -47,6 +47,8 @@ void usage() {
     cerr << " -O [options] Timbl options" << endl;
     cerr << " -1           Represent the focus feature as a single entity, rather than individual tokens" << endl;
     cerr << " -D           Enable debug" << endl;
+    cerr << " -p [int]     Field of the score vector in which the forward probability p(t|s) is stored (default: 3)" << endl;
+    
     
     //cerr << "\t-C number                 Classifier mode" << endl;
     //cerr << "\t   1 - Local context with Classifier Array" << endl;
@@ -96,9 +98,11 @@ int main( int argc, char *argv[] ) {
     
     bool timbloptionsset = false;
     
+    int ptsfield = 3; //1-indexed
+    
     char c;    
     string s;
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:I",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -180,6 +184,9 @@ int main( int argc, char *argv[] ) {
             break;
         case 'r':
             rightcontextsize = atoi(optarg);
+            break;
+        case 'p':
+            ptsfield = atoi(optarg);
             break;
         case 'D':
             debug = true;

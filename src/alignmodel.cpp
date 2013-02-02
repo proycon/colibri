@@ -2507,12 +2507,13 @@ void AlignmentModel::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel, 
 }
 
 
-AlignmentModel::AlignmentModel(const string & filename, bool logprobs, bool allowskipgrams, const int bestn, bool DEBUG) {
+AlignmentModel::AlignmentModel(const string & filename, bool logprobs, int ptsfield, bool allowskipgrams, const int bestn, bool DEBUG) {
     this->DEBUG = DEBUG;
     sourcemodel = NULL;
     targetmodel = NULL; 
     this->debug_sourceclassdecoder = NULL;
     this->debug_targetclassdecoder = NULL;
+    this->ptsfield = ptsfield;
     load(filename,logprobs, allowskipgrams, bestn);
 }
 
@@ -2699,13 +2700,14 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
     f.close();
 }
 
-AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs, bool DEBUG) {
+AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs, int ptsfield, bool DEBUG) {
     //load from moses-style phrasetable file
     this->DEBUG = DEBUG;
     sourcemodel = NULL;
     targetmodel = NULL;
     this->debug_sourceclassdecoder = NULL;
     this->debug_targetclassdecoder = NULL;    
+    this->ptsfield = ptsfield
     leftsourcecontext = rightsourcecontext = 0;
 		
     ifstream f;

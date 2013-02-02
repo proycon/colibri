@@ -39,7 +39,9 @@ typedef std::unordered_map<const EncAnyGram*, std::unordered_set<const EncAnyGra
 class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
    protected:
     bool DEBUG;
+    
    public:
+    int ptsfield;
     //std::unordered_set<EncNGram> sourcengrams;
     //std::unordered_set<EncSkipGram> sourceskipgrams;
     std::unordered_set<EncNGram> targetngrams;
@@ -58,14 +60,14 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     //Initialise new alignment model from pattern models (actual computation needs to be invoked explicitly, different types possible)    
     AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePatternModel * targetmodel, unsigned char leftsourcecontext=0, unsigned char rightsourcecontext=0, const bool DEBUG = false); //prepare to compute on the basis of two pattern models
 
-    AlignmentModel(unsigned char leftsourcecontext=0, unsigned char rightsourcecontext=0, const bool DEBUG = false); //prepare to compute without pattern models (heuristic giza approach), or empty model
+    AlignmentModel(unsigned char leftsourcecontext=0, unsigned char rightsourcecontext=0, int ptsfield = 1, const bool DEBUG = false); //prepare to compute without pattern models (heuristic giza approach), or empty model
 
     //Load alignment model from (binary) file
-    AlignmentModel(const std::string & filename, bool logprobs = true, bool allowskipgrams = true, const int bestn = 0, bool DEBUG = false); //load from binary file
+    AlignmentModel(const std::string & filename, bool logprobs = true, int ptsfield = 1, bool allowskipgrams = true, const int bestn = 0, bool DEBUG = false); //load from binary file
     void load(const std::string & filename, bool logprobs = true, bool allowskipgrams = true, const int bestn = 0);
         
     //Load alignment model from Moses phrasetable (text)
-    AlignmentModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs= true, bool DEBUG = false); //load from Moses text file
+    AlignmentModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs= true, int ptsfield = 3, bool DEBUG = false); //load from Moses text file
     
     //create on the basis of two alignment models (intersection), scores from both models will be represented in the score array (e.g p(t|s) and p(s|t))
     AlignmentModel(const std::string & s2tfilename, const std::string & t2sfilename, const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0, bool DEBUG = false); //create on the basis of two alignment models, will generate two scores: p(t|s) and p(s|t) 
