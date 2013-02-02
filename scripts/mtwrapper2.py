@@ -1705,7 +1705,7 @@ class MTWrapper(object):
         if not os.path.exists("model/phrase-table"):
             if not self.runcmd(self.EXEC_MOSES_TRAINMODEL + ' -external-bin-dir ' + self.PATH_MOSES_EXTERNALBIN + " -root-dir . --corpus train --f " + self.SOURCELANG + " --e " + self.TARGETLANG + " --first-step " + str(firststep) + " --last-step " + str(laststep) + " --lm 0:3:" + self.gettargetfilename('srilm') ,"Training model (moses)", "model/phrase-table.gz", "model/moses.ini"): return False
             os.system("gunzip -f model/phrase-table.gz")
-            os.system("sed -i s/phrase-table\.gz/phrase-table model/moses.ini")
+            os.system("sed -i s/phrase-table\.gz/phrase-table/ model/moses.ini")
         else:
             print >>sys.stderr,bold(yellow("Skipping training model (moses), phrasetable already exists"))   
         
