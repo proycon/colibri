@@ -1707,7 +1707,7 @@ class MTWrapper(object):
             os.system("gunzip -f model/phrase-table.gz")
             os.system("sed -i s/phrase-table\.gz/phrase-table model/moses.ini")
         else:
-            print >>sys.stderr,yellow("Skipping training model (moses), phrasetable already exists")   
+            print >>sys.stderr,bold(yellow("Skipping training model (moses), phrasetable already exists"))   
         
         
         
@@ -1768,7 +1768,7 @@ class MTWrapper(object):
         if not ('-I' in self.MOSES_CLASSIFIER_OPTIONS):
             if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('clsenc') + ' -g ' + self.gettargetfilename('clsenc') + ' -m ' +  'model/phrase-table' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS, "Training classifiers for context-aware moses"): return False
         else:        
-            print >>sys.stderr, yellow("Not training classifiers because -I (ignore) is set in options")
+            print >>sys.stderr, bold(yellow("Not training classifiers because -I (ignore) is set in options"))
         
         return True
     
