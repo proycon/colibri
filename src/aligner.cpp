@@ -572,7 +572,7 @@ int main( int argc, char *argv[] ) {
 	        alignmodel->load(modelfile, false, DOSKIPGRAMS, bestn);	    
 	        
         } else {
-            alignmodel = new AlignmentModel(modelfile, false, DOSKIPGRAMS, bestn, DODEBUG);            
+            alignmodel = new AlignmentModel(modelfile, false, 1, DOSKIPGRAMS, bestn, DODEBUG);            
         }  
         cerr << "\tLoaded " << alignmodel->size() << " source patterns." << endl;	        
         
@@ -582,7 +582,7 @@ int main( int argc, char *argv[] ) {
 	            reversealignmodel = new AlignmentModel(targetmodel,sourcemodel, 0,0, DODEBUG);
 	            reversealignmodel->load(modelfile, false, DOSKIPGRAMS, bestn);	    	        
             } else {
-                reversealignmodel = new AlignmentModel(invmodelfile, false, DOSKIPGRAMS, bestn, DODEBUG); 
+                reversealignmodel = new AlignmentModel(invmodelfile, false, 1, DOSKIPGRAMS, bestn, DODEBUG); 
             }     
             cerr << "\tLoaded " << reversealignmodel->size() << " source patterns for inverse model" << endl;
         }

@@ -18,12 +18,13 @@ AlignmentModel::AlignmentModel(SelectivePatternModel * sourcemodel, SelectivePat
 
 
 
-AlignmentModel::AlignmentModel(unsigned char leftsourcecontext, unsigned char rightsourcecontext, bool DEBUG) {    
+AlignmentModel::AlignmentModel(unsigned char leftsourcecontext, unsigned char rightsourcecontext, int ptsfield, bool DEBUG) {    
     this->DEBUG = DEBUG;
     this->leftsourcecontext = leftsourcecontext;
     this->rightsourcecontext = rightsourcecontext;     
     this->debug_sourceclassdecoder = NULL;
     this->debug_targetclassdecoder = NULL;
+    this->ptsfield = ptsfield;
 }
 
 void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthreshold, int bestn) {
@@ -2707,7 +2708,7 @@ AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sour
     targetmodel = NULL;
     this->debug_sourceclassdecoder = NULL;
     this->debug_targetclassdecoder = NULL;    
-    this->ptsfield = ptsfield
+    this->ptsfield = ptsfield;
     leftsourcecontext = rightsourcecontext = 0;
 		
     ifstream f;

@@ -251,7 +251,7 @@ int main( int argc, char *argv[] ) {
         
         if (!alignmodelfile.empty()) {
             cerr << "Loading alignment model " << alignmodelfile << endl;
-            alignmodel = new AlignmentModel(alignmodelfile,false,true,0, false);
+            alignmodel = new AlignmentModel(alignmodelfile,false,ptsfield, true,0, false);
         } else if (!mosesphrasetable.empty()) {
 	        cerr << "Loading target class encoder " << targetclassfile << endl;
 	        targetclassencoder = new ClassEncoder(targetclassfile);  
@@ -260,7 +260,7 @@ int main( int argc, char *argv[] ) {
             sourceclassencoder = new ClassEncoder(sourceclassfile);
 
             cerr << "Loading moses phrasetable " << mosesphrasetable << endl;
-            alignmodel = new AlignmentModel(mosesphrasetable, sourceclassencoder, targetclassencoder);
+            alignmodel = new AlignmentModel(mosesphrasetable, sourceclassencoder, targetclassencoder, false, ptsfield);
             
             /*if (debug) {
                 cerr << "Outputting phrasetable"<< endl;
@@ -311,7 +311,7 @@ int main( int argc, char *argv[] ) {
         }
     
 		
-		AlignmentModel * contextalignmodel = new AlignmentModel((unsigned char) leftcontextsize, (unsigned char) rightcontextsize);
+		AlignmentModel * contextalignmodel = new AlignmentModel((unsigned char) leftcontextsize, (unsigned char) rightcontextsize, ptsfield);
 		
 		if (mode == CLASSIFIERTYPE_NARRAY) {
     
@@ -698,7 +698,10 @@ int main( int argc, char *argv[] ) {
                 TMPTABLE->close();
                 TMPTEST->close(); 
                 
-                system("makecontextmosesini.py " + scorecount + " > model/contextmoses.ini");
+                stringstream cmd;
+                cmd << "makecontextmosesini.py " << scorecount << " > model/contextmoses.ini";          
+                cerr << cmd.str() << endl; 
+                system(cmd.str().c_str());
             } else {
                 cerr << "Classifier already tested (tmp.phrasetable and tmp.txt exist), not overwriting, proceeding with decoding..." << endl;
             }
