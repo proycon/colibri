@@ -402,7 +402,7 @@ class MTWrapper(object):
             if not self.EXEC_MOSES or not os.path.isfile(self.EXEC_MOSES):
                 self.log("Error: Moses not found! (" + self.EXEC_MOSES+")",red,True)
                 return False
-            elif not os.path.exists(self.WORKDIR + '/moses.ini'):
+            elif not os.path.exists(self.WORKDIR + '/model/moses.ini'):
                 self.log("Error: No Moses configuration found. Did you forget to train the system first?",red,True)
                 return False
             elif not os.path.exists(self.gets2tfilename('phrasetable')) and not not os.path.exists('model/' + self.gets2tfilename('phrase-table.gz')):
