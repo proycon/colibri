@@ -136,7 +136,7 @@ class MTWrapper(object):
             #('BUILD_MOSES_SYMAL', False,'Symmetrise word alignments'),
             #('BUILD_MOSES_WORDTRANSTABLE', False,'Build lexical translation table'),
             #('BUILD_MOSES_PHRASEEXTRACT', False,'Extract phrases'),            
-            #('BUILD_MOSES_PHRASETRANSTABLE', False,'Build phrase translation table'),
+            ('BUILD_MOSES_PHRASETRANSTABLE', False,'Build phrase translation table'),
             ('BUILD_MOSES_CLASSIFIERS', False, 'Use context-aware classifiers. Set COLIBRI_CLASSIFIER_OPTIONS to select a classifier method.'),
             ('BUILD_MOSES_MEMSCORE', False,'Use memscore to score phrases rather than the default phrase-extract scorer'),            
             ('BUILD_MOSES', False,'Build moses configuration, necessary for decoding using moses'),
