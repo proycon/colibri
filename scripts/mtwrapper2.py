@@ -1724,34 +1724,35 @@ class MTWrapper(object):
         
         
         
-        outputfiles = ['moses.ini']        
-        if not self.header('Build Moses Configuration',*outputfiles): return True
-        if self.BUILD_MOSES:
-            f = open(self.WORKDIR + '/moses.ini','w')
-            f.write('#Moses INI, produced by mtwrapper.py\n')
-            f.write('[input-factors]\n')
-            f.write('0\n\n')
-            f.write('[mapping]\n')
-            f.write('T 0\n\n') 
-            f.write('# translation tables: source-factors, target-factors, number of scores, file\n')
-            f.write('[ttable-file]\n')
-            if self.BUILD_MOSES_PHRASETRANSTABLE:
-                f.write('0 0 0 5 ' + self.gets2tfilename('phrasetable') + '\n\n')
-            elif self.BUILD_COLIBRI_MOSESPHRASETABLE:
-                f.write('0 0 0 2 ' + self.gets2tfilename('phrasetable') + '\n\n')
-            f.write('[lmodel-file]\n')
-            if self.BUILD_SRILM_TARGETMODEL:
-                f.write('0 0 ' + str(self.SRILM_ORDER) + ' ' + self.gettargetfilename('srilm') + '\n\n')
-            f.write('[ttable-limit]\n20\n\n')
-            f.write('[weight-d]\n1\n\n')
-            f.write('[weight-l]\n1\n\n')                
-            if self.BUILD_MOSES_PHRASETRANSTABLE:
-                f.write('[weight-t]\n1\n1\n1\n\n')
-            elif self.BUILD_COLIBRI_MOSESPHRASETABLE: 
-                f.write('[weight-t]\n1\n1\n1\n1\n1\n\n')
-            f.write('[weight-w]\n0\n\n')        
-            f.close()
-        return self.footer('Build Moses Configuration', 0, *outputfiles)
+        # outputfiles = ['moses.ini']        
+        # if not self.header('Build Moses Configuration',*outputfiles): return True
+        # if self.BUILD_MOSES:
+            # f = open(self.WORKDIR + '/moses.ini','w')
+            # f.write('#Moses INI, produced by mtwrapper.py\n')
+            # f.write('[input-factors]\n')
+            # f.write('0\n\n')
+            # f.write('[mapping]\n')
+            # f.write('T 0\n\n') 
+            # f.write('# translation tables: source-factors, target-factors, number of scores, file\n')
+            # f.write('[ttable-file]\n')
+            # if self.BUILD_MOSES_PHRASETRANSTABLE:
+                # f.write('0 0 0 5 ' + self.gets2tfilename('phrasetable') + '\n\n')
+            # elif self.BUILD_COLIBRI_MOSESPHRASETABLE:
+                # f.write('0 0 0 2 ' + self.gets2tfilename('phrasetable') + '\n\n')
+            # f.write('[lmodel-file]\n')
+            # if self.BUILD_SRILM_TARGETMODEL:
+                # f.write('0 0 ' + str(self.SRILM_ORDER) + ' ' + self.gettargetfilename('srilm') + '\n\n')
+            # f.write('[ttable-limit]\n20\n\n')
+            # f.write('[weight-d]\n1\n\n')
+            # f.write('[weight-l]\n1\n\n')                
+            # if self.BUILD_MOSES_PHRASETRANSTABLE:
+                # f.write('[weight-t]\n1\n1\n1\n\n')
+            # elif self.BUILD_COLIBRI_MOSESPHRASETABLE: 
+                # f.write('[weight-t]\n1\n1\n1\n1\n1\n\n')
+            # f.write('[weight-w]\n0\n\n')        
+            # f.close()
+        # return self.footer('Build Moses Configuration', 0, *outputfiles)
+        return True
 
     def build_moses_classifiers(self):
         if not self.runcmd(self.EXEC_COLIBRI_CLASSENCODE + ' -f ' + self.getsourcefilename('txt'), "Encoding source corpus for Colibri",self.getsourcefilename('cls'), self.getsourcefilename('clsenc') ): return False
