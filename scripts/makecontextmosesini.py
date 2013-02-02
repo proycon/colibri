@@ -24,7 +24,7 @@ intweight = False
 for line in open("model/moses.ini"):
     line = line.strip()
     if not line: intweight = False
-    if line[-16:] == '/phrase-table.gz':
+    if line[-13:] == '/phrase-table':
         d = os.path.dirname(line.split(' ')[-1])
         if d[-5:] == "model": d = d[:-5]
         print "0 0 0 " + str(scorecount) + " " + d + "/tmp.phrasetable"
