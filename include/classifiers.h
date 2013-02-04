@@ -63,8 +63,8 @@ class Classifier {
     void load();
     void unload();
     void remove();
-    t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions );
-    t_aligntargets classify(std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);     
+    t_aligntargets classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed );
+    t_aligntargets classify(std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed);     
 };
 
 
@@ -109,10 +109,10 @@ class ClassifierInterface {
         virtual void add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) =0;
         virtual void train(const std::string & timbloptions) =0;
         virtual void load( const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG =0) =0;
-        virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling); //decoder will call this
-        virtual t_aligntargets classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize);
-        virtual t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0;
-        virtual t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) =0; 
+        virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, int & changecount); //decoder will call this
+        virtual t_aligntargets classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize, int & changecount);
+        virtual t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed) =0;
+        virtual t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed) =0; 
         virtual void reset() {};         
 };
 
@@ -127,8 +127,8 @@ class MonoClassifier: public ClassifierInterface {
         void add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);
         void train(const std::string & timbloptions);     
         void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG=0);
-        t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);
-        t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);          
+        t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoption, bool & changeds);
+        t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed);          
         AlignmentModel * classify(AlignmentModel * original);
 };
 
@@ -141,8 +141,8 @@ class NClassifierArray: public ClassifierInterface {
         void add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);
         void train(const std::string & timbloptions);     
         void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG=0);
-        t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);
-        t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);          
+        t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed);
+        t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed);          
         AlignmentModel * classify(AlignmentModel * original);
 };
 
@@ -156,8 +156,8 @@ class ConstructionExperts: public ClassifierInterface {
         void add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);
         void train(const std::string & timbloptions);     
         void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG=0);
-        t_aligntargets classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);
-        t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions);          
+        t_aligntargets classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed);
+        t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed);          
         AlignmentModel * classify(AlignmentModel * original);
         void reset();
 };

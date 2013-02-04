@@ -572,6 +572,11 @@ int main( int argc, char *argv[] ) {
                 unsigned char buffer[8192]; 
                 int size;
                 int sentence = 0;
+                
+                unsigned int sourcefragmentcount = 0;
+                int unknowncount = 0;
+                int changedcount = 0;
+                
                 while (getline(*IN, input)) {        
                     if (input.length() > 0) {
                         sentence++;                    
@@ -613,6 +618,8 @@ int main( int argc, char *argv[] ) {
                                 const EncAnyGram * key = alignmodel->getsourcekey((const EncAnyGram *) ngram);
                                 if ((n == 1) && (key == NULL)) {
                                     //unknown word!! Add to phrasetable
+                                    unknowncount += 1;
+                                    
                                     *TMPTABLE << encodedngram << " ||| " << ngram->decode(*sourceclassdecoder) << " ||| ";
                                     for (int j = 0; j < scorecount; j++) {
                                         if (j > 0) *TMPTABLE << " ";
@@ -621,6 +628,8 @@ int main( int argc, char *argv[] ) {
                                     *TMPTABLE << endl;                                     
                                 } else if (key != NULL) {
                                     //match found!
+                                    sourcefragmentcount += 1;
+                                    
                                     found = true;
                                     if (debug) cerr << "found match (i=" << i << ",n=" << (int) n << "): " << ngram->decode(*sourceclassdecoder) << endl;
                                     const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);                                
@@ -647,7 +656,7 @@ int main( int argc, char *argv[] ) {
                                         //are there enough targets for this source to warrant a classifier?
                                         if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
                                             if (debug) cerr << "classifying" << endl;
-                                            translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize);
+                                            translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize, changedcount);
                                         } else {
                                             if (debug) cerr << "bypassing classifier, targetthreshold too low" << endl;
 
@@ -702,6 +711,13 @@ int main( int argc, char *argv[] ) {
 
                 TMPTABLE->close();
                 TMPTEST->close(); 
+                
+                const double changedratio = changedcount / (sentence + 1);
+                cerr << "Statistics:" << endl;
+                cerr << "\tSentences: " << sentence << endl;
+                cerr << "\tSource fragments: " << sourcefragmentcount +unknowncount << endl;
+                cerr << "\tUnknown word instances: " << unknowncount << " " << ( (float) changedcount / (sourcefragmentcount+unknowncount)) * 100 << '%' << endl;
+                cerr << "\tSource fragments affected by classifier outcome: " << changedcount << " " << ( (float) changedcount / sourcefragmentcount) * 100 << '%' << endl;
                 
                 stringstream cmd;
                 cmd << "makecontextmosesini.py " << scorecount << " > model/contextmoses.ini";          

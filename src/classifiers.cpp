@@ -184,17 +184,17 @@ void Classifier::train(const string & timbloptions) {
 
 
 
-t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed) {
     if (DEBUG) cerr << "\t\t\tConverting classifier input to strings..." << endl;
     vector<string> featurevector_s;
     for (vector<const EncAnyGram *>::const_iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         const EncAnyGram * anygram = *iter;
         featurevector_s.push_back(anygram->decode(*sourceclassdecoder));        
     }
-    return classify(featurevector_s, scorehandling, originaltranslationoptions);
+    return classify(featurevector_s, scorehandling, originaltranslationoptions, changed);
 }
 
-t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+t_aligntargets Classifier::classify(std::vector<string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed) {
     /*
 concerning p(t|s) only
 
@@ -254,8 +254,7 @@ concerning p(t|s) only
     //get amount of scores:
     const double epsilon = -900;
     int scorecount = 0;
-    
-    
+
     
     if (scorehandling != SCOREHANDLING_REPLACE) {
         //how long is the score vector?
@@ -295,7 +294,7 @@ concerning p(t|s) only
                 if (DEBUG) cerr << " [" << result[target][ptsfield-1] << "+" << weight << "=" << result[target][ptsfield-1] + weight << "] ";
                 cis_oldtotal += pow(exp(1),result[target][ptsfield-1]); //counting for normalisation later ..prior
                 result[target][ptsfield-1] = result[target][ptsfield-1] + weight;
-                cis_total += pow(exp(1), result[target][ptsfield-1]);   //counting for normalisation later ..post
+                cis_total += pow(exp(1), result[target][ptsfield-1]);   //counting for normalisation later ..post                
             //}                        
         }
         if ((scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_REPLACE)) {
@@ -327,10 +326,18 @@ concerning p(t|s) only
             } else {
                 //translation option is in classifier as well: C | S
                 if (scorehandling == SCOREHANDLING_WEIGHED) {
-                    //renormalise within C | S only, S remains as is                    
-                    result[target][ptsfield-1] = log( pow(exp(1), result[target][ptsfield-1]) * ((float) cis_oldtotal/cis_total) ); 
+                    //renormalise within C | S only, S remains as is
+                    const double newprob = log( pow(exp(1), result[target][ptsfield-1]) * ((float) cis_oldtotal/cis_total) );
+                    if (result[target][ptsfield-1] != newprob) {                    
+                        result[target][ptsfield-1] = newprob;
+                        changed = true;                        
+                    }
                 } else if (scorehandling == SCOREHANDLING_FILTEREDWEIGHED) {
-                    result[target][ptsfield-1] = log( pow(exp(1), result[target][ptsfield-1]) * cis_oldtotal) ; 
+                    const double newprob = result[target][ptsfield-1] = log( pow(exp(1), result[target][ptsfield-1]) * cis_oldtotal) ;
+                    if (result[target][ptsfield-1] != newprob) {
+                        result[target][ptsfield-1] = newprob;
+                        changed = true;
+                    }                          
                 }
             }
             
@@ -538,29 +545,29 @@ void NClassifierArray::add(const EncAnyGram * focus, const EncAnyGram * withcont
 
 
 
-t_aligntargets NClassifierArray::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+t_aligntargets NClassifierArray::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed) {
     const int n = featurevector.size() - leftcontextsize - rightcontextsize;  
     if ((classifierarray.count(n)) && (classifierarray[n] != NULL)) {
         if (DEBUG >= 2) classifierarray[n]->enabledebug();
-        return classifierarray[n]->classify(featurevector, scorehandling, originaltranslationoptions);
+        return classifierarray[n]->classify(featurevector, scorehandling, originaltranslationoptions, changed);
     } else {
         cerr << "INTERNAL ERROR: NClassifierArray::classify invokes classifier " << n << ", but it does not exist" << endl;
         throw InternalError();
     } 
 }
 
-t_aligntargets NClassifierArray::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+t_aligntargets NClassifierArray::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed ) {
     const int n = featurevector.size() - leftcontextsize - rightcontextsize; 
     if ((classifierarray.count(n)) && (classifierarray[n] != NULL)) {
         if (DEBUG >= 2) classifierarray[n]->enabledebug();
-        return classifierarray[n]->classify(featurevector, scorehandling, originaltranslationoptions);
+        return classifierarray[n]->classify(featurevector, scorehandling, originaltranslationoptions, changed);
     } else {
         cerr << "INTERNAL ERROR: NClassifierArray::classify invokes classifier " << n << ", but it does not exist" << endl;
         throw InternalError();
     } 
 }
 
-void ClassifierInterface::classifyfragments(const EncData & input, AlignmentModel * translationtable, t_sourcefragments & sourcefragments, ScoreHandling scorehandling) {    
+void ClassifierInterface::classifyfragments(const EncData & input, AlignmentModel * translationtable, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, int & changecount) {    
      
           
      //decoder will call this
@@ -602,7 +609,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
             
                 //extract anygram in context for classifier test input
                 const EncAnyGram * withcontext = translationtable->addcontext(&input,anygram, (int) ref.token);
-                translationoptions = classifyfragment(anygram, withcontext, reftranslationoptions, scorehandling, translationtable->leftsourcecontext, translationtable->rightsourcecontext);
+                translationoptions = classifyfragment(anygram, withcontext, reftranslationoptions, scorehandling, translationtable->leftsourcecontext, translationtable->rightsourcecontext, changecount);
 
             } else {
                 if (DEBUG >= 2) cerr << "\t\t\t\tBypassing classifier... number of reference target options is less than set threshold: " << reftranslationoptions.size() << " < " << targetthreshold << endl;
@@ -635,7 +642,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
      }     
 }
 
-t_aligntargets ClassifierInterface::classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationoptions, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize) {
+t_aligntargets ClassifierInterface::classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationoptions, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize, int & changecount) {
         const int nwithcontext = withcontext->n();
 
          
@@ -662,9 +669,9 @@ t_aligntargets ClassifierInterface::classifyfragment(const EncAnyGram * focus, c
             }                             
         }
         
-        
-        
-        t_aligntargets translationoptions = classify(focus, featurevector, scorehandling, reftranslationoptions);
+        bool changed = false;        
+        t_aligntargets translationoptions = classify(focus, featurevector, scorehandling, reftranslationoptions, changed);
+        if (changed) changecount++;
         
         if (DEBUG >= 2) {
             multimap<double,string> ordered;
@@ -868,14 +875,14 @@ void MonoClassifier::add(const EncAnyGram * focus, const EncAnyGram * withcontex
 
 
 
-t_aligntargets MonoClassifier::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+t_aligntargets MonoClassifier::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool& changed) {
         if (DEBUG >= 2) classifier->enabledebug();  
-        return classifier->classify(featurevector, scorehandling, originaltranslationoptions);
+        return classifier->classify(featurevector, scorehandling, originaltranslationoptions, changed);
 }
 
-t_aligntargets MonoClassifier::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+t_aligntargets MonoClassifier::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool& changed) {
         if (DEBUG >= 2) classifier->enabledebug();
-        return classifier->classify(featurevector, scorehandling, originaltranslationoptions);
+        return classifier->classify(featurevector, scorehandling, originaltranslationoptions, changed);
 }
 
 void MonoClassifier::train(const string & timbloptions) {
@@ -1029,11 +1036,11 @@ void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withc
 }
 
 
-t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions,bool& changed) {
     const uint64_t hash = focus->hash();   
     if ((classifierarray.count(hash)) && (classifierarray[hash] != NULL)) {
         if (DEBUG >= 2) classifierarray[hash]->enabledebug();
-        return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions);
+        return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions, changed);
     } else {
         if (DEBUG >= 2) cerr << "Classifier " << hash << " does not exist... falling back to statistical model   ";
         if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_IGNORE) || (scorehandling == SCOREHANDLING_FILTEREDWEIGHED)) {
@@ -1042,8 +1049,8 @@ t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vect
             t_aligntargets translationoptions; 
             for (t_aligntargets::iterator iter = originaltranslationoptions.begin(); iter != originaltranslationoptions.end(); iter++) {
                 const EncAnyGram * target = iter->first;
-                if (scorehandling == SCOREHANDLING_APPEND) translationoptions[target] = originaltranslationoptions[target];                    
-                translationoptions[target].push_back(iter->second[0]); //first score                  
+                if (scorehandling != SCOREHANDLING_REPLACE) translationoptions[target] = originaltranslationoptions[target];                    
+                if ((scorehandling == SCOREHANDLING_REPLACE) || (scorehandling == SCOREHANDLING_APPEND)) translationoptions[target].push_back(iter->second[ptsfield-1]);                 
             }
             return translationoptions;
               
@@ -1051,11 +1058,11 @@ t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vect
     } 
 }
 
-t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions) {
+t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vector<string> & featurevector,  ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool& changed) {
     const uint64_t hash = focus->hash(); 
     if ((classifierarray.count(hash)) && (classifierarray[hash] != NULL)) {
         if (DEBUG >= 2) classifierarray[hash]->enabledebug();
-        return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions);
+        return classifierarray[hash]->classify(featurevector, scorehandling, originaltranslationoptions, changed);
     } else {
         if (DEBUG >= 2) cerr << "Classifier " << hash << " does not exist... falling back to statistical model    ";
         if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_IGNORE) || (scorehandling == SCOREHANDLING_FILTEREDWEIGHED)) {
@@ -1064,8 +1071,8 @@ t_aligntargets ConstructionExperts::classify(const EncAnyGram * focus, std::vect
             t_aligntargets translationoptions; 
             for (t_aligntargets::iterator iter = originaltranslationoptions.begin(); iter != originaltranslationoptions.end(); iter++) {
                 const EncAnyGram * target = iter->first;
-                if (scorehandling == SCOREHANDLING_APPEND) translationoptions[target] = originaltranslationoptions[target];                    
-                translationoptions[target].push_back(iter->second[0]); //first score                  
+                if (scorehandling != SCOREHANDLING_REPLACE) translationoptions[target] = originaltranslationoptions[target];                    
+                if ((scorehandling == SCOREHANDLING_REPLACE) || (scorehandling == SCOREHANDLING_APPEND)) translationoptions[target].push_back(iter->second[ptsfield-1]);        
             }
             return translationoptions;
         }    

@@ -41,7 +41,9 @@ StackDecoder::StackDecoder(const EncData & input, AlignmentModel * translationta
             if (DEBUG >= 1) cerr << "Gathering source fragments from classifier:" << endl;
             if (DEBUG >= 1) cerr << "  Calling classifier" << endl;
             bool exemplarweights = true; //irrelevant
-            classifier->classifyfragments(input, translationtable, sourcefragments, scorehandling);
+            int changedcount = 0;
+            classifier->classifyfragments(input, translationtable, sourcefragments, scorehandling, changedcount);
+            if (DEBUG >= 1) cerr << "  Changed fragments: " << endl;
         } else {            
             //Collect source fragments and translation options straight from translation table
             if (DEBUG >= 1) cerr << "Gathering source fragments from translation table:" << endl;
