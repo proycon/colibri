@@ -290,10 +290,10 @@ concerning p(t|s) only
         if (scorehandling == SCOREHANDLING_WEIGHED) {
             //ONLY WEIGH FOR p(t|s)            
             //for (int i = 0; i < originaltranslationoptions[target].size(); i++) {
-                if (DEBUG) cerr << " [" << result[target][0] << "+" << weight << "=" << result[target][0] + weight << "] ";
-                cis_oldtotal += pow(exp(1),result[target][0]); //counting for normalisation later ..prior
-                result[target][0] = result[target][0] + weight;
-                cis_total += pow(exp(1), result[target][0]);   //counting for normalisation later ..post
+                if (DEBUG) cerr << " [" << result[target][ptsfield-1] << "+" << weight << "=" << result[target][ptsfield-1] + weight << "] ";
+                cis_oldtotal += pow(exp(1),result[target][ptsfield-1]); //counting for normalisation later ..prior
+                result[target][ptsfield-1] = result[target][ptsfield-1] + weight;
+                cis_total += pow(exp(1), result[target][ptsfield-1]);   //counting for normalisation later ..post
             //}                        
         }
         if ((scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_REPLACE)) {
