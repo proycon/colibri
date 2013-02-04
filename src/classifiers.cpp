@@ -279,10 +279,12 @@ concerning p(t|s) only
         const EncAnyGram * target = targetclassencoder->input2anygram(data, false);
         if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_IGNORE)) {
             if (originaltranslationoptions.count(target)) {
-                //this target occurs in the original statistical model        
+                //this target occurs in the original statistical model
+                if (DEBUG) cerr << " (found) ";        
                 result[target] = originaltranslationoptions[target];               
             } else {
                 //this target only occurs in the classifier, ignore
+                if (DEBUG) cerr << " (only in classifier) ";
                 break;
             }          
         } 
