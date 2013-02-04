@@ -1258,12 +1258,13 @@ class MTWrapper(object):
         fig = matplotlib.pyplot.figure(figsize=(15,10)) 
         matplotlib.pyplot.gcf().subplots_adjust(bottom=0.2, left=0.4)                   
         matplotlib.pyplot.grid(True)
-        p_count = matplotlib.pyplot.barh(locations2 ,  [x[0] for x in phrasetablesize], align='center', color='b')
-        p_uniquecount = matplotlib.pyplot.barh(locations2 ,  [x[1] for x in phrasetablesize], align='center', color='m')                        
-        matplotlib.pyplot.ylabel('Number of phrase pairs in phrase table')
-        matplotlib.pyplot.title('Phrase table size for ' + title)
-        matplotlib.pyplot.legend( (p_count[0],p_uniquecount[0]), ('Count', 'Unique') )        
         try:
+            p_count = matplotlib.pyplot.barh(locations2 ,  [x[0] for x in phrasetablesize], align='center', color='b')
+            p_uniquecount = matplotlib.pyplot.barh(locations2 ,  [x[1] for x in phrasetablesize], align='center', color='m')                        
+            matplotlib.pyplot.ylabel('Number of phrase pairs in phrase table')
+            matplotlib.pyplot.title('Phrase table size for ' + title)
+            matplotlib.pyplot.legend( (p_count[0],p_uniquecount[0]), ('Count', 'Unique') )        
+        
             matplotlib.pyplot.yticks(locations2+hbarheight/2., names_phrasetable )# size='small')
             matplotlib.pyplot.xticks(numpy.arange(0,max( (x[0] for x in phrasetablesize) ),100000))
             autolabelh(p_count)
