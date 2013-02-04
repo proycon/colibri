@@ -44,10 +44,11 @@ class Classifier {
     bool added;
     bool loaded;
     bool DEBUG;
+    int ptsfield;
   public:
     bool used;
     Classifier(const std::string & id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true, bool debug=false); //for building
-    Classifier(const std::string & id, const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, bool loadondemand = false, bool debug = false); //for testing
+    Classifier(const std::string & id, const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int ptsfield = 1, bool loadondemand = false, bool debug = false); //for testing
     ~Classifier();            
     void addinstance(std::vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight = 1);
     void addinstance(std::vector<std::string> & featurevector, const std::string & label, double exemplarweight = 1);
@@ -79,8 +80,9 @@ class ClassifierInterface {
         int DEBUG;
         ClassDecoder * sourceclassdecoder;
         ClassDecoder * targetclassdecoder;
+        int ptsfield;
     public:
-        ClassifierInterface(const std::string & _id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, bool exemplarweights, bool singlefocusfeature) {
+        ClassifierInterface(const std::string & _id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, int ptsfield, bool exemplarweights, bool singlefocusfeature) {
             DEBUG = 0;
             sourceclassdecoder = NULL;
             targetclassdecoder = NULL;
@@ -91,6 +93,7 @@ class ClassifierInterface {
             this->targetthreshold = targetthreshold;
             this->exemplarweights = exemplarweights;
             this->singlefocusfeature = singlefocusfeature;            
+            this->ptsfield = ptsfield;
         }
         void enabledebug(int debug, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
             this->DEBUG = debug;
@@ -115,7 +118,7 @@ class ClassifierInterface {
 class MonoClassifier: public ClassifierInterface {      
     public:
         Classifier * classifier;  
-        MonoClassifier(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature) {};
+        MonoClassifier(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, int ptsfield, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature) {};
         ~MonoClassifier(); 
         void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder); 
         void add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);
@@ -129,7 +132,7 @@ class MonoClassifier: public ClassifierInterface {
 class NClassifierArray: public ClassifierInterface {
     public:
         std::map<int, Classifier*> classifierarray;    
-        NClassifierArray(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature) {};
+        NClassifierArray(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, int ptsfield, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature) {};
         ~NClassifierArray(); 
         void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);       
         void add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);
@@ -144,7 +147,7 @@ class ConstructionExperts: public ClassifierInterface {
     public:
         double accuracythreshold;
         std::map<uint64_t, Classifier*> classifierarray;    
-        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature) { accuracythreshold = 0; }; 
+        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, int ptsfield, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature) { accuracythreshold = 0; }; 
         ~ConstructionExperts();
         void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);
         void add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);

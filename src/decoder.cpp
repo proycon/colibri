@@ -1759,19 +1759,20 @@ int main( int argc, char *argv[] ) {
         int targetthreshold; //will be set by getclassifiertype
         bool exemplarweights; //will be set by getclassifiertype
         bool singlefocusfeature; //will be set by getclassifiertype        
+        const int ptsfield = 1;
         ClassifierType classifiertype = getclassifierconf(classifierid, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
         if (classifiertype == CLASSIFIERTYPE_NARRAY) {        
-            classifier = (ClassifierInterface*) new NClassifierArray(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+            classifier = (ClassifierInterface*) new NClassifierArray(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold,ptsfield, exemplarweights, singlefocusfeature);
             classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);
         } else if (classifiertype == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
-            classifier = (ClassifierInterface*) new ConstructionExperts(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+            classifier = (ClassifierInterface*) new ConstructionExperts(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold,ptsfield, exemplarweights, singlefocusfeature);
              classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);                    
         } else if (classifiertype == CLASSIFIERTYPE_MONO) {
             if (!singlefocusfeature) {
                 cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
                 throw InternalError();
             }
-            classifier = (ClassifierInterface*) new MonoClassifier(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+            classifier = (ClassifierInterface*) new MonoClassifier(classifierid, (int) transtable->leftsourcecontext, (int) transtable->rightsourcecontext, contextthreshold, targetthreshold,ptsfield, exemplarweights, singlefocusfeature);
             classifier->load(timbloptions, &sourceclassdecoder, &targetclassencoder, debug);            
         } else {
             cerr << "ERROR: Undefined classifier type:" << classifiertype << endl;

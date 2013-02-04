@@ -42,7 +42,7 @@ Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecode
     used = false;
 }        
 
-Classifier::Classifier(const std::string & _id, const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, bool loadondemand, bool debug) {
+Classifier::Classifier(const std::string & _id, const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int ptsfield, bool loadondemand, bool debug) {
     //for testing
     ID = _id;
 
@@ -61,6 +61,7 @@ Classifier::Classifier(const std::string & _id, const string & timbloptions, Cla
     this->targetclassencoder = targetclassencoder;
     this->DEBUG = debug;
     this->timbloptions = timbloptions;
+    this->ptsfield = ptsfield;
     added = false;
     
     used = false;
@@ -320,10 +321,10 @@ concerning p(t|s) only
             } else {
                 //translation option is in classifier as well: C | S
                 if (scorehandling == SCOREHANDLING_WEIGHED) {
-                    //renormalise within C | S only, S remains as is 
-                    result[target][0] = log( pow(exp(1), result[target][0]) * (cis_oldtotal/cis_total) ); 
+                    //renormalise within C | S only, S remains as is                    
+                    result[target][ptsfield-1] = log( pow(exp(1), result[target][ptsfield-1]) * (cis_oldtotal/cis_total) ); 
                 } else if (scorehandling == SCOREHANDLING_FILTEREDWEIGHED) {
-                    result[target][0] = log( pow(exp(1), result[target][0]) * cis_oldtotal) ; 
+                    result[target][ptsfield-1] = log( pow(exp(1), result[target][ptsfield-1]) * cis_oldtotal) ; 
                 }
             }
             
@@ -414,7 +415,7 @@ void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourcec
         
         const string nclassifierid = filename.substr(0, filename.size() - 6);
         cerr << "   Loading classifier n=" << n << " id=" << nclassifierid << endl;   
-        classifierarray[n] = new Classifier(nclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder, false, (DEBUG >= 3));
+        classifierarray[n] = new Classifier(nclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder, ptsfield, false, (DEBUG >= 3));
     }    
 }
 
@@ -479,7 +480,7 @@ void NClassifierArray::add(const EncAnyGram * focus, const EncAnyGram * withcont
         stringstream newid;
         newid << this->id() << ".n" << n;
         if (!classifierarray.count(n)) {
-            classifierarray[n] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder, exemplarweights);
+            classifierarray[n] = new Classifier(newid.str(), sourceclassdecoder, targetclassdecoder, ptsfield, exemplarweights);
         }
 
         if (singlefocusfeature) {                    
@@ -764,7 +765,7 @@ ClassifierType getclassifierconf(const string & ID, int & contextthreshold, int 
 
 void MonoClassifier::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG) {    
     vector<string> files = globfiles(ID + ".ibase");
-    classifier = new Classifier(ID, timbloptions,  sourceclassdecoder, targetclassencoder, false, (DEBUG >= 3));    
+    classifier = new Classifier(ID, timbloptions,  sourceclassdecoder, targetclassencoder, ptsfield, false, (DEBUG >= 3));    
 }
 
 void MonoClassifier::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
@@ -1082,7 +1083,7 @@ void ConstructionExperts::load( const string & timbloptions, ClassDecoder * sour
         const uint64_t hash = atoi(hash_s.str().c_str());
         
         cerr << "   Preparing classifier hash=" << hash << " id=" << filenamenoext << endl;   
-        classifierarray[hash] = new Classifier(filenamenoext, timbloptions,  sourceclassdecoder, targetclassencoder, true, (DEBUG >= 3));
+        classifierarray[hash] = new Classifier(filenamenoext, timbloptions,  sourceclassdecoder, targetclassencoder, ptsfield, true, (DEBUG >= 3));
     }    
 }
 

@@ -316,12 +316,12 @@ int main( int argc, char *argv[] ) {
 		if (mode == CLASSIFIERTYPE_NARRAY) {
     
             cerr << "Initialising N-Array classifiers" << endl;
-            classifiers = new NClassifierArray(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+            classifiers = new NClassifierArray(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);
             
         } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
     
             cerr << "Initialising construction expert classifiers" << endl;
-            classifiers = new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);    
+            classifiers = new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);    
 		
 		} else if (mode == CLASSIFIERTYPE_MONO) {
 		
@@ -331,7 +331,7 @@ int main( int argc, char *argv[] ) {
             }
             
             cerr << "Initialising monolithic classifier" << endl;
-            classifiers = new MonoClassifier(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+            classifiers = new MonoClassifier(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);
             
         } else if (mode == CLASSIFIERTYPE_IGNORE) {
             cerr << "ERROR: Can't ignore classifier when training!" << endl;
@@ -513,17 +513,17 @@ int main( int argc, char *argv[] ) {
                 if (mode != CLASSIFIERTYPE_IGNORE) {
                     classifiertype = getclassifierconf(classifierid, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
                     if (classifiertype == CLASSIFIERTYPE_NARRAY) {        
-                        classifiers = (ClassifierInterface*) new NClassifierArray(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                        classifiers = (ClassifierInterface*) new NClassifierArray(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);
                         classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
                     } else if (classifiertype == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
-                        classifiers = (ClassifierInterface*) new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                        classifiers = (ClassifierInterface*) new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);
                          classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);                    
                     } else if (classifiertype == CLASSIFIERTYPE_MONO) {
                         if (!singlefocusfeature) {
                             cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
                             throw InternalError();
                         }
-                        classifiers = (ClassifierInterface*) new MonoClassifier(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
+                        classifiers = (ClassifierInterface*) new MonoClassifier(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);
                         classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
                     } else if (classifiertype == CLASSIFIERTYPE_IGNORE) {
                         cerr << "Ignoring classifiers" << endl;                 
