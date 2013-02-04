@@ -326,7 +326,7 @@ concerning p(t|s) only
                 //translation option is in classifier as well: C | S
                 if (scorehandling == SCOREHANDLING_WEIGHED) {
                     //renormalise within C | S only, S remains as is                    
-                    result[target][ptsfield-1] = log( pow(exp(1), result[target][ptsfield-1]) * (cis_oldtotal/cis_total) ); 
+                    result[target][ptsfield-1] = log( pow(exp(1), result[target][ptsfield-1]) * ((float) cis_oldtotal/cis_total) ); 
                 } else if (scorehandling == SCOREHANDLING_FILTEREDWEIGHED) {
                     result[target][ptsfield-1] = log( pow(exp(1), result[target][ptsfield-1]) * cis_oldtotal) ; 
                 }
