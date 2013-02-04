@@ -42,7 +42,7 @@ Classifier::Classifier(const std::string & _id, ClassDecoder * sourceclassdecode
     used = false;
 }        
 
-Classifier::Classifier(const std::string & _id, const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int ptsfield, bool loadondemand, bool debug) {
+Classifier::Classifier(const std::string & _id, const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int ptsfield, double appendepsilon, bool loadondemand, bool debug) {
     //for testing
     ID = _id;
 
@@ -62,6 +62,7 @@ Classifier::Classifier(const std::string & _id, const string & timbloptions, Cla
     this->DEBUG = debug;
     this->timbloptions = timbloptions;
     this->ptsfield = ptsfield;
+    this->appendepsilon = appendepsilon;
     added = false;
     
     used = false;
@@ -314,10 +315,13 @@ concerning p(t|s) only
             const EncAnyGram * target = iter->first;
             if ((result.count(target) == 0) && (scorehandling != SCOREHANDLING_FILTEREDWEIGHED)) {
                 //translation option is not in classifier: S only, add to results
-                if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_IGNORE)) {        
+                if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_IGNORE) || (scorehandling == SCOREHANDLING_APPEND)) {        
                     result[target] = originaltranslationoptions[target];
                     //s_total += pow(exp(1), iter->second[0]);
                 }                 
+                if (scorehandling == SCOREHANDLING_APPEND) {
+                    result[target].push_back(appendepsilon);
+                }
             } else {
                 //translation option is in classifier as well: C | S
                 if (scorehandling == SCOREHANDLING_WEIGHED) {
@@ -415,7 +419,7 @@ void NClassifierArray::load( const string & timbloptions, ClassDecoder * sourcec
         
         const string nclassifierid = filename.substr(0, filename.size() - 6);
         cerr << "   Loading classifier n=" << n << " id=" << nclassifierid << endl;   
-        classifierarray[n] = new Classifier(nclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder, ptsfield, false, (DEBUG >= 3));
+        classifierarray[n] = new Classifier(nclassifierid, timbloptions,  sourceclassdecoder, targetclassencoder, ptsfield, appendepsilon, false, (DEBUG >= 3));
     }    
 }
 
@@ -765,7 +769,7 @@ ClassifierType getclassifierconf(const string & ID, int & contextthreshold, int 
 
 void MonoClassifier::load( const string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG) {    
     vector<string> files = globfiles(ID + ".ibase");
-    classifier = new Classifier(ID, timbloptions,  sourceclassdecoder, targetclassencoder, ptsfield, false, (DEBUG >= 3));    
+    classifier = new Classifier(ID, timbloptions,  sourceclassdecoder, targetclassencoder, ptsfield, appendepsilon, false, (DEBUG >= 3));    
 }
 
 void MonoClassifier::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
@@ -1083,7 +1087,7 @@ void ConstructionExperts::load( const string & timbloptions, ClassDecoder * sour
         const uint64_t hash = atoi(hash_s.str().c_str());
         
         cerr << "   Preparing classifier hash=" << hash << " id=" << filenamenoext << endl;   
-        classifierarray[hash] = new Classifier(filenamenoext, timbloptions,  sourceclassdecoder, targetclassencoder, ptsfield, true, (DEBUG >= 3));
+        classifierarray[hash] = new Classifier(filenamenoext, timbloptions,  sourceclassdecoder, targetclassencoder, ptsfield, appendepsilon, true, (DEBUG >= 3));
     }    
 }
 

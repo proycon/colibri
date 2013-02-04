@@ -48,6 +48,7 @@ void usage() {
     cerr << " -1           Represent the focus feature as a single entity, rather than individual tokens" << endl;
     cerr << " -D           Enable debug" << endl;
     cerr << " -p [int]     Field of the score vector in which the forward probability p(t|s) is stored (default: 3)" << endl;
+    cerr << " -e [float]   Small epsilon value used as score for unencountered options when score handling is set to append mode (default:  0.000001) " << endl;
     
     
     //cerr << "\t-C number                 Classifier mode" << endl;
@@ -97,12 +98,13 @@ int main( int argc, char *argv[] ) {
     double accuracythreshold = 0;
     
     bool timbloptionsset = false;
+    double appendepsilon = 0.000001;
     
     int ptsfield = 3; //1-indexed
     
     char c;    
     string s;
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:e:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -167,6 +169,9 @@ int main( int argc, char *argv[] ) {
         case 'm':
             mosesphrasetable = optarg;
             break; 	
+        case 'e':
+            appendepsilon = atof(optarg);
+            break;
         case 'f':
             TRAIN = true;
             trainfile = optarg;
@@ -316,12 +321,12 @@ int main( int argc, char *argv[] ) {
 		if (mode == CLASSIFIERTYPE_NARRAY) {
     
             cerr << "Initialising N-Array classifiers" << endl;
-            classifiers = new NClassifierArray(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);
+            classifiers = new NClassifierArray(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature);
             
         } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
     
             cerr << "Initialising construction expert classifiers" << endl;
-            classifiers = new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);    
+            classifiers = new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature);    
 		
 		} else if (mode == CLASSIFIERTYPE_MONO) {
 		
@@ -331,7 +336,7 @@ int main( int argc, char *argv[] ) {
             }
             
             cerr << "Initialising monolithic classifier" << endl;
-            classifiers = new MonoClassifier(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);
+            classifiers = new MonoClassifier(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature);
             
         } else if (mode == CLASSIFIERTYPE_IGNORE) {
             cerr << "ERROR: Can't ignore classifier when training!" << endl;
@@ -513,17 +518,17 @@ int main( int argc, char *argv[] ) {
                 if (mode != CLASSIFIERTYPE_IGNORE) {
                     classifiertype = getclassifierconf(classifierid, contextthreshold, targetthreshold, exemplarweights, singlefocusfeature);
                     if (classifiertype == CLASSIFIERTYPE_NARRAY) {        
-                        classifiers = (ClassifierInterface*) new NClassifierArray(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);
+                        classifiers = (ClassifierInterface*) new NClassifierArray(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature);
                         classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
                     } else if (classifiertype == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
-                        classifiers = (ClassifierInterface*) new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);
+                        classifiers = (ClassifierInterface*) new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature);
                          classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);                    
                     } else if (classifiertype == CLASSIFIERTYPE_MONO) {
                         if (!singlefocusfeature) {
                             cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
                             throw InternalError();
                         }
-                        classifiers = (ClassifierInterface*) new MonoClassifier(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);
+                        classifiers = (ClassifierInterface*) new MonoClassifier(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature);
                         classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
                     } else if (classifiertype == CLASSIFIERTYPE_IGNORE) {
                         cerr << "Ignoring classifiers" << endl;                 

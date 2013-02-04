@@ -127,11 +127,11 @@ int main( int argc, char *argv[] ) {
     AlignmentModel alignmodel = AlignmentModel(modelfile,false,true,0, false);
     
     const int ptsfield = 1;
-    
+    const double appendepsilon = -999;
     if (mode == CLASSIFIERTYPE_NARRAY) {
     
         cerr << "Building N-Array classifiers" << endl;
-        NClassifierArray classifiers = NClassifierArray(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);    
+        NClassifierArray classifiers = NClassifierArray(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature);    
         classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder);
 
         cerr << "Training classifiers" << endl;
@@ -141,7 +141,7 @@ int main( int argc, char *argv[] ) {
     } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
     
         cerr << "Building construction expert classifiers" << endl;
-        ConstructionExperts classifiers = ConstructionExperts(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);    
+        ConstructionExperts classifiers = ConstructionExperts(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature);    
         classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder);
         
         classifiers.accuracythreshold = accuracythreshold;
@@ -158,7 +158,7 @@ int main( int argc, char *argv[] ) {
         }
         
         cerr << "Building monolithic classifier" << endl;
-        MonoClassifier classifiers = MonoClassifier(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, ptsfield, exemplarweights, singlefocusfeature);    
+        MonoClassifier classifiers = MonoClassifier(outputprefix, alignmodel.leftsourcecontext, alignmodel.rightsourcecontext, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature);    
         classifiers.build(&alignmodel, &sourceclassdecoder, &targetclassdecoder);
         
         cerr << "Training classifiers" << endl;
