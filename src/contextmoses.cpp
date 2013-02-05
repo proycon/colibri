@@ -623,7 +623,11 @@ int main( int argc, char *argv[] ) {
                                     *TMPTABLE << encodedngram << " ||| " << ngram->decode(*sourceclassdecoder) << " ||| ";
                                     for (int j = 0; j < scorecount; j++) {
                                         if (j > 0) *TMPTABLE << " ";
-                                        *TMPTABLE << "0.001";
+                                        if (j == 4) {
+                                            *TMPTABLE << "2.718";
+                                        } else {
+                                            *TMPTABLE << pow(exp(1),-100); //unknown words : -100 (default weight used by moses
+                                        }
                                     }                 
                                     *TMPTABLE << endl;                                     
                                 } else if (key != NULL) {
