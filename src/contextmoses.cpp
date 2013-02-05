@@ -577,9 +577,15 @@ int main( int argc, char *argv[] ) {
                 int unknowncount = 0;
                 int changedcount = 0;
                 
+                int maxn = 0;
+                for (t_alignmatrix::iterator iter = alignmodel->alignmatrix.begin(); iter != alignmodel->alignmatrix.end(); iter++) {
+                    const int n = iter->first->n();
+                    if (n > maxn) maxn = n; 
+                }
+                
                 while (getline(*IN, input)) {        
                     if (input.length() > 0) {
-                        sentence++;                    
+                        sentence++;
                         cerr << "INPUT: " << input << endl;
                         if (debug) cerr << "Processing input" ;        
                         size = sourceclassencoder->encodestring(input, buffer, true, true) - 1; //weird patch: - 1  to get n() right later
@@ -601,9 +607,8 @@ int main( int argc, char *argv[] ) {
                         for (int i = 0; ((i < l) && (i < 256)); i++) {
                             bool found;
                             int n = 1;
-                            do {
+                            while ((n <= maxn) && (i + n <= l))  {
                                 found = false;
-                                if (i + n > l) break;
                                 
                                 const EncNGram * ngram = line->slice(i,n);
                                                                 
@@ -703,7 +708,7 @@ int main( int argc, char *argv[] ) {
                                 }  
                                 delete ngram;                  
                                 n++;
-                            } while (found);  
+                            } 
                             
                             
                             
