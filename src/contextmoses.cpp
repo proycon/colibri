@@ -636,7 +636,7 @@ int main( int argc, char *argv[] ) {
                                     sourcefragmentcount += 1;
                                     
                                     found = true;
-                                    if (debug) cerr << "found match '" << ngram->decode(*sourceclassdecoder) << "' (s=" << sentence << ",i=" << i << ",n=" << (int) n << "): " << ngram->decode(*sourceclassdecoder) << endl;
+                                    if (debug) cerr << "found match (s=" << sentence << ",i=" << i << ",n=" << (int) n << "): " << ngram->decode(*sourceclassdecoder) << endl;
                                     const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);                                
 
                                     
