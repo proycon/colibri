@@ -299,6 +299,7 @@ concerning p(t|s) only
         }
         if ((scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_REPLACE)) {
             result[target].push_back(weight);
+            changed = true;
         }         
         if (DEBUG) cerr << endl; 
     }
