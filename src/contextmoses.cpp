@@ -49,6 +49,7 @@ void usage() {
     cerr << " -D           Enable debug" << endl;
     cerr << " -p [int]     Field of the score vector in which the forward probability p(t|s) is stored (default: 3)" << endl;
     cerr << " -e [float]   Small epsilon value used as score for unencountered options when score handling is set to append mode (default:  0.000001) " << endl;
+    cerr << " -q           Skip decoder" << endl;
     
     
     //cerr << "\t-C number                 Classifier mode" << endl;
@@ -102,9 +103,11 @@ int main( int argc, char *argv[] ) {
     
     int ptsfield = 3; //1-indexed
     
+    bool skipdecoder = false;
+    
     char c;    
     string s;
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:e:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:e:q",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -196,6 +199,9 @@ int main( int argc, char *argv[] ) {
         case 'D':
             debug = true;
             break;  
+        case 'q':
+            skipdecoder = true;
+            false;
         case 'H':
             s = optarg;
             if (s == "weighed") {
@@ -743,11 +749,12 @@ int main( int argc, char *argv[] ) {
             	cerr << "ERROR: Unable to open moses.ini" << endl;
             	exit(5);
             } */       
-
-            stringstream cmd;
-            cmd << "moses -config model/contextmoses.ini < tmp.txt";          
-            cerr << cmd.str() << endl;  
-            system(cmd.str().c_str());
+            if (!skipdecoder) {
+                stringstream cmd;
+                cmd << "moses -config model/contextmoses.ini < tmp.txt";          
+                cerr << cmd.str() << endl;  
+                system(cmd.str().c_str());
+            }
 
         }  
     }
