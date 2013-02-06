@@ -4,14 +4,18 @@
 import sys
 import os
 
+try:
+    outputprefix = int(sys.argv[1])
+except:
+    outputprefix = "tmp";
 
 try:
-    scorecount = int(sys.argv[1])
+    scorecount = int(sys.argv[2])
 except:
     scorecount = 5;
 
 try:    
-    tweight = float(sys.argv[2])
+    tweight = float(sys.argv[3])
 except:
     tweight = 0.20
 
@@ -27,7 +31,7 @@ for line in open("model/moses.ini"):
     if line[-13:] == '/phrase-table':
         d = os.path.dirname(line.split(' ')[-1])
         if d[-5:] == "model": d = d[:-5]
-        print "0 0 0 " + str(scorecount) + " " + d + "/tmp.phrasetable"
+        print "0 0 0 " + str(scorecount) + " " + d + "/" + outputprefix + ".phrasetable"
     elif line == '[weight-t]':
         intweight = True
         print line

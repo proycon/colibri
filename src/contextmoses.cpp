@@ -50,6 +50,7 @@ void usage() {
     cerr << " -p [int]     Field of the score vector in which the forward probability p(t|s) is stored (default: 3)" << endl;
     cerr << " -e [float]   Small epsilon value used as score for unencountered options when score handling is set to append mode (default:  0.000001) " << endl;
     cerr << " -q           Skip decoder" << endl;
+    cerr << " -o           Output prefix (default: tmp)" << endl;
     
     
     //cerr << "\t-C number                 Classifier mode" << endl;
@@ -105,9 +106,11 @@ int main( int argc, char *argv[] ) {
     
     bool skipdecoder = false;
     
+    string outputprefix = "tmp";
+    
     char c;    
     string s;
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:e:q",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:e:qo:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -201,7 +204,10 @@ int main( int argc, char *argv[] ) {
             break;  
         case 'q':
             skipdecoder = true;
-            false;
+            break;
+        case 'o':
+            outputprefix = optarg;
+            break;
         case 'H':
             s = optarg;
             if (s == "weighed") {
@@ -231,6 +237,8 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
+    const string tmptestfile = outputprefix + ".txt";
+    const string tmptablefile = outputprefix + ".phrasetable";
 
     ClassDecoder * sourceclassdecoder = NULL;
     ClassDecoder * targetclassdecoder = NULL;
@@ -240,8 +248,8 @@ int main( int argc, char *argv[] ) {
     
     bool testexists = false;
     if (TEST) {
-        ifstream TEST1( "tmp.txt" );
-        ifstream TEST2( "tmp.phrasetable"  );
+        ifstream TEST1(tmptestfile );
+        ifstream TEST2( tmptablefile );
         testexists = (TEST1 && TEST2);
         if (testexists) {                       
             TEST1.close();
@@ -570,9 +578,10 @@ int main( int argc, char *argv[] ) {
                 	cerr << "ERROR: Unable to open file " << trainfile << endl;
                 	exit(5);
                 }        
-        
-                ofstream *TMPTEST = new ofstream( "tmp.txt" ); //intermediate test file (IDs instead of words)
-                ofstream *TMPTABLE = new ofstream( "tmp.phrasetable" ); //intermediate phrase table
+            
+
+                ofstream *TMPTEST = new ofstream( tmptestfile ); //intermediate test file (IDs instead of words)
+                ofstream *TMPTABLE = new ofstream( tmptablefile ); //intermediate phrase table
 
                 string input;
                 unsigned char buffer[8192]; 
@@ -736,11 +745,11 @@ int main( int argc, char *argv[] ) {
                 cerr << "\tSource fragments affected by classifier outcome: " << changedcount << " " << ( (float) changedcount / sourcefragmentcount) * 100 << '%' << endl;
                 
                 stringstream cmd;
-                cmd << "makecontextmosesini.py " << scorecount << " > model/contextmoses.ini";          
+                cmd << "makecontextmosesini.py " << outputprefix << " " << scorecount << " > model/contextmoses." << outputprefix << ".ini";          
                 cerr << cmd.str() << endl; 
                 system(cmd.str().c_str());
             } else {
-                cerr << "Classifier already tested (tmp.phrasetable and tmp.txt exist), not overwriting, proceeding with decoding..." << endl;
+                cerr << "Classifier already tested (" << outputprefix <<".phrasetable and " << outputprefix << ".txt exist), not overwriting, proceeding with decoding..." << endl;
             }
 
             /*cerr << "Updating moses configuration..." << endl;
@@ -751,7 +760,7 @@ int main( int argc, char *argv[] ) {
             } */       
             if (!skipdecoder) {
                 stringstream cmd;
-                cmd << "moses -config model/contextmoses.ini < tmp.txt";          
+                cmd << "moses -config model/contextmoses." << outputprefix << ".ini < " << outputprefix << ".txt";
                 cerr << cmd.str() << endl;  
                 system(cmd.str().c_str());
             }

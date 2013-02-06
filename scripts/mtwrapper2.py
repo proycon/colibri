@@ -1710,14 +1710,7 @@ class MTWrapper(object):
         else:
             print >>sys.stderr,bold(yellow("Skipping training model (moses), phrasetable already exists"))   
         
-        
-        
-        #if os.path.exists(self.gets2tfilename('phrasetable')): os.unlink(self.gets2tfilename('phrasetable'))
-        
-        #try:
-        #    os.symlink("model/phrase-table",self.gets2tfilename('phrasetable'))
-        #except:
-        #    pass
+       
         
         try:
             os.symlink("giza." + self.SOURCELANG + "-" + self.TARGETLANG + "/" + self.SOURCELANG + "-" + self.TARGETLANG + ".A3.final" ,self.gets2tfilename('A3.final'))
@@ -1728,37 +1721,8 @@ class MTWrapper(object):
             os.symlink("giza." + self.TARGETLANG + "-" + self.SOURCELANG + "/" + self.TARGETLANG + "-" + self.SOURCELANG + ".A3.final" ,self.gett2sfilename('A3.final'))
         except:
             pass
+       
         
-        
-        
-        # outputfiles = ['moses.ini']        
-        # if not self.header('Build Moses Configuration',*outputfiles): return True
-        # if self.BUILD_MOSES:
-            # f = open(self.WORKDIR + '/moses.ini','w')
-            # f.write('#Moses INI, produced by mtwrapper.py\n')
-            # f.write('[input-factors]\n')
-            # f.write('0\n\n')
-            # f.write('[mapping]\n')
-            # f.write('T 0\n\n') 
-            # f.write('# translation tables: source-factors, target-factors, number of scores, file\n')
-            # f.write('[ttable-file]\n')
-            # if self.BUILD_MOSES_PHRASETRANSTABLE:
-                # f.write('0 0 0 5 ' + self.gets2tfilename('phrasetable') + '\n\n')
-            # elif self.BUILD_COLIBRI_MOSESPHRASETABLE:
-                # f.write('0 0 0 2 ' + self.gets2tfilename('phrasetable') + '\n\n')
-            # f.write('[lmodel-file]\n')
-            # if self.BUILD_SRILM_TARGETMODEL:
-                # f.write('0 0 ' + str(self.SRILM_ORDER) + ' ' + self.gettargetfilename('srilm') + '\n\n')
-            # f.write('[ttable-limit]\n20\n\n')
-            # f.write('[weight-d]\n1\n\n')
-            # f.write('[weight-l]\n1\n\n')                
-            # if self.BUILD_MOSES_PHRASETRANSTABLE:
-                # f.write('[weight-t]\n1\n1\n1\n\n')
-            # elif self.BUILD_COLIBRI_MOSESPHRASETABLE: 
-                # f.write('[weight-t]\n1\n1\n1\n1\n1\n\n')
-            # f.write('[weight-w]\n0\n\n')        
-            # f.close()
-        # return self.footer('Build Moses Configuration', 0, *outputfiles)
         return True
 
     def build_moses_classifiers(self):
@@ -1774,8 +1738,15 @@ class MTWrapper(object):
         return True
     
     def build_moses_mert(self):            
-        if self.BUILD_MOSES_CLASSIFIERS:
-            if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/contextmoses.ini 2> mert.log', 'Parameter tuning for Moses (+context) using MERT (logged in mert.log)'): return False
+        if self.BUILD_MOSES_CLASSIFIERS:            
+                   
+            if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F ' + self.DEVSOURCECORPUS + ' -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' -q -o devtmp 2> contextmoses-dev.log', "Preparing context-aware moses on development set (logged in contextmoses-dev.log)"): return False                
+                
+            if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/contextmoses.devtmp.ini 2> mert.log', 'Parameter tuning for Moses (+context) using MERT (logged in mert.log)'): return False
+            
+            shutil.copyfile(self.WORKDIR + '/model/contextmoses.devtmp.ini', self.WORKDIR + '/model/contextmoses.tmp.ini')
+            os.system("sed -i s/devtmp\.phrasetable/tmp.phrasetable/ model/contextmoses.tmp.ini")
+        
         else:
             if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/moses.ini 2> mert.log', 'Parameter tuning for Moses using MERT (logged in mert.log)'): return False         
         return True
@@ -2015,10 +1986,9 @@ WordPenalty: -0.5\n""")
         return True 
     
     def run_moses_classifiers(self):
+        #should work with MERT as well
         if not os.path.exists('tmp.srilm'):
-            os.symlink(self.gettargetfilename('srilm'), 'tmp.srilm')
-        if self.BUILD_MOSES_MERT:
-            shutil.copyfile(self.WORKDIR + '/mert-work/moses.ini', self.WORKDIR + '/model/contextmoses.ini' )                    
+            os.symlink(self.gettargetfilename('srilm'), 'tmp.srilm')                    
         if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False      
         return True 
     
