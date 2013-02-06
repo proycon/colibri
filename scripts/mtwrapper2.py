@@ -1704,7 +1704,7 @@ class MTWrapper(object):
         
         
         if not os.path.exists("model/phrase-table"):
-            if not self.runcmd(self.EXEC_MOSES_TRAINMODEL + ' -external-bin-dir ' + self.PATH_MOSES_EXTERNALBIN + " -root-dir . --corpus train --f " + self.SOURCELANG + " --e " + self.TARGETLANG + " --first-step " + str(firststep) + " --last-step " + str(laststep) + " --lm 0:3:" + self.gettargetfilename('srilm')  + ' 2>> train.log',"Training model (moses)", "model/phrase-table.gz", "model/moses.ini"): return False
+            if not self.runcmd(self.EXEC_MOSES_TRAINMODEL + ' -external-bin-dir ' + self.PATH_MOSES_EXTERNALBIN + " -root-dir . --corpus train --f " + self.SOURCELANG + " --e " + self.TARGETLANG + " --first-step " + str(firststep) + " --last-step " + str(laststep) + " --lm 0:3:" + self.gettargetfilename('srilm')  + ' 2>> train-model.log',"Training model (moses)", "model/phrase-table.gz", "model/moses.ini"): return False
             os.system("gunzip -f model/phrase-table.gz")
             os.system("sed -i s/phrase-table\.gz/phrase-table/ model/moses.ini")
         else:
@@ -1767,7 +1767,7 @@ class MTWrapper(object):
         if not self.runcmd(self.EXEC_COLIBRI_CLASSENCODE + ' -f ' + self.gettargetfilename('txt'), "Encoding target corpus for Colibri",self.gettargetfilename('cls'), self.gettargetfilename('clsenc') ): return False        
         
         if not ('-I' in self.MOSES_CLASSIFIER_OPTIONS):
-            if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('clsenc') + ' -g ' + self.gettargetfilename('clsenc') + ' -m ' +  'model/phrase-table' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' 2>> train.log', "Training classifiers for context-aware moses"): return False
+            if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('clsenc') + ' -g ' + self.gettargetfilename('clsenc') + ' -m ' +  'model/phrase-table' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' 2>> contextmoses-train.log', "Training classifiers for context-aware moses (logged in contextmoses-train.log)"): return False
         else:        
             print >>sys.stderr, bold(yellow("Not training classifiers because -I (ignore) is set in options"))
         
@@ -1775,9 +1775,9 @@ class MTWrapper(object):
     
     def build_moses_mert(self):            
         if self.BUILD_MOSES_CLASSIFIERS:
-            if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/contextmoses.ini 2>> mert.log', 'Parameter tuning for Moses (+context) using MERT'): return False
+            if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/contextmoses.ini 2> mert.log', 'Parameter tuning for Moses (+context) using MERT (logged in mert.log)'): return False
         else:
-            if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/moses.ini 2>> mert.log', 'Parameter tuning for Moses using MERT'): return False         
+            if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/moses.ini 2> mert.log', 'Parameter tuning for Moses using MERT (logged in mert.log)'): return False         
         return True
     
     def build_pbmbmt(self):
@@ -2007,13 +2007,13 @@ WordPenalty: -0.5\n""")
 
     
     def run_moses(self):
-        if not self.runcmd(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini < input.txt > output.txt 2> decoder.log','Moses Decoder'): return False
+        if not self.runcmd(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini < input.txt > output.txt 2> moses.log','Moses Decoder (logged in moses.log)'): return False
         return True 
     
     def run_moses_classifiers(self):
         if not os.path.exists('tmp.srilm'):
             os.symlink(self.gettargetfilename('srilm'), 'tmp.srilm')
-        if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt', "Testing classifiers and running context-aware moses decoder"): return False      
+        if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False      
         return True 
     
     def run_phrasal(self):
@@ -2032,16 +2032,16 @@ WordPenalty: -0.5\n""")
                 decoder_extraoptions += ' -O "' + self.COLIBRI_TIMBL_OPTIONS + '"'
                 
         if os.path.exists(self.gets2tfilename('transtable.colibri')): #backward compatibility
-            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('transtable.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + '  < input.txt > output.txt 2> decoder.log','Colibri Decoder'): return False                                
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('transtable.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + '  < input.txt > output.txt 2> decoder.log','Colibri Decoder (logged in decoder.log)'): return False                                
         elif os.path.exists(self.gets2tfilename('alignmodelS.colibri')):
-            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodelS.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + ' < input.txt > output.txt 2> decoder.log','Colibri Decoder'): return False            
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodelS.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + ' < input.txt > output.txt 2> decoder.log','Colibri Decoder (logged in decoder.log)'): return False            
         elif os.path.exists(self.gets2tfilename('alignmodel.colibri')):            
-            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' ' + decoder_extraoptions + ' < input.txt > output.txt 2> decoder.log','Colibri Decoder'): return False
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' ' + decoder_extraoptions + ' < input.txt > output.txt 2> decoder.log','Colibri Decoder (logged in decoder.log)'): return False
         elif os.path.exists(self.gets2tfilename('phrasetable')):
             if self.BUILD_COLIBRI_CLASSIFIERS:
                 self.log("WARNING: No classifiers will be used! Not possible with Moses phrasetable!",red)
             #moses-style phrase-table
-            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('phrasetable') + ' --moses -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' < input.txt > output.txt 2> decoder.log','Colibri Decoder'): return False
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('phrasetable') + ' --moses -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' < input.txt > output.txt 2> decoder.log','Colibri Decoder (logged in decoder.log)'): return False
         else:
             self.log("Error: No phrasetable found! Did you forget to train the system?" ,red)
             return False                
@@ -2051,9 +2051,9 @@ WordPenalty: -0.5\n""")
     def server_moses(self, port, html):
         while True:
             if not html:
-                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini 2> ' + self.WORKDIR + '/decoder.log', port, True, False) #print stdout, not send stderr
+                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini 2> ' + self.WORKDIR + '/moses.log', port, True, False) #print stdout, not send stderr
             else:
-                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini 2> ' + self.WORKDIR + '/decoder.log', port, False, True, lambda x: None, serveroutputproc) #print stderr, not send stdout, but filter first
+                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini 2> ' + self.WORKDIR + '/moses.log', port, False, True, lambda x: None, serveroutputproc) #print stderr, not send stdout, but filter first
             print >>sys.stderr, "Server process failed? Restarting..."
             #server down? restart
             time.sleep(10)
