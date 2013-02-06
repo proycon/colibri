@@ -1742,7 +1742,7 @@ class MTWrapper(object):
                    
             if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F ' + self.DEVSOURCECORPUS + ' -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' -q -o devtmp 2> contextmoses-dev.log', "Preparing context-aware moses on development set (logged in contextmoses-dev.log)"): return False                
                 
-            if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/contextmoses.devtmp.ini 2> mert.log', 'Parameter tuning for Moses (+context) using MERT (logged in mert.log)'): return False
+            if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.WORKDIR + '/devtmp.txt ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/contextmoses.devtmp.ini 2> mert.log', 'Parameter tuning for Moses (+context) using MERT (logged in mert.log)'): return False
             
             shutil.copyfile(self.WORKDIR + '/model/contextmoses.devtmp.ini', self.WORKDIR + '/model/contextmoses.tmp.ini')
             os.system("sed -i s/devtmp\.phrasetable/tmp.phrasetable/ model/contextmoses.tmp.ini")
