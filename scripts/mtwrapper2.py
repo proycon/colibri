@@ -2007,12 +2007,18 @@ WordPenalty: -0.5\n""")
 
     
     def run_moses(self):
-        if not self.runcmd(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini < input.txt > output.txt 2> moses.log','Moses Decoder (logged in moses.log)'): return False
+        if self.BUILD_MOSES_MERT:
+            mosesini = self.WORKDIR + '/mert-work/moses.ini'
+        else:
+            mosesini = self.WORKDIR + '/model/moses.ini'     
+        if not self.runcmd(self.EXEC_MOSES + ' -f ' + mosesini + ' < input.txt > output.txt 2> moses.log','Moses Decoder (logged in moses.log)'): return False
         return True 
     
     def run_moses_classifiers(self):
         if not os.path.exists('tmp.srilm'):
             os.symlink(self.gettargetfilename('srilm'), 'tmp.srilm')
+        if self.BUILD_MOSES_MERT:
+            shutil.copyfile(self.WORKDIR + '/mert-work/moses.ini', self.WORKDIR + '/model/contextmoses.ini' )                    
         if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False      
         return True 
     
@@ -2049,11 +2055,15 @@ WordPenalty: -0.5\n""")
         
     
     def server_moses(self, port, html):
+        if self.BUILD_MOSES_MERT:
+            mosesini = self.WORKDIR + '/mert-work/moses.ini'
+        else:
+            mosesini = self.WORKDIR + '/model/moses.ini'   
         while True:
             if not html:
-                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini 2> ' + self.WORKDIR + '/moses.log', port, True, False) #print stdout, not send stderr
+                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + mosesini + ' 2> ' + self.WORKDIR + '/moses.log', port, True, False) #print stdout, not send stderr
             else:
-                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini 2> ' + self.WORKDIR + '/moses.log', port, False, True, lambda x: None, serveroutputproc) #print stderr, not send stdout, but filter first
+                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + mosesini + ' 2> ' + self.WORKDIR + '/moses.log', port, False, True, lambda x: None, serveroutputproc) #print stderr, not send stdout, but filter first
             print >>sys.stderr, "Server process failed? Restarting..."
             #server down? restart
             time.sleep(10)
