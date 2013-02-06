@@ -5,14 +5,14 @@ import sys
 import os
 
 try:
-    outputprefix = int(sys.argv[1])
+    outputprefix = sys.argv[1]
 except:
-    outputprefix = "tmp";
+    outputprefix = "tmp"
 
 try:
     scorecount = int(sys.argv[2])
 except:
-    scorecount = 5;
+    scorecount = 5
 
 try:    
     tweight = float(sys.argv[3])
