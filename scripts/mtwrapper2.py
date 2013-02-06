@@ -1704,7 +1704,7 @@ class MTWrapper(object):
         
         
         if not os.path.exists("model/phrase-table"):
-            if not self.runcmd(self.EXEC_MOSES_TRAINMODEL + ' -external-bin-dir ' + self.PATH_MOSES_EXTERNALBIN + " -root-dir . --corpus train --f " + self.SOURCELANG + " --e " + self.TARGETLANG + " --first-step " + str(firststep) + " --last-step " + str(laststep) + " --lm 0:3:" + self.gettargetfilename('srilm')  + ' 2> train-model.log',"Training model (moses) (logged in train-model.log)", "model/phrase-table.gz", "model/moses.ini"): return False
+            if not self.runcmd(self.EXEC_MOSES_TRAINMODEL + ' -external-bin-dir ' + self.PATH_MOSES_EXTERNALBIN + " -root-dir . --corpus train --f " + self.SOURCELANG + " --e " + self.TARGETLANG + " --first-step " + str(firststep) + " --last-step " + str(laststep) + " --lm 0:3:" + self.gettargetfilename('srilm')  + ' >&2 2> train-model.log',"Training model (moses) (logged in train-model.log)", "model/phrase-table.gz", "model/moses.ini"): return False
             os.system("gunzip -f model/phrase-table.gz")
             os.system("sed -i s/phrase-table\.gz/phrase-table/ model/moses.ini")
         else:
