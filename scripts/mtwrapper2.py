@@ -1774,8 +1774,10 @@ class MTWrapper(object):
         return True
     
     def build_moses_mert(self):            
-        #TODO: Add MOSES_CLASSIFIERS
-        if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/moses.ini', 'Parameter tuning for Moses using MERT'): return False         
+        if self.BUILD_MOSES_CLASSIFIERS:
+            if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/contextmoses.ini', 'Parameter tuning for Moses (+context) using MERT'): return False
+        else:
+            if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/moses.ini', 'Parameter tuning for Moses using MERT'): return False         
         return True
     
     def build_pbmbmt(self):
