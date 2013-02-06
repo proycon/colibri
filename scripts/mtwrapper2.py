@@ -2007,7 +2007,7 @@ WordPenalty: -0.5\n""")
 
     
     def run_moses(self):
-        if not self.runcmd(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini < input.txt > output.txt','Moses Decoder'): return False
+        if not self.runcmd(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini < input.txt > output.txt 2> decoder.log','Moses Decoder'): return False
         return True 
     
     def run_moses_classifiers(self):
@@ -2032,16 +2032,16 @@ WordPenalty: -0.5\n""")
                 decoder_extraoptions += ' -O "' + self.COLIBRI_TIMBL_OPTIONS + '"'
                 
         if os.path.exists(self.gets2tfilename('transtable.colibri')): #backward compatibility
-            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('transtable.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + '  < input.txt > output.txt','Colibri Decoder'): return False                                
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('transtable.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + '  < input.txt > output.txt 2> decoder.log','Colibri Decoder'): return False                                
         elif os.path.exists(self.gets2tfilename('alignmodelS.colibri')):
-            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodelS.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + ' < input.txt > output.txt','Colibri Decoder'): return False            
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodelS.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS +  ' ' + decoder_extraoptions + ' < input.txt > output.txt 2> decoder.log','Colibri Decoder'): return False            
         elif os.path.exists(self.gets2tfilename('alignmodel.colibri')):            
-            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' ' + decoder_extraoptions + ' < input.txt > output.txt','Colibri Decoder'): return False
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('alignmodel.colibri') + ' -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' ' + decoder_extraoptions + ' < input.txt > output.txt 2> decoder.log','Colibri Decoder'): return False
         elif os.path.exists(self.gets2tfilename('phrasetable')):
             if self.BUILD_COLIBRI_CLASSIFIERS:
                 self.log("WARNING: No classifiers will be used! Not possible with Moses phrasetable!",red)
             #moses-style phrase-table
-            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('phrasetable') + ' --moses -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' < input.txt > output.txt','Colibri Decoder'): return False
+            if not self.runcmd(self.EXEC_COLIBRI_DECODER + ' -l ' + self.gettargetfilename('srilm') + ' -t ' + self.gets2tfilename('phrasetable') + ' --moses -S ' + self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' ' + self.COLIBRI_DECODER_OPTIONS + ' < input.txt > output.txt 2> decoder.log','Colibri Decoder'): return False
         else:
             self.log("Error: No phrasetable found! Did you forget to train the system?" ,red)
             return False                
@@ -2051,9 +2051,9 @@ WordPenalty: -0.5\n""")
     def server_moses(self, port, html):
         while True:
             if not html:
-                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini 2> ' + self.WORKDIR + '/server.err', port, True, False) #print stdout, not send stderr
+                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini 2> ' + self.WORKDIR + '/decoder.log', port, True, False) #print stdout, not send stderr
             else:
-                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/moses.ini 2> ' + self.WORKDIR + '/server.err', port, False, True, lambda x: None, serveroutputproc) #print stderr, not send stdout, but filter first
+                GenericWrapperServer(self.EXEC_MOSES + ' -f ' + self.WORKDIR + '/model/moses.ini 2> ' + self.WORKDIR + '/decoder.log', port, False, True, lambda x: None, serveroutputproc) #print stderr, not send stdout, but filter first
             print >>sys.stderr, "Server process failed? Restarting..."
             #server down? restart
             time.sleep(10)
