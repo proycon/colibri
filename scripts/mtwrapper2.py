@@ -1744,7 +1744,7 @@ class MTWrapper(object):
                 
             if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.WORKDIR + '/devtmp.txt ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/contextmoses.devtmp.ini 2> mert.log', 'Parameter tuning for Moses (+context) using MERT (logged in mert.log)'): return False
             
-            shutil.copyfile(self.WORKDIR + '/model/contextmoses.devtmp.ini', self.WORKDIR + '/model/contextmoses.tmp.ini')
+            shutil.copyfile(self.WORKDIR + '/mert-work/moses.ini', self.WORKDIR + '/model/contextmoses.tmp.ini')
             os.system("sed -i s/devtmp\.phrasetable/tmp.phrasetable/ model/contextmoses.tmp.ini")
         
         else:
