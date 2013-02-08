@@ -928,7 +928,7 @@ void ConstructionExperts::train(const string & timbloptions) {
         if ((instancethreshold > 0) && (!iter->second->checkinstancethreshold(instancethreshold))) {
             cerr << "Deleting classifier #" << count << "/" << total << " -- " << p << "% hash=" << iter->first << " (did not pass instance threshold)";
             const string filename = iter->second->id() + ".train";
-            unlink(filename); //TODO: check
+            remove(filename.c_str());
             continue;
         }        
         if (accuracy >= accuracythreshold) {
