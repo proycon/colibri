@@ -43,6 +43,7 @@ void usage() {
     cerr << " -c [int]     Context threshold. Only create a classifier when at least this many different contexts exist. Defaults to 1." << endl;
     cerr << " -t [int]     Target threshold. Only create a classifier when at least this many different target options exist. Defaults to 1." << endl;
     cerr << " -a [float]   Accuracy threshold for Construction experts (-X), only experts with a leave-one-out accuracy higher than specified will be included. Value between 0 and 1. Defaults to 0 (no threshold)." << endl;
+    cerr << " -i [int]     Instance threshold for Construction experts (-X), prune all classifiers with less instances than this threshhold." << endl; 
     cerr << " -x           disable exemplar weighting" << endl;
     cerr << " -O [options] Timbl options" << endl;
     cerr << " -1           Represent the focus feature as a single entity, rather than individual tokens" << endl;
@@ -98,6 +99,7 @@ int main( int argc, char *argv[] ) {
     int targetthreshold = 1;
     bool singlefocusfeature = false;
     double accuracythreshold = 0;
+    int instancethreshold = 0;
     
     bool timbloptionsset = false;
     double appendepsilon = 0.000001;
@@ -110,7 +112,7 @@ int main( int argc, char *argv[] ) {
     
     char c;    
     string s;
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:e:qo:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:e:qo:i:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -161,6 +163,9 @@ int main( int argc, char *argv[] ) {
         case 'a':
             accuracythreshold = atof(optarg);
             break; 
+        case 'i':
+            instancethreshold = atoi(optarg);
+            break;
         case 'x':
             if (timbloptionsset) {
                 cerr << "ERROR: Only specify -x before -O, not after" << endl;
@@ -481,6 +486,7 @@ int main( int argc, char *argv[] ) {
         
             
             ((ConstructionExperts *) classifiers)->accuracythreshold = accuracythreshold;
+            ((ConstructionExperts *) classifiers)->instancethreshold = instancethreshold;
             ((ConstructionExperts *) classifiers)->train(traintimbloptions);
         
         } else if (mode == CLASSIFIERTYPE_MONO) {

@@ -53,6 +53,7 @@ class Classifier {
     ~Classifier();            
     void addinstance(std::vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight = 1);
     void addinstance(std::vector<std::string> & featurevector, const std::string & label, double exemplarweight = 1);
+    int checkinstancethreshold(int instancethreshold);
     void train(const std::string & timbloptions);
     double crossvalidate(const std::string & timbloptions); //returns accuracy (measured using leave one out cross validation)
     const std::string id() { return ID; };
@@ -149,8 +150,10 @@ class NClassifierArray: public ClassifierInterface {
 class ConstructionExperts: public ClassifierInterface {
     public:
         double accuracythreshold;
+        int instancethreshold;
+        
         std::map<uint64_t, Classifier*> classifierarray;    
-        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, int ptsfield, double appendepsilon, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature) { accuracythreshold = 0; }; 
+        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, int ptsfield, double appendepsilon, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature) { accuracythreshold = 0; instancethreshold = 0; }; 
         ~ConstructionExperts();
         void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);
         void add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);

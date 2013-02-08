@@ -182,6 +182,25 @@ void Classifier::train(const string & timbloptions) {
     delete timbltrainexp;
 }
 
+int Classifier::checkinstancethreshold(int instancethreshold) {
+    ifstream * f  = new ifstream(trainfile);
+    if (!f->good()) {
+        cerr << "Training file not found: " << trainfile << endl;
+        throw InternalError();
+    }
+    string s;
+    int count = 0;
+    while (!f->eof()) {
+        getline(*f,s);
+        count++;
+        if (count >= instancethreshold) {
+            f->close();
+            return true;
+        }                
+    }
+    f->close();
+    return false;
+}
 
 
 t_aligntargets Classifier::classify(std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed) {
@@ -906,6 +925,12 @@ void ConstructionExperts::train(const string & timbloptions) {
             accuracy =  iter->second->crossvalidate(timbloptions);
             cerr << accuracy << endl;
         }
+        if ((instancethreshold > 0) && (!iter->second->checkinstancethreshold(instancethreshold))) {
+            cerr << "Deleting classifier #" << count << "/" << total << " -- " << p << "% hash=" << iter->first << " (did not pass instance threshold)";
+            const string filename = iter->second->id() + ".train";
+            unlink(filename); //TODO: check
+            continue;
+        }        
         if (accuracy >= accuracythreshold) {
             cerr << "Training classifier #" << count << "/" << total << " -- " << p << "% hash=" << iter->first << "... " << endl;                    
             iter->second->train(timbloptions);
