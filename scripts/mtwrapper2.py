@@ -2555,7 +2555,7 @@ if __name__ == "__main__":
         for dir in includedirs:
             f.write("sys.path.append('" + dir + "')\n")
     f.write("\n")
-    f.write("from mtwrapper import MTWrapper\n")    
+    f.write("from mtwrapper2 import MTWrapper\n")    
     f.write("mtwrapper = MTWrapper(")
     if includemod:
         f.write("'" + includemod + "',")
