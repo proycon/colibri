@@ -1354,11 +1354,11 @@ class MTWrapper(object):
             
     def clean(self, targets):            
         if not targets:
-            self.log("Nothing to clean, please specify one or more targets: all, giza, berkeleyaligner, moses, colibri, phrasal, srilm, test, score, batches",red)
+            self.log("Nothing to clean, please specify one or more targets: all, giza, berkeleyaligner, moses, colibri, classifiers, mert, phrasal, srilm, test, score, batches",red)
             sys.exit(2)        
         
         if 'giza' in targets or 'all' in targets:
-            self.cleanfiles('*.final', '*.vcb','*.snt','*.classes','*.classes.cats','*.gizacfg','*.Decoder.config','*.perp','*.cooc')
+            self.cleanfiles('corpus/*','*.final', '*.vcb','*.snt','*.classes','*.classes.cats','*.gizacfg','*.Decoder.config','*.perp','*.cooc')
         if 'berkeleyaligner' in targets or 'all' in targets:
             self.cleanfiles('*.final','aligner.conf')
             if os.path.isdir(self.WORKDIR + '/alignerinput'):
@@ -1368,7 +1368,11 @@ class MTWrapper(object):
                 shutil.rmtree(self.WORKDIR + '/aligneroutput')
                 self.log("Removed aligneroutput",green)                        
         if 'moses' in targets or 'all' in targets:
-            self.cleanfiles('*.bal', '*.symal','*.s2t','*.s2t.sorted','*.t2s','*.t2s','*.sorted','*.phrasetable', '*.phraseextract', '*.phraseextract.inv','*.half','moses.ini')
+            self.cleanfiles('*.bal', '*.symal','*.s2t','*.s2t.sorted','*.t2s','*.t2s','*.sorted','*.phrasetable', '*.phraseextract', '*.phraseextract.inv','*.half','moses.ini','model/*')
+        if 'mert' in targets or 'all' in targets:
+            self.cleanfiles('mert-work/*')            
+        if 'classifier' in targets or 'classifiers' in targets or 'timbl' in targets  or 'all' in targets:
+            self.cleanfiles('classifier.*')
         if 'phrasal' in targets or 'all' in targets:
             self.cleanfiles('phrases*gz','*.phrasetable','phrasal.conf')
         if 'srilm' in targets or 'all' in targets:
