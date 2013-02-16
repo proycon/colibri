@@ -2266,8 +2266,17 @@ WordPenalty: -0.5\n""")
         fout.close()
         self.log("Branched file " + sourcefile + " (downsized to " + str(lines)+")",green)
 
+    def copychangepaths(self,sourcefile, targetfile, sourcepath, targetpath):
+        f_in = codecs.open(sourcefile,'r','utf-8')
+        f_out = codecs.open(targetfile,'w','utf-8')
+        for line in f_in:
+            line = line.replace(sourcepath, targetpath)
+            f_out.write(line)
+        f_in.close()
+        f_out.close()
+               
+
     def branch(self,expname, conf=None, useparentdir=True, quiet = False, writebatches=True):
-        
         parentdir = self.WORKDIR
         if useparentdir:
             if parentdir[-1] == '/':
@@ -2282,14 +2291,32 @@ WordPenalty: -0.5\n""")
             self.log("Creating branched work directory (as sibling): " + workdir,white)           
             os.mkdir(workdir)
             for filename in glob.glob(self.WORKDIR + '/*'):
-                basefilename = os.path.basename(filename)                
-                if (basefilename[-3:] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.' or os.path.isdir(filename) or basefilename[-4:] in ['.log','.tex','.png','.jpg','.aux','.pdf']:
+               basefilename = os.path.basename(filename)    
+               
+               if basefilename[-4:] == '.ini' or basefilename[-4:] == '.cfg' or basefilename[-5:] == '.conf':
+                    self.copychangepaths(filename, workdir + '/' + basefilename, self.WORKDIR, workdir)
+               elif (basefilename == 'model' or basefilename == 'mert-work' or basefilename == 'corpus') and os.path.isdir(filename):
+                    try:
+                        os.mkdir(workdir + '/' + basefilename)
+                    except:
+                        pass
+                    for filename2 in glob.glob(self.WORKDIR + '/' + basefilename + '/*'):
+                        basefilename2 = os.path.basename(filename2)
+                        if basefilename2[-4:] == '.ini' or basefilename2[-4:] == '.cfg' or basefilename2[-5:] == '.conf':
+                            self.copychangepaths(filename2, workdir + '/' + basefilename + '/' + basefilename2, self.WORKDIR, workdir)
+                        else:
+                            try:
+                                os.symlink(filename2, workdir + '/' + basefilename + '/' + basefilename2)
+                                self.log("Branched file " + basefilename + "/" + basefilename2 + " (symlink)",green)
+                            except:
+                                self.log("Error making symlink for " + basefilename + "/" + basefilename2,red)                          
+               elif (basefilename[-3:] == '.py' and basefilename[0:3] == 'mt-') or basefilename[0] == '.' or os.path.isdir(filename) or basefilename[-4:] in ['.log','.tex','.png','.jpg','.aux','.pdf'] or basefilename[-1] == '~':
                     continue    
                 #elif 'TRAINSOURCECORPUS' in conf and basefilename == os.path.basename(conf['TRAINSOURCECORPUS']) and 'TRAINSIZE' in conf:
                 #    self.downsize(filename, workdir + '/' + basefilename, int(conf['TRAINSIZE']))
                 #elif 'TRAINTARGETCORPUS' in conf and basefilename == os.path.basename(conf['TRAINTARGETCORPUS']) and 'TRAINSIZE' in conf:
                 #    self.downsize(filename, workdir + '/' + basefilename, int(conf['TRAINSIZE']))                    
-                else:
+               else:                           
                     try:
                         os.symlink(filename, workdir + '/' + basefilename)
                         self.log("Branched file " + basefilename + " (symlink)",green)
