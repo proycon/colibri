@@ -2376,8 +2376,9 @@ WordPenalty: -0.5\n""")
                     continue
                 if key[:5] == 'EXEC_' and (value == default or value == ""): 
                     continue
-                
+                                
                 if isinstance(value, str) or isinstance(value,  unicode):            
+                    if '"' in value: value = value.replace('"','\\' + '"')                        
                     f.write("    " + key + "=\"" + value + "\"")
                 else:
                     f.write("    " + key + "=" + str(value))
