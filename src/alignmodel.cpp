@@ -2463,6 +2463,19 @@ AlignmentModel::AlignmentModel(AlignmentModel & s2tmodel, AlignmentModel & t2smo
     load(s2tmodel, t2smodel, s2tthreshold, t2sthreshold, productthreshold);
 }
 
+AlignmentModel::~AlignmentModel() {
+    for (t_keywords::iterator iter = keywords.begin(); iter != keywords.end(); iter++) {
+        const EncAnyGram * sourcegram = iter->first;
+        for (unordered_set<const EncAnyGram*>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {        
+            const EncAnyGram * keygram = *iter2;
+            if (getsourcekey(keygram) == NULL) {
+                delete keygram;
+            }
+        }    
+    }
+    //TODO: More and better cleanup
+}
+
 void AlignmentModel::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold, const double t2sthreshold, const double productthreshold) {
     for (t_alignmatrix::iterator iter = s2tmodel.alignmatrix.begin(); iter != s2tmodel.alignmatrix.end(); iter++) {
         const EncAnyGram * copysource_s2t = s2tmodel.getsourcekey(iter->first);
@@ -2552,6 +2565,10 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
     int ngramversion = 1;
     if (model_id < (unsigned int) ALIGNMENTMODEL + 5) {
         ngramversion = 0;
+    }
+    bool dokeywords = true; 
+    if (model_id < (unsigned int) ALIGNMENTMODEL + 6) {
+        dokeywords = false;
     }
     
     if (DEBUG) {
@@ -2667,7 +2684,44 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
 		            }		      
 		            alignmatrix[sourcegram][targetgram].push_back(p);
 		        }		    
-		    }		  			    
+		    }		  
+		    
+		    if (dokeywords) {
+		        uint32_t keywordcount;
+		        f.read((char*) &keywordcount, sizeof(uint32_t));
+		        for (int i = 0; i < keywordcount; i++) {
+                    f.read(&gapcount, sizeof(char));
+                    if (gapcount == 0) {
+                        if (DEBUG)  cerr << "\tKEYWORD-NGRAM";
+                        EncNGram * ngram = new EncNGram(&f, ngramversion); //read from file
+                        if (DEBUG)  cerr << " n=" << (int) ngram->n() << " size=" << (int) ngram->size();
+                        const EncAnyGram * sourcekey = getsourcekey((EncAnyGram*) ngram);
+                        if (sourcekey != NULL) {
+                            keywords[targetgram].insert(sourcekey);
+                            delete ngram;
+                        } else {
+                            keywords[targetgram].insert(ngram);
+                        }
+                    } else {
+                        if (DEBUG)  cerr << "\tKEYWORD-SKIPGRAM, " << (int) gapcount << " gaps";
+                        EncSkipGram * skipgram = new EncSkipGram( &f, gapcount, ngramversion); //read from file
+                        if (allowskipgrams) {
+                            const EncAnyGram * sourcekey = getsourcekey((EncAnyGram*) skipgram);		                          
+                            if (sourcekey != NULL) {
+                                keywords[targetgram].insert(sourcekey);
+                                delete skipgram;
+                            } else {
+                                keywords[targetgram].insert(skipgram);
+                            }                        
+                        } else {
+                            delete skipgram;
+                        }
+                    }		                        	
+		        }
+		    }
+		    
+		    
+		    			    
 		    if (bestn) {
 		        if (logprobs) {
 		           p = listsum(alignmatrix[sourcegram][targetgram]);   
@@ -2699,6 +2753,7 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
 		if (DEBUG)  cerr << endl;
 	}
     f.close();
+    
 }
 
 AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs, int ptsfield, bool DEBUG) {
@@ -2857,6 +2912,29 @@ void AlignmentModel::save(const string & filename) {
     		    const double p = *iter3;
         	    f.write( (char*) &p, sizeof(double));
         	}
+        	
+        
+        	if (keywords.count(targetgram)) {
+        	    const uint32_t keywordcount = keywords[targetgram].size();
+        	    f.write( (char*) &keywordcount, sizeof(uint32_t));
+        	    for (unordered_set<const EncAnyGram*>::iterator iter3 = keywords[targetgram].begin(); iter3 != keywords[targetgram].end(); iter3++) {
+        	        const EncAnyGram * keyword = *iter3;
+                	if (keyword->isskipgram()) {
+            			const EncSkipGram * skipgram = (const EncSkipGram*) keyword;
+	            		skipgram->writeasbinary(&f);
+	            	
+            		} else {
+            	    	const EncNGram * ngram = (const EncNGram*) keyword;     	
+            			f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
+	            		ngram->writeasbinary(&f);	    		
+            		}    		                    
+        	    }
+        	} else {
+        	    const uint32_t keywordcount = 0;
+        	    f.write( (char*) &keywordcount, sizeof(uint32_t));
+        	}
+        	 
+        	
         }
 
     }    

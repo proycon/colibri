@@ -26,7 +26,7 @@ void recompute_token_index(std::unordered_map<const EncAnyGram *, std::vector<in
 size_t get_templates(const EncAnyGram * anygram, SelectivePatternModel * model, std::unordered_set<const EncSkipGram *> & container);
 void find_clusters(std::unordered_map<const EncSkipGram*,uint16_t> skipgrams, std::vector<std::unordered_set<const EncSkipGram*> > & clusters , SelectivePatternModel * model );
 
-const short ALIGNMENTMODELVERSION = 5; //unsigned: 4
+const short ALIGNMENTMODELVERSION = 6; //unsigned: 4, no-keywords: 5
 const int ALIGNMENTMODEL = 100;
 
 
@@ -35,6 +35,7 @@ typedef std::unordered_map<const EncAnyGram*, t_aligntargets > t_alignmatrix;
 
 
 typedef std::unordered_map<const EncAnyGram*, std::unordered_set<const EncAnyGram *> > t_contexts;
+typedef std::unordered_map<const EncAnyGram*, std::unordered_set<const EncAnyGram *> > t_keywords;
 
 class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
    protected:
@@ -75,12 +76,13 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     void load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel,  const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0); //take the intersection of two existing models
 
         
-    // ~AlignmentModel(); //TODO: write destructor and do cleanup  
+    ~AlignmentModel();
         
     size_t size() { return alignmatrix.size(); }
     
     t_alignmatrix alignmatrix;
-    t_contexts sourcecontexts; //focus pattern -> [patterns_in_context]     
+    t_contexts sourcecontexts; //focus pattern -> [patterns_in_context]
+    t_keywords keywords;     
     
     void computereverse();
     t_alignmatrix reversealignmatrix; //for computation of 2nd score    
