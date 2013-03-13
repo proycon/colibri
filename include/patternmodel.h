@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 #include <map>
+#include <set>
 
 const unsigned char MAXN = 0xff;
 
@@ -233,6 +234,10 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     int reverse_index_size();
     std::vector<EncAnyGram*> reverse_index(const int i);
     EncAnyGram* get_reverse_index_item(const int, const int);
+    
+    std::set<int> getsentences(const EncAnyGram * anygram);
+    std::unordered_map<const EncAnyGram*, int>  getcooccurrences(const EncAnyGram * anygram, IndexedPatternModel * targetmodel = NULL, std::set<int> * sentenceconstraints = NULL);
+    
     
     virtual uint64_t id() { return INDEXEDPATTERNMODEL + INDEXEDPATTERNMODELVERSION; }
     virtual void readheader(std::istream * in, bool ignore = false);

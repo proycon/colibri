@@ -2464,14 +2464,15 @@ AlignmentModel::AlignmentModel(AlignmentModel & s2tmodel, AlignmentModel & t2smo
 }
 
 AlignmentModel::~AlignmentModel() {
-    for (t_keywords::iterator iter = keywords.begin(); iter != keywords.end(); iter++) {
-        const EncAnyGram * sourcegram = iter->first;
-        for (unordered_set<const EncAnyGram*>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {        
-            const EncAnyGram * keygram = *iter2;
-            if (getsourcekey(keygram) == NULL) {
-                delete keygram;
-            }
-        }    
+    for (unordered_map<const EncAnyGram*, unordered_map<const EncAnyGram*, unordered_map<const EncAnyGram*, double> > >::iterator iter = keywords.begin(); iter != keywords.end(); iter++) {
+        for (unordered_map<const EncAnyGram*, unordered_map<const EncAnyGram*, double> >::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+            for (unordered_map<const EncAnyGram*, double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {        
+                const EncAnyGram * keygram = iter2->first;
+                if (getsourcekey(keygram) == NULL) {
+                    delete keygram;
+                }
+            }    
+        }
     }
     //TODO: More and better cleanup
 }
@@ -2696,23 +2697,27 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
                         EncNGram * ngram = new EncNGram(&f, ngramversion); //read from file
                         if (DEBUG)  cerr << " n=" << (int) ngram->n() << " size=" << (int) ngram->size();
                         const EncAnyGram * sourcekey = getsourcekey((EncAnyGram*) ngram);
+                        double keywordprob;                                                
+                        f.read((char*) &keywordprob, sizeof(double));
                         if (sourcekey != NULL) {
-                            keywords[targetgram].insert(sourcekey);
+                            keywords[sourcegram][targetgram][sourcekey] = keywordprob;
                             delete ngram;
                         } else {
-                            keywords[targetgram].insert(ngram);
+                            keywords[sourcegram][targetgram][ngram] = keywordprob;
                         }
                     } else {
                         if (DEBUG)  cerr << "\tKEYWORD-SKIPGRAM, " << (int) gapcount << " gaps";
                         EncSkipGram * skipgram = new EncSkipGram( &f, gapcount, ngramversion); //read from file
+                        double keywordprob;                                                
+                        f.read((char*) &keywordprob, sizeof(double));                        
                         if (allowskipgrams) {
                             const EncAnyGram * sourcekey = getsourcekey((EncAnyGram*) skipgram);		                          
                             if (sourcekey != NULL) {
-                                keywords[targetgram].insert(sourcekey);
+                                keywords[sourcegram][targetgram][sourcekey] = keywordprob;
                                 delete skipgram;
                             } else {
-                                keywords[targetgram].insert(skipgram);
-                            }                        
+                                keywords[sourcegram][targetgram][skipgram] = keywordprob;
+                            }
                         } else {
                             delete skipgram;
                         }
@@ -2914,20 +2919,21 @@ void AlignmentModel::save(const string & filename) {
         	}
         	
         
-        	if (keywords.count(targetgram)) {
-        	    const uint32_t keywordcount = keywords[targetgram].size();
+        	if ((keywords.count(sourcegram)) && (keywords[sourcegram].count(targetgram))) {
+        	    const uint32_t keywordcount = keywords[sourcegram][targetgram].size();
         	    f.write( (char*) &keywordcount, sizeof(uint32_t));
-        	    for (unordered_set<const EncAnyGram*>::iterator iter3 = keywords[targetgram].begin(); iter3 != keywords[targetgram].end(); iter3++) {
-        	        const EncAnyGram * keyword = *iter3;
+        	    for (unordered_map<const EncAnyGram*, double>::iterator iter3 = keywords[sourcegram][targetgram].begin(); iter3 != keywords[sourcegram][targetgram].end(); iter3++) {
+        	        const EncAnyGram * keyword = iter3->first;
                 	if (keyword->isskipgram()) {
             			const EncSkipGram * skipgram = (const EncSkipGram*) keyword;
 	            		skipgram->writeasbinary(&f);
-	            	
             		} else {
             	    	const EncNGram * ngram = (const EncNGram*) keyword;     	
             			f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
 	            		ngram->writeasbinary(&f);	    		
             		}    		                    
+            	    const double p = iter3->second;
+            	    f.write( (char*) &p, sizeof(double));
         	    }
         	} else {
         	    const uint32_t keywordcount = 0;
@@ -3154,6 +3160,70 @@ void AlignmentModel::stats() {
     if (leftsourcecontext || rightsourcecontext) cout << "source contexts: " << alignmatrix.size() << endl;
     cout << "score vector size: " << scorecount << endl;
 }
+
+
+void AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, int include_threshold, int absolute_threshold, int probability_threshold, double filter_threshold) {
+    for (unordered_map<const EncNGram,NGramData >::iterator iter = sourcepatternmodel.ngrams.begin(); iter != sourcepatternmodel.ngrams.end(); iter++) {
+        const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
+        if (iter->second.count() >= include_threshold) computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold);
+    }    
+    for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = sourcepatternmodel.skipgrams.begin(); iter != sourcepatternmodel.skipgrams.end(); iter++) {
+        const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
+        if (iter->second.count() >= include_threshold) computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold);
+    }    
+}
+
+void AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, int probability_threshold , double filter_threshold) {        
+
+    if (alignmatrix.count(sourcegram) && (sourcepatternmodel.exists(sourcegram))) {
+        
+       unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > countmap; // targetgram -> key -> count        
+        
+       for (t_aligntargets::iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
+            const EncAnyGram * targetgram = iter->first;
+            
+            if (targetpatternmodel.exists(targetgram)) {
+                set<int> sentenceconstraints = targetpatternmodel.getsentences(targetgram);
+                countmap[targetgram] = sourcepatternmodel.getcooccurrences(sourcegram, NULL, &sentenceconstraints); ////returns map for counting key -> counts                                                
+            }
+       } 
+
+        double Nkloc = 0;
+        for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
+            const EncAnyGram * targetgram = iter->first;
+            for (unordered_map<const EncAnyGram *, int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                Nkloc += iter2->second;
+            }
+        }
+        
+
+        for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
+            const EncAnyGram * targetgram = iter->first;
+            for (unordered_map<const EncAnyGram *, int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                const EncAnyGram * keygram = iter2->first;
+                //compute probability of translation given keyword
+                
+                const double Ns_kloc = iter2->second;
+                const double Nkcorp = sourcepatternmodel.occurrencecount(keygram);
+                if( (Ns_kloc >= absolute_threshold) && (Nkcorp >= filter_threshold)) {
+                    const double p = (Ns_kloc / Nkloc) * (1/Nkcorp);
+                    if (p >= probability_threshold) {
+                        //add to keywords
+                        keywords[sourcegram][targetgram][keygram] = p;
+                    }                    
+                }
+                
+            }
+        }
+    } 
+    
+   
+    
+}
+
+
+
+
 
 /**************************** EXPERIMENTAL EM MODEL **********************************/
 

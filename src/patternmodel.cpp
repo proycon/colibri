@@ -1490,6 +1490,35 @@ bool IndexedPatternModel::skipgramvarietycheck(SkipGramData & skipgramdata, int 
     return true;
 }
 
+set<int> IndexedPatternModel::getsentences(const EncAnyGram * anygram) {
+    const AnyGramData * data = getdata(anygram);
+    set<CorpusReference> indices = data->get_refs();
+    set<int> sentences;
+    for (set<CorpusReference>::iterator iter = indices.begin(); iter != indices.end(); iter++) {
+        sentences.insert((int) iter->sentence);
+    }
+    return sentences;
+}
+    
+
+unordered_map<const EncAnyGram*, int> IndexedPatternModel::getcooccurrences(const EncAnyGram * anygram, IndexedPatternModel * targetmodel,  set<int> * sentenceconstraints) {
+    if (targetmodel == NULL) targetmodel = this;
+        
+    //find sourcegram sentence index
+    set<int> sentences = getsentences(anygram);
+    
+    unordered_map<const EncAnyGram *,int> coocgrams;
+    for (set<int>::iterator iter = sentences.begin(); iter != sentences.end(); iter++) {
+        if ((sentenceconstraints == NULL) || (sentenceconstraints->count(*iter))) {
+            vector<EncAnyGram*> tmp = targetmodel->reverse_index(*iter);
+            //find keys
+            for (vector<EncAnyGram*>::iterator iter2 = tmp.begin(); iter2 != tmp.end(); iter2++) coocgrams[*iter2]++;
+        }
+    }
+    
+    return coocgrams;
+}
+
 void IndexedPatternModel::histogram(ostream *OUT) {
     map<int,unsigned int> h_ngrams;
     map<int,unsigned int> h_skipgrams;
