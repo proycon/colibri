@@ -5,9 +5,11 @@
 #include <unistd.h>
 #include <patternmodel.h>
 #include <common.h>
+#include <getopt.h>
 
 
 using namespace std;
+
 
 
 void usage() {
@@ -32,6 +34,9 @@ void usage() {
 	cerr << "\t-g               Output relations" << endl;    
     cerr << "\t-G               Output graphviz graph for visualisation" << endl;
     cerr << "\t-q word          Query word (use with -G to output a selected graph)" << endl;
+    cerr << "\t--pmi            Output co-occurrence relations as pointwise mutual information" << endl;
+    cerr << "\t--npmi           Output co-occurrence relations as normalised pointwise mutual information" << endl;
+    //cerr << "\t--jaccard        Output co-occurrence relations as jaccard coefficient" << endl;
 }
 
 int main( int argc, char *argv[] ) {
@@ -58,8 +63,23 @@ int main( int argc, char *argv[] ) {
     bool DOGRAPHVIZ = false; 
     bool DEBUG = false;
     
+    int DOPMI = 0;
+    int DONPMI = 0;
+    int DOJACCARD = 0;
+    
+    
+    static struct option long_options[] = {      
+       {"pmi", no_argument,             &DOPMI, 1},
+       {"npmi", no_argument,             &DONPMI, 1},
+       {"jaccard",no_argument,             &DOJACCARD, 1},                       
+       {0, 0, 0, 0}
+     };
+    /* getopt_long stores the option index here. */
+    int option_index = 0;
+            
+    
     char c;    
-    while ((c = getopt(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgITDJ")) != -1)
+    while ((c = getopt_long(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgITDJ",long_options,&option_index)) != -1)
         switch (c)
         {
         case 'a':
@@ -183,7 +203,10 @@ int main( int argc, char *argv[] ) {
         filter.DOSKIPCONTENT = DOSKIPCONTENT;
         filter.DOSUCCESSORS = DOSUCCESSORS;
         filter.DOPREDECESSORS = DOPREDECESSORS;
-        filter.DOCOOCCURRENCE = DOCOOCCURRENCE;        
+        filter.DOCOOCCURRENCE = DOCOOCCURRENCE;
+        if (DOPMI)  filter.COOCSTYLE = COOCSTYLE_PMI;
+        if (DONPMI)  filter.COOCSTYLE = COOCSTYLE_NPMI;
+        if (DOJACCARD)  filter.COOCSTYLE = COOCSTYLE_JACCARD;
         GraphPatternModel graphmodel = GraphPatternModel(&patternmodel, filter);
         
         
@@ -226,6 +249,9 @@ int main( int argc, char *argv[] ) {
             filter.DOSUCCESSORS = DOSUCCESSORS;
             filter.DOPREDECESSORS = DOPREDECESSORS;   
             filter.DOCOOCCURRENCE = DOCOOCCURRENCE;
+            if (DOPMI)  filter.COOCSTYLE = COOCSTYLE_PMI;
+            if (DONPMI)  filter.COOCSTYLE = COOCSTYLE_NPMI;
+            if (DOJACCARD)  filter.COOCSTYLE = COOCSTYLE_JACCARD;            
             GraphPatternModel graphmodel = GraphPatternModel(modelfile, filter, DEBUG);  
             
             graphmodel.stats( (ostream*) &cerr );

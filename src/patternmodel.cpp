@@ -3442,33 +3442,33 @@ void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OU
 		return;
 	} 
 	if (outputqueryword) {
-	    *OUT << "Query:" << endl;
-        *OUT << "\t" << focus->decode(classdecoder) << "\t" << model->occurrencecount(focus) << "\t" << model->coveragecount(focus) << "\t" << model->coverage(focus);
+	    *OUT << "#Query:" << endl;
+        *OUT << "\t" << focus->decode(classdecoder) << "\t-\t" << model->occurrencecount(focus) << "\t" << model->coveragecount(focus) << "\t" << model->coverage(focus);
 	    if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[focus] << '\t' << (double) data_xcount[focus] / model->occurrencecount(focus);
 	    *OUT << endl;
 	}	
 	if (rel_subsumption_parents[focus].size() > 0) {		
-	    *OUT << "Parent relations - " << rel_subsumption_parents[focus].size() << endl;
+	    *OUT << "#Parent relations - " << rel_subsumption_parents[focus].size() << endl;
 	    outputrelations(classdecoder,OUT,  rel_subsumption_parents[focus]);
     }
     if (rel_subsumption_children[focus].size() > 0) {
-	    *OUT << "Child relations - " << rel_subsumption_children[focus].size() << endl;
+	    *OUT << "#Child relations - " << rel_subsumption_children[focus].size() << endl;
 	    outputrelations(classdecoder,OUT,  rel_subsumption_children[focus]);
 	}
     if (rel_predecessors[focus].size() > 0) {
-       *OUT << "Predecessor relations - " << rel_predecessors[focus].size() << endl;
+       *OUT << "#Predecessor relations - " << rel_predecessors[focus].size() << endl;
        outputrelations(classdecoder,OUT,  rel_predecessors[focus]);
     }
     if (rel_successors[focus].size() > 0) {    
-	    *OUT << "Successor relations - " << rel_successors[focus].size() << endl;
+	    *OUT << "#Successor relations - " << rel_successors[focus].size() << endl;
     	outputrelations(classdecoder,OUT,  rel_successors[focus]);
     }
     if (rel_skipcontent[focus].size() > 0) {    
-	    *OUT << "Skipcontent - " << rel_skipcontent[focus].size() << endl;
+	    *OUT << "#Skipcontent - " << rel_skipcontent[focus].size() << endl;
 	    outputrelations(classdecoder,OUT,  rel_skipcontent[focus]);
 	}
 	if (rel_skipusage[focus].size() > 0) {
-	    *OUT << "Skipusage - " << rel_skipusage[focus].size() << endl;
+	    *OUT << "#Skipusage - " << rel_skipusage[focus].size() << endl;
     	outputrelations(classdecoder,OUT,  rel_skipusage[focus]);
     }
     if (rel_templates[focus].size() > 0) {
@@ -3481,15 +3481,15 @@ void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OU
 	}
 	if (rel_cooccurences[focus].size() > 0) {
 	    *OUT << "Co-occurrences - " << rel_cooccurences[focus].size() << endl;
-	    outputrelations(classdecoder,OUT,  rel_cooccurences[focus]);
+	    outputcoocrelations(focus, classdecoder,OUT,  rel_cooccurences[focus]);
 	}		
 }
 
 void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OUT, unordered_set<const EncAnyGram*>   & relations ) {
 	for (std::unordered_set<const EncAnyGram*>::iterator iter = relations.begin(); iter != relations.end(); iter++) {
 		const EncAnyGram * anygram = *iter;
-		*OUT << "\t" << anygram->decode(classdecoder) << "\t" << model->occurrencecount(anygram) << "\t" << model->coveragecount(anygram) << "\t" << model->coverage(anygram);
-		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[anygram] << '\t' << (double) data_xcount[anygram] / model->occurrencecount(anygram);
+		*OUT << "\t" << anygram->decode(classdecoder) << "\t-\t" << model->occurrencecount(anygram) << "\t" << model->coveragecount(anygram) << "\t" << model->coverage(anygram);
+		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[anygram] << "\t" << (double) data_xcount[anygram] / model->occurrencecount(anygram);
 		*OUT << endl;		
 	}
 }
@@ -3499,11 +3499,53 @@ void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OU
 void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OUT, unordered_map<const EncAnyGram*, uint64_t>   & relations ) {
 	for (std::unordered_map<const EncAnyGram*, uint64_t>::iterator iter = relations.begin(); iter != relations.end(); iter++) {
 		const EncAnyGram * anygram = iter->first;
-		*OUT << "\t" << anygram->decode(classdecoder) << "\t" << model->occurrencecount(anygram) << "\t" << model->coveragecount(anygram) << "\t" << model->coverage(anygram);
-		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[anygram] << '\t' << (double) data_xcount[anygram] / model->occurrencecount(anygram);
+		*OUT << "\t" << anygram->decode(classdecoder) << "\t" << iter->second << "\t" << model->occurrencecount(anygram) << "\t" << model->coveragecount(anygram) << "\t" << model->coverage(anygram);
+		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[anygram] << "\t" << (double) data_xcount[anygram] / model->occurrencecount(anygram);
 		*OUT << endl;		
 	}
 }
+
+
+void GraphPatternModel::outputcoocrelations(const EncAnyGram * pivot, ClassDecoder & classdecoder, ostream *OUT, unordered_map<const EncAnyGram*, uint64_t>   & relations ) {
+	for (std::unordered_map<const EncAnyGram*, uint64_t>::iterator iter = relations.begin(); iter != relations.end(); iter++) {
+		const EncAnyGram * anygram = iter->first;
+		
+		double coocvalue = 0;
+		if (COOCSTYLE == COOCSTYLE_COUNT) {
+		    coocvalue = iter->second;
+		} else if (COOCSTYLE == COOCSTYLE_PMI) {
+		    coocvalue = pmi(pivot, anygram);
+		} else if (COOCSTYLE == COOCSTYLE_NPMI) {
+		    coocvalue = npmi(pivot, anygram);
+		} else {
+		    cerr << "Invalid COOCSTYLE in GraphPatternModel::outputcoocrelations" << endl;
+		    throw InternalError();
+		}	
+		*OUT << "\t" << anygram->decode(classdecoder) << "\t" << coocvalue << "\t" << model->occurrencecount(anygram) << "\t" << model->coveragecount(anygram) << "\t" << model->coverage(anygram);
+		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[anygram] << "\t" << (double) data_xcount[anygram] / model->occurrencecount(anygram);
+		*OUT << endl;		
+	}
+}
+
+double GraphPatternModel::pmi(const EncAnyGram * key1, const EncAnyGram * key2) {
+    if ((rel_cooccurences.count(key1)) && (rel_cooccurences[key1].count(key2))) {
+        const int jointcount = rel_cooccurences[key1][key2];
+        return  log( (double) jointcount / (model->occurrencecount(key1) * model->occurrencecount(key2)) );    
+    } else {
+        return 0;
+    }
+}
+
+double GraphPatternModel::npmi(const EncAnyGram * key1, const EncAnyGram * key2) {
+    if ((rel_cooccurences.count(key1)) && (rel_cooccurences[key1].count(key2))) {
+        const int jointcount = rel_cooccurences[key1][key2];
+        return  log( (double) jointcount / (model->occurrencecount(key1) * model->occurrencecount(key2)) ) / -log(jointcount);    
+    } else {
+        return 0;
+    }
+}
+
+
 
 
 void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, const EncAnyGram * focusinput) {

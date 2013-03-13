@@ -355,6 +355,15 @@ class UnindexedPatternModel: public ModelReader, public ModelWriter, public Mode
 int transitivereduction(std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > & relations );
 
 
+enum CoocStyle {
+       COOCSTYLE_COUNT = 0, //join count
+       COOCSTYLE_JACCARD = 1,
+       COOCSTYLE_DICE = 2,
+       COOCSTYLE_PMI = 3,
+       COOCSTYLE_NPMI = 4
+};
+
+
 class GraphFilter {
    public:
     bool DOPARENTS;
@@ -366,7 +375,8 @@ class GraphFilter {
     bool DOSKIPCONTENT;
     bool DOSUCCESSORS;
     bool DOPREDECESSORS;
-    bool DOCOOCCURRENCE;
+    bool DOCOOCCURRENCE;  
+    CoocStyle COOCSTYLE; 
   
   GraphFilter() {
     DOPARENTS = false;
@@ -379,6 +389,7 @@ class GraphFilter {
     DOSUCCESSORS = false;
     DOPREDECESSORS = false;
     DOCOOCCURRENCE = false;
+    CoocStyle COOCSTYLE = COOCSTYLE_COUNT;
   }
 };    
 
@@ -399,6 +410,7 @@ class GraphRelations {
     bool DOSUCCESSORS;
     bool DOPREDECESSORS;
     bool DOCOOCCURRENCE;
+    CoocStyle COOCSTYLE; //cooc style for outputrelations
     
     bool HASPARENTS;
     bool HASCHILDREN;
@@ -460,10 +472,13 @@ class GraphRelations {
     DOSKIPCONTENT = model.DOSKIPCONTENT;
     DOPREDECESSORS = model.DOPREDECESSORS;
     DOSUCCESSORS = model.DOSUCCESSORS;
-    DOCOOCCURRENCE = model.DOCOOCCURRENCE;  
+    DOCOOCCURRENCE = model.DOCOOCCURRENCE;
+    COOCSTYLE = model.COOCSTYLE;  
   }
     
    virtual const EncAnyGram* getkey(const EncAnyGram* key) =0;
+   
+   
 };
 
 class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRelations {               
@@ -550,16 +565,22 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
     void outputgraphvizrelations( const std::unordered_set<const EncAnyGram *> &, std::ostream *OUT, t_weightedrelations & relationhash, const std::string & colour);
     //void outputgraphvizrelations( const EncAnyGram * anygram, t_weightedrelations & relationhash, const std::string & colour);
     //void outputgraphvizrelations( const std::unordered_set<const EncAnyGram *> &, std::ostream *OUT, t_weightedrelations & relationhash, const std::string & colour);        
+    
+  
   
     void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, const EncAnyGram * focusinput, bool outputquery=false);
     void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, std::unordered_set<const EncAnyGram*>   & relations );
     void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, std::unordered_map<const EncAnyGram*,uint64_t>   & relations ); //weighted
+    void outputcoocrelations(const EncAnyGram * pivot, ClassDecoder & classdecoder, std::ostream *OUT, std::unordered_map<const EncAnyGram*,uint64_t>   & relations ); //weighted
 
     void outputcoverage(ClassDecoder & classdecoder, std::ostream *OUT);
     
     void findincomingnodes(const EncAnyGram * focus, std::unordered_set<const EncAnyGram *> & relatednodes);
     void findincomingnodes(const EncAnyGram * focus, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram *> & relatednodes, t_relations  & relationhash );
     void findincomingnodes(const EncAnyGram * focus, const EncAnyGram * anygram, std::unordered_set<const EncAnyGram *> & relatednodes, t_weightedrelations  & relationhash );
+    
+    double pmi(const EncAnyGram * key1, const EncAnyGram * key2);
+    double npmi(const EncAnyGram * key1, const EncAnyGram * key2);
 };
 
 
