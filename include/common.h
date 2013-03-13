@@ -12,6 +12,8 @@ bool strip_extension(std::string& filename, const std::string extension);
 double listproduct(const std::vector<double> & l);
 double listsum(const std::vector<double> & l);
 void orderedinsert(std::list<double> & l, double value);
+std::vector<std::string> & split(const std::string &s, char delim, std::vector<std::string> &elems);
+std::vector<std::string> split(const std::string &s, char delim);
 
 class InternalError: public std::exception {
   virtual const char* what() const throw()

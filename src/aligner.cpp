@@ -30,7 +30,11 @@ void usage() {
     cerr << "\t-G weight-factor          Weigh alignment results based on graph information (subsumption relations)" << endl;
     cerr << "\t-B probability-threshold  Probability threshold used when computing bidirectional alignment (intersection) of alignment model and reverse alignment model (-I, -i)" << endl;
     cerr << "\t-z				         No normalisation" << endl;
-    cerr << "\t-U                        Extract skip-grams from n-grams (requires source and target models to be graph models with template and instance relations)" << endl;    
+    cerr << "\t-U                        Extract skip-grams from n-grams (requires source and target models to be graph models with template and instance relations)" << endl;   
+    cerr << " Keyword extraction:" << endl;    
+    cerr << "\t-k                        Do keyword extraction (requires -d, -s and -t !!)" << endl;
+    cerr << "\t-K include_threshold,absolute_threshold,filter_threshold,probability_threshold  " << endl;
+    cerr << "\t                          Parameters for keyword extraction" << endl;
     cerr << " Co-occurrence alignment options (-J):" << endl;       
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;   
     cerr << " EM Alignment Options (-E):" << endl;
@@ -57,7 +61,7 @@ void usage() {
     cerr << "\t-X xcount-ratio           Consider only patterns with an *exclusivity ratio* over this threshold (between 0.0 [not exclusive] and 1.0 [entirely exclusive])" << endl;
     cerr << "\t-l n                      Left context size (in words, default 0)" << endl;
     cerr << "\t-r n                      Right context size (in words, default 0)" << endl; 
-    cerr << "\t-L n                      Maximum N length" << endl;         
+    cerr << "\t-L n                      Maximum N length" << endl;                 
     cerr << " Output options:" << endl;    
     cerr << "\t-o filename               Write an alignment model to file using this filename (extension *.alignmodel.colibri will be automatically added)",
     cerr << "\t--moses                   Output phrase-translation table in Moses format" << endl;
@@ -138,6 +142,12 @@ int main( int argc, char *argv[] ) {
     string outputprefix = "";
     double unionweight = 1.05;
     
+    bool DOKEYWORDS = false;
+    int kw_absolute_threshold = 3;
+    int kw_filter_threshold = 0.001;
+    int kw_probability_threshold = 20;
+    int kw_include_threshold = 1;
+    
     static struct option long_options[] = {      
        //{"simplelex", no_argument,       &DOSIMPLELEX, 1},
        //{"simpletable", no_argument,       &DOSIMPLETABLE, 1},
@@ -157,9 +167,10 @@ int main( int argc, char *argv[] ) {
     string::size_type pos;
     string a;
     
+    vector<string> args; //for K
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:wAu:eR",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:wAu:eRkK:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -318,6 +329,16 @@ int main( int argc, char *argv[] ) {
                 cerr << "ERROR: Unknown phrase alignment heuristic: '" << a << "'" << endl;
                 exit(2);
             }
+            break;
+        case 'k':
+            DOKEYWORDS = true;
+            break;
+        case 'K':
+            args = split(optarg,',');
+            if (args.size() >= 1) kw_include_threshold = atoi(args[0].c_str());
+            if (args.size() >= 2) kw_absolute_threshold = atoi(args[1].c_str());
+            if (args.size() >= 3) kw_filter_threshold = atoi(args[2].c_str());
+            if (args.size() >= 4) kw_probability_threshold = atoi(args[3].c_str());
             break;
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
