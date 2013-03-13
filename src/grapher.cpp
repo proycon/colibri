@@ -16,13 +16,14 @@ void usage() {
     cerr << "\t-f filename.indexedpatternmodel.colibri		Indexed pattern model to load (required for building a graph model)" << endl;      
     cerr << "\t-P               Compute/load subsumption relations from children to parents (reverse of -C)" << endl;
     cerr << "\t-C               Compute/load subsumption relations from parents to children (reverse of -P)" << endl;
-    cerr << "\t-S               Compute/load subsumption skipgram to skipcontent relations" << endl;
-    cerr << "\t-s               Compute/load subsumption skip-content to skipgram relations (reverse of -S)" << endl;
-    cerr << "\t-L               Compute/load subsumption predecessor relations (constructions to the left)" << endl;
-    cerr << "\t-R               Compute/load subsumption sucessor relations (constructions to the right)" << endl;
-    cerr << "\t-T               Compute/load subsumption template relations" << endl;
-    cerr << "\t-I               Compute/load subsumption instance relations (reverse of -T)" << endl;
-    cerr << "\t-a               Compute/load subsumption all relations" << endl;      
+    cerr << "\t-S               Compute/load skipgram to skipcontent relations" << endl;
+    cerr << "\t-s               Compute/load skip-content to skipgram relations (reverse of -S)" << endl;
+    cerr << "\t-L               Compute/load predecessor relations (constructions to the left)" << endl;
+    cerr << "\t-R               Compute/load sucessor relations (constructions to the right)" << endl;
+    cerr << "\t-T               Compute/load template relations" << endl;
+    cerr << "\t-I               Compute/load instance relations (reverse of -T)" << endl;
+    cerr << "\t-J               Compute/load co-occurence relations (joint count)" << endl;
+    cerr << "\t-a               Compute/load all relations" << endl;      
     cerr << "\t-X               Compute/load exclusive count" << endl;
     cerr << "\t------------------------------------------------------------------------------" << endl;
     cerr << "\t-r               Keep only transitive reduction (sizes down the model)" << endl;
@@ -58,7 +59,7 @@ int main( int argc, char *argv[] ) {
     bool DEBUG = false;
     
     char c;    
-    while ((c = getopt(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgITDO")) != -1)
+    while ((c = getopt(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgITDJ")) != -1)
         switch (c)
         {
         case 'a':
@@ -103,7 +104,7 @@ int main( int argc, char *argv[] ) {
 		case 'S':
         	DOSKIPCONTENT = true;
         	break;       
-		case 'O':
+		case 'J':
         	DOCOOCCURRENCE = true;
         	break;       
         case 's':

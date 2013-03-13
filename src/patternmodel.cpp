@@ -912,6 +912,62 @@ double IndexedPatternModel::coverage(const EncAnyGram* key) {
     }
 }*/
 
+
+double IndexedPatternModel::pmi(const EncAnyGram * key1, const EncAnyGram * key2) {
+    //pointwise mutual information
+    double jointcount = 0;
+        
+    set<int> sentences1 = getsentences(key1);
+    set<int> sentences2 = getsentences(key2);
+    
+    set<int>::const_iterator sourceiter = sentences1.begin();    
+    set<int>::const_iterator targetiter = sentences2.begin();
+    
+    while ((sourceiter !=sentences1.end()) && (targetiter!=sentences2.end())) {
+        if (*sourceiter < *targetiter) { 
+            sourceiter++;
+        } else if (*targetiter < *sourceiter) {
+            targetiter++;
+        } else {  //equal
+            jointcount++;
+            sourceiter++;
+            targetiter++;
+        }
+    }
+    
+    return  log( (double) jointcount / (occurrencecount(key1) * occurrencecount(key2)) );    
+}
+
+
+double IndexedPatternModel::npmi(const EncAnyGram * key1, const EncAnyGram * key2) {
+    //normalised pointwise mutual information
+    double jointcount = 0;
+        
+    set<int> sentences1 = getsentences(key1);
+    set<int> sentences2 = getsentences(key2);
+    
+    set<int>::const_iterator sourceiter = sentences1.begin();    
+    set<int>::const_iterator targetiter = sentences2.begin();
+    
+    while ((sourceiter !=sentences1.end()) && (targetiter!=sentences2.end())) {
+        if (*sourceiter < *targetiter) { 
+            sourceiter++;
+        } else if (*targetiter < *sourceiter) {
+            targetiter++;
+        } else {  //equal
+            jointcount++;
+            sourceiter++;
+            targetiter++;
+        }
+    }
+    
+    return  log( (double) jointcount / (occurrencecount(key1) * occurrencecount(key2)) )  / -log(jointcount);    
+}
+
+
+
+
+
 void IndexedPatternModel::computestats() {
     totalngramcount = 0;
     totalskipgramcount = 0;
