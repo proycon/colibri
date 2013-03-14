@@ -3218,16 +3218,21 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
 int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold) {        
     int keywordsfound = 0;
     
-    if (alignmatrix.count(sourcegram) && (sourcepatternmodel.exists(sourcegram))) {
+    const EncAnyGram * sourcekey = getsourcekey(sourcegram);
+    if (!sourcekey) return NULL;
+    
+    if (alignmatrix.count(sourcekey) && (sourcepatternmodel.exists(sourcegram))) {
         
        unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > countmap; // targetgram -> key -> count        
         
-       for (t_aligntargets::iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
+       for (t_aligntargets::iterator iter = alignmatrix[sourcekey].begin(); iter != alignmatrix[sourcekey].end(); iter++) {
             const EncAnyGram * targetgram = iter->first;
             
-            if (targetpatternmodel.exists(targetgram)) {
+            if (targetpatternmodel.exists(targetgram)) {                
                 set<int> sentenceconstraints = targetpatternmodel.getsentences(targetgram);
-                countmap[targetgram] = sourcepatternmodel.getcooccurrences(sourcegram, NULL, &sentenceconstraints); ////returns map for counting key -> counts                                                
+                if (sentenceconstraints.empty()) cerr << "\tWARNING: sentenceconstraints is empty set" << endl;
+                countmap[targetgram] = sourcepatternmodel.getcooccurrences(sourcegram, NULL, &sentenceconstraints); ////returns map for counting key -> counts
+                if (countmap[targetgram].empty()) cerr << "\tWARNING: No cooccurrences found" << endl;
             }
        } 
        
@@ -3257,7 +3262,7 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
                     const double p = (Ns_kloc / Nkloc) * (1/Nkcorp);
                     if (p >= probability_threshold) {
                         //add to keywords
-                        keywords[sourcegram][targetgram][keygram] = p;
+                        keywords[sourcekey][targetgram][keygram] = p;
                         keywordsfound++;
                         if (DEBUG) cerr << "\tACCEPTED p=" << p << endl;                    
                     } else if (DEBUG) {
