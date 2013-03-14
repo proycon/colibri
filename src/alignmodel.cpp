@@ -3230,16 +3230,10 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
             
             if (targetpatternmodel.exists(targetgram)) {                
                 set<int> sentenceconstraints = targetpatternmodel.getsentences(targetgram);
-                if (sentenceconstraints.empty()) cerr << "\tWARNING: sentenceconstraints is empty set" << endl;
                 countmap[targetgram] = sourcepatternmodel.getcooccurrences(sourcegram, NULL, &sentenceconstraints); ////returns map for counting key -> counts
-                if (countmap[targetgram].empty()) cerr << "\tWARNING: No cooccurrences found" << endl;
             }
        } 
        
-        if (DEBUG) {
-            cerr << "\tTemporary map for " << countmap.size() << " target patterns" << endl; 
-        }
-
         double Nkloc = 0;
         for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
             const EncAnyGram * targetgram = iter->first;
@@ -3284,20 +3278,34 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
 
 
 
-int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold) {        
+int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold) {
+
+            
+
     int keywordsfound = 0;
-    if (alignmatrix.count(sourcegram) && (sourcepatternmodel.exists(sourcegram))) {
+
+    const EncAnyGram * sourcekey = getsourcekey(sourcegram);
+    if (!sourcekey) return NULL;    
+    
+    if (alignmatrix.count(sourcekey) && (sourcepatternmodel.exists(sourcekey))) {
         
        unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > countmap; // targetgram -> key -> count        
         
-       for (t_aligntargets::iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
+       for (t_aligntargets::iterator iter = alignmatrix[sourcekey].begin(); iter != alignmatrix[sourcekey].end(); iter++) {
             const EncAnyGram * targetgram = iter->first;
             
             if (targetpatternmodel.exists(targetgram)) {
                 set<int> sentenceconstraints = targetpatternmodel.getsentences(targetgram);
+                if (sentenceconstraints.empty()) cerr << "\tWARNING: sentenceconstraints is empty set" << endl;
                 countmap[targetgram] = sourcepatternmodel.getcooccurrences(sourcegram, NULL, &sentenceconstraints); ////returns map for counting key -> counts                                                
+                if (countmap[targetgram].empty()) cerr << "\tWARNING: No co-occurrences found for a source pattern" << endl;
             }
        } 
+       
+        if (DEBUG) {
+            cerr << "\tTemporary map for " << countmap.size() << " target patterns" << endl; 
+        }
+       
 
         double Nkloc = 0;
         for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
@@ -3314,15 +3322,22 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
                 const EncAnyGram * keygram = iter2->first;
                 //compute probability of translation given keyword
                 
+                if (DEBUG) cerr << "\tConsidering keyword - "; 
+                
                 const double Ns_kloc = iter2->second;
                 const double Nkcorp = sourcepatternmodel.occurrencecount(keygram);
                 if( (Ns_kloc >= absolute_threshold) && (Nkcorp >= filter_threshold)) {
                     const double p = (Ns_kloc / Nkloc) * (1/Nkcorp);
                     if (p >= probability_threshold) {
                         //add to keywords
-                        keywords[sourcegram][targetgram][keygram] = p;
+                        keywords[sourcekey][targetgram][keygram] = p;
                         keywordsfound++;
-                    }                    
+                        if (DEBUG) cerr << "\tACCEPTED p=" << p << endl;                    
+                    } else if (DEBUG) {
+                        cerr << "\trejected p=" << p << endl;                    
+                    }                     
+                } else if (DEBUG) {
+                     cerr << "\trejected Ns_kloc=" << Ns_kloc << " Nkcorp=" << Nkcorp << endl;
                 }
                 
             }
