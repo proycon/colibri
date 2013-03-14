@@ -154,11 +154,14 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 	
 	t_aligntargets sumtranslationoptions(const EncAnyGram * sourcefocus, bool debug = false);	
 	AlignmentModel * removecontext();
-	
-	void computekeywords(IndexedPatternModel & patternmodel, int absolute_threshold = 3, int filter_threshold = 0.001, double probability_threshold = 20);	
+		
 
     void computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, int include_threshold = 1, int absolute_threshold = 3, int probability_threshold = 0.001, double filter_threshold = 20);
 	void computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold = 3, int probability_threshold = 0.001, double filter_threshold = 20);   
+	
+    void computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, int include_threshold = 1, int absolute_threshold = 3, int probability_threshold = 0.001, double filter_threshold = 20);
+	void computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold = 3, int probability_threshold = 0.001, double filter_threshold = 20);   
+	
 	
 	void stats();
 };

@@ -4088,6 +4088,17 @@ void SelectivePatternModel::outputinstance(const EncAnyGram * anygram, CorpusRef
 	cout << endl;	
 }
 
+bool SelectivePatternModel::exists(const EncAnyGram* key) const {
+    if (key == NULL) return NULL;    
+    if (key->gapcount() == 0) {
+        return (ngrams.count(*( (const EncNGram*) key) ) > 0);
+    } else {
+        return (skipgrams.count(*( (const EncSkipGram*) key) ) > 0);
+    }
+    return false;
+}
+
+
 
 const EncAnyGram* SelectivePatternModel::getkey(const EncAnyGram* key) {
     if (key == NULL) {

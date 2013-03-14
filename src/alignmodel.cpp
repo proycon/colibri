@@ -3179,6 +3179,18 @@ void AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, I
     }    
 }
 
+
+void AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, int include_threshold, int absolute_threshold, int probability_threshold, double filter_threshold) {
+    for (unordered_map<const EncNGram,IndexCountData >::iterator iter = sourcepatternmodel.ngrams.begin(); iter != sourcepatternmodel.ngrams.end(); iter++) {
+        const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
+        if (iter->second.count >= include_threshold) computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold);
+    }    
+    for (unordered_map<const EncSkipGram,IndexCountData >::iterator iter = sourcepatternmodel.skipgrams.begin(); iter != sourcepatternmodel.skipgrams.end(); iter++) {
+        const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
+        if (iter->second.count >= include_threshold) computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold);
+    }    
+}
+
 void AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, int probability_threshold , double filter_threshold) {        
 
     if (alignmatrix.count(sourcegram) && (sourcepatternmodel.exists(sourcegram))) {
@@ -3228,6 +3240,55 @@ void AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, I
 }
 
 
+
+
+void AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, int probability_threshold , double filter_threshold) {        
+
+    if (alignmatrix.count(sourcegram) && (sourcepatternmodel.exists(sourcegram))) {
+        
+       unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > countmap; // targetgram -> key -> count        
+        
+       for (t_aligntargets::iterator iter = alignmatrix[sourcegram].begin(); iter != alignmatrix[sourcegram].end(); iter++) {
+            const EncAnyGram * targetgram = iter->first;
+            
+            if (targetpatternmodel.exists(targetgram)) {
+                set<int> sentenceconstraints = targetpatternmodel.getsentences(targetgram);
+                countmap[targetgram] = sourcepatternmodel.getcooccurrences(sourcegram, NULL, &sentenceconstraints); ////returns map for counting key -> counts                                                
+            }
+       } 
+
+        double Nkloc = 0;
+        for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
+            const EncAnyGram * targetgram = iter->first;
+            for (unordered_map<const EncAnyGram *, int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                Nkloc += iter2->second;
+            }
+        }
+        
+
+        for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
+            const EncAnyGram * targetgram = iter->first;
+            for (unordered_map<const EncAnyGram *, int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+                const EncAnyGram * keygram = iter2->first;
+                //compute probability of translation given keyword
+                
+                const double Ns_kloc = iter2->second;
+                const double Nkcorp = sourcepatternmodel.occurrencecount(keygram);
+                if( (Ns_kloc >= absolute_threshold) && (Nkcorp >= filter_threshold)) {
+                    const double p = (Ns_kloc / Nkloc) * (1/Nkcorp);
+                    if (p >= probability_threshold) {
+                        //add to keywords
+                        keywords[sourcegram][targetgram][keygram] = p;
+                    }                    
+                }
+                
+            }
+        }
+    } 
+    
+   
+    
+}
 
 
 

@@ -166,6 +166,7 @@ class ModelQuerier: public ModelQuerierBase {
 	public:
 	 //ModelQuerier() {} ;
 	 virtual int maxlength() const =0;
+	 virtual bool exists(const EncAnyGram* key) const =0;
      virtual int occurrencecount(const EncAnyGram* key) =0;
      virtual int coveragecount(const EncAnyGram* key) =0;    
      virtual double coverage(const EncAnyGram* key) =0;	 
@@ -656,6 +657,7 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier, public Gra
     const EncAnyGram* getkey(const EncAnyGram* key);
     IndexCountData getdata(const EncAnyGram* key);
     
+    bool exists(const EncAnyGram* key) const;
     int occurrencecount(const EncAnyGram* key);
     int coveragecount(const EncAnyGram* key);    
     double coverage(const EncAnyGram* key);
