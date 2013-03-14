@@ -628,7 +628,7 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier, public Gra
      void computestats(); //compute occurrence count sums
    public:
 
-    //occurence counts
+    //occurence countspatt
     unsigned long totalngramcount;
     unsigned long totalskipgramcount;     
     unsigned int ngramcount[MAXN]; 
@@ -654,7 +654,7 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier, public Gra
     
     int maxlength() const { return MAXLENGTH; }
     const EncAnyGram* getkey(const EncAnyGram* key);
-    
+    IndexCountData getdata(const EncAnyGram* key);
     
     int occurrencecount(const EncAnyGram* key);
     int coveragecount(const EncAnyGram* key);    
@@ -680,6 +680,9 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier, public Gra
     virtual void readngramdata(std::istream * in, const EncNGram & ngram, int ngramversion=1,bool ignore = false);
     virtual void readskipgramdata(std::istream * in, const EncSkipGram & skipgram,int ngramversion=1,bool ignore = false);
     virtual void readfooter(std::istream * in, bool ignore = false) {};
+    
+    std::set<int> getsentences(const EncAnyGram * anygram);
+    std::unordered_map<const EncAnyGram*, int>  getcooccurrences(const EncAnyGram * anygram, SelectivePatternModel * targetmodel = NULL, std::set<int> * sentenceconstraints = NULL);    
 };
 
 

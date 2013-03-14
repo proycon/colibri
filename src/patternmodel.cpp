@@ -4111,8 +4111,43 @@ const EncAnyGram* SelectivePatternModel::getkey(const EncAnyGram* key) {
     }
 }
 
+IndexCountData SelectivePatternModel::getdata(const EncAnyGram* key) {
+    key = getkey(key);
+    if (key == NULL) {
+        cerr << "INTERNAL ERROR: SelectivePatternModel::getdata(NULL)!" << endl;
+        throw InternalError();
+    }
+    if (key->gapcount() == 0) {
+        return ngrams[*((const EncNGram *) key)];
+    } else {
+        return skipgrams[*((const EncSkipGram *) key)];
+    }    
+}
 
 
+set<int> SelectivePatternModel::getsentences(const EncAnyGram * anygram) {
+    const IndexCountData data = getdata(anygram);
+    return set<int>(data.sentences.begin(), data.sentences.end());
+}
+    
+
+unordered_map<const EncAnyGram*, int> SelectivePatternModel::getcooccurrences(const EncAnyGram * anygram, SelectivePatternModel * targetmodel,  set<int> * sentenceconstraints) {
+    if (targetmodel == NULL) targetmodel = this;
+        
+    //find sourcegram sentence index
+    set<int> sentences = getsentences(anygram);
+    
+    unordered_map<const EncAnyGram *,int> coocgrams;
+    for (set<int>::iterator iter = sentences.begin(); iter != sentences.end(); iter++) {
+        if (((sentenceconstraints == NULL) || (sentenceconstraints->count(*iter))) && (reverseindex.count(*iter))) {
+            vector<const EncAnyGram*> * tmp = &targetmodel->reverseindex[*iter];
+            //find keys
+            for (vector<const EncAnyGram*>::iterator iter2 = tmp->begin(); iter2 != tmp->end(); iter2++) coocgrams[*iter2]++;
+        }
+    }
+    
+    return coocgrams;
+}
 
 
 void GraphRelations::readrelations(std::istream * in, const EncAnyGram * anygram, t_relations * relationhash, int ngramversion, bool ignore) {
