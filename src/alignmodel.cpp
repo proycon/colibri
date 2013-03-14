@@ -3024,12 +3024,12 @@ const EncAnyGram * AlignmentModel::getsourcekey(const EncAnyGram * key,  bool al
 }
 
 
-const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key, bool returnselfifnotfound) {
+const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key, bool returnselfifnotfound, bool forcemodel) {
     if (targetmodel != NULL) {
         const EncAnyGram * modelkey = targetmodel->getkey(key);
         if (modelkey != NULL) {
             return modelkey;
-        } else {
+        } else if (forcemodel) {
             return returnselfifnotfound ? key : NULL;
         }
     }
