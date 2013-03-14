@@ -605,7 +605,7 @@ int main( int argc, char *argv[] ) {
         } else if (!mosesmodelfile.empty()) {
             
             if (sourceclassfile.empty() || targetclassfile.empty()) {
-                cerr << "ERROR: Source and target class files (-S, -T) must be specified when loading from moses phrasestable" << endl;
+                cerr << "ERROR: Source and target class files (-S, -T) must be specified when loading from moses phrasetable" << endl;
                 exit(2);
             }
             
@@ -658,6 +658,11 @@ int main( int argc, char *argv[] ) {
         }
         
         if (DOKEYWORDS) {
+            if ((!sourcepatternmodel) || (!targetpatternmodel)) {
+                cerr << "ERROR: Source and target models needed (-s, -t) to compute global keywords" << endl;
+                exit(2);            
+            }
+        
             cerr << "Computing global keywords" << endl;
             alignmodel->computekeywords(*sourcemodel, *targetmodel, kw_include_threshold, kw_absolute_threshold, kw_probability_threshold, kw_filter_threshold);
             cerr << "Keywords found for " << alignmodel->keywords.size() << " source patterns" << endl;        
