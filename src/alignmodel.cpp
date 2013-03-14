@@ -3230,6 +3230,10 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
                 countmap[targetgram] = sourcepatternmodel.getcooccurrences(sourcegram, NULL, &sentenceconstraints); ////returns map for counting key -> counts                                                
             }
        } 
+       
+        if (DEBUG) {
+            cerr << "\tTemporary map for " << countmap.size() << " target patterns" << endl; 
+        }
 
         double Nkloc = 0;
         for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
