@@ -144,8 +144,8 @@ int main( int argc, char *argv[] ) {
     
     bool DOKEYWORDS = false;
     int kw_absolute_threshold = 3;
-    int kw_filter_threshold = 0.001;
-    int kw_probability_threshold = 20;
+    int kw_filter_threshold = 20;
+    double kw_probability_threshold = 0.001;
     int kw_include_threshold = 1;
     
     static struct option long_options[] = {      
@@ -338,7 +338,7 @@ int main( int argc, char *argv[] ) {
             if (args.size() >= 1) kw_include_threshold = atoi(args[0].c_str());
             if (args.size() >= 2) kw_absolute_threshold = atoi(args[1].c_str());
             if (args.size() >= 3) kw_filter_threshold = atoi(args[2].c_str());
-            if (args.size() >= 4) kw_probability_threshold = atoi(args[3].c_str());
+            if (args.size() >= 4) kw_probability_threshold = atof(args[3].c_str());
             break;
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
@@ -627,6 +627,10 @@ int main( int argc, char *argv[] ) {
                 newalignmodel->save(outputprefix);
             }
             exit(0);
+        }
+        
+        if (DOKEYWORDS) {
+            alignmodel->computekeywords(*sourcemodel, *targetmodel, kw_include_threshold, kw_absolute_threshold, kw_probability_threshold, kw_filter_threshold);        
         }
 
         

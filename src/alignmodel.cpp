@@ -3168,7 +3168,7 @@ void AlignmentModel::stats() {
 }
 
 
-void AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, int include_threshold, int absolute_threshold, int probability_threshold, double filter_threshold) {
+void AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, int include_threshold, int absolute_threshold, double probability_threshold, int filter_threshold) {
     for (unordered_map<const EncNGram,NGramData >::iterator iter = sourcepatternmodel.ngrams.begin(); iter != sourcepatternmodel.ngrams.end(); iter++) {
         const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
         if (iter->second.count() >= include_threshold) computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold);
@@ -3180,7 +3180,7 @@ void AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, I
 }
 
 
-void AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, int include_threshold, int absolute_threshold, int probability_threshold, double filter_threshold) {
+void AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, int include_threshold, int absolute_threshold, double probability_threshold, int filter_threshold) {
     for (unordered_map<const EncNGram,IndexCountData >::iterator iter = sourcepatternmodel.ngrams.begin(); iter != sourcepatternmodel.ngrams.end(); iter++) {
         const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
         if (iter->second.count >= include_threshold) computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold);
@@ -3191,7 +3191,7 @@ void AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel,
     }    
 }
 
-void AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, int probability_threshold , double filter_threshold) {        
+void AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold) {        
 
     if (alignmatrix.count(sourcegram) && (sourcepatternmodel.exists(sourcegram))) {
         
@@ -3242,7 +3242,7 @@ void AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, I
 
 
 
-void AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, int probability_threshold , double filter_threshold) {        
+void AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold) {        
 
     if (alignmatrix.count(sourcegram) && (sourcepatternmodel.exists(sourcegram))) {
         
