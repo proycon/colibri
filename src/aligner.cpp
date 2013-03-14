@@ -147,7 +147,7 @@ int main( int argc, char *argv[] ) {
     bool DOKEYWORDS = false;
     int kw_absolute_threshold = 3;
     int kw_filter_threshold = 20;
-    double kw_probability_threshold = 0.001;
+    double kw_probability_threshold = 0.0000000001;
     int kw_include_threshold = 1;
     
     static struct option long_options[] = {      

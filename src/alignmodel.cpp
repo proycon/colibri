@@ -3258,7 +3258,7 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
                         //add to keywords
                         keywords[sourcekey][targetgram][keygram] = p;
                         keywordsfound++;
-                        if (DEBUG) cerr << "\tACCEPTED p=" << p << endl;                    
+                        if (DEBUG) cerr << "\tACCEPTED p=" << p << " Ns_kloc=" << Ns_kloc << " Nkloc=" << Nkloc << " Nkcorp=" << Nkcorp << endl;
                     } else if (DEBUG) {
                         cerr << "\trejected p=" << p << endl;                    
                     }                     
