@@ -3245,6 +3245,7 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
             for (unordered_map<const EncAnyGram *, int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                 const EncAnyGram * keygram = iter2->first;
                 //compute probability of translation given keyword
+                if (DEBUG) cerr << "\tConsidering keyword - "; 
                 
                 const double Ns_kloc = iter2->second;
                 const double Nkcorp = sourcepatternmodel.occurrencecount(keygram);
@@ -3254,7 +3255,12 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
                         //add to keywords
                         keywords[sourcegram][targetgram][keygram] = p;
                         keywordsfound++;
-                    }                    
+                        if (DEBUG) cerr << "\tACCEPTED p=" << p << endl;                    
+                    } else if (DEBUG) {
+                        cerr << "\trejected p=" << p << endl;                    
+                    }                     
+                } else if (DEBUG) {
+                     cerr << "\trejected Ns_kloc=" << Ns_kloc << " Nkcorp=" << Nkcorp << endl;
                 }
                 
             }
