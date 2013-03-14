@@ -12,6 +12,7 @@ void usage() {
     cerr << "\t-S sourceclassfile        Source class file (for model decoding)" << endl;
     cerr << "\t-T targetclassfile        Target class file (for model decoding)" << endl;
     cerr << "\t-d alignmodelfile         Load an existing alignment model (*.alignmodel.colibri), for model decoding specify with -S and -T" << endl;
+    cerr << "\t-m phrase-table           Load a moses-style phrasetable" << endl;
     cerr << "\t-i alignmodelfile         Load inverse alignment model as well (*.alignmodel.colibri) and compute intersection, for model decoding specify with -S and -T" << endl;
     //cerr << "\t-H translationtable       Load a translation table model (*.transtable.colibri) for decoding, specify with -S and -T" << endl;    
     cerr << " Alignment method (choose one, though some may be combined):" << endl;
@@ -78,6 +79,7 @@ int main( int argc, char *argv[] ) {
     string sourceclassfile = "";
     string targetclassfile = "";
     string modelfile="";
+    string mosesmodelfile="";
     string ttablefile="";
     string ttableoutfile="";
     string invmodelfile="";
@@ -170,7 +172,7 @@ int main( int argc, char *argv[] ) {
     vector<string> args; //for K
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:wAu:eRkK:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:wAu:eRkK:m:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -179,6 +181,9 @@ int main( int argc, char *argv[] ) {
         case 'd':
         	modelfile = optarg;
         	break;
+        case 'm':
+        	mosesmodelfile = optarg;
+        	break;        	
         case 'i':
         	invmodelfile = optarg;
         	break;
@@ -585,17 +590,38 @@ int main( int argc, char *argv[] ) {
 		    
 		    		  
 		}
-	} else if (!modelfile.empty()) { //modelfile not empty
+	} else if ( (!modelfile.empty()) || (!mosesmodelfile.empty())) { //modelfile not empty
 	    //************ LOAD ****************
 	    cerr << "Loading alignment model..." << endl;
-	    if ((sourcemodel != NULL) && (targetmodel != NULL)) {
-	        alignmodel = new AlignmentModel(sourcemodel,targetmodel, LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE,DODEBUG);
-	        alignmodel->load(modelfile, false, DOSKIPGRAMS, bestn);	    
-	        
-        } else {
-            alignmodel = new AlignmentModel(modelfile, false, 1, DOSKIPGRAMS, bestn, DODEBUG);            
-        }  
-        cerr << "\tLoaded " << alignmodel->size() << " source patterns." << endl;	        
+	    if (!modelfile.empty()) {
+	        if ((sourcemodel != NULL) && (targetmodel != NULL)) {
+	            alignmodel = new AlignmentModel(sourcemodel,targetmodel, LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE,DODEBUG);
+	            alignmodel->load(modelfile, false, DOSKIPGRAMS, bestn);	    	        
+            } else {
+                alignmodel = new AlignmentModel(modelfile, false, 1, DOSKIPGRAMS, bestn, DODEBUG);            
+            }  
+            cerr << "\tLoaded " << alignmodel->size() << " source patterns." << endl;
+        } else if (!mosesmodelfile.empty()) {
+
+            if (sourceclassfile.empty() || targetclassfile.empty()) {
+                cerr << "ERROR: Source and target class files (-S, -T) must be specified when loading from moses phrasestable" << endl;
+                exit(2);
+            }
+            
+		    cerr << "Loading source class decoder " << sourceclassfile << endl;
+		    ClassEncoder sourceclassencoder = ClassEncoder(sourceclassfile);
+
+		    cerr << "Loading target class decoder " << targetclassfile << endl;
+		    ClassEncoder targetclassencoder = ClassEncoder(targetclassfile);          
+		            
+	        if ((sourcemodel != NULL) && (targetmodel != NULL)) {
+	            alignmodel = new AlignmentModel(sourcemodel,targetmodel, LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE,DODEBUG);
+	            alignmodel->load(mosesmodelfile, &sourceclassencoder, &targetclassencoder);	    	        
+            } else {
+                alignmodel = new AlignmentModel(mosesmodelfile, &sourceclassencoder, &targetclassencoder,true,3,DODEBUG);         
+            }  
+            cerr << "\tLoaded " << alignmodel->size() << " source patterns." << endl;            
+        }
         
         if (!invmodelfile.empty()) {
         	cerr << "Loading inverse alignment model..." << endl;

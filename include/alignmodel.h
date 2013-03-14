@@ -69,6 +69,7 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
         
     //Load alignment model from Moses phrasetable (text)
     AlignmentModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs= true, int ptsfield = 3, bool DEBUG = false); //load from Moses text file
+    void load(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs= true, int ptsfield = 3); 
     
     //create on the basis of two alignment models (intersection), scores from both models will be represented in the score array (e.g p(t|s) and p(s|t))
     AlignmentModel(const std::string & s2tfilename, const std::string & t2sfilename, const double s2tthreshold = 0, const double t2sthreshold = 0, const double productthreshold = 0, bool DEBUG = false); //create on the basis of two alignment models, will generate two scores: p(t|s) and p(s|t) 

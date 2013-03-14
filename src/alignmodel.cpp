@@ -2770,6 +2770,13 @@ AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sour
     this->debug_targetclassdecoder = NULL;    
     this->ptsfield = ptsfield;
     leftsourcecontext = rightsourcecontext = 0;
+    load(filename, sourceencoder, targetencoder, logprobs, ptsfield);
+}
+
+void AlignmentModel::load(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs, int ptsfield) {
+    //load from moses-style phrasetable file
+    this->ptsfield = ptsfield;
+    leftsourcecontext = rightsourcecontext = 0;
 		
     ifstream f;
     f.open(filename.c_str(), ios::in | ios::binary);
@@ -2799,8 +2806,7 @@ AlignmentModel::AlignmentModel(const std::string & filename, ClassEncoder * sour
                 begin = i+5;
                 mode++; 
             }
-        }
-        //TODO: add scores
+        }        
         scores_s = scores_s + " "; 
         begin = 0;
         //cerr << "DEBUG: scores_s=" << scores_s << endl;       
