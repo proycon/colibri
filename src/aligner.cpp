@@ -603,7 +603,7 @@ int main( int argc, char *argv[] ) {
             }  
             cerr << "\tLoaded " << alignmodel->size() << " source patterns." << endl;
         } else if (!mosesmodelfile.empty()) {
-            cerr << "Loading alignment model (moses)..." << endl;
+            
             if (sourceclassfile.empty() || targetclassfile.empty()) {
                 cerr << "ERROR: Source and target class files (-S, -T) must be specified when loading from moses phrasestable" << endl;
                 exit(2);
@@ -615,6 +615,7 @@ int main( int argc, char *argv[] ) {
 		    cerr << "Loading target class encoder " << targetclassfile << endl;
 		    ClassEncoder targetclassencoder = ClassEncoder(targetclassfile);          
 		            
+            cerr << "Loading alignment model (moses)..." << endl;		            
 	        if ((sourcemodel != NULL) && (targetmodel != NULL)) {
 	            alignmodel = new AlignmentModel(sourcemodel,targetmodel, LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE,DODEBUG);
 	            alignmodel->load(mosesmodelfile, &sourceclassencoder, &targetclassencoder);	    	        
