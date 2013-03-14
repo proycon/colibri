@@ -657,7 +657,9 @@ int main( int argc, char *argv[] ) {
         }
         
         if (DOKEYWORDS) {
-            alignmodel->computekeywords(*sourcemodel, *targetmodel, kw_include_threshold, kw_absolute_threshold, kw_probability_threshold, kw_filter_threshold);        
+            cerr << "Computing global keywords" << endl;
+            alignmodel->computekeywords(*sourcemodel, *targetmodel, kw_include_threshold, kw_absolute_threshold, kw_probability_threshold, kw_filter_threshold);
+            cerr << "Keywords found for " << alignmodel->keywords.size() << " source patterns" << endl;        
         }
 
         
