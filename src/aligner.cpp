@@ -658,7 +658,7 @@ int main( int argc, char *argv[] ) {
         }
         
         if (DOKEYWORDS) {
-            if ((!sourcepatternmodel) || (!targetpatternmodel)) {
+            if ((!sourcemodel) || (!targetmodel)) {
                 cerr << "ERROR: Source and target models needed (-s, -t) to compute global keywords" << endl;
                 exit(2);            
             }
