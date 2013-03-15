@@ -3232,16 +3232,25 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
             
             if (targetpatternmodel.exists(targetgram)) {                
                 set<int> sentenceconstraints = targetpatternmodel.getsentences(targetgram);
-                countmap[targetgram] = sourcepatternmodel.getcooccurrences(sourcegram, NULL, &sentenceconstraints); ////returns map for counting key -> counts
+                countmap[targetgram] = sourcepatternmodel.getcooccurrences(sourcegram, NULL, &sentenceconstraints); ////returns map for counting key -> counts                
             }
        } 
        
+       
+       
         double Nkloc = 0;
-        for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
-            const EncAnyGram * targetgram = iter->first;
-            for (unordered_map<const EncAnyGram *, int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-                Nkloc += iter2->second;
-            }
+        for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) { 
+            unordered_map<const EncAnyGram *, int>::iterator keyiter = iter->second.begin();
+            while (keyiter != iter->second.end()) {
+                const EncAnyGram * keygram = keyiter->first;
+                //exclude keywords that are already subsumed by the sourcegram  (does not work for skipgrams yet)
+                if ((keygram->gapcount() == 0) && (sourcegram->gapcount() == 0) && (((const EncNGram *) sourcegram)->contains((const EncNGram *) keygram))) {                
+                    keyiter = iter->second.erase(keyiter);                    
+                } else {
+                    Nkloc += keyiter->second;
+                    keyiter++;
+                }                
+            }            
         }
         
 

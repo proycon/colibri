@@ -102,6 +102,7 @@ class EncNGram: public EncAnyGram {
     int subngrams(std::vector<EncNGram*> & container) const;
     int splits(std::vector<std::pair<EncNGram*, EncNGram*> > & container) const;
     bool classvector(std::vector<int> & ) const;
+    bool contains(const EncNGram * ngram) const;
     
     EncNGram * gettoken(int index) const;
     

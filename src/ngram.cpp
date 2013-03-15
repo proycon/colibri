@@ -1421,6 +1421,22 @@ std::string EncData::decode(ClassDecoder& classdecoder) const {
 EncAnyGram * EncNGram::addcontext(const EncNGram * leftcontext, const EncNGram * rightcontext) const {
     return (EncAnyGram *) new EncNGram(*leftcontext + *this + *rightcontext);  
 }
+    
+
+bool EncNGram::contains(const EncNGram * ngram) const {
+    for (int i = 0; i < _size; i++) {
+        bool match = true;
+        const int s = ngram->size();
+        for (int j = 0; j < s; j++) {
+            if ((i+j >= _size) || (data[i+j] != ngram->data[j])) {
+                match = false;
+                break;
+            }
+        }
+        if (match) return true;
+    }
+    return false;
+}
 
 
 EncAnyGram * EncSkipGram::addcontext(const EncNGram * leftcontext, const EncNGram * rightcontext) const {
