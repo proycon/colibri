@@ -603,7 +603,7 @@ int main( int argc, char *argv[] ) {
             }  
             cerr << "\tLoaded " << alignmodel->size() << " source patterns";
             if (alignmodel->keywords.size() > 0) {
-                cerr << ", with keywords for \t " << alignmodel->keywords.size() << " of them";
+                cerr << ", with keywords for " << alignmodel->keywords.size() << " of them";
             }
             cerr << "." << endl;
         } else if (!mosesmodelfile.empty()) {
