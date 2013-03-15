@@ -45,6 +45,22 @@ int main( int argc, char *argv[] ) {
         const EncAnyGram * subngram = *iter2;
     	cout << "'" << subngram->decode(classdecoder) << "'" << endl;
     }
+    
+    cerr << "Below tests should all return 1" << endl;
+    
+    string substring = "or not";     	
+  	EncNGram subngram = encoder.input2ngram(substring, true);
+  	cerr << "Testing occurrence of substring 'or not' " << (ngram.contains(subngram) == 1) << endl; 	
+    
+    string substring2 = "to not";     	
+  	EncNGram subngram2 = encoder.input2ngram(substring2, true);
+  	cerr << "Testing occurrence of substring 'to not': " << (ngram.contains(subngram2) == 0) << endl;
+    
+    string substring3 = "to be";     	
+  	EncNGram subngram3 = encoder.input2ngram(substring3, true);
+  	cerr << "Testing occurrence of substring 'to be': " << (ngram.contains(subngram3) == 1) << endl;    
+    
+    
     cerr << "----------------------------------------------------" << endl;
     cerr << "Encoding skip-gram from string input" << endl;
 	string querystring2 = "To {*1*} or {*1*} to be";
