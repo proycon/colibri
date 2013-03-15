@@ -3277,6 +3277,8 @@ int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const Enc
     }
     
 
+    unordered_set<const EncAnyGram *> tmp; //temporary map holding all keywords
+
     for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
         const EncAnyGram * targetgram = iter->first;
         for (unordered_map<const EncAnyGram *, int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
@@ -3292,6 +3294,7 @@ int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const Enc
                 if (p >= probability_threshold) {
                     //add to keywords
                     keywords[sourcekey][targetgram][keygram] = p;
+                    tmp.insert(keygram);
                     keywordsfound++;
                     if (DEBUG) cerr << "\tACCEPTED p=" << p << " Ns_kloc=" << Ns_kloc << " Nkloc=" << Nkloc << " Nkcorp=" << Nkcorp << endl;                    
                 } else if (DEBUG) {
@@ -3303,6 +3306,32 @@ int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const Enc
             
         }
     }
+    
+    //remove keywords that have no disambiguative power, i.e keywords that are present regardless for all targets
+    for (unordered_set<const EncAnyGram *>::iterator tmpiter = tmp.begin(); tmpiter != tmp.end(); tmpiter++) {
+        const EncAnyGram * keygram = *tmpiter;
+        bool omnipresent = true;
+        for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
+            if (iter->second.count(keygram)) {
+                omnipresent = false;
+                break;
+            }
+        }
+        if (omnipresent) {
+            unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin();             
+            while (iter != countmap.end()) {
+                const EncAnyGram * targetgram = iter->first;
+                iter->second.erase(keygram);
+                if (iter->second.empty()) {
+                    iter = countmap.erase(iter);
+                } else {
+                    iter++;
+                }                            
+            }
+        }        
+    }
+    
+    
     
     
     
