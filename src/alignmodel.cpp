@@ -3221,7 +3221,9 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
     const EncAnyGram * sourcekey = getsourcekey(sourcegram);
     if (!sourcekey) return NULL;
     
-    if (alignmatrix.count(sourcekey) && (sourcepatternmodel.exists(sourcegram))) {
+    if ( (alignmatrix.count(sourcekey)) && (alignmatrix[sourcekey].size() > 1)  && (sourcepatternmodel.exists(sourcegram))) { //don't bother searching keywords if there is only one translation for a sourcegram
+    
+           
         
        unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > countmap; // targetgram -> key -> count        
         
