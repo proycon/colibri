@@ -2970,7 +2970,7 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
             for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
                 *OUT << *iter3 << ' ';
             }
-            if ( (keywords.count(sourcegram)) && (keywords[sourcegram].count(targetgram)) ) {
+            if ( (keywords.count(sourcegram)) && (keywords[sourcegram].count(targetgram)) && (!mosesformat) ) {
                 *OUT << endl << "#KEYWORDS:";
                 multimap<double,const EncAnyGram *> sortedkw;
                 for (unordered_map<const EncAnyGram *, double>::iterator iter3 = keywords[sourcegram][targetgram].begin(); iter3 != keywords[sourcegram][targetgram].end(); iter3++) sortedkw.insert(pair<double,const EncAnyGram *>(-1* iter3->second, iter3->first));
