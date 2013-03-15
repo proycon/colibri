@@ -601,7 +601,11 @@ int main( int argc, char *argv[] ) {
             } else {
                 alignmodel = new AlignmentModel(modelfile, false, 1, DOSKIPGRAMS, bestn, DODEBUG);            
             }  
-            cerr << "\tLoaded " << alignmodel->size() << " source patterns." << endl;
+            cerr << "\tLoaded " << alignmodel->size() << " source patterns";
+            if (alignmodel->keywords.size() > 0) {
+                cerr << ", with keywords for \t " << alignmodel->keywords.size() << " of them";
+            }
+            cerr << "." << endl;
         } else if (!mosesmodelfile.empty()) {
             
             if (sourceclassfile.empty() || targetclassfile.empty()) {
