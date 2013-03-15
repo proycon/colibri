@@ -23,7 +23,7 @@ int addunknownwords(ClassEncoder * sourceclassencoder, ClassDecoder * sourceclas
 
 void usage() {
     cerr << "Training usage: contextmoses -f source-traindatafile -g target-traindatafile [-N|-X|-M] [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
-    cerr << "Training usage: contextmoses -F testdatafile [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
+    cerr << "Test usage: contextmoses -F testdatafile [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
     cerr << "Classifier types: (pick one, for training only)" << endl;
     cerr << " -N           N-Classifier Array, one classifier per pattern size group" << endl;
     cerr << " -X           Construction experts, one classifier per construction" << endl;
@@ -43,7 +43,9 @@ void usage() {
     cerr << " -c [int]     Context threshold. Only create a classifier when at least this many different contexts exist. Defaults to 1." << endl;
     cerr << " -t [int]     Target threshold. Only create a classifier when at least this many different target options exist. Defaults to 1." << endl;
     cerr << " -a [float]   Accuracy threshold for Construction experts (-X), only experts with a leave-one-out accuracy higher than specified will be included. Value between 0 and 1. Defaults to 0 (no threshold)." << endl;
-    cerr << " -i [int]     Instance threshold for Construction experts (-X), prune all classifiers with less instances than this threshhold." << endl; 
+    cerr << " -i [int]     Instance threshold for Construction experts (-X), prune all classifiers with less instances than this threshhold." << endl;
+    cerr << " -k           enable global context keywords (only for -X, required an alignment model loaded with keywords (-d) )" << endl;
+    cerr << " -K           probability threshold p(keyword|source,target) (default: 1e-99)" << endl; 
     cerr << " -x           disable exemplar weighting" << endl;
     cerr << " -O [options] Timbl options" << endl;
     cerr << " -1           Represent the focus feature as a single entity, rather than individual tokens" << endl;
@@ -86,6 +88,8 @@ int main( int argc, char *argv[] ) {
     bool TEST = false;
     bool debug = false;
     
+    bool DOKEYWORDS = false;
+    
     string trainfile = "";
     string targettrainfile = "";
     string testfile = "";
@@ -100,6 +104,7 @@ int main( int argc, char *argv[] ) {
     bool singlefocusfeature = false;
     double accuracythreshold = 0;
     int instancethreshold = 0;
+    double keywordprobthreshold = 1e-99;
     
     bool timbloptionsset = false;
     double appendepsilon = 0.000001;
@@ -112,7 +117,7 @@ int main( int argc, char *argv[] ) {
     
     char c;    
     string s;
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:e:qo:i:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:e:qo:i:kK:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -213,6 +218,12 @@ int main( int argc, char *argv[] ) {
         case 'o':
             outputprefix = optarg;
             break;
+        case 'k':
+            DOKEYWORDS = true;
+            break;
+        case 'K':
+            keywordprobthreshold = atof(optarg);
+            break;
         case 'H':
             s = optarg;
             if (s == "weighed") {
@@ -277,6 +288,11 @@ int main( int argc, char *argv[] ) {
             cerr << "Loading alignment model " << alignmodelfile << endl;
             alignmodel = new AlignmentModel(alignmodelfile,false,ptsfield, true,0, false);
         } else if (!mosesphrasetable.empty()) {
+            if (DOKEYWORDS) {
+                cerr << "ERROR: Global context features are enabled, need a colibri alignment model with keywords instead of a moses phrasetables" << endl;
+                exit(2);
+            }
+        
 	        cerr << "Loading target class encoder " << targetclassfile << endl;
 	        targetclassencoder = new ClassEncoder(targetclassfile);  
 
