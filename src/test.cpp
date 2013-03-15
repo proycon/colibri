@@ -60,6 +60,10 @@ int main( int argc, char *argv[] ) {
   	EncNGram subngram3 = encoder.input2ngram(substring3, true);
   	cerr << "Testing occurrence of substring 'to be': " << (ngram.contains(&subngram3) == 1) << endl;    
     
+    string substring4 = "or";     	
+  	EncNGram subngram4 = encoder.input2ngram(substring4, true);
+  	cerr << "Testing occurrence of substring 'or': " << (ngram.contains(&subngram4) == 1) << endl;  
+    
     
     cerr << "----------------------------------------------------" << endl;
     cerr << "Encoding skip-gram from string input" << endl;
