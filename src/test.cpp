@@ -50,11 +50,11 @@ int main( int argc, char *argv[] ) {
     
     string substring = "or not";     	
   	EncNGram subngram = encoder.input2ngram(substring, true);
-  	cerr << "Testing occurrence of substring 'or not' " << (ngram.contains(&subngram) == 1) << endl; 	
+  	cerr << "Testing occurrence of substring 'or not': " << (ngram.contains(&subngram) == 1) << endl; 	
     
     string substring2 = "to not";     	
   	EncNGram subngram2 = encoder.input2ngram(substring2, true);
-  	cerr << "Testing occurrence of substring 'to not': " << (ngram.contains(&subngram2) == 0) << endl;
+  	cerr << "Testing non-occurrence of substring 'to not': " << (ngram.contains(&subngram2) == 0) << endl;
     
     string substring3 = "to be";     	
   	EncNGram subngram3 = encoder.input2ngram(substring3, true);
