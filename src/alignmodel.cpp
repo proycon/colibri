@@ -3244,8 +3244,10 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
             while (keyiter != iter->second.end()) {
                 const EncAnyGram * keygram = keyiter->first;
                 //exclude keywords that are already subsumed by the sourcegram  (does not work for skipgrams yet)
-                if ((keygram->gapcount() == 0) && (sourcegram->gapcount() == 0) && (((const EncNGram *) sourcegram)->contains((const EncNGram *) keygram))) {                
-                    keyiter = countmap[iter->first].erase(keyiter);                    
+                if ((keygram->gapcount() == 0) && (sourcegram->gapcount() == 0) && (((const EncNGram *) sourcegram)->contains((const EncNGram *) keygram))) {
+                    if (DEBUG) cerr << "\tKey is subpart, deleting key " << iter->second.size();                 
+                    keyiter = countmap[iter->first].erase(keyiter);
+                    if (DEBUG) cerr << " " << iter->second.size() << endl;                    
                 } else {
                     Nkloc += keyiter->second;
                     keyiter++;
