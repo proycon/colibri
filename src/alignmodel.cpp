@@ -3219,7 +3219,7 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
 
 
 
-
+//Bit ugly, code duplication! Fix sometime... Make sure I edit the right one!
 int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold) {        
     int keywordsfound = 0;
     
@@ -3243,59 +3243,71 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
        
        
        
-        double Nkloc = 0;
-        for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) { 
-            unordered_map<const EncAnyGram *, int>::iterator keyiter = iter->second.begin();
-            while (keyiter != iter->second.end()) {
-                const EncAnyGram * keygram = keyiter->first;
-                //exclude keywords that are already subsumed by the sourcegram  (does not work for skipgrams yet)
-                if ((keygram->gapcount() == 0) && (sourcegram->gapcount() == 0) && (((const EncNGram *) sourcegram)->contains((const EncNGram *) keygram))) {
-                    if (DEBUG) cerr << "\tKey is subpart, deleting key " << iter->second.size();                 
-                    keyiter = countmap[iter->first].erase(keyiter);
-                    if (DEBUG) cerr << " " << iter->second.size() << endl;                    
-                } else {
-                    Nkloc += keyiter->second;
-                    keyiter++;
-                }                
-            }            
-        }
-        
-
-        for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
-            const EncAnyGram * targetgram = iter->first;
-            for (unordered_map<const EncAnyGram *, int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-                const EncAnyGram * keygram = iter2->first;
-                //compute probability of translation given keyword
-                if (DEBUG) cerr << "\tConsidering keyword - "; 
-                
-                const double Ns_kloc = iter2->second;
-                const double Nkcorp = sourcepatternmodel.occurrencecount(keygram);
-                if( (Ns_kloc >= absolute_threshold) && (Nkcorp >= filter_threshold)) {
-                    const double p = (Ns_kloc / Nkloc) * (1/Nkcorp);
-                    if (p >= probability_threshold) {
-                        //add to keywords
-                        keywords[sourcekey][targetgram][keygram] = p;
-                        keywordsfound++;
-                        if (DEBUG) cerr << "\tACCEPTED p=" << p << " Ns_kloc=" << Ns_kloc << " Nkloc=" << Nkloc << " Nkcorp=" << Nkcorp << endl;
-                    } else if (DEBUG) {
-                        cerr << "\trejected p=" << p << endl;                    
-                    }                     
-                } else if (DEBUG) {
-                     cerr << "\trejected Ns_kloc=" << Ns_kloc << " Nkcorp=" << Nkcorp << endl;
-                }
-                
-            }
-        }
-    } 
-    
+        keywordsfound = computekeywords(&sourcepatternmodel, sourcekey,sourcegram,countmap, absolute_threshold, probability_threshold , filter_threshold);
+    }
     return keywordsfound;
-   
-    
+       
 }
 
 
 
+int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const EncAnyGram * sourcekey, const EncAnyGram * sourcegram, unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > & countmap, int absolute_threshold, double probability_threshold , int filter_threshold) {
+    int keywordsfound = 0;
 
+    if (DEBUG) {
+        cerr << "\tTemporary map for " << countmap.size() << " target patterns" << endl; 
+    }
+   
+
+    double Nkloc = 0;
+    for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) { 
+        unordered_map<const EncAnyGram *, int>::iterator keyiter = iter->second.begin();
+        while (keyiter != iter->second.end()) {
+            const EncAnyGram * keygram = keyiter->first;
+            //exclude keywords that are already subsumed by the sourcegram  (does not work for skipgrams yet)
+            if ((keygram->gapcount() == 0) && (sourcegram->gapcount() == 0) && (((const EncNGram *) sourcegram)->contains((const EncNGram *) keygram))) {
+                if (DEBUG) cerr << "\tKey is subpart, deleting key " << iter->second.size();                 
+                keyiter = countmap[iter->first].erase(keyiter);
+                if (DEBUG) cerr << " " << iter->second.size() << endl;                    
+            } else {
+                Nkloc += keyiter->second;
+                keyiter++;
+            }                
+        }            
+    }
+    
+
+    for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
+        const EncAnyGram * targetgram = iter->first;
+        for (unordered_map<const EncAnyGram *, int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+            const EncAnyGram * keygram = iter2->first;
+            //compute probability of translation given keyword
+            
+            if (DEBUG) cerr << "\tConsidering keyword - "; 
+            
+            const double Ns_kloc = iter2->second;
+            const double Nkcorp = sourcepatternmodel->occurrencecount(keygram);
+            if( (Ns_kloc >= absolute_threshold) && (Nkcorp >= filter_threshold)) {
+                const double p = (Ns_kloc / Nkloc) * (1/Nkcorp);
+                if (p >= probability_threshold) {
+                    //add to keywords
+                    keywords[sourcekey][targetgram][keygram] = p;
+                    keywordsfound++;
+                    if (DEBUG) cerr << "\tACCEPTED p=" << p << " Ns_kloc=" << Ns_kloc << " Nkloc=" << Nkloc << " Nkcorp=" << Nkcorp << endl;                    
+                } else if (DEBUG) {
+                    cerr << "\trejected p=" << p << endl;                    
+                }                     
+            } else if (DEBUG) {
+                 cerr << "\trejected Ns_kloc=" << Ns_kloc << " Nkcorp=" << Nkcorp << endl;
+            }
+            
+        }
+    }
+    
+    
+    
+   return keywordsfound;
+}
 
 int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold) {
 
@@ -3321,60 +3333,11 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
             }
        } 
        
-        if (DEBUG) {
-            cerr << "\tTemporary map for " << countmap.size() << " target patterns" << endl; 
-        }
+       keywordsfound = computekeywords(&sourcepatternmodel, sourcekey,sourcegram,countmap, absolute_threshold, probability_threshold , filter_threshold);
        
+    }
 
-        double Nkloc = 0;
-        for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) { 
-            unordered_map<const EncAnyGram *, int>::iterator keyiter = iter->second.begin();
-            while (keyiter != iter->second.end()) {
-                const EncAnyGram * keygram = keyiter->first;
-                //exclude keywords that are already subsumed by the sourcegram  (does not work for skipgrams yet)
-                if ((keygram->gapcount() == 0) && (sourcegram->gapcount() == 0) && (((const EncNGram *) sourcegram)->contains((const EncNGram *) keygram))) {
-                    if (DEBUG) cerr << "\tKey is subpart, deleting key " << iter->second.size();                 
-                    keyiter = countmap[iter->first].erase(keyiter);
-                    if (DEBUG) cerr << " " << iter->second.size() << endl;                    
-                } else {
-                    Nkloc += keyiter->second;
-                    keyiter++;
-                }                
-            }            
-        }
-        
-
-        for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
-            const EncAnyGram * targetgram = iter->first;
-            for (unordered_map<const EncAnyGram *, int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-                const EncAnyGram * keygram = iter2->first;
-                //compute probability of translation given keyword
-                
-                if (DEBUG) cerr << "\tConsidering keyword - "; 
-                
-                const double Ns_kloc = iter2->second;
-                const double Nkcorp = sourcepatternmodel.occurrencecount(keygram);
-                if( (Ns_kloc >= absolute_threshold) && (Nkcorp >= filter_threshold)) {
-                    const double p = (Ns_kloc / Nkloc) * (1/Nkcorp);
-                    if (p >= probability_threshold) {
-                        //add to keywords
-                        keywords[sourcekey][targetgram][keygram] = p;
-                        keywordsfound++;
-                        if (DEBUG) cerr << "\tACCEPTED p=" << p << " Ns_kloc=" << Ns_kloc << " Nkloc=" << Nkloc << " Nkcorp=" << Nkcorp << endl;                    
-                    } else if (DEBUG) {
-                        cerr << "\trejected p=" << p << endl;                    
-                    }                     
-                } else if (DEBUG) {
-                     cerr << "\trejected Ns_kloc=" << Ns_kloc << " Nkcorp=" << Nkcorp << endl;
-                }
-                
-            }
-        }
-    } 
-    
-    
-   return keywordsfound;
-    
+    return keywordsfound;
 }
 
 
