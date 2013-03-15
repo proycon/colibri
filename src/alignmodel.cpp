@@ -2972,9 +2972,9 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
             }
             if ( (keywords.count(sourcegram)) && (keywords[sourcegram].count(targetgram)) ) {
                 *OUT << endl << "#KEYWORDS:";
-                for (unordered_map<const EncAnyGram *, double>::iterator iter3 = keywords[sourcegram][targetgram].begin(); iter3 != keywords[sourcegram][targetgram].end(); iter3++) {
-                    *OUT << "\t" << iter3->first->decode(sourceclassdecoder) << ' ' << iter3->second;
-                }
+                multimap<double,const EncAnyGram *> sortedkw;
+                for (unordered_map<const EncAnyGram *, double>::iterator iter3 = keywords[sourcegram][targetgram].begin(); iter3 != keywords[sourcegram][targetgram].end(); iter3++) sortedkw.insert(pair<double,const EncAnyGram *>(-1* iter3->second, iter3->first));
+                for (multimap<double,const EncAnyGram *>::iterator iter3 = sortedkw.begin(); iter3 != sortedkw.end(); iter3++) *OUT << "\t" << iter3->second->decode(sourceclassdecoder) << ' ' << (iter3->first * -1);  
             }
             *OUT << endl;
         }
