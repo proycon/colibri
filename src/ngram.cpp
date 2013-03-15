@@ -1424,9 +1424,10 @@ EncAnyGram * EncNGram::addcontext(const EncNGram * leftcontext, const EncNGram *
     
 
 bool EncNGram::contains(const EncNGram * ngram) const {
+    const int s = ngram->size();
+    if (_size < ngram->size()) return false;    
     for (int i = 0; i < _size; i++) {
         bool match = true;
-        const int s = ngram->size();
         for (int j = 0; j < s; j++) {
             if ((i+j >= _size) || (data[i+j] != ngram->data[j])) {
                 match = false;
