@@ -3215,6 +3215,11 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
     return keywordsfound;    
 }
 
+
+
+
+
+
 int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold) {        
     int keywordsfound = 0;
     
@@ -3291,6 +3296,7 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
 
 
 
+
 int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold) {
 
             
@@ -3300,7 +3306,7 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
     const EncAnyGram * sourcekey = getsourcekey(sourcegram);
     if (!sourcekey) return NULL;    
     
-    if (alignmatrix.count(sourcekey) && (sourcepatternmodel.exists(sourcekey))) {
+    if (alignmatrix.count(sourcekey)  && (alignmatrix[sourcekey].size() > 1) && (sourcepatternmodel.exists(sourcekey))) {
         
        unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > countmap; // targetgram -> key -> count        
         
@@ -3321,11 +3327,20 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
        
 
         double Nkloc = 0;
-        for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
-            const EncAnyGram * targetgram = iter->first;
-            for (unordered_map<const EncAnyGram *, int>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-                Nkloc += iter2->second;
-            }
+        for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) { 
+            unordered_map<const EncAnyGram *, int>::iterator keyiter = iter->second.begin();
+            while (keyiter != iter->second.end()) {
+                const EncAnyGram * keygram = keyiter->first;
+                //exclude keywords that are already subsumed by the sourcegram  (does not work for skipgrams yet)
+                if ((keygram->gapcount() == 0) && (sourcegram->gapcount() == 0) && (((const EncNGram *) sourcegram)->contains((const EncNGram *) keygram))) {
+                    if (DEBUG) cerr << "\tKey is subpart, deleting key " << iter->second.size();                 
+                    keyiter = countmap[iter->first].erase(keyiter);
+                    if (DEBUG) cerr << " " << iter->second.size() << endl;                    
+                } else {
+                    Nkloc += keyiter->second;
+                    keyiter++;
+                }                
+            }            
         }
         
 
@@ -3345,7 +3360,7 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
                         //add to keywords
                         keywords[sourcekey][targetgram][keygram] = p;
                         keywordsfound++;
-                        if (DEBUG) cerr << "\tACCEPTED p=" << p << endl;                    
+                        if (DEBUG) cerr << "\tACCEPTED p=" << p << " Ns_kloc=" << Ns_kloc << " Nkloc=" << Nkloc << " Nkcorp=" << Nkcorp << endl;                    
                     } else if (DEBUG) {
                         cerr << "\trejected p=" << p << endl;                    
                     }                     
