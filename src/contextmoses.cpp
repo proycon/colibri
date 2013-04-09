@@ -45,8 +45,10 @@ void usage() {
     cerr << " -t [int]     Target threshold. Only create a classifier when at least this many different target options exist. Defaults to 1." << endl;
     cerr << " -a [float]   Accuracy threshold for Construction experts (-X), only experts with a leave-one-out accuracy higher than specified will be included. Value between 0 and 1. Defaults to 0 (no threshold)." << endl;
     cerr << " -i [int]     Instance threshold for Construction experts (-X), prune all classifiers with less instances than this threshhold." << endl;
-    cerr << " -k           enable global context keywords (only for -X, required an alignment model loaded with keywords (-d) )" << endl;
+    cerr << " -k           enable global context keywords (only for -X, required an alignment model loaded with keywords (-d), and pattern models (-s -E)" << endl;
     cerr << " -K           probability threshold p(keyword|source,target) (default: 1e-99)" << endl; 
+    cerr << " -s [file]    Source-side pattern model (needed for -k)" << endl;
+    cerr << " -E [file]    Target-side pattern model (needed for -k)" << endl;
     cerr << " -x           disable exemplar weighting" << endl;
     cerr << " -O [options] Timbl options" << endl;
     cerr << " -1           Represent the focus feature as a single entity, rather than individual tokens" << endl;
@@ -55,8 +57,6 @@ void usage() {
     cerr << " -e [float]   Small epsilon value used as score for unencountered options when score handling is set to append mode (default:  0.000001) " << endl;
     cerr << " -q           Skip decoder" << endl;
     cerr << " -o           Output prefix (default: tmp)" << endl;
-    cerr << " -s [file]    Source-side pattern model (needed for -k)" << endl;
-    cerr << " -E [file]    Target-side pattern model (needed for -k)" << endl;
     
     
     //cerr << "\t-C number                 Classifier mode" << endl;
