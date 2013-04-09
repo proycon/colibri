@@ -51,7 +51,7 @@ class Classifier {
     Classifier(const std::string & id, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, bool exemplarweights = true, bool debug=false); //for building
     Classifier(const std::string & id, const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int ptsfield = 1, double appendepsilon=0.000001, bool loadondemand = false, bool debug = false); //for testing
     ~Classifier();            
-    void addinstance(std::vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight = 1);
+    void addinstance(std::vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight = 1, std::vector<std::string> * extrafeatures = NULL);
     void addinstance(std::vector<std::string> & featurevector, const std::string & label, double exemplarweight = 1);
     int checkinstancethreshold(int instancethreshold);
     void train(const std::string & timbloptions);
@@ -151,12 +151,16 @@ class ConstructionExperts: public ClassifierInterface {
     public:
         double accuracythreshold;
         int instancethreshold;
+        bool keywords;
+        double keywordprobthreshold;
         
         std::map<uint64_t, Classifier*> classifierarray;    
-        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, int ptsfield, double appendepsilon, bool exemplarweights, bool singlefocusfeature): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature) { accuracythreshold = 0; instancethreshold = 0; }; 
+        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, int ptsfield, double appendepsilon, bool exemplarweights, bool singlefocusfeature, bool keywords=false, double keywordprobthreshold=0): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature) { accuracythreshold = 0; instancethreshold = 0; this->keywords = keywords, this->keywordprobthreshold = keywordprobthreshold; }; 
         ~ConstructionExperts();
-        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);
-        void add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder);
+        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, t_keywordflags * flaggedkeywords);
+        void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) { build(ttable, sourceclassdecoder, targetclassdecoder, NULL); };
+        void add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, t_keywords_source *, t_keywordflags_source *);
+        void add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) { add(focus, withcontext, targets, leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder,NULL,NULL); } ;
         void train(const std::string & timbloptions);     
         void load(const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG=0);
         t_aligntargets classify(const EncAnyGram * focus, std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed);

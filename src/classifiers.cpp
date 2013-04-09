@@ -118,13 +118,14 @@ Classifier::~Classifier() {
     unload();
 }
 
-void Classifier::addinstance(vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight) {
+void Classifier::addinstance(vector<const EncAnyGram *> & featurevector, const EncAnyGram * label, double exemplarweight, vector<string> * extrafeatures) {
     vector<string> featurevector_s;
     for (vector<const EncAnyGram *>::iterator iter = featurevector.begin(); iter != featurevector.end(); iter++) {
         const EncAnyGram * anygram = *iter;
         const string feature = anygram->decode(*sourceclassdecoder);        
         featurevector_s.push_back(feature);        
     }
+    featurevector_s.insert(featurevector_s.end(), extrafeatures->begin(), extrafeatures->end());
     const string label_s = label->decode(*targetclassdecoder);
     addinstance(featurevector_s, label_s, exemplarweight);
 }
@@ -948,7 +949,10 @@ void ConstructionExperts::train(const string & timbloptions) {
     cerr << "Training complete: " << accepted << " classifiers built, " << discarded << " discarded due to not making the accuracy threshold." << endl;        
 }
 
-void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
+void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, t_keywordflags * flaggedkeywords) {
+    //Build construction experts, everything is precomputed already at this
+    //stage
+
     if (ttable->leftsourcecontext != leftcontextsize) {
         cerr << "Translation table has left context size: " << ttable->leftsourcecontext << ", not " << leftcontextsize << endl;
         exit(3); 
@@ -983,9 +987,25 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
             
             if (targets.size() >= targetthreshold) {
                 cerr << "Building classifier hash=" << hash << "..." << endl;
+
+                //select keywords given source
+                t_keywords_source * keywords_source = NULL;
+                if ((keywords) && (ttable->keywords.count(focus))) {
+                        keywords_source = &(ttable->keywords[focus]); 
+                }
+
+
+                
                 for (unordered_set<const EncAnyGram *>::const_iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                     const EncAnyGram * withcontext = *iter2;
-                    add(focus, withcontext, ttable->alignmatrix[withcontext], leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder);
+
+                    //select flagged keywords given source
+                    t_keywordflags_source * flaggedkeywords_source = NULL;
+                    if ((keywords) && (flaggedkeywords->count(focus))) {
+                        flaggedkeywords_source = &((*flaggedkeywords)[withcontext]);
+                    }
+
+                    add(focus, withcontext, ttable->alignmatrix[withcontext], leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder, keywords_source, flaggedkeywords_source);
 
                 }
             }
@@ -1006,7 +1026,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
 }
 
 
-void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
+void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, t_keywords_source * keywords_source, t_keywordflags_source * keywordflags_source) {
     const int nwithcontext = withcontext->n();
     vector<const EncAnyGram *> featurevector;
     const uint64_t hash = focus->hash();
@@ -1036,17 +1056,79 @@ void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withc
             featurevector.push_back(unigram);                    
         }                             
     }
-    
-                        
+
+
+    //sort all keywords (based on hash value), so order in feature vector is always deterministic
+    map<int, const EncAnyGram *> sortedkws;
+    if (keywords) {
+        for (t_keywords_source::iterator kwiter = keywords_source->begin(); kwiter != keywords_source->end(); kwiter++) {
+            for (unordered_map<const EncAnyGram *, double>::iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
+                sortedkws.insert(pair<int,const EncAnyGram*>(kwiter2->first->hash(), kwiter2->first)); //will not insert duplicates due to nature of map
+            }
+        }
+    }
+
+
     for (t_aligntargets::const_iterator iter3 = targets.begin(); iter3 != targets.end(); iter3++) {
         const EncAnyGram * label = iter3->first;
+
         cerr << "Adding to classifier hash=" << hash << "..." << endl;
-        if (exemplarweights) {
-            //add exemplar weight         
-            double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
-            classifierarray[hash]->addinstance(featurevector, label, exemplarweight);
+
+        if (keywords) {
+           //loop over the sorted keywords and check whether each is flagged or
+           //not, multiple instances may be passed, call addinstance for each
+           //set of flags
+
+          std::vector< std::unordered_set<const EncAnyGram * > > * kwinstances = NULL;
+          if (keywordflags_source->count(label)) kwinstances = &((*keywordflags_source)[label]);
+
+          if (kwinstances != NULL) {
+              //iterate over all keyword instances (each is a set of flagged
+              //keywords)
+                
+              for (std::vector< std::unordered_set<const EncAnyGram *> >::iterator instanceiter = kwinstances->begin(); instanceiter != kwinstances->end(); instanceiter++) {
+                //new instance, initiate extra featurevector
+                vector<string> keywordfeatures;
+                for (map<int, const EncAnyGram *>::iterator kwiter = sortedkws.begin(); kwiter != sortedkws.end(); kwiter++) {
+                    if (instanceiter->count(kwiter->second)) {
+                        keywordfeatures.push_back("1");
+                    } else {
+                        keywordfeatures.push_back("0");
+                    }
+                }
+                if (exemplarweights) {
+                    //add exemplar weight         
+                    const double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
+                    classifierarray[hash]->addinstance(featurevector, label, exemplarweight, &keywordfeatures);
+                } else {
+                    classifierarray[hash]->addinstance(featurevector, label, 1, &keywordfeatures);
+                }
+              }
+          } else {
+                //no keywords found, add 1 instance without keywords (0 value for all keywords)             
+                vector<string> keywordfeatures;
+                for (map<int, const EncAnyGram *>::iterator kwiter = sortedkws.begin(); kwiter != sortedkws.end(); kwiter++) keywordfeatures.push_back("0");
+                if (exemplarweights) {
+                    //add exemplar weight         
+                    const double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
+                    classifierarray[hash]->addinstance(featurevector, label, exemplarweight, &keywordfeatures);
+                } else {
+                    classifierarray[hash]->addinstance(featurevector, label, 1, &keywordfeatures);
+                }
+          }
+
+
+
         } else {
-            classifierarray[hash]->addinstance(featurevector, label);
+            //no keywords enabled
+
+            if (exemplarweights) {
+                //add exemplar weight         
+                double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
+                classifierarray[hash]->addinstance(featurevector, label, exemplarweight);
+            } else {
+                classifierarray[hash]->addinstance(featurevector, label);
+            }
         }
     }                        
     //cleanup

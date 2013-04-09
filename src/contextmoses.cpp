@@ -24,6 +24,7 @@ int addunknownwords(ClassEncoder * sourceclassencoder, ClassDecoder * sourceclas
 void usage() {
     cerr << "Training usage: contextmoses -f source-traindatafile -g target-traindatafile [-N|-X|-M] [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
     cerr << "Test usage: contextmoses -F testdatafile [-m mosesphrasetable|-d alignmentmodel -S source-class-file -T target-class-file]" << endl;
+    cerr << "Training usage with keywords: contextmoses -f source-traindatafile -g target-traindatafile -s sourcepatternmodel -E targetpatternmodel -k -X -d alignmentmodel -S source-class-file -T target-class-file]" << endl;
     cerr << "Classifier types: (pick one, for training only)" << endl;
     cerr << " -N           N-Classifier Array, one classifier per pattern size group" << endl;
     cerr << " -X           Construction experts, one classifier per construction" << endl;
@@ -54,6 +55,8 @@ void usage() {
     cerr << " -e [float]   Small epsilon value used as score for unencountered options when score handling is set to append mode (default:  0.000001) " << endl;
     cerr << " -q           Skip decoder" << endl;
     cerr << " -o           Output prefix (default: tmp)" << endl;
+    cerr << " -s [file]    Source-side pattern model (needed for -k)" << endl;
+    cerr << " -E [file]    Target-side pattern model (needed for -k)" << endl;
     
     
     //cerr << "\t-C number                 Classifier mode" << endl;
@@ -95,6 +98,8 @@ int main( int argc, char *argv[] ) {
     string testfile = "";
     string mosesphrasetable = "";
     string alignmodelfile = "";
+    string sourcepatternmodelfile = "";
+    string targetpatternmodelfile = "";
 
     int leftcontextsize = 1;
     int rightcontextsize = 1;
@@ -117,7 +122,7 @@ int main( int argc, char *argv[] ) {
     
     char c;    
     string s;
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:e:qo:i:kK:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:e:qo:i:kK:s:E:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -185,6 +190,12 @@ int main( int argc, char *argv[] ) {
         case 'm':
             mosesphrasetable = optarg;
             break; 	
+        case 's':
+            sourcepatternmodelfile = optarg;
+            break;
+        case 'E':
+            targetpatternmodelfile = optarg;
+            break;
         case 'e':
             appendepsilon = atof(optarg);
             break;
@@ -253,6 +264,14 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
+    if ((DOKEYWORDS) && ((sourcepatternmodelfile.empty()) || (targetpatternmodelfile.empty()))) {
+        cerr << "ERROR: source and target pattern model must be specified when using -k";
+        usage();
+        exit(2);
+    }
+    if (DOKEYWORDS) mode = CLASSIFIERTYPE_CONSTRUCTIONEXPERTS;
+
+
     const string tmptestfile = outputprefix + ".txt";
     const string tmptablefile = outputprefix + ".phrasetable";
 
@@ -261,6 +280,8 @@ int main( int argc, char *argv[] ) {
     ClassEncoder * sourceclassencoder = NULL;
     ClassEncoder * targetclassencoder = NULL;
     AlignmentModel * alignmodel = NULL;
+    SelectivePatternModel * sourcepatternmodel = NULL;
+    SelectivePatternModel * targetpatternmodel = NULL;
     
     bool testexists = false;
     if (TEST) {
@@ -278,7 +299,13 @@ int main( int argc, char *argv[] ) {
 	sourceclassdecoder = new ClassDecoder(sourceclassfile);
 
 	cerr << "Loading target class decoder " << targetclassfile << endl;
-	targetclassdecoder = new ClassDecoder(targetclassfile);   
+	targetclassdecoder = new ClassDecoder(targetclassfile);  
+
+    if (DOKEYWORDS) {
+        GraphFilter graphfilter;
+        sourcepatternmodel = new SelectivePatternModel(sourcepatternmodelfile, graphfilter, true,true);
+        targetpatternmodel = new SelectivePatternModel(targetpatternmodelfile, graphfilter, true,true);
+    }
 
     int maxn = 0;
 		
@@ -361,7 +388,7 @@ int main( int argc, char *argv[] ) {
         } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
     
             cerr << "Initialising construction expert classifiers" << endl;
-            classifiers = new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature);    
+            classifiers = new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature, DOKEYWORDS, keywordprobthreshold);    
 		
 		} else if (mode == CLASSIFIERTYPE_MONO) {
 		
@@ -395,7 +422,9 @@ int main( int argc, char *argv[] ) {
         	cerr << "ERROR: Unable to open file " << trainfile << endl;
         	exit(5);
         }                
-        
+       
+        t_keywordflags flaggedkeywords;
+
         vector<unsigned int> words;
         int sentence = 0;
         while (INSOURCE->good()) {
@@ -440,13 +469,25 @@ int main( int argc, char *argv[] ) {
                             //see if this one already exists:
                             const EncAnyGram * contextkey = contextalignmodel->getsourcekey(incontext, false);
                             
-                            //see what targets the the target sentence match with the translation options (only one alignment is right, but if there is ambiguity we add them all as we don't have alignment data at this point).. 
+                            //see what targets in the target sentence match with the translation options (only one alignment is right, but if there is ambiguity we add them all as we don't have alignment data at this point).. 
                             bool targetfound = false;
                             for (t_aligntargets::iterator iter = alignmodel->alignmatrix[key].begin(); iter !=  alignmodel->alignmatrix[key].end(); iter++) {
                                 const EncAnyGram * targetgram = iter->first;
                                 const unsigned char targetn = targetgram->n();
                                 
                                 if (targetline.contains((const EncNGram *) targetgram)) {
+                                    if (DOKEYWORDS) {
+                                        //loop over global context keywords and flag presence, store in separate datastructure: globalkeywords
+                                        unordered_set<const EncAnyGram *> keywords;
+                                        for (unordered_map<const EncAnyGram *, double>::iterator kwiter = alignmodel->keywords[key][targetgram].begin(); kwiter != alignmodel->keywords[key][targetgram].end(); kwiter++) {
+                                            const EncAnyGram * keyword = kwiter->first;
+                                            if (kwiter->second >= keywordprobthreshold) {
+                                                keywords.insert(keyword);
+                                            }
+                                        }
+                                        flaggedkeywords[(contextkey != NULL) ? contextkey : incontext][targetgram].push_back(keywords);
+                                    }
+
                                     //add to context-aware alignment model (classifier training data will be constructed on the basis of this)
                                     targetfound = true;
                                     const double score = (exemplarweights) ?  (  (iter->second[0] < 0) ? pow(exp(1), iter->second[0]) : iter->second[0] ) : 1; //no logprob
@@ -477,14 +518,13 @@ int main( int argc, char *argv[] ) {
             
         }
 		
-		
         
         if (mode == CLASSIFIERTYPE_NARRAY) {
             cerr << "Building n-array classifier" << endl;                  
             ((NClassifierArray *) classifiers)->build(contextalignmodel, sourceclassdecoder, targetclassdecoder);                                                            
         } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
             cerr << "Building expert classifier" << endl;
-            ((ConstructionExperts *) classifiers)->build(contextalignmodel, sourceclassdecoder, targetclassdecoder);
+            ((ConstructionExperts *) classifiers)->build(contextalignmodel, sourceclassdecoder, targetclassdecoder, &flaggedkeywords);
         } else if (mode == CLASSIFIERTYPE_MONO) {
             cerr << "Building monolithic classifier" << endl;
             ((MonoClassifier *) classifiers)->build(contextalignmodel, sourceclassdecoder, targetclassdecoder);

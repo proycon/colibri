@@ -35,7 +35,10 @@ typedef std::unordered_map<const EncAnyGram*, t_aligntargets > t_alignmatrix;
 
 
 typedef std::unordered_map<const EncAnyGram*, std::unordered_set<const EncAnyGram *> > t_contexts;
-typedef std::unordered_map<const EncAnyGram*, std::unordered_map<const EncAnyGram*, std::unordered_map<const EncAnyGram *, double> > > t_keywords; //source -> target -> key -> double 
+typedef std::unordered_map<const EncAnyGram*, std::unordered_map<const EncAnyGram *, double> > t_keywords_source; //target -> key -> double 
+typedef std::unordered_map<const EncAnyGram*, t_keywords_source > t_keywords; //source -> target -> key -> double 
+typedef std::unordered_map<const EncAnyGram*, std::vector< std::unordered_set<const EncAnyGram *> > > t_keywordflags_source; // target -> key
+typedef std::unordered_map<const EncAnyGram*, t_keywordflags_source > t_keywordflags; //source -> target -> [key -> double ]
 
 class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
    protected:
