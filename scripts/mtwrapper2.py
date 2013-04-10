@@ -228,6 +228,8 @@ class MTWrapper(object):
             ('COLIBRI_LEFTCONTEXTSIZE',1,'For use with BUILD_COLIBRI_CLASSIFIERS=True'),
             ('COLIBRI_RIGHTCONTEXTSIZE',1,'For use with BUILD_COLIBRI_CLASSIFIERS=True'),
             ('COLIBRI_CLASSIFIER_OPTIONS','-N','For use with BUILD_COLIBRI_CLASSIFIERS=True. Make sure to select at least a classifier here (-N, -X,-M). See trainclassifiers -h for all options'),
+            ('COLIBRI_GLOBALKEYWORDS',False,'Enable global context keywords (also affects BUILD_MOSES_CLASSIFIERS)'),
+            ('COLIBRI_GLOBALKEYWORDS_OPTIONS','1,3,20,0.0000000009','Four comma-separated values: include_threshold,absolute_threshold,filter_threshold,probability_threshold'),
             ('MOSES_LEFTCONTEXTSIZE',1,'For use with BUILD_MOSES_CLASSIFIERS=True'),
             ('MOSES_RIGHTCONTEXTSIZE',1,'For use with BUILD_MOSES_CLASSIFIERS=True'),
             ('MOSES_CLASSIFIER_OPTIONS','-N','For use with BUILD_MOSES_CLASSIFIERS=True. Make sure to select at least a classifier (-N, -X,-M) here. See contextmoses -h for all options.'),
@@ -1734,10 +1736,19 @@ class MTWrapper(object):
 
         if not self.runcmd(self.EXEC_COLIBRI_CLASSENCODE + ' -f ' + self.gettargetfilename('txt'), "Encoding target corpus for Colibri",self.gettargetfilename('cls'), self.gettargetfilename('clsenc') ): return False
 
-        if not ('-I' in self.MOSES_CLASSIFIER_OPTIONS):
-            if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('clsenc') + ' -g ' + self.gettargetfilename('clsenc') + ' -m ' +  'model/phrase-table' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' 2> contextmoses-train.log', "Training classifiers for context-aware moses (logged in contextmoses-train.log)"): return False
+        if self.COLIBRI_GLOBALKEYWORDS:
+            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -m model/phrase-table' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') +' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' -k -K ' + str(self.COLIBRI_GLOBALKEYWORDS_OPTIONS) + ' -o withkeywords.alignmodel.colibri 2> contextmoses-globalkeywords.log', "Extracting global keywords (logged in contextmoses-globalkeywords.log)"): return False
+            if not ('-I' in self.MOSES_CLASSIFIER_OPTIONS):
+                if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('clsenc') + ' -g ' + self.gettargetfilename('clsenc') + ' -d ' +  'withkeywords.alignmodel.colibri' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' -s ' + self.getsourcefilename('indexedpatternmodel.colibri') + ' -E ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' -k ' + self.MOSES_CLASSIFIER_OPTIONS + ' 2> contextmoses-train.log', "Training classifiers for context-aware moses (logged in contextmoses-train.log)"): return False
+            else:
+                print >>sys.stderr, bold(yellow("Not training classifiers because -I (ignore) is set in options"))
         else:
-            print >>sys.stderr, bold(yellow("Not training classifiers because -I (ignore) is set in options"))
+            if not ('-I' in self.MOSES_CLASSIFIER_OPTIONS):
+                if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('clsenc') + ' -g ' + self.gettargetfilename('clsenc') + ' -m ' +  'model/phrase-table' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' 2> contextmoses-train.log', "Training classifiers for context-aware moses (logged in contextmoses-train.log)"): return False
+            else:
+                print >>sys.stderr, bold(yellow("Not training classifiers because -I (ignore) is set in options"))
+
+
 
         return True
 

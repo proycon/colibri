@@ -1,4 +1,3 @@
-
 #include <getopt.h>
 #include "alignmodel.h"
 #include "classifiers.h"
