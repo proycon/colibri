@@ -1736,8 +1736,8 @@ class MTWrapper(object):
         if not self.runcmd(self.EXEC_COLIBRI_CLASSENCODE + ' -f ' + self.gettargetfilename('txt'), "Encoding target corpus for Colibri",self.gettargetfilename('cls'), self.gettargetfilename('clsenc') ): return False
 
         if self.COLIBRI_GLOBALKEYWORDS:
-            if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.getsourcefilename('clsenc') + ' ' + self.COLIBRI_PATTERNFINDER_OPTIONS + patternfinder_extraoptions, "Building source-side pattern model",self.getsourcefilename('indexedpatternmodel.colibri') ): return False
-            if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.gettargetfilename('clsenc') + ' ' + self.COLIBRI_PATTERNFINDER_OPTIONS + patternfinder_extraoptions, "Building target-side pattern model",self.gettargetfilename('indexedpatternmodel.colibri') ): return False
+            if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.getsourcefilename('clsenc') + ' ' + self.COLIBRI_PATTERNFINDER_OPTIONS , "Building source-side pattern model",self.getsourcefilename('indexedpatternmodel.colibri') ): return False
+            if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.gettargetfilename('clsenc') + ' ' + self.COLIBRI_PATTERNFINDER_OPTIONS , "Building target-side pattern model",self.gettargetfilename('indexedpatternmodel.colibri') ): return False
 
 
             if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -m model/phrase-table' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') +' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' -k -K ' + str(self.COLIBRI_GLOBALKEYWORDS_OPTIONS) + ' -o ' + self.gets2tfilename('withkeywords.alignmodel.colibri') + ' 2> contextmoses-globalkeywords.log', "Extracting global keywords (logged in contextmoses-globalkeywords.log)",self.gets2tfilename("withkeywords.alignmodel.colibri")): return False
