@@ -477,14 +477,16 @@ int main( int argc, char *argv[] ) {
                                 if (targetline.contains((const EncNGram *) targetgram)) {
                                     if (DOKEYWORDS) {
                                         //loop over global context keywords and flag presence, store in separate datastructure: globalkeywords
-                                        unordered_set<const EncAnyGram *> keywords;
-                                        for (unordered_map<const EncAnyGram *, double>::iterator kwiter = alignmodel->keywords[key][targetgram].begin(); kwiter != alignmodel->keywords[key][targetgram].end(); kwiter++) {
-                                            const EncAnyGram * keyword = kwiter->first;
-                                            if (kwiter->second >= keywordprobthreshold) {
-                                                keywords.insert(keyword);
+                                        if ((alignmodel->keywords.count(key)) && (alignmodel->keywords[key].count(targetgram))) {
+                                            unordered_set<const EncAnyGram *> keywords;
+                                            for (unordered_map<const EncAnyGram *, double>::iterator kwiter = alignmodel->keywords[key][targetgram].begin(); kwiter != alignmodel->keywords[key][targetgram].end(); kwiter++) {
+                                                const EncAnyGram * keyword = kwiter->first;
+                                                if (kwiter->second >= keywordprobthreshold) {
+                                                    keywords.insert(keyword);
+                                                }
                                             }
+                                            flaggedkeywords[(contextkey != NULL) ? contextkey : incontext][targetgram].push_back(keywords);
                                         }
-                                        flaggedkeywords[(contextkey != NULL) ? contextkey : incontext][targetgram].push_back(keywords);
                                     }
 
                                     //add to context-aware alignment model (classifier training data will be constructed on the basis of this)
