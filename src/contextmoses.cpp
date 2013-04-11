@@ -485,6 +485,7 @@ int main( int argc, char *argv[] ) {
                                                     keywords.insert(keyword);
                                                 }
                                             }
+                                            if (debug) cerr << "    found " << alignmodel->keywords[key][targetgram].size() << " keywords, added " << keywords.size() << endl;
                                             flaggedkeywords[(contextkey != NULL) ? contextkey : incontext][targetgram].push_back(keywords);
                                         }
                                     }
