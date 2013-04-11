@@ -475,7 +475,6 @@ class MTWrapper(object):
                 self.BUILD_COLIBRI_ALIGNMENT = True
 
 
-
         if self.BUILD_COLIBRI_ALIGNMENT:
             if not self.EXEC_COLIBRI_PATTERNFINDER or not os.path.exists(self.EXEC_COLIBRI_PATTERNFINDER):
                 sane = False
@@ -1737,9 +1736,13 @@ class MTWrapper(object):
         if not self.runcmd(self.EXEC_COLIBRI_CLASSENCODE + ' -f ' + self.gettargetfilename('txt'), "Encoding target corpus for Colibri",self.gettargetfilename('cls'), self.gettargetfilename('clsenc') ): return False
 
         if self.COLIBRI_GLOBALKEYWORDS:
-            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -m model/phrase-table' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') +' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' -k -K ' + str(self.COLIBRI_GLOBALKEYWORDS_OPTIONS) + ' -o withkeywords.alignmodel.colibri 2> contextmoses-globalkeywords.log', "Extracting global keywords (logged in contextmoses-globalkeywords.log)"): return False
+            if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.getsourcefilename('clsenc') + ' ' + self.COLIBRI_PATTERNFINDER_OPTIONS + patternfinder_extraoptions, "Building source-side pattern model",self.getsourcefilename('indexedpatternmodel.colibri') ): return False
+            if not self.runcmd(self.EXEC_COLIBRI_PATTERNFINDER + ' -f ' + self.gettargetfilename('clsenc') + ' ' + self.COLIBRI_PATTERNFINDER_OPTIONS + patternfinder_extraoptions, "Building target-side pattern model",self.gettargetfilename('indexedpatternmodel.colibri') ): return False
+
+
+            if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -m model/phrase-table' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') +' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' -k -K ' + str(self.COLIBRI_GLOBALKEYWORDS_OPTIONS) + ' -o ' + self.gets2tfilename('withkeywords.alignmodel.colibri') + ' 2> contextmoses-globalkeywords.log', "Extracting global keywords (logged in contextmoses-globalkeywords.log)",self.gets2tfilename("withkeywords.alignmodel.colibri")): return False
             if not ('-I' in self.MOSES_CLASSIFIER_OPTIONS):
-                if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('clsenc') + ' -g ' + self.gettargetfilename('clsenc') + ' -d ' +  'withkeywords.alignmodel.colibri' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' -s ' + self.getsourcefilename('indexedpatternmodel.colibri') + ' -E ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' -k ' + self.MOSES_CLASSIFIER_OPTIONS + ' 2> contextmoses-train.log', "Training classifiers for context-aware moses (logged in contextmoses-train.log)"): return False
+                if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('clsenc') + ' -g ' + self.gettargetfilename('clsenc') + ' -d ' +  self.gets2tfilename('withkeywords.alignmodel.colibri') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' -s ' + self.getsourcefilename('indexedpatternmodel.colibri') + ' -E ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' -k ' + self.MOSES_CLASSIFIER_OPTIONS + ' 2> contextmoses-train.log', "Training classifiers for context-aware moses (logged in contextmoses-train.log)"): return False
             else:
                 print >>sys.stderr, bold(yellow("Not training classifiers because -I (ignore) is set in options"))
         else:
