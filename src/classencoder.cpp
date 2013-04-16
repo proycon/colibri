@@ -370,7 +370,7 @@ void ClassEncoder::encodefile(const std::string & inputfilename, const std::stri
     const char zero = 0;
     const char one = 1;
 	    
-    if (inputfilename.rfind(".xml") != string::npos) {
+    if ((inputfilename.rfind(".xml") != string::npos) ||  (inputfilename.rfind(".bz2") != string::npos) ||  (inputfilename.rfind(".gz") != string::npos)) {
         //FoLiA
         Document doc;
         doc.readFromFile(inputfilename);
