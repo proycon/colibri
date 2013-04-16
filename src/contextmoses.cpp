@@ -481,11 +481,13 @@ int main( int argc, char *argv[] ) {
                                             unordered_set<const EncAnyGram *> keywords;
                                             for (unordered_map<const EncAnyGram *, double>::iterator kwiter = alignmodel->keywords[key][targetgram].begin(); kwiter != alignmodel->keywords[key][targetgram].end(); kwiter++) { //problem: far too many keywords!!
                                                 const EncAnyGram * keyword = kwiter->first;
-                                                if (kwiter->second >= keywordprobthreshold) {
-                                                    keywords.insert(keyword);
+                                                if (line.contains((const EncNGram *) keyword)) {
+                                                    if (kwiter->second >= keywordprobthreshold) {
+                                                        keywords.insert(keyword);
+                                                    }
                                                 }
                                             }
-                                            if (debug) cerr << "    found " << alignmodel->keywords[key][targetgram].size() << " keywords, added " << keywords.size() << endl;
+                                            if (debug) cerr << "    found  " << keywords.size() << " of " << alignmodel->keywords[key][targetgram].size() << " keywords" << endl;
                                             flaggedkeywords[(contextkey != NULL) ? contextkey : incontext][targetgram].push_back(keywords);
                                         }
                                     }
