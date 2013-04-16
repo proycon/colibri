@@ -645,7 +645,8 @@ class SelectivePatternModel: public ModelReader, public ModelQuerier, public Gra
      
               
     
-     std::unordered_map<uint32_t,std::vector<const EncAnyGram*> > reverseindex;    
+     std::unordered_map<uint32_t,std::unordered_set<const EncAnyGram*> > reverseindex; 
+
      SelectivePatternModel(const std::string & filename, const GraphFilter & filter, bool DOFORWARDINDEX = true, bool DOREVERSEINDEX = true, int COUNTTHRESHOLD = 0, double FREQTHRESHOLD = 0, double XCOUNTRATIOTHRESHOLD = 0, int XCOUNTTHRESHOLD = 0, bool DOSKIPGRAMS = true,  int MINLENGTH = 0, int MAXLENGTH=99, AlignConstraintInterface * alignconstrain = NULL, bool alignconstrainsource = true , const bool DEBUG=false); //read a graph pattern model
   
      uint64_t types() const { return ngrams.size() + skipgrams.size(); }

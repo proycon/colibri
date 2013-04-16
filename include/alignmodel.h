@@ -23,6 +23,7 @@ enum PhraseAlignHeuristic {
 
 void orderedinsert(std::list<double> &, double value);
 void recompute_token_index(std::unordered_map<const EncAnyGram *, std::vector<int> > & tokenfwindex, std::unordered_map<int, std::vector<const EncAnyGram *> > & tokenrevindex, EncData * sentence, const std::vector<const EncAnyGram*> * patterns, bool includeskipgrams = false );
+void recompute_token_index(std::unordered_map<const EncAnyGram *, std::vector<int> > & tokenfwindex, std::unordered_map<int, std::vector<const EncAnyGram *> > & tokenrevindex, EncData * sentence, std::unordered_set<const EncAnyGram*> * patterns, bool includeskipgrams = false );
 size_t get_templates(const EncAnyGram * anygram, SelectivePatternModel * model, std::unordered_set<const EncSkipGram *> & container);
 void find_clusters(std::unordered_map<const EncSkipGram*,uint16_t> skipgrams, std::vector<std::unordered_set<const EncSkipGram*> > & clusters , SelectivePatternModel * model );
 

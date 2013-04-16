@@ -474,14 +474,18 @@ int main( int argc, char *argv[] ) {
                                 const EncAnyGram * targetgram = iter->first;
                                 const unsigned char targetn = targetgram->n();
                                 
-                                if (targetline.contains((const EncNGram *) targetgram)) {
+                                if (targetpatternmodel->reverseindex[sentence].count(targetgram)) {  //line.contains((const EncNGram *) targetgram)) { //use targetpatternmodel and reverse index!!
                                     if (DOKEYWORDS) {
                                         //loop over global context keywords and flag presence, store in separate datastructure: globalkeywords
                                         if ((alignmodel->keywords.count(key)) && (alignmodel->keywords[key].count(targetgram))) {
                                             unordered_set<const EncAnyGram *> keywords;
+                                            //reverse: loop over patterns in
+                                            //sentence and match each with
+                                            //keywords
+                                            
                                             for (unordered_map<const EncAnyGram *, double>::iterator kwiter = alignmodel->keywords[key][targetgram].begin(); kwiter != alignmodel->keywords[key][targetgram].end(); kwiter++) { //problem: far too many keywords!!
                                                 const EncAnyGram * keyword = kwiter->first;
-                                                if (line.contains((const EncNGram *) keyword)) {
+                                                if (sourcepatternmodel->reverseindex[sentence].count(keyword)) {  //(line.contains((const EncNGram *) keyword)) { //TODO: use sourcepatternmodel and reverse index!!
                                                     if (kwiter->second >= keywordprobthreshold) {
                                                         keywords.insert(keyword);
                                                     }

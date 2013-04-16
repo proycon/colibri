@@ -3888,7 +3888,7 @@ void SelectivePatternModel::readngramdata(std::istream * in, const EncNGram & ng
 		if (!index.empty()) {			
 			for (vector<uint32_t>::iterator iter = index.begin(); iter != index.end(); iter++) {
 				ngrams[ngram].sentences.insert(*iter);
-		    	reverseindex[*iter].push_back(anygram);
+		    	reverseindex[*iter].insert(anygram);
 			}
 		}	
 	} else {
@@ -3977,7 +3977,7 @@ void SelectivePatternModel::readskipgramdata(std::istream * in, const EncSkipGra
 		if (!index.empty()) {			
 			for (vector<uint32_t>::iterator iter = index.begin(); iter != index.end(); iter++) {
 		    	skipgrams[skipgram].sentences.insert(*iter);
-		    	reverseindex[*iter].push_back(anygram);
+		    	reverseindex[*iter].insert(anygram);
 			}
 		}	    	
     } else {
@@ -4151,9 +4151,9 @@ unordered_map<const EncAnyGram*, int> SelectivePatternModel::getcooccurrences(co
     unordered_map<const EncAnyGram *,int> coocgrams;
     for (set<int>::iterator iter = sentences.begin(); iter != sentences.end(); iter++) {
         if (((sentenceconstraints == NULL) || (sentenceconstraints->count(*iter))) && (reverseindex.count(*iter))) {
-            vector<const EncAnyGram*> * tmp = &targetmodel->reverseindex[*iter];
+            unordered_set<const EncAnyGram*> * tmp = &targetmodel->reverseindex[*iter];
             //find keys
-            for (vector<const EncAnyGram*>::iterator iter2 = tmp->begin(); iter2 != tmp->end(); iter2++) coocgrams[*iter2]++;
+            for (unordered_set<const EncAnyGram*>::iterator iter2 = tmp->begin(); iter2 != tmp->end(); iter2++) coocgrams[*iter2]++;
         }
     }
     
