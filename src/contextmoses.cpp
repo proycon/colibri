@@ -482,15 +482,25 @@ int main( int argc, char *argv[] ) {
                                             //reverse: loop over patterns in
                                             //sentence and match each with
                                             //keywords
-                                            
-                                            for (unordered_map<const EncAnyGram *, double>::iterator kwiter = alignmodel->keywords[key][targetgram].begin(); kwiter != alignmodel->keywords[key][targetgram].end(); kwiter++) { //problem: far too many keywords!!
-                                                const EncAnyGram * keyword = kwiter->first;
-                                                if (sourcepatternmodel->reverseindex[sentence].count(keyword)) {  //(line.contains((const EncNGram *) keyword)) { //TODO: use sourcepatternmodel and reverse index!!
-                                                    if (kwiter->second >= keywordprobthreshold) {
+                                             
+                                            for (unordered_set<const EncAnyGram *>::iterator kwiter = sourcepatternmodel->reverseindex[sentence].begin(); kwiter != sourcepatternmodel->reverseindex[sentence].end(); kwiter++) { //problem: far too many keywords!!
+                                                const EncAnyGram * keyword = *kwiter; //candidate keyword
+                                                if (alignmodel->keywords[key][targetgram].count(keyword)) { //check if this is a keyword
+                                                    if (alignmodel->keywords[key][targetgram][keyword] >= keywordprobthreshold) {
                                                         keywords.insert(keyword);
                                                     }
                                                 }
                                             }
+
+
+                                            //for (unordered_map<const EncAnyGram *, double>::iterator kwiter = alignmodel->keywords[key][targetgram].begin(); kwiter != alignmodel->keywords[key][targetgram].end(); kwiter++) { //problem: far too many keywords!!
+                                            //    const EncAnyGram * keyword = kwiter->first;
+                                            //    if (sourcepatternmodel->reverseindex[sentence].count(keyword)) {  //(line.contains((const EncNGram *) keyword)) { //TODO: use sourcepatternmodel and reverse index!!
+                                            //        if (kwiter->second >= keywordprobthreshold) {
+                                            //            keywords.insert(keyword);
+                                            //        }
+                                            //    }
+                                            //}
                                             if (debug) cerr << "    found  " << keywords.size() << " of " << alignmodel->keywords[key][targetgram].size() << " keywords" << endl;
                                             flaggedkeywords[(contextkey != NULL) ? contextkey : incontext][targetgram].push_back(keywords);
                                         }
