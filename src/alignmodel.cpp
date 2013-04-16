@@ -2928,7 +2928,7 @@ void AlignmentModel::save(const string & filename) {
 
 
         	if ((keywords.count(sourcegram)) && (keywords[sourcegram].count(targetgram))) {
-        	    const uint32_t keywordcount = keywords[sourcegram][targetgram].size();
+        	    const uint32_t keywordcount = keywords[sourcegram][targetgram].size();                
         	    f.write( (char*) &keywordcount, sizeof(uint32_t));
         	    for (unordered_map<const EncAnyGram*, double>::iterator iter3 = keywords[sourcegram][targetgram].begin(); iter3 != keywords[sourcegram][targetgram].end(); iter3++) {
         	        const EncAnyGram * keyword = iter3->first;
@@ -2971,6 +2971,7 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
                 *OUT << *iter3 << ' ';
             }
             if ( (keywords.count(sourcegram)) && (keywords[sourcegram].count(targetgram)) && (!mosesformat) ) {
+                if (DEBUG) cerr << "keywordcount=" << keywords[sourcegram][targetgram].size() << endl;
                 *OUT << endl << "#KEYWORDS:";
                 multimap<double,const EncAnyGram *> sortedkw;
                 for (unordered_map<const EncAnyGram *, double>::iterator iter3 = keywords[sourcegram][targetgram].begin(); iter3 != keywords[sourcegram][targetgram].end(); iter3++) sortedkw.insert(pair<double,const EncAnyGram *>(-1* iter3->second, iter3->first));

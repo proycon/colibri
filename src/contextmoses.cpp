@@ -479,7 +479,7 @@ int main( int argc, char *argv[] ) {
                                         //loop over global context keywords and flag presence, store in separate datastructure: globalkeywords
                                         if ((alignmodel->keywords.count(key)) && (alignmodel->keywords[key].count(targetgram))) {
                                             unordered_set<const EncAnyGram *> keywords;
-                                            for (unordered_map<const EncAnyGram *, double>::iterator kwiter = alignmodel->keywords[key][targetgram].begin(); kwiter != alignmodel->keywords[key][targetgram].end(); kwiter++) {
+                                            for (unordered_map<const EncAnyGram *, double>::iterator kwiter = alignmodel->keywords[key][targetgram].begin(); kwiter != alignmodel->keywords[key][targetgram].end(); kwiter++) { //problem: far too many keywords!!
                                                 const EncAnyGram * keyword = kwiter->first;
                                                 if (kwiter->second >= keywordprobthreshold) {
                                                     keywords.insert(keyword);

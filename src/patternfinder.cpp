@@ -14,7 +14,7 @@ using namespace std;
 
 void usage() {
     cerr << "Syntax: patternfinder -f encoded-corpus" << endl;
-    cerr << "Descriptions: Reads an encoded corpus and extracts patterns above a certain threshold. The patterns consist out of n-grams and skip-grams up to a certain maximum value of n. The resulting model will be built in-memory (very memory intestive) and subsequently stored in a binary representation on disk. If a class-file is specified, the output will immediately afterwards be decoded for you as well. Or use the modeldecode program and pass it the binary model." << endl;
+    cerr << "Descriptions: Reads an encoded corpus and extracts patterns above a certain threshold. The patterns consist out of n-grams and skip-grams up to a certain maximum value of n. The resulting model will be built in-memory (very memory intestive) and subsequently stored in a binary representation on disk. If a class-file is specified, the output will immediately afterwards be decoded for you as well. Or decode an existing model using the -d flag." << endl;
     cerr << "Options:" << endl;
     cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced (except in query mode)" << endl;
     cerr << "\t-d modelfile     Load and decode this patternmodel (instead of -f)" << endl;
