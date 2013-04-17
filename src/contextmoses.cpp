@@ -482,15 +482,17 @@ int main( int argc, char *argv[] ) {
                                             //reverse: loop over patterns in
                                             //sentence and match each with
                                             //keywords
-                                             
+                                            if (debug) cerr << "Keywords for " << key->decode(*sourceclassdecoder) << " -> " << targetgram->decode(*targetclassdecoder) << " = " << alignmodel->keywords[key][targetgram].size();
                                             for (unordered_set<const EncAnyGram *>::iterator kwiter = sourcepatternmodel->reverseindex[sentence].begin(); kwiter != sourcepatternmodel->reverseindex[sentence].end(); kwiter++) { //problem: far too many keywords!!
                                                 const EncAnyGram * keyword = *kwiter; //candidate keyword
+                                                if (debug) cerr << " | " << keyword->decode(*sourceclassdecoder);
                                                 if (alignmodel->keywords[key][targetgram].count(keyword)) { //check if this is a keyword
                                                     if (alignmodel->keywords[key][targetgram][keyword] >= keywordprobthreshold) {
                                                         keywords.insert(keyword);
                                                     }
                                                 }
                                             }
+                                            if (debug) cerr << endl;
 
 
                                             //for (unordered_map<const EncAnyGram *, double>::iterator kwiter = alignmodel->keywords[key][targetgram].begin(); kwiter != alignmodel->keywords[key][targetgram].end(); kwiter++) { //problem: far too many keywords!!
