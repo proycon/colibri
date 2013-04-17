@@ -125,7 +125,7 @@ void Classifier::addinstance(vector<const EncAnyGram *> & featurevector, const E
         const string feature = anygram->decode(*sourceclassdecoder);        
         featurevector_s.push_back(feature);        
     }
-    featurevector_s.insert(featurevector_s.end(), extrafeatures->begin(), extrafeatures->end());
+    if (extrafeatures != NULL) featurevector_s.insert(featurevector_s.end(), extrafeatures->begin(), extrafeatures->end());
     const string label_s = label->decode(*targetclassdecoder);
     addinstance(featurevector_s, label_s, exemplarweight);
 }
