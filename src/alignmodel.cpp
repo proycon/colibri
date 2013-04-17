@@ -2545,17 +2545,17 @@ void AlignmentModel::load(AlignmentModel & s2tmodel, AlignmentModel & t2smodel, 
 }
 
 
-AlignmentModel::AlignmentModel(const string & filename, bool logprobs, int ptsfield, bool allowskipgrams, const int bestn, bool DEBUG) {
+AlignmentModel::AlignmentModel(const string & filename, bool logprobs, int ptsfield, bool allowskipgrams, const int bestn, bool DEBUG, const int bestnkeywords, const double keywordprobthreshold) {
     this->DEBUG = DEBUG;
     sourcemodel = NULL;
     targetmodel = NULL;
     this->debug_sourceclassdecoder = NULL;
     this->debug_targetclassdecoder = NULL;
     this->ptsfield = ptsfield;
-    load(filename,logprobs, allowskipgrams, bestn);
+    load(filename,logprobs, allowskipgrams, bestn, bestnkeywords, keywordprobthreshold);
 }
 
-void AlignmentModel::load(const string & filename, bool logprobs, bool allowskipgrams, const int bestn) {
+void AlignmentModel::load(const string & filename, bool logprobs, bool allowskipgrams, const int bestn, const int bestnkeywords, const double keywordprobthreshold) {
 	unsigned char check;
 
     ifstream f;
@@ -2723,10 +2723,14 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
                         double keywordprob;
                         f.read((char*) &keywordprob, sizeof(double));
                         if (sourcekey != NULL) {
-                            keywords[sourcegram][targetgram][sourcekey] = keywordprob;
+                            if ((i <= bestnkeywords) && (keywordprob >= keywordprobthreshold))  keywords[sourcegram][targetgram][sourcekey] = keywordprob;
                             delete ngram;
                         } else {
-                            keywords[sourcegram][targetgram][ngram] = keywordprob;
+                            if ((i <= bestnkeywords) && (keywordprob >= keywordprobthreshold)) {
+                                keywords[sourcegram][targetgram][ngram] = keywordprob;
+                            } else {
+                                delete ngram;
+                            }
                         }
                     } else {
                         if (DEBUG)  cerr << "\tKEYWORD-SKIPGRAM, " << (int) gapcount << " gaps";
@@ -2736,10 +2740,14 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
                         if (allowskipgrams) {
                             const EncAnyGram * sourcekey = getsourcekey((EncAnyGram*) skipgram);
                             if (sourcekey != NULL) {
-                                keywords[sourcegram][targetgram][sourcekey] = keywordprob;
+                                if ((i <= bestnkeywords) && (keywordprob >= keywordprobthreshold)) keywords[sourcegram][targetgram][sourcekey] = keywordprob;
                                 delete skipgram;
                             } else {
-                                keywords[sourcegram][targetgram][skipgram] = keywordprob;
+                                if ((i <= bestnkeywords) && (keywordprob >= keywordprobthreshold)) {
+                                    keywords[sourcegram][targetgram][skipgram] = keywordprob;
+                                } else {
+                                    delete skipgram;
+                                }
                             }
                         } else {
                             delete skipgram;

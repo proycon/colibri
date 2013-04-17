@@ -68,8 +68,8 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     AlignmentModel(unsigned char leftsourcecontext=0, unsigned char rightsourcecontext=0, int ptsfield = 1, const bool DEBUG = false); //prepare to compute without pattern models (heuristic giza approach), or empty model
 
     //Load alignment model from (binary) file
-    AlignmentModel(const std::string & filename, bool logprobs = true, int ptsfield = 1, bool allowskipgrams = true, const int bestn = 0, bool DEBUG = false); //load from binary file
-    void load(const std::string & filename, bool logprobs = true, bool allowskipgrams = true, const int bestn = 0);
+    AlignmentModel(const std::string & filename, bool logprobs = true, int ptsfield = 1, bool allowskipgrams = true, const int bestn = 0, bool DEBUG = false, const int bestnkeywords = 100, const double keywordprobthreshold = 0.0); //load from binary file
+    void load(const std::string & filename, bool logprobs = true, bool allowskipgrams = true, const int bestn = 0, const int bestnkeywords = 100, const double  keywordprobthreshold = 0.0);
         
     //Load alignment model from Moses phrasetable (text)
     AlignmentModel(const std::string & filename, ClassEncoder * sourceencoder, ClassEncoder * targetencoder, bool logprobs= true, int ptsfield = 3, bool DEBUG = false); //load from Moses text file
