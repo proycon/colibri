@@ -2959,8 +2959,13 @@ void AlignmentModel::save(const string & filename) {
         	if ((keywords.count(sourcegram)) && (keywords[sourcegram].count(targetgram))) {
         	    const uint32_t keywordcount = keywords[sourcegram][targetgram].size();                
         	    f.write( (char*) &keywordcount, sizeof(uint32_t));
+                //sort before saving
+                multimap<double, const EncAnyGram *> sortedkeywords;
         	    for (unordered_map<const EncAnyGram*, double>::iterator iter3 = keywords[sourcegram][targetgram].begin(); iter3 != keywords[sourcegram][targetgram].end(); iter3++) {
-        	        const EncAnyGram * keyword = iter3->first;
+                    sortedkeywords.insert(pair<double, const EncAnyGram *>(iter3->second, iter3->first);
+                }
+        	    for (multimap<double, const EncAnyGram*>::iterator iter3 = sortedkeywords.begin(); iter3 != sortedkeywords.end(); iter3++) {
+        	        const EncAnyGram * keyword = iter3->second;
                 	if (keyword->isskipgram()) {
             			const EncSkipGram * skipgram = (const EncSkipGram*) keyword;
 	            		skipgram->writeasbinary(&f);
@@ -2969,7 +2974,7 @@ void AlignmentModel::save(const string & filename) {
             			f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
 	            		ngram->writeasbinary(&f);
             		}
-            	    const double p = iter3->second;
+            	    const double p = iter3->first;
             	    f.write( (char*) &p, sizeof(double));
         	    }
         	} else {
@@ -3338,7 +3343,7 @@ int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const Enc
     }
 
     //remove keywords that have no disambiguative power, i.e keywords that are present regardless for all targets
-    //also remove keywords above bestnkeywords threshold //TODO!
+    //also remove keywords above bestnkeywords threshold!
     int kwcount = 0;
     for (multimap<double,const EncAnyGram *>::iterator tmpiter = tmp.begin(); tmpiter != tmp.end(); tmpiter++) {
         kwcount++;
