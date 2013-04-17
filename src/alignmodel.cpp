@@ -2962,7 +2962,7 @@ void AlignmentModel::save(const string & filename) {
                 //sort before saving
                 multimap<double, const EncAnyGram *> sortedkeywords;
         	    for (unordered_map<const EncAnyGram*, double>::iterator iter3 = keywords[sourcegram][targetgram].begin(); iter3 != keywords[sourcegram][targetgram].end(); iter3++) {
-                    sortedkeywords.insert(pair<double, const EncAnyGram *>(iter3->second, iter3->first);
+                    sortedkeywords.insert(pair<double, const EncAnyGram *>(iter3->second, iter3->first));
                 }
         	    for (multimap<double, const EncAnyGram*>::iterator iter3 = sortedkeywords.begin(); iter3 != sortedkeywords.end(); iter3++) {
         	        const EncAnyGram * keyword = iter3->second;
