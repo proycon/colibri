@@ -485,9 +485,9 @@ int main( int argc, char *argv[] ) {
                                             if (debug) cerr << "Keywords for " << key->decode(*sourceclassdecoder) << " -> " << targetgram->decode(*targetclassdecoder) << " = " << alignmodel->keywords[key][targetgram].size();
                                             for (unordered_set<const EncAnyGram *>::iterator kwiter = sourcepatternmodel->reverseindex[sentence].begin(); kwiter != sourcepatternmodel->reverseindex[sentence].end(); kwiter++) { //problem: far too many keywords!!
                                                 const EncAnyGram * keyword = *kwiter; //candidate keyword
-                                                if (debug) cerr << " | " << keyword->decode(*sourceclassdecoder);
                                                 if (alignmodel->keywords[key][targetgram].count(keyword)) { //check if this is a keyword
                                                     if (alignmodel->keywords[key][targetgram][keyword] >= keywordprobthreshold) {
+                                                        if (debug) cerr << " | " << keyword->decode(*sourceclassdecoder);
                                                         keywords.insert(keyword);
                                                     }
                                                 }
