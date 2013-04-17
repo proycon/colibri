@@ -386,7 +386,12 @@ int main( int argc, char *argv[] ) {
             
         } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
     
-            cerr << "Initialising construction expert classifiers" << endl;
+            cerr << "Initialising construction expert classifiers ";
+            if (DOKEYWORDS) {
+                cerr << "with keywords" << endl;
+            } else {
+                cerr << "without keywords" << endl;
+            }
             classifiers = new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature, DOKEYWORDS, keywordprobthreshold);    
 		
 		} else if (mode == CLASSIFIERTYPE_MONO) {
