@@ -3307,7 +3307,7 @@ int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const Enc
     }
 
 
-    unordered_set<const EncAnyGram *> tmp; //temporary map holding all keywords
+    multimap<double, const EncAnyGram *> tmp; //temporary map holding all keywords
 
     for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
         const EncAnyGram * targetgram = iter->first;
@@ -3324,7 +3324,7 @@ int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const Enc
                 if (p >= probability_threshold) {
                     //add to keywords
                     keywords[sourcekey][targetgram][keygram] = p;
-                    tmp.insert(keygram);
+                    tmp.insert(pair<double, const EncAnyGram *>(p, keygram));
                     keywordsfound++;
                     if (DEBUG) cerr << "\tACCEPTED p=" << p << " Ns_kloc=" << Ns_kloc << " Nkloc=" << Nkloc << " Nkcorp=" << Nkcorp << endl;
                 } else if (DEBUG) {
@@ -3338,8 +3338,11 @@ int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const Enc
     }
 
     //remove keywords that have no disambiguative power, i.e keywords that are present regardless for all targets
-    for (unordered_set<const EncAnyGram *>::iterator tmpiter = tmp.begin(); tmpiter != tmp.end(); tmpiter++) {
-        const EncAnyGram * keygram = *tmpiter;
+    //also remove keywords above bestnkeywords threshold //TODO!
+    int kwcount = 0;
+    for (multimap<double,const EncAnyGram *>::iterator tmpiter = tmp.begin(); tmpiter != tmp.end(); tmpiter++) {
+        kwcount++;
+        const EncAnyGram * keygram = tmpiter->second;
         bool omnipresent = true;
         for (unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin(); iter != countmap.end(); iter++) {
             if (iter->second.count(keygram)) {
@@ -3347,7 +3350,7 @@ int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const Enc
                 break;
             }
         }
-        if (omnipresent) {
+        if ((omnipresent) || (kwcount > bestnkeywords)) {
             unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> >::iterator iter = countmap.begin();
             while (iter != countmap.end()) {
                 const EncAnyGram * targetgram = iter->first;
