@@ -155,7 +155,7 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 	
 	unsigned int prunepatternmodel(IndexedPatternModel & patternmodel, double threshold);
 	
-	void save(const std::string & filename);
+	void save(const std::string & filename, const int bestnkeywords = 99999999);
 	
 	t_aligntargets sumtranslationoptions(const EncAnyGram * sourcefocus, bool debug = false);	
 	AlignmentModel * removecontext();

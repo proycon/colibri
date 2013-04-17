@@ -661,7 +661,7 @@ int main( int argc, char *argv[] ) {
             cerr << "Removing context" << endl;
             AlignmentModel * newalignmodel = alignmodel->removecontext();
             if (!outputprefix.empty()) {
-                newalignmodel->save(outputprefix);
+                newalignmodel->save(outputprefix, bestnkeywords);
             }
             exit(0);
         }
@@ -729,7 +729,7 @@ int main( int argc, char *argv[] ) {
 	if (!outputprefix.empty()) {
 	    //************ SAVING ****************
 	    cerr << "Saving alignment model (" << outputprefix << ")" << endl;
-		alignmodel->save(outputprefix);
+		alignmodel->save(outputprefix, bestnkeywords);
 	}
 
     if ((!sourceclassfile.empty()) && (!targetclassfile.empty())) {

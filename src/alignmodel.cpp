@@ -2885,7 +2885,7 @@ void AlignmentModel::load(const std::string & filename, ClassEncoder * sourceenc
 }
 
 
-void AlignmentModel::save(const string & filename) {
+void AlignmentModel::save(const string & filename, const int bestnkeywords) {
 	const unsigned char check = 0xff;
 	const char czero = 0;
 
@@ -2957,14 +2957,18 @@ void AlignmentModel::save(const string & filename) {
 
 
         	if ((keywords.count(sourcegram)) && (keywords[sourcegram].count(targetgram))) {
-        	    const uint32_t keywordcount = keywords[sourcegram][targetgram].size();                
+        	    uint32_t keywordcount = keywords[sourcegram][targetgram].size();
+                if (keywordcount > bestnkeywords) keywordcount = bestnkeywords;
         	    f.write( (char*) &keywordcount, sizeof(uint32_t));
                 //sort before saving
                 multimap<double, const EncAnyGram *> sortedkeywords;
         	    for (unordered_map<const EncAnyGram*, double>::iterator iter3 = keywords[sourcegram][targetgram].begin(); iter3 != keywords[sourcegram][targetgram].end(); iter3++) {
                     sortedkeywords.insert(pair<double, const EncAnyGram *>(iter3->second, iter3->first));
                 }
+                int kwcount = 0;
         	    for (multimap<double, const EncAnyGram*>::iterator iter3 = sortedkeywords.begin(); iter3 != sortedkeywords.end(); iter3++) {
+                    kwcount++;
+                    if (kwcount > bestnkeywords) break;
         	        const EncAnyGram * keyword = iter3->second;
                 	if (keyword->isskipgram()) {
             			const EncSkipGram * skipgram = (const EncSkipGram*) keyword;
