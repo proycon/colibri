@@ -35,7 +35,8 @@ void usage() {
     cerr << " Keyword extraction:" << endl;    
     cerr << "\t-k                        Do keyword extraction (requires -d, -s and -t !!)" << endl;
     cerr << "\t-K include_threshold,absolute_threshold,filter_threshold,probability_threshold  " << endl;
-    cerr << "\t                          Parameters for keyword extraction" << endl;
+    cerr << "\t                          Parameters for keyword extraction. Probability_threshold also has effect on loading (-d)." << endl;
+    cerr << "\t-Q n                      Select only best n features (default: 100). Also works on loading (-d)."<< endl;
     cerr << " Co-occurrence alignment options (-J):" << endl;       
     cerr << "\t-p cooc-pruning-threshold Prune all alignments with a co-occurence score lower than specified (0 <= x <= 1). Uses heuristics to prune, final probabilities may turn out lower than they would otherwise be" << endl;   
     cerr << " EM Alignment Options (-E):" << endl;
@@ -116,6 +117,7 @@ int main( int argc, char *argv[] ) {
     int REMOVECONTEXT = 0;
     
     int bestn = 0;
+    int bestnkeywords = 0;
     
     bool DOPARENTS = false;
     bool DOCHILDREN = false;
@@ -172,7 +174,7 @@ int main( int argc, char *argv[] ) {
     vector<string> args; //for K
     
     char c;    
-    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:wAu:eRkK:m:",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "hd:s:S:t:T:p:P:JDo:O:F:x:X:B:b:l:r:L:NVzEM:v:G:i:23W:a:c:UI:H:wAu:eRkK:m:Q:", long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -345,6 +347,9 @@ int main( int argc, char *argv[] ) {
             if (args.size() >= 3) kw_filter_threshold = atoi(args[2].c_str());
             if (args.size() >= 4) kw_probability_threshold = atof(args[3].c_str());
             break;
+        case 'Q':
+            bestnkeywords = atoi(optarg);
+            break;
         default:
             cerr << "Unknown option: -" <<  optopt << endl;
             abort ();
@@ -488,8 +493,8 @@ int main( int argc, char *argv[] ) {
 		    alignmodel = new AlignmentModel(sourcemodel,targetmodel, LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE, DODEBUG);
 		    reversealignmodel = new AlignmentModel(targetmodel,sourcemodel, 0,0, DODEBUG);
 		} else {
-		    alignmodel = new AlignmentModel(LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE, DODEBUG);
-		}    
+		    alignmodel = new AlignmentModel(LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE, DODEBUG, bestnkeywords);
+		}   
 		
 		 				
 		bool EM_INIT = true;
@@ -597,7 +602,7 @@ int main( int argc, char *argv[] ) {
 	        cerr << "Loading alignment model..." << endl;
 	        if ((sourcemodel != NULL) && (targetmodel != NULL)) {
 	            alignmodel = new AlignmentModel(sourcemodel,targetmodel, LEFTCONTEXTSIZE, RIGHTCONTEXTSIZE,DODEBUG);
-	            alignmodel->load(modelfile, false, DOSKIPGRAMS, bestn);	    	        
+	            alignmodel->load(modelfile, false, DOSKIPGRAMS, bestn, bestnkeywords, kw_probability_threshold);	    	        
             } else {
                 alignmodel = new AlignmentModel(modelfile, false, 1, DOSKIPGRAMS, bestn, DODEBUG);            
             }  
@@ -633,7 +638,7 @@ int main( int argc, char *argv[] ) {
         	cerr << "Loading inverse alignment model..." << endl;
 	        if ((sourcemodel != NULL) && (targetmodel != NULL)) {
 	            reversealignmodel = new AlignmentModel(targetmodel,sourcemodel, 0,0, DODEBUG);
-	            reversealignmodel->load(modelfile, false, DOSKIPGRAMS, bestn);	    	        
+	            reversealignmodel->load(modelfile, false, DOSKIPGRAMS, bestn, bestnkeywords, kw_probability_threshold);	    	        
             } else {
                 reversealignmodel = new AlignmentModel(invmodelfile, false, 1, DOSKIPGRAMS, bestn, DODEBUG); 
             }     

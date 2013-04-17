@@ -3206,40 +3206,40 @@ void AlignmentModel::stats() {
 }
 
 
-int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, int include_threshold, int absolute_threshold, double probability_threshold, int filter_threshold) {
+int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, int include_threshold, int absolute_threshold, double probability_threshold, int filter_threshold, int bestnkeywords) {
     int keywordsfound = 0;
     int c = 0;
     int total = sourcepatternmodel.ngrams.size() + sourcepatternmodel.skipgrams.size();
     for (unordered_map<const EncNGram,NGramData >::iterator iter = sourcepatternmodel.ngrams.begin(); iter != sourcepatternmodel.ngrams.end(); iter++) {
         c++;
         const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
-        if (iter->second.count() >= include_threshold) keywordsfound += computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold);
+        if (iter->second.count() >= include_threshold) keywordsfound += computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold, bestnkeywords);
         if ((DEBUG) || (c % 10000 == 0)) cerr << " Computekeywords @" << c << "/" << total << " -- " << keywordsfound << " keywords found in total thus far" << endl;
     }
     for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = sourcepatternmodel.skipgrams.begin(); iter != sourcepatternmodel.skipgrams.end(); iter++) {
         c++;
         const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
-        if (iter->second.count() >= include_threshold) keywordsfound += computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold);
+        if (iter->second.count() >= include_threshold) keywordsfound += computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold, bestnkeywords);
         if ((DEBUG) || (c % 10000 == 0)) cerr << " Computekeywords @" << c << "/" << total << " -- " << keywordsfound << " keywords found in total thus far" << endl;
     }
     return keywordsfound;
 }
 
 
-int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, int include_threshold, int absolute_threshold, double probability_threshold, int filter_threshold) {
+int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, int include_threshold, int absolute_threshold, double probability_threshold, int filter_threshold, int bestnkeywords) {
     int keywordsfound = 0;
     int c = 0;
     int total = sourcepatternmodel.ngrams.size() + sourcepatternmodel.skipgrams.size();
     for (unordered_map<const EncNGram,IndexCountData >::iterator iter = sourcepatternmodel.ngrams.begin(); iter != sourcepatternmodel.ngrams.end(); iter++) {
         c++;
         const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
-        if (iter->second.count >= include_threshold) keywordsfound += computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold);
+        if (iter->second.count >= include_threshold) keywordsfound += computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold, bestnkeywords);
         if ((DEBUG) || (c % 10000 == 0)) cerr << " Computekeywords @" << c << "/" << total << " -- " << keywordsfound << " keywords found in total thus far" << endl;
     }
     for (unordered_map<const EncSkipGram,IndexCountData >::iterator iter = sourcepatternmodel.skipgrams.begin(); iter != sourcepatternmodel.skipgrams.end(); iter++) {
         c++;
         const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
-        if (iter->second.count >= include_threshold) keywordsfound +=computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold);
+        if (iter->second.count >= include_threshold) keywordsfound +=computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold, bestnkeywords);
         if ((DEBUG) || (c % 10000 == 0)) cerr << " Computekeywords @" << c << "/" << total << " -- " << keywordsfound << " keywords found in total thus far" << endl;
     }
     return keywordsfound;
@@ -3250,7 +3250,7 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
 
 
 //Bit ugly, code duplication! Fix sometime... Make sure I edit the right one!
-int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold) {
+int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold, int bestnkeywords) {
     int keywordsfound = 0;
 
     const EncAnyGram * sourcekey = getsourcekey(sourcegram);
@@ -3273,7 +3273,7 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
 
 
 
-        keywordsfound = computekeywords(&sourcepatternmodel, sourcekey,sourcegram,countmap, absolute_threshold, probability_threshold , filter_threshold);
+        keywordsfound = computekeywords(&sourcepatternmodel, sourcekey,sourcegram,countmap, absolute_threshold, probability_threshold , filter_threshold, bestnkeywords);
     }
     return keywordsfound;
 
@@ -3281,7 +3281,7 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
 
 
 
-int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const EncAnyGram * sourcekey, const EncAnyGram * sourcegram, unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > & countmap, int absolute_threshold, double probability_threshold , int filter_threshold) {
+int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const EncAnyGram * sourcekey, const EncAnyGram * sourcegram, unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > & countmap, int absolute_threshold, double probability_threshold , int filter_threshold, int bestnkeywords) {
     int keywordsfound = 0;
 
     if (DEBUG) {
@@ -3368,7 +3368,7 @@ int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const Enc
    return keywordsfound;
 }
 
-int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold) {
+int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold, int bestnkeywords) {
 
 
 
@@ -3392,7 +3392,7 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
             }
        }
 
-       keywordsfound = computekeywords(&sourcepatternmodel, sourcekey,sourcegram,countmap, absolute_threshold, probability_threshold , filter_threshold);
+       keywordsfound = computekeywords(&sourcepatternmodel, sourcekey,sourcegram,countmap, absolute_threshold, probability_threshold , filter_threshold, bestnkeywords);
 
     }
 

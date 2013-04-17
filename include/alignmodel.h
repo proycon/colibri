@@ -161,13 +161,13 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
 	AlignmentModel * removecontext();
 		
 
-    int computekeywords(ModelQuerier *, const EncAnyGram * sourcekey, const EncAnyGram * sourcegram, std::unordered_map<const EncAnyGram *, std::unordered_map<const EncAnyGram *, int> > & countmap, int absolute_threshold, double probability_threshold , int filter_threshold);
+    int computekeywords(ModelQuerier *, const EncAnyGram * sourcekey, const EncAnyGram * sourcegram, std::unordered_map<const EncAnyGram *, std::unordered_map<const EncAnyGram *, int> > & countmap, int absolute_threshold, double probability_threshold , int filter_threshold, int bestnkeywords=1000);
 
-    int computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, int include_threshold = 1, int absolute_threshold = 3, double probability_threshold = 0.0000000001, int filter_threshold = 20);
-	int computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold = 3, double probability_threshold = 0.0000000001, int filter_threshold = 20);   
+    int computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, int include_threshold = 1, int absolute_threshold = 3, double probability_threshold = 0.0000000001, int filter_threshold = 20, int bestnkeywords=1000);
+	int computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold = 3, double probability_threshold = 0.0000000001, int filter_threshold = 20,  int bestnkeywords=1000);   
 	
-    int computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, int include_threshold = 1, int absolute_threshold = 3, double probability_threshold = 0.0000000001, int filter_threshold = 20);
-	int computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold = 3, double probability_threshold = 0.0000000001, int filter_threshold = 20);   
+    int computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, int include_threshold = 1, int absolute_threshold = 3, double probability_threshold = 0.0000000001, int filter_threshold = 20,  int bestnkeywords=1000);
+	int computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold = 3, double probability_threshold = 0.0000000001, int filter_threshold = 20,  int bestnkeywords=1000);   
 	
 	
 	void stats();
