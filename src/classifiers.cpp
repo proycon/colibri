@@ -1021,7 +1021,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
     /*for (map<uint64_t, Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
         cerr << "Closing classifier hash=" << iter->first << "..." << endl;
         iter->second->flush();
-        iter->second->close();
+        iter->scond->close();
     }*/
 }
 
@@ -1060,7 +1060,7 @@ void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withc
 
     //sort all keywords (based on hash value), so order in feature vector is always deterministic
     map<int, const EncAnyGram *> sortedkws;
-    if (keywords) {
+    if ((keywords) && (keywords_source != NULL)) {
         for (t_keywords_source::iterator kwiter = keywords_source->begin(); kwiter != keywords_source->end(); kwiter++) {
             for (unordered_map<const EncAnyGram *, double>::iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
                 sortedkws.insert(pair<int,const EncAnyGram*>(kwiter2->first->hash(), kwiter2->first)); //will not insert duplicates due to nature of map
@@ -1074,7 +1074,7 @@ void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withc
 
         cerr << "Adding to classifier hash=" << hash << "..." << endl;
 
-        if (keywords) {
+        if ((keywords) && (keywordflags_source != NULL)) {
            //loop over the sorted keywords and check whether each is flagged or
            //not, multiple instances may be passed, call addinstance for each
            //set of flags
