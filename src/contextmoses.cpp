@@ -480,8 +480,10 @@ int main( int argc, char *argv[] ) {
                             for (t_aligntargets::iterator iter = alignmodel->alignmatrix[key].begin(); iter !=  alignmodel->alignmatrix[key].end(); iter++) {
                                 const EncAnyGram * targetgram = iter->first;
                                 const unsigned char targetn = targetgram->n();
+
+                                const EncAnyGram * targetkey = targetpatternmodel->getkey(targetkey);
                                 
-                                if (targetpatternmodel->reverseindex[sentence].count(targetgram)) {  //line.contains((const EncNGram *) targetgram)) { //use targetpatternmodel and reverse index!!
+                                if (targetpatternmodel->reverseindex[sentence].count(targetkey)) {  //line.contains((const EncNGram *) targetgram)) { //use targetpatternmodel and reverse index!!
                                     if (DOKEYWORDS) {
                                         //loop over global context keywords and flag presence, store in separate datastructure: globalkeywords
                                         if ((alignmodel->keywords.count(key)) && (alignmodel->keywords[key].count(targetgram))) {
