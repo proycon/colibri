@@ -1073,7 +1073,7 @@ void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withc
         const EncAnyGram * label = iter3->first;
 
         cerr << "Adding to classifier hash=" << hash << " |localcontext|=" << featurevector.size();
-        if ((keywords) && (keywords_source != NULL)) cerr << " |globalkeywords|=" << sortedkws.size() << "..." 
+        if ((keywords) && (keywords_source != NULL)) cerr << " |globalkeywords|=" << sortedkws.size() << "..."; 
         cerr << endl;
 
         if ((keywords) && (keywordflags_source != NULL)) {
