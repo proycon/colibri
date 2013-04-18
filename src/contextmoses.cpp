@@ -495,9 +495,24 @@ int main( int argc, char *argv[] ) {
                                     if (debug) cerr << " ... not found in target pattern model" << endl;
                                     continue;
                                 } else {                                    
-                                    if (debug) cerr << "... found" << endl;
+                                    if (debug) {
+                                        cerr << "... target found.. ";
+                                        if (DOKEYWORDS){
+                                            if (focuskey == NULL) {
+                                                cerr << "no keywords found for source";
+                                            } else {
+                                                if (alignmodel->keywords[focuskey].count(targetgram)) {
+                                                    cerr << alignmodel->keywords[focuskey][targetgram].size() << " possible keywords found";
+                                                } else {
+                                                    cerr << "no keywords found for target";
+                                                }
+                                            }
+                                        }
+                                        cerr << endl;
+                                    } 
                                 }
                                 
+
                                 if ((DOKEYWORDS) && (focuskey != NULL) && (targetpatternmodel->reverseindex[sentence].count(targetkey))) {  //line.contains((const EncNGram *) targetgram)) { //use targetpatternmodel and reverse index!!
                                     if (debug) cerr << "\t\tCounting keywords" << endl;
                                     //loop over global context keywords and flag presence, store in separate datastructure: globalkeywords
