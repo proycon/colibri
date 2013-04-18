@@ -2712,10 +2712,10 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
 
 		    if (dokeywords) {
 
-                const EncAnyGram * sourcegramfocus;
+                const EncAnyGram * sourcegramfocus = NULL;
                 if ((leftsourcecontext != 0) || (rightsourcecontext != 0)) {
                     const EncAnyGram * tmp = sourcegram->slice(leftsourcecontext, sourcegram->n() - leftsourcecontext - rightsourcecontext);
-                    sourcegramfocus = getsourcekey(tmp);
+                    sourcegramfocus = getkeywordkey(tmp);
                     delete tmp;
                 } else {
                     sourcegramfocus = sourcegram;
@@ -2764,6 +2764,8 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
                         }
                     }
 		        }
+
+
 		    }
 
 
@@ -2971,7 +2973,7 @@ void AlignmentModel::save(const string & filename, const int bestnkeywords) {
             const EncAnyGram * sourcegramfocus;
             if ((leftsourcecontext != 0) || (rightsourcecontext != 0)) {
                 const EncAnyGram * tmp = sourcegram->slice(leftsourcecontext, sourcegram->n() - leftsourcecontext - rightsourcecontext);
-                sourcegramfocus = getsourcekey(tmp);
+                sourcegramfocus = getkeywordkey(tmp);
                 delete tmp;
             } else {
                 sourcegramfocus = sourcegram;
@@ -3031,6 +3033,16 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
     for (t_alignmatrix::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
     	if (iter->first == NULLGRAM) continue;
         const EncAnyGram* sourcegram = iter->first;
+
+
+        const EncAnyGram * sourcegramfocus = NULL;
+        if ((leftsourcecontext != 0) || (rightsourcecontext != 0)) {
+            const EncAnyGram * sourcegramfocus = sourcegram->slice(leftsourcecontext, sourcegram->n() - leftsourcecontext - rightsourcecontext);
+        } else {
+            sourcegramfocus = sourcegram;
+        }                               
+
+
         //cerr << "DEBUG: SIZE=" << iter->second.size() << " @" << (size_t) iter->first << " #" << iter->first->hash() << endl;
         for (t_aligntargets::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
             const EncAnyGram* targetgram = iter2->first;
@@ -3039,15 +3051,20 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
             for (vector<double>::iterator iter3 = iter2->second.begin(); iter3 != iter2->second.end(); iter3++) {
                 *OUT << *iter3 << ' ';
             }
-            if ( (keywords.count(sourcegram)) && (keywords[sourcegram].count(targetgram)) && (!mosesformat) ) {
-                if (DEBUG) cerr << "keywordcount=" << keywords[sourcegram][targetgram].size() << endl;
+
+        
+
+            if ( (keywords.count(sourcegramfocus)) && (keywords[sourcegramfocus].count(targetgram)) && (!mosesformat) ) {
+                if (DEBUG) cerr << "keywordcount=" << keywords[sourcegramfocus][targetgram].size() << endl;
                 *OUT << endl << "#KEYWORDS:";
                 multimap<double,const EncAnyGram *> sortedkw;
-                for (unordered_map<const EncAnyGram *, double>::iterator iter3 = keywords[sourcegram][targetgram].begin(); iter3 != keywords[sourcegram][targetgram].end(); iter3++) sortedkw.insert(pair<double,const EncAnyGram *>(-1* iter3->second, iter3->first));
+                for (unordered_map<const EncAnyGram *, double>::iterator iter3 = keywords[sourcegramfocus][targetgram].begin(); iter3 != keywords[sourcegramfocus][targetgram].end(); iter3++) sortedkw.insert(pair<double,const EncAnyGram *>(-1* iter3->second, iter3->first));
                 for (multimap<double,const EncAnyGram *>::iterator iter3 = sortedkw.begin(); iter3 != sortedkw.end(); iter3++) *OUT << "\t" << iter3->second->decode(sourceclassdecoder) << ' ' << (iter3->first * -1);
             }
             *OUT << endl;
         }
+
+        if (sourcegramfocus != NULL) delete sourcegramfocus;
     }
 }
 
@@ -3123,6 +3140,15 @@ const EncAnyGram * AlignmentModel::gettargetkey(const EncAnyGram* key, bool retu
     }
 }
 
+
+const EncAnyGram * AlignmentModel::getkeywordkey(const EncAnyGram * key) {
+    t_keywords::iterator keyiter = keywords.find(key);
+    if (keyiter != keywords.end()) {
+        return keyiter->first;
+    } else {
+        return NULL;
+    }
+}
 
 void AlignmentModel::computereverse() {
     reversealignmatrix.clear();

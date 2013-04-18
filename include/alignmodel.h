@@ -102,6 +102,7 @@ class AlignmentModel: public AlignConstraintInterface, public ModelQuerierBase {
     const EncAnyGram * gettargetkey(const EncAnyGram* key, bool returnselfifnotfound=false, bool forcemodel=false);
     const EncAnyGram * getkey(const EncAnyGram* key) { return getsourcekey(key); } //alias for getsourcekey, needed by ModelQuerier
     const EncAnyGram * getfocuskey(const EncAnyGram* key); //alias for getsourcekey, wITHOUT context, needed by ModelQuerier
+    const EncAnyGram * getkeywordkey(const EncAnyGram * key); //for global context keywords 
     
     std::pair<EncNGram, EncNGram> getsourcecontext(const EncAnyGram* key);
     
