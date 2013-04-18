@@ -479,9 +479,9 @@ int main( int argc, char *argv[] ) {
                             bool targetfound = false;
                             for (t_aligntargets::iterator iter = alignmodel->alignmatrix[key].begin(); iter !=  alignmodel->alignmatrix[key].end(); iter++) {
                                 const EncAnyGram * targetgram = iter->first;
-                                const unsigned char targetn = targetgram->n();
 
-                                const EncAnyGram * targetkey = targetpatternmodel->getkey(targetkey);
+                                if (!targetpatternmodel->exists(targetgram)) continue;
+                                const EncAnyGram * targetkey = targetpatternmodel->getkey(targetgram);
                                 
                                 if (targetpatternmodel->reverseindex[sentence].count(targetkey)) {  //line.contains((const EncNGram *) targetgram)) { //use targetpatternmodel and reverse index!!
                                     if (DOKEYWORDS) {
