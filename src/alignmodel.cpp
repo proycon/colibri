@@ -50,7 +50,7 @@ void AlignmentModel::intersect(AlignmentModel * reversemodel, double probthresho
 			    //score vector [a,b] * [x,y]  == [a*x,b*y]
 			    const int scores = targetiter->second.size();
 			    for (int i = 0; i < scores; i++) {
-			        alignmatrix[sourcegram][targetgram][i] = alignmatrix[sourcegram][targetgram][i] * reversemodel->alignmatrix[revtargetgram][revsourcegram][i];
+                    alignmatrix[sourcegram][targetgram][i] = alignmatrix[sourcegram][targetgram][i] * reversemodel->alignmatrix[revtargetgram][revsourcegram][i];
 			    }
 				const double p = listproduct(alignmatrix[sourcegram][targetgram]);
 				if ((bestn) && ((p > lowerbound) || (bestq.size() < (size_t) bestn))) {
@@ -2902,6 +2902,7 @@ void AlignmentModel::save(const string & filename, const int bestnkeywords) {
 	const char czero = 0;
     unordered_set<const EncAnyGram *> processedkws; //temporary map will store processed keywords, if context is presents, keywords will only be stored at the first occurrence of the focus
 
+
     ofstream f;
     f.open(filename.c_str(), ios::out | ios::binary);
     if ((!f) || (!f.good())) {
@@ -2920,6 +2921,8 @@ void AlignmentModel::save(const string & filename, const int bestnkeywords) {
     f.write( (char*) &sourcecount, sizeof(uint64_t));
 
     unsigned int i = 0;
+    unsigned int totalkws = 0;
+    unsigned int targetcount = 0;
 
     for (t_alignmatrix::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
         i++;
@@ -2945,6 +2948,7 @@ void AlignmentModel::save(const string & filename, const int bestnkeywords) {
     	f.write( (char*) &targetcount, sizeof(uint64_t));
 
         for (t_aligntargets::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+            targetcount++;
         	const EncAnyGram* targetgram = gettargetkey(iter2->first, true);
         	if (targetgram == NULL) {
         	    cerr << "AlignmentModel::save(): Target key not found! This should not happen! Error whilst processing source-pattern " << i << endl;
@@ -2970,23 +2974,23 @@ void AlignmentModel::save(const string & filename, const int bestnkeywords) {
 
 
 
-            const EncAnyGram * sourcegramfocus;
+            const EncAnyGram * sourcegramfocus = NULL;
             if ((leftsourcecontext != 0) || (rightsourcecontext != 0)) {
                 const EncAnyGram * tmp = sourcegram->slice(leftsourcecontext, sourcegram->n() - leftsourcecontext - rightsourcecontext);
                 sourcegramfocus = getkeywordkey(tmp);
                 delete tmp;
             } else {
-                sourcegramfocus = sourcegram;
+                sourcegramfocus = getkeywordkey(sourcegram);
             }                               
                     
-
-        	if ((keywords.count(sourcegramfocus)) && (keywords[sourcegramfocus].count(targetgram))) {
+        	if ((sourcegramfocus != NULL) && (keywords.count(sourcegramfocus)) && (keywords[sourcegramfocus].count(targetgram))) {
 
                 if (processedkws.count(sourcegramfocus)) {
         	        const uint32_t keywordcount = 0;
                     f.write((char*) &keywordcount, sizeof(uint32_t));
                 } else {
                     processedkws.insert(sourcegramfocus);
+                    totalkws++;
 
                     uint32_t keywordcount = keywords[sourcegramfocus][targetgram].size();
                     if (keywordcount > bestnkeywords) keywordcount = bestnkeywords;
@@ -3024,6 +3028,7 @@ void AlignmentModel::save(const string & filename, const int bestnkeywords) {
 
     }
     f.close();
+    cerr << "(saved " << i << " source patterns,  " << targetcount << " target patterns, " << totalkws << " keywords)";
 }
 
 
