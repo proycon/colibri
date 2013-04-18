@@ -429,6 +429,8 @@ int main( int argc, char *argv[] ) {
        
         t_keywordflags flaggedkeywords;
 
+        unsigned int totalkwcount = 0;
+
         vector<unsigned int> words;
         int sentence = 0;
         while (INSOURCE->good()) {
@@ -451,7 +453,7 @@ int main( int argc, char *argv[] ) {
                 continue;
             }
             int foundcount = 0;    
-            
+
             const int ltarget = countwords(targetlinebuffer,targetlinesize); 
                                     
             if (linesize > 0) {
@@ -493,6 +495,7 @@ int main( int argc, char *argv[] ) {
                                                 if (alignmodel->keywords[key][targetgram].count(keyword)) { //check if this is a keyword
                                                     if (alignmodel->keywords[key][targetgram][keyword] >= keywordprobthreshold) {
                                                         if (debug) cerr << " | " << keyword->decode(*sourceclassdecoder);
+                                                        totalkwcount++;
                                                         keywords.insert(keyword);
                                                     }
                                                 }
@@ -508,7 +511,7 @@ int main( int argc, char *argv[] ) {
                                             //        }
                                             //    }
                                             //}
-                                            if (debug) cerr << "    found  " << keywords.size() << " of " << alignmodel->keywords[key][targetgram].size() << " keywords" << endl;
+                                            if (debug) cerr << "    found  " << keywords.size() << " of " << alignmodel->keywords[key][targetgram].size() << " keywords" << endl;                                            
                                             flaggedkeywords[(contextkey != NULL) ? contextkey : incontext][targetgram].push_back(keywords);
                                         }
                                     }
@@ -542,7 +545,12 @@ int main( int argc, char *argv[] ) {
             
             
         }
-		
+	
+
+        if (DOKEYWORDS) {
+            cerr << "Keywords found for " << flaggedkeywords.size() << " different contexts. Total keyword tokens counted: " << totalkwcount << endl;
+        }
+
         
         if (mode == CLASSIFIERTYPE_NARRAY) {
             cerr << "Building n-array classifier" << endl;                  
