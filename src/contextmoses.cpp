@@ -454,7 +454,13 @@ int main( int argc, char *argv[] ) {
             }
             int foundcount = 0;    
 
-            const int ltarget = countwords(targetlinebuffer,targetlinesize); 
+            const int ltarget = countwords(targetlinebuffer,targetlinesize);
+
+            if (targetpatternmodel->reverseindex.empty()) {
+                cerr << "No reverse index loaded in target-side patternmodel" << endl;
+                throw InternalError();
+            }
+
                                     
             if (linesize > 0) {
                 EncData line = EncData(linebuffer, linesize);
@@ -477,45 +483,51 @@ int main( int argc, char *argv[] ) {
                             
                             //see what targets in the target sentence match with the translation options (only one alignment is right, but if there is ambiguity we add them all as we don't have alignment data at this point).. 
                             bool targetfound = false;
-                            for (t_aligntargets::iterator iter = alignmodel->alignmatrix[key].begin(); iter !=  alignmodel->alignmatrix[key].end(); iter++) {
+                            for (t_aligntargets::iterator iter = alignmodel->alignmatrix[key].begin(); iter !=  alignmodel->alignmatrix[key].end(); iter++) {                            
+
+                                if (debug) cerr << "    processing target";
                                 const EncAnyGram * targetgram = iter->first;
 
-                                if (!targetpatternmodel->exists(targetgram)) continue;
                                 const EncAnyGram * targetkey = targetpatternmodel->getkey(targetgram);
+                                if (targetkey == NULL) {
+                                    if (debug) cerr << " ... not found in target pattern model" << endl;
+                                    continue;
+                                } else {                                    
+                                    if (debug) cerr << "... found" << endl;
+                                }
                                 
-                                if (targetpatternmodel->reverseindex[sentence].count(targetkey)) {  //line.contains((const EncNGram *) targetgram)) { //use targetpatternmodel and reverse index!!
-                                    if (DOKEYWORDS) {
-                                        //loop over global context keywords and flag presence, store in separate datastructure: globalkeywords
-                                        if ((alignmodel->keywords.count(key)) && (alignmodel->keywords[key].count(targetgram))) {
-                                            unordered_set<const EncAnyGram *> keywords;
-                                            //reverse: loop over patterns in
-                                            //sentence and match each with
-                                            //keywords
-                                            if (debug) cerr << "Keywords for " << key->decode(*sourceclassdecoder) << " -> " << targetgram->decode(*targetclassdecoder) << " = " << alignmodel->keywords[key][targetgram].size();
-                                            for (unordered_set<const EncAnyGram *>::iterator kwiter = sourcepatternmodel->reverseindex[sentence].begin(); kwiter != sourcepatternmodel->reverseindex[sentence].end(); kwiter++) { //problem: far too many keywords!!
-                                                const EncAnyGram * keyword = *kwiter; //candidate keyword
-                                                if (alignmodel->keywords[key][targetgram].count(keyword)) { //check if this is a keyword
-                                                    if (alignmodel->keywords[key][targetgram][keyword] >= keywordprobthreshold) {
-                                                        if (debug) cerr << " | " << keyword->decode(*sourceclassdecoder);
-                                                        totalkwcount++;
-                                                        keywords.insert(keyword);
-                                                    }
+                                if ((DOKEYWORDS) && (targetpatternmodel->reverseindex[sentence].count(targetkey))) {  //line.contains((const EncNGram *) targetgram)) { //use targetpatternmodel and reverse index!!
+                                    if (debug) cerr << "\t\tCounting keywords" << endl;
+                                    //loop over global context keywords and flag presence, store in separate datastructure: globalkeywords
+                                    if ((alignmodel->keywords.count(key)) && (alignmodel->keywords[key].count(targetgram))) {
+                                        unordered_set<const EncAnyGram *> keywords;
+                                        //reverse: loop over patterns in
+                                        //sentence and match each with
+                                        //keywords
+                                        if (debug) cerr << "\t\tKeywords for " << key->decode(*sourceclassdecoder) << " -> " << targetgram->decode(*targetclassdecoder) << " = " << alignmodel->keywords[key][targetgram].size();
+                                        for (unordered_set<const EncAnyGram *>::iterator kwiter = sourcepatternmodel->reverseindex[sentence].begin(); kwiter != sourcepatternmodel->reverseindex[sentence].end(); kwiter++) { //problem: far too many keywords!!
+                                            const EncAnyGram * keyword = *kwiter; //candidate keyword
+                                            if (alignmodel->keywords[key][targetgram].count(keyword)) { //check if this is a keyword
+                                                if (alignmodel->keywords[key][targetgram][keyword] >= keywordprobthreshold) {
+                                                    if (debug) cerr << " | " << keyword->decode(*sourceclassdecoder);
+                                                    totalkwcount++;
+                                                    keywords.insert(keyword);
                                                 }
                                             }
-                                            if (debug) cerr << endl;
-
-
-                                            //for (unordered_map<const EncAnyGram *, double>::iterator kwiter = alignmodel->keywords[key][targetgram].begin(); kwiter != alignmodel->keywords[key][targetgram].end(); kwiter++) { //problem: far too many keywords!!
-                                            //    const EncAnyGram * keyword = kwiter->first;
-                                            //    if (sourcepatternmodel->reverseindex[sentence].count(keyword)) {  //(line.contains((const EncNGram *) keyword)) { //TODO: use sourcepatternmodel and reverse index!!
-                                            //        if (kwiter->second >= keywordprobthreshold) {
-                                            //            keywords.insert(keyword);
-                                            //        }
-                                            //    }
-                                            //}
-                                            if (debug) cerr << "    found  " << keywords.size() << " of " << alignmodel->keywords[key][targetgram].size() << " keywords" << endl;                                            
-                                            flaggedkeywords[(contextkey != NULL) ? contextkey : incontext][targetgram].push_back(keywords);
                                         }
+                                        if (debug) cerr << endl;
+
+
+                                        //for (unordered_map<const EncAnyGram *, double>::iterator kwiter = alignmodel->keywords[key][targetgram].begin(); kwiter != alignmodel->keywords[key][targetgram].end(); kwiter++) { //problem: far too many keywords!!
+                                        //    const EncAnyGram * keyword = kwiter->first;
+                                        //    if (sourcepatternmodel->reverseindex[sentence].count(keyword)) {  //(line.contains((const EncNGram *) keyword)) { //TODO: use sourcepatternmodel and reverse index!!
+                                        //        if (kwiter->second >= keywordprobthreshold) {
+                                        //            keywords.insert(keyword);
+                                        //        }
+                                        //    }
+                                        //}
+                                        if (debug) cerr << "    found  " << keywords.size() << " of " << alignmodel->keywords[key][targetgram].size() << " keywords" << endl;                                            
+                                        flaggedkeywords[(contextkey != NULL) ? contextkey : incontext][targetgram].push_back(keywords);
                                     }
 
                                     //add to context-aware alignment model (classifier training data will be constructed on the basis of this)
