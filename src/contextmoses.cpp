@@ -499,7 +499,7 @@ int main( int argc, char *argv[] ) {
                                         cerr << "... target found.. ";
                                         if (DOKEYWORDS){
                                             if (focuskey == NULL) {
-                                                cerr << "no keywords found for source";
+                                                cerr << "no keywords found for source " << focuskey->decode(*sourceclassdecoder);
                                             } else {
                                                 if (alignmodel->keywords[focuskey].count(targetgram)) {
                                                     cerr << alignmodel->keywords[focuskey][targetgram].size() << " possible keywords found";
