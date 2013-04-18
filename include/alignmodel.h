@@ -27,7 +27,7 @@ void recompute_token_index(std::unordered_map<const EncAnyGram *, std::vector<in
 size_t get_templates(const EncAnyGram * anygram, SelectivePatternModel * model, std::unordered_set<const EncSkipGram *> & container);
 void find_clusters(std::unordered_map<const EncSkipGram*,uint16_t> skipgrams, std::vector<std::unordered_set<const EncSkipGram*> > & clusters , SelectivePatternModel * model );
 
-const short ALIGNMENTMODELVERSION = 6; //unsigned: 4, no-keywords: 5
+const short ALIGNMENTMODELVERSION = 7; //unsigned: 4, no-keywords: 5, ordered-keywords,always-without-context: 7
 const int ALIGNMENTMODEL = 100;
 
 

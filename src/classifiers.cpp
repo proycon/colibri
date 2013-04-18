@@ -968,7 +968,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
         } 
     
         const EncAnyGram * focus = iter->first;                
-        if (iter->second.size() >= contextthreshold) { //only use classifier if contextssthreshold is met (by default 1, so it always is)
+        if (iter->second.size() >= contextthreshold) { //only use classifier if contextsthreshold is met (by default 1, so it always is)
             stringstream newid;
             const uint64_t hash = focus->hash();
             newid << this->id() << "." << focus->hash();

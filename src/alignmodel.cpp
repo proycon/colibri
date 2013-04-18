@@ -2711,6 +2711,16 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
 		    }
 
 		    if (dokeywords) {
+
+                const EncAnyGram * sourcegramfocus;
+                if ((leftsourcecontext != 0) || (rightsourcecontext != 0)) {
+                    const EncAnyGram * tmp = sourcegram->slice(leftsourcecontext, sourcegram->n() - leftsourcecontext - rightsourcecontext);
+                    sourcegramfocus = getsourcekey(tmp);
+                    delete tmp;
+                } else {
+                    sourcegramfocus = sourcegram;
+                }                               
+
 		        uint32_t keywordcount;
 		        f.read((char*) &keywordcount, sizeof(uint32_t));
 		        for (int i = 0; i < keywordcount; i++) {
@@ -2719,15 +2729,15 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
                         if (DEBUG)  cerr << "\tKEYWORD-NGRAM";
                         EncNGram * ngram = new EncNGram(&f, ngramversion); //read from file
                         if (DEBUG)  cerr << " n=" << (int) ngram->n() << " size=" << (int) ngram->size();
-                        const EncAnyGram * sourcekey = getsourcekey((EncAnyGram*) ngram);
+                        const EncAnyGram * sourcekey = getsourcekey((EncAnyGram*) ngram); //for keyword
                         double keywordprob;
                         f.read((char*) &keywordprob, sizeof(double));
                         if (sourcekey != NULL) {
-                            if ((i <= bestnkeywords) && (keywordprob >= keywordprobthreshold))  keywords[sourcegram][targetgram][sourcekey] = keywordprob;
+                            if ((i <= bestnkeywords) && (keywordprob >= keywordprobthreshold))  keywords[sourcegramfocus][targetgram][sourcekey] = keywordprob;
                             delete ngram;
                         } else {
                             if ((i <= bestnkeywords) && (keywordprob >= keywordprobthreshold)) {
-                                keywords[sourcegram][targetgram][ngram] = keywordprob;
+                                keywords[sourcegramfocus][targetgram][ngram] = keywordprob;
                             } else {
                                 delete ngram;
                             }
@@ -2738,13 +2748,13 @@ void AlignmentModel::load(const string & filename, bool logprobs, bool allowskip
                         double keywordprob;
                         f.read((char*) &keywordprob, sizeof(double));
                         if (allowskipgrams) {
-                            const EncAnyGram * sourcekey = getsourcekey((EncAnyGram*) skipgram);
+                            const EncAnyGram * sourcekey = getsourcekey((EncAnyGram*) skipgram); //for keyword
                             if (sourcekey != NULL) {
-                                if ((i <= bestnkeywords) && (keywordprob >= keywordprobthreshold)) keywords[sourcegram][targetgram][sourcekey] = keywordprob;
+                                if ((i <= bestnkeywords) && (keywordprob >= keywordprobthreshold)) keywords[sourcegramfocus][targetgram][sourcekey] = keywordprob;
                                 delete skipgram;
                             } else {
                                 if ((i <= bestnkeywords) && (keywordprob >= keywordprobthreshold)) {
-                                    keywords[sourcegram][targetgram][skipgram] = keywordprob;
+                                    keywords[sourcegramfocus][targetgram][skipgram] = keywordprob;
                                 } else {
                                     delete skipgram;
                                 }
@@ -2888,6 +2898,7 @@ void AlignmentModel::load(const std::string & filename, ClassEncoder * sourceenc
 void AlignmentModel::save(const string & filename, const int bestnkeywords) {
 	const unsigned char check = 0xff;
 	const char czero = 0;
+    unordered_set<const EncAnyGram *> processedkws; //temporary map will store processed keywords, if context is presents, keywords will only be stored at the first occurrence of the focus
 
     ofstream f;
     f.open(filename.c_str(), ios::out | ios::binary);
@@ -2956,31 +2967,50 @@ void AlignmentModel::save(const string & filename, const int bestnkeywords) {
         	}
 
 
-        	if ((keywords.count(sourcegram)) && (keywords[sourcegram].count(targetgram))) {
-        	    uint32_t keywordcount = keywords[sourcegram][targetgram].size();
-                if (keywordcount > bestnkeywords) keywordcount = bestnkeywords;
-        	    f.write( (char*) &keywordcount, sizeof(uint32_t));
-                //sort before saving
-                multimap<double, const EncAnyGram *> sortedkeywords;
-        	    for (unordered_map<const EncAnyGram*, double>::iterator iter3 = keywords[sourcegram][targetgram].begin(); iter3 != keywords[sourcegram][targetgram].end(); iter3++) {
-                    sortedkeywords.insert(pair<double, const EncAnyGram *>(iter3->second, iter3->first));
+
+            const EncAnyGram * sourcegramfocus;
+            if ((leftsourcecontext != 0) || (rightsourcecontext != 0)) {
+                const EncAnyGram * tmp = sourcegram->slice(leftsourcecontext, sourcegram->n() - leftsourcecontext - rightsourcecontext);
+                sourcegramfocus = getsourcekey(tmp);
+                delete tmp;
+            } else {
+                sourcegramfocus = sourcegram;
+            }                               
+                    
+
+        	if ((keywords.count(sourcegramfocus)) && (keywords[sourcegramfocus].count(targetgram))) {
+
+                if (processedkws.count(sourcegramfocus)) {
+                    f.write(&czero, sizeof(char));
+                } else {
+                    processedkws.insert(sourcegramfocus);
+
+                    uint32_t keywordcount = keywords[sourcegramfocus][targetgram].size();
+                    if (keywordcount > bestnkeywords) keywordcount = bestnkeywords;
+                    f.write( (char*) &keywordcount, sizeof(uint32_t));
+                    //sort before saving
+                    multimap<double, const EncAnyGram *> sortedkeywords;
+                    for (unordered_map<const EncAnyGram*, double>::iterator iter3 = keywords[sourcegramfocus][targetgram].begin(); iter3 != keywords[sourcegramfocus][targetgram].end(); iter3++) {
+                        sortedkeywords.insert(pair<double, const EncAnyGram *>(iter3->second, iter3->first));
+                    }
+                    int kwcount = 0;
+                    for (multimap<double, const EncAnyGram*>::iterator iter3 = sortedkeywords.begin(); iter3 != sortedkeywords.end(); iter3++) {
+                        kwcount++;
+                        if (kwcount > bestnkeywords) break;
+                        const EncAnyGram * keyword = iter3->second;
+                        if (keyword->isskipgram()) {
+                            const EncSkipGram * skipgram = (const EncSkipGram*) keyword;
+                            skipgram->writeasbinary(&f);
+                        } else {
+                            const EncNGram * ngram = (const EncNGram*) keyword;
+                            f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
+                            ngram->writeasbinary(&f);
+                        }
+                        const double p = iter3->first;
+                        f.write( (char*) &p, sizeof(double));
+                    }
+
                 }
-                int kwcount = 0;
-        	    for (multimap<double, const EncAnyGram*>::iterator iter3 = sortedkeywords.begin(); iter3 != sortedkeywords.end(); iter3++) {
-                    kwcount++;
-                    if (kwcount > bestnkeywords) break;
-        	        const EncAnyGram * keyword = iter3->second;
-                	if (keyword->isskipgram()) {
-            			const EncSkipGram * skipgram = (const EncSkipGram*) keyword;
-	            		skipgram->writeasbinary(&f);
-            		} else {
-            	    	const EncNGram * ngram = (const EncNGram*) keyword;
-            			f.write(&czero, sizeof(char)); //gapcount, always zero for ngrams
-	            		ngram->writeasbinary(&f);
-            		}
-            	    const double p = iter3->first;
-            	    f.write( (char*) &p, sizeof(double));
-        	    }
         	} else {
         	    const uint32_t keywordcount = 0;
         	    f.write( (char*) &keywordcount, sizeof(uint32_t));
@@ -3221,13 +3251,13 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
     int total = sourcepatternmodel.ngrams.size() + sourcepatternmodel.skipgrams.size();
     for (unordered_map<const EncNGram,NGramData >::iterator iter = sourcepatternmodel.ngrams.begin(); iter != sourcepatternmodel.ngrams.end(); iter++) {
         c++;
-        const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
+        const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first); //without context
         if (iter->second.count() >= include_threshold) keywordsfound += computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold, bestnkeywords);
         if ((DEBUG) || (c % 10000 == 0)) cerr << " Computekeywords @" << c << "/" << total << " -- " << keywordsfound << " keywords found in total thus far" << endl;
     }
     for (unordered_map<const EncSkipGram,SkipGramData >::iterator iter = sourcepatternmodel.skipgrams.begin(); iter != sourcepatternmodel.skipgrams.end(); iter++) {
         c++;
-        const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
+        const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first); //without context
         if (iter->second.count() >= include_threshold) keywordsfound += computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold, bestnkeywords);
         if ((DEBUG) || (c % 10000 == 0)) cerr << " Computekeywords @" << c << "/" << total << " -- " << keywordsfound << " keywords found in total thus far" << endl;
     }
@@ -3241,13 +3271,13 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
     int total = sourcepatternmodel.ngrams.size() + sourcepatternmodel.skipgrams.size();
     for (unordered_map<const EncNGram,IndexCountData >::iterator iter = sourcepatternmodel.ngrams.begin(); iter != sourcepatternmodel.ngrams.end(); iter++) {
         c++;
-        const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
+        const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first); //without context
         if (iter->second.count >= include_threshold) keywordsfound += computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold, bestnkeywords);
         if ((DEBUG) || (c % 10000 == 0)) cerr << " Computekeywords @" << c << "/" << total << " -- " << keywordsfound << " keywords found in total thus far" << endl;
     }
     for (unordered_map<const EncSkipGram,IndexCountData >::iterator iter = sourcepatternmodel.skipgrams.begin(); iter != sourcepatternmodel.skipgrams.end(); iter++) {
         c++;
-        const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first);
+        const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first); //without context
         if (iter->second.count >= include_threshold) keywordsfound +=computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold, bestnkeywords);
         if ((DEBUG) || (c % 10000 == 0)) cerr << " Computekeywords @" << c << "/" << total << " -- " << keywordsfound << " keywords found in total thus far" << endl;
     }
@@ -3262,28 +3292,44 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
 int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, IndexedPatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold, int bestnkeywords) {
     int keywordsfound = 0;
 
-    const EncAnyGram * sourcekey = getsourcekey(sourcegram);
-    if (!sourcekey) return NULL;
+    //const EncAnyGram * sourcegram    is without context
+    //keywords are stored in keywords[] without context
 
-    if ( (alignmatrix.count(sourcekey)) && (alignmatrix[sourcekey].size() > 1)  && (sourcepatternmodel.exists(sourcegram))) { //don't bother searching keywords if there is only one translation for a sourcegram
+    const EncAnyGram * sourcefocuskey = getfocuskey(sourcegram); //without context
 
-
-
-       unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > countmap; // targetgram -> key -> count
-
-       for (t_aligntargets::iterator iter = alignmatrix[sourcekey].begin(); iter != alignmatrix[sourcekey].end(); iter++) {
-            const EncAnyGram * targetgram = iter->first;
-
-            if (targetpatternmodel.exists(targetgram)) {
-                set<int> sentenceconstraints = targetpatternmodel.getsentences(targetgram);
-                countmap[targetgram] = sourcepatternmodel.getcooccurrences(sourcegram, NULL, &sentenceconstraints); ////returns map for counting key -> counts
-            }
-       }
-
-
-
-        keywordsfound = computekeywords(&sourcepatternmodel, sourcekey,sourcegram,countmap, absolute_threshold, probability_threshold , filter_threshold, bestnkeywords);
+    if ((leftsourcecontext == 0) && (rightsourcecontext == 0)) {
+        //cheat, temporarily add to sourcecontexts
+        const EncAnyGram * sourcekey = getsourcekey(sourcegram); 
+        if (sourcekey == NULL) return 0;
+        sourcecontexts[sourcefocuskey].insert(sourcekey);
     }
+
+    for (std::unordered_set<const EncAnyGram *>::iterator ctiter = sourcecontexts[sourcefocuskey].begin(); ctiter != sourcecontexts[sourcefocuskey].end(); ctiter++) {
+        const EncAnyGram * sourcekey = *ctiter; //with context
+
+        if ( (alignmatrix.count(sourcekey)) && (alignmatrix[sourcekey].size() > 1)  && (sourcepatternmodel.exists(sourcegram))) { //don't bother searching keywords if there is only one translation for a sourcegram
+
+            unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > countmap; // targetgram -> key -> count
+
+            for (t_aligntargets::iterator iter = alignmatrix[sourcekey].begin(); iter != alignmatrix[sourcekey].end(); iter++) {
+                    const EncAnyGram * targetgram = iter->first;
+
+                    if (targetpatternmodel.exists(targetgram)) {
+                        set<int> sentenceconstraints = targetpatternmodel.getsentences(targetgram);
+                        countmap[targetgram] = sourcepatternmodel.getcooccurrences(sourcegram, NULL, &sentenceconstraints); ////returns map for counting key -> counts
+                    }
+            }
+
+
+
+            keywordsfound = computekeywords(&sourcepatternmodel, sourcekey,sourcegram,countmap, absolute_threshold, probability_threshold , filter_threshold, bestnkeywords);
+        }
+
+    }
+
+    if ((leftsourcecontext == 0) && (rightsourcecontext == 0)) sourcecontexts.clear(); //cleanup cheat
+    
+
     return keywordsfound;
 
 }
@@ -3291,6 +3337,10 @@ int AlignmentModel::computekeywords(IndexedPatternModel & sourcepatternmodel, In
 
 
 int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const EncAnyGram * sourcekey, const EncAnyGram * sourcegram, unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > & countmap, int absolute_threshold, double probability_threshold , int filter_threshold, int bestnkeywords) {
+
+    //sourcegram and sourcekey are without context, and are stored as such in
+    //keywords[]. No need to concern about context here
+
     int keywordsfound = 0;
 
     if (DEBUG) {
@@ -3373,40 +3423,49 @@ int AlignmentModel::computekeywords(ModelQuerier * sourcepatternmodel, const Enc
         }
     }
 
-
-
-
-
    return keywordsfound;
 }
 
 int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, SelectivePatternModel & targetpatternmodel, const EncAnyGram * sourcegram, int absolute_threshold, double probability_threshold , int filter_threshold, int bestnkeywords) {
 
-
-
+    //const EncAnyGram * sourcegram    is without context
+    //keywords are stored in keywords[] without context
+    
     int keywordsfound = 0;
+    const EncAnyGram * sourcefocuskey = getfocuskey(sourcegram);
 
-    const EncAnyGram * sourcekey = getsourcekey(sourcegram);
-    if (!sourcekey) return NULL;
+    if ((leftsourcecontext == 0) && (rightsourcecontext == 0)) {
+        //cheat, temporarily add to sourcecontexts
+        const EncAnyGram * sourcekey = getsourcekey(sourcegram); 
+        if (sourcekey == NULL) return 0;
+        sourcecontexts[sourcefocuskey].insert(sourcekey);
+    }
 
-    if (alignmatrix.count(sourcekey)  && (alignmatrix[sourcekey].size() > 1) && (sourcepatternmodel.exists(sourcekey))) {
+    for (unordered_set<const EncAnyGram *>::iterator ctiter = sourcecontexts[sourcefocuskey].begin(); ctiter != sourcecontexts[sourcefocuskey].end(); ctiter++) {
+        const EncAnyGram * sourcekey = *ctiter; //with context
 
-       unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > countmap; // targetgram -> key -> count
+        if (alignmatrix.count(sourcekey)  && (alignmatrix[sourcekey].size() > 1) && (sourcepatternmodel.exists(sourcekey))) {
 
-       for (t_aligntargets::iterator iter = alignmatrix[sourcekey].begin(); iter != alignmatrix[sourcekey].end(); iter++) {
-            const EncAnyGram * targetgram = iter->first;
+        unordered_map<const EncAnyGram *, unordered_map<const EncAnyGram *, int> > countmap; // targetgram -> key -> count
 
-            if (targetpatternmodel.exists(targetgram)) {
-                set<int> sentenceconstraints = targetpatternmodel.getsentences(targetgram);
-                if (sentenceconstraints.empty()) cerr << "\tWARNING: sentenceconstraints is empty set" << endl;
-                countmap[targetgram] = sourcepatternmodel.getcooccurrences(sourcegram, NULL, &sentenceconstraints); ////returns map for counting key -> counts
-                if (countmap[targetgram].empty()) cerr << "\tWARNING: No co-occurrences found for a source pattern" << endl;
-            }
-       }
+        for (t_aligntargets::iterator iter = alignmatrix[sourcekey].begin(); iter != alignmatrix[sourcekey].end(); iter++) {
+                const EncAnyGram * targetgram = iter->first;
 
-       keywordsfound = computekeywords(&sourcepatternmodel, sourcekey,sourcegram,countmap, absolute_threshold, probability_threshold , filter_threshold, bestnkeywords);
+                if (targetpatternmodel.exists(targetgram)) {
+                    set<int> sentenceconstraints = targetpatternmodel.getsentences(targetgram);
+                    if (sentenceconstraints.empty()) cerr << "\tWARNING: sentenceconstraints is empty set" << endl;
+                    countmap[targetgram] = sourcepatternmodel.getcooccurrences(sourcegram, NULL, &sentenceconstraints); ////returns map for counting key -> counts
+                    if (countmap[targetgram].empty()) cerr << "\tWARNING: No co-occurrences found for a source pattern" << endl;
+                }
+        }
+
+        keywordsfound = computekeywords(&sourcepatternmodel, sourcekey,sourcegram,countmap, absolute_threshold, probability_threshold , filter_threshold, bestnkeywords);
+
+        }
 
     }
+
+    if ((leftsourcecontext == 0) && (rightsourcecontext == 0)) sourcecontexts.clear(); //cleanup cheat
 
     return keywordsfound;
 }
