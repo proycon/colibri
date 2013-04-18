@@ -3307,7 +3307,6 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
         c++;
         const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first); //without context
         if (iter->second.count >= include_threshold) keywordsfound += computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold, bestnkeywords);
-        if (c % 1000 == 0) break; //DEBUG!! remove!!!
         if ((DEBUG) || (c % 10000 == 0)) cerr << " Computekeywords @" << c << "/" << total << " -- " << keywordsfound << " keywords found in total thus far" << endl;
     }
     for (unordered_map<const EncSkipGram,IndexCountData >::iterator iter = sourcepatternmodel.skipgrams.begin(); iter != sourcepatternmodel.skipgrams.end(); iter++) {
