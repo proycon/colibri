@@ -1072,7 +1072,8 @@ void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withc
     for (t_aligntargets::const_iterator iter3 = targets.begin(); iter3 != targets.end(); iter3++) {
         const EncAnyGram * label = iter3->first;
 
-        cerr << "Adding to classifier hash=" << hash << "..." << endl;
+        cerr << "Adding to classifier hash=" << hash << " |localcontext|=" << featurevector.size();
+        if ((keywords) && (keywords_source != NULL)) cerr << " |globalkeywords|=" << sortedkws.size() << "..." << endl;
 
         if ((keywords) && (keywordflags_source != NULL)) {
            //loop over the sorted keywords and check whether each is flagged or
