@@ -2981,7 +2981,7 @@ void AlignmentModel::save(const string & filename, const int bestnkeywords) {
         	if ((keywords.count(sourcegramfocus)) && (keywords[sourcegramfocus].count(targetgram))) {
 
                 if (processedkws.count(sourcegramfocus)) {
-                    f.write(&czero, sizeof(char));
+                    f.write(&czero, sizeof(uint32_t));
                 } else {
                     processedkws.insert(sourcegramfocus);
 
