@@ -117,7 +117,7 @@ int main( int argc, char *argv[] ) {
     int REMOVECONTEXT = 0;
     
     int bestn = 0;
-    int bestnkeywords = 0;
+    int bestnkeywords = 100;
     
     bool DOPARENTS = false;
     bool DOCHILDREN = false;

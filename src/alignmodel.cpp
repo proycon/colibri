@@ -2922,7 +2922,7 @@ void AlignmentModel::save(const string & filename, const int bestnkeywords) {
 
     unsigned int i = 0;
     unsigned int totalkws = 0;
-    unsigned int targetcount = 0;
+    unsigned int totaltargets = 0;
 
     for (t_alignmatrix::iterator iter = alignmatrix.begin(); iter != alignmatrix.end(); iter++) {
         i++;
@@ -2948,7 +2948,7 @@ void AlignmentModel::save(const string & filename, const int bestnkeywords) {
     	f.write( (char*) &targetcount, sizeof(uint64_t));
 
         for (t_aligntargets::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
-            targetcount++;
+            totaltargets++;
         	const EncAnyGram* targetgram = gettargetkey(iter2->first, true);
         	if (targetgram == NULL) {
         	    cerr << "AlignmentModel::save(): Target key not found! This should not happen! Error whilst processing source-pattern " << i << endl;
@@ -2994,6 +2994,7 @@ void AlignmentModel::save(const string & filename, const int bestnkeywords) {
 
                     uint32_t keywordcount = keywords[sourcegramfocus][targetgram].size();
                     if (keywordcount > bestnkeywords) keywordcount = bestnkeywords;
+                    if (keywordcount > bestnkeywords) keywordcount = bestnkeywords;
                     f.write( (char*) &keywordcount, sizeof(uint32_t));
                     //sort before saving
                     multimap<double, const EncAnyGram *> sortedkeywords;
@@ -3028,7 +3029,7 @@ void AlignmentModel::save(const string & filename, const int bestnkeywords) {
 
     }
     f.close();
-    cerr << "(saved " << i << " source patterns,  " << targetcount << " target patterns, " << totalkws << " keywords)";
+    cerr << "(saved " << i << " source patterns,  " << totaltargets << " target patterns, " << totalkws << " keywords)" << endl;
 }
 
 
@@ -3042,7 +3043,9 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
 
         const EncAnyGram * sourcegramfocus = NULL;
         if ((leftsourcecontext != 0) || (rightsourcecontext != 0)) {
-            const EncAnyGram * sourcegramfocus = sourcegram->slice(leftsourcecontext, sourcegram->n() - leftsourcecontext - rightsourcecontext);
+            const EncAnyGram * tmp = sourcegram->slice(leftsourcecontext, sourcegram->n() - leftsourcecontext - rightsourcecontext);
+            sourcegramfocus = getkeywordkey(tmp);
+            delete tmp;
         } else {
             sourcegramfocus = sourcegram;
         }                               
@@ -3069,7 +3072,6 @@ void AlignmentModel::decode(ClassDecoder & sourceclassdecoder, ClassDecoder & ta
             *OUT << endl;
         }
 
-        if (sourcegramfocus != NULL) delete sourcegramfocus;
     }
 }
 
@@ -3305,6 +3307,7 @@ int AlignmentModel::computekeywords(SelectivePatternModel & sourcepatternmodel, 
         c++;
         const EncAnyGram * sourcegram = (const EncAnyGram *) &(iter->first); //without context
         if (iter->second.count >= include_threshold) keywordsfound += computekeywords(sourcepatternmodel, targetpatternmodel, sourcegram, absolute_threshold, probability_threshold, filter_threshold, bestnkeywords);
+        if (c % 1000 == 0) break; //DEBUG!! remove!!!
         if ((DEBUG) || (c % 10000 == 0)) cerr << " Computekeywords @" << c << "/" << total << " -- " << keywordsfound << " keywords found in total thus far" << endl;
     }
     for (unordered_map<const EncSkipGram,IndexCountData >::iterator iter = sourcepatternmodel.skipgrams.begin(); iter != sourcepatternmodel.skipgrams.end(); iter++) {
