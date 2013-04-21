@@ -496,7 +496,8 @@ int main( int argc, char *argv[] ) {
                             //see if this one already exists:
                             const EncAnyGram * contextkey = contextalignmodel->getsourcekey(incontext, false);
 
-                            const EncAnyGram * focuskey = contextalignmodel->getkeywordkey( (const EncAnyGram *) ngram);
+                            //const EncAnyGram * focuskey = alignmodel->getkeywordkey( (const EncAnyGram *) ngram);
+                            //if (focuskey == NULL) focuskey = key;
                             
                             //see what targets in the target sentence match with the translation options (only one alignment is right, but if there is ambiguity we add them all as we don't have alignment data at this point).. 
                             bool targetfound = false;
@@ -513,11 +514,11 @@ int main( int argc, char *argv[] ) {
                                     if (debug) {
                                         cerr << "... target found.. ";
                                         if (DOKEYWORDS){
-                                            if (focuskey == NULL) {
+                                            if (key == NULL) { //can't happen
                                                 cerr << "no keywords found for source " << ngram->decode(*sourceclassdecoder);
                                             } else {
-                                                if (alignmodel->keywords[focuskey].count(targetgram)) {
-                                                    cerr << alignmodel->keywords[focuskey][targetgram].size() << " possible keywords found";
+                                                if (alignmodel->keywords[key].count(targetgram)) {
+                                                    cerr << alignmodel->keywords[key][targetgram].size() << " possible keywords found";
                                                 } else {
                                                     cerr << "no keywords found for target";
                                                 }
@@ -528,19 +529,19 @@ int main( int argc, char *argv[] ) {
                                 }
                                 
 
-                                if ((DOKEYWORDS) && (focuskey != NULL) && (targetpatternmodel->reverseindex[sentence].count(targetkey))) {  //line.contains((const EncNGram *) targetgram)) { //use targetpatternmodel and reverse index!!
+                                if ((DOKEYWORDS) && (targetpatternmodel->reverseindex[sentence].count(targetkey))) {  //line.contains((const EncNGram *) targetgram)) { //use targetpatternmodel and reverse index!!
                                     if (debug) cerr << "\t\tCounting keywords" << endl;
-                                    //loop over global context keywords and flag presence, store in separate datastructure: globalkeywords
-                                    if ((alignmodel->keywords.count(focuskey)) && (alignmodel->keywords[focuskey].count(targetgram))) {
+                                    //loop over global context keywords and flag presence, store in separate datastructure: flaggedkeywords
+                                    if ((alignmodel->keywords.count(key)) && (alignmodel->keywords[key].count(targetgram))) {
                                         unordered_set<const EncAnyGram *> keywords;
                                         //reverse: loop over patterns in
                                         //sentence and match each with
                                         //keywords
-                                        if (debug) cerr << "\t\tKeywords for " << focuskey->decode(*sourceclassdecoder) << " -> " << targetgram->decode(*targetclassdecoder) << " = " << alignmodel->keywords[focuskey][targetgram].size();
-                                        for (unordered_set<const EncAnyGram *>::iterator kwiter = sourcepatternmodel->reverseindex[sentence].begin(); kwiter != sourcepatternmodel->reverseindex[sentence].end(); kwiter++) { //problem: far too many keywords!!
+                                        if (debug) cerr << "\t\tKeywords for " << key->decode(*sourceclassdecoder) << " -> " << targetgram->decode(*targetclassdecoder) << " = " << alignmodel->keywords[key][targetgram].size();
+                                        for (unordered_set<const EncAnyGram *>::iterator kwiter = sourcepatternmodel->reverseindex[sentence].begin(); kwiter != sourcepatternmodel->reverseindex[sentence].end(); kwiter++) { 
                                             const EncAnyGram * keyword = *kwiter; //candidate keyword
-                                            if (alignmodel->keywords[focuskey][targetgram].count(keyword)) { //check if this is a keyword
-                                                if (alignmodel->keywords[focuskey][targetgram][keyword] >= keywordprobthreshold) {
+                                            if (alignmodel->keywords[key][targetgram].count(keyword)) { //check if this is a keyword
+                                                if (alignmodel->keywords[key][targetgram][keyword] >= keywordprobthreshold) {
                                                     if (debug) cerr << " | " << keyword->decode(*sourceclassdecoder);
                                                     totalkwcount++;
                                                     keywords.insert(keyword);
@@ -559,8 +560,7 @@ int main( int argc, char *argv[] ) {
                                         //    }
                                         //}
                                         if (debug) cerr << "    found  " << keywords.size() << " of " << alignmodel->keywords[key][targetgram].size() << " keywords" << endl;                                            
-                                        //TODO: add keywords to
-                                        //contextalignmodel
+                                        contextalignmodel->keywords[key][targetgram] = alignmodel->keywords[key][targetgram]; //simply copy keywords to contextalignmodel
                                         flaggedkeywords[(contextkey != NULL) ? contextkey : incontext][targetgram].push_back(keywords);
                                     }
 
