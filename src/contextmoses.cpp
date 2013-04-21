@@ -67,7 +67,7 @@ int main( int argc, char *argv[] ) {
     string targetclassfile = "";    
     string classifierid="classifier";
     bool exemplarweights = true;
-    
+   
     static struct option long_options[] = {                        
        {0, 0, 0, 0}
     };
@@ -312,7 +312,16 @@ int main( int argc, char *argv[] ) {
         
         if (!alignmodelfile.empty()) {
             cerr << "Loading alignment model " << alignmodelfile << endl;
-            alignmodel = new AlignmentModel(alignmodelfile,false,ptsfield, true,0, false);
+            alignmodel = new AlignmentModel(alignmodelfile,false,ptsfield, true,0, false); 
+            cerr << "\tLoaded " << alignmodel->size() << " source patterns";
+            if (alignmodel->keywords.size() > 0) {
+                cerr << ", with keywords for " << alignmodel->keywords.size() << " of them";
+            } else if (DOKEYWORDS) {
+                cerr << "WARNING: Keywords are enabled but alignmodel model " << alignmodelfile << " contains no keywords!!!" << endl;
+            }
+            cerr << "." << endl;
+
+
         } else if (!mosesphrasetable.empty()) {
             if (DOKEYWORDS) {
                 cerr << "ERROR: Global context features are enabled, need a colibri alignment model with keywords instead of a moses phrasetables" << endl;
@@ -376,9 +385,11 @@ int main( int argc, char *argv[] ) {
             exit(2);
         }
     
-		
+	
+        //new alignment model to be build
 		AlignmentModel * contextalignmodel = new AlignmentModel((unsigned char) leftcontextsize, (unsigned char) rightcontextsize, ptsfield);
-		
+	
+
 		if (mode == CLASSIFIERTYPE_NARRAY) {
     
             cerr << "Initialising N-Array classifiers" << endl;
@@ -548,6 +559,8 @@ int main( int argc, char *argv[] ) {
                                         //    }
                                         //}
                                         if (debug) cerr << "    found  " << keywords.size() << " of " << alignmodel->keywords[key][targetgram].size() << " keywords" << endl;                                            
+                                        //TODO: add keywords to
+                                        //contextalignmodel
                                         flaggedkeywords[(contextkey != NULL) ? contextkey : incontext][targetgram].push_back(keywords);
                                     }
 
