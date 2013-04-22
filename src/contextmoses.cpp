@@ -489,7 +489,10 @@ int main( int argc, char *argv[] ) {
                             found = true;
                             if (debug) cerr << "found match @" << sentence << " " << i << ":" << (int) n << endl;
                             //match found!
-                            const EncAnyGram * incontext = alignmodel->addcontext(&line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);
+                            const EncAnyGram * incontext = key; //no context
+                            if ((leftcontextsize > 0) || (rightcontextsize > 0)) {
+                                incontext = alignmodel->addcontext(&line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);
+                            }
                             //see if this one already exists:
                             const EncAnyGram * contextkey = contextalignmodel->getsourcekey(incontext, false);
 
@@ -571,8 +574,6 @@ int main( int argc, char *argv[] ) {
                             
                             if (targetfound) {
                                 contextalignmodel->sourcecontexts[key].insert((contextkey != NULL) ? contextkey : incontext);
-                            //} else {
-                                //cerr << "WARNING: No alignment targets found for source fragment " <<  << ", shouldn't really happen" << endl;  //can happen!
                             } 
                             
                             
