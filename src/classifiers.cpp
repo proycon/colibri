@@ -1100,9 +1100,9 @@ void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withc
                 vector<string> keywordfeatures;
                 for (map<int, const EncAnyGram *>::iterator kwiter = sortedkws.begin(); kwiter != sortedkws.end(); kwiter++) {
                     if (instanceiter->count(kwiter->second)) {
-                        keywordfeatures.push_back("1");
+                        keywordfeatures.push_back("1=" + kwiter->second->decode(*sourceclassdecoder));
                     } else {
-                        keywordfeatures.push_back("0");
+                        keywordfeatures.push_back("0=" + kwiter->second->decode(*sourceclassdecoder));
                     }
                 }
                 if (exemplarweights) {
@@ -1116,7 +1116,7 @@ void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withc
           } else {
                 //no keywords found, add 1 instance without keywords (0 value for all keywords)             
                 vector<string> keywordfeatures;
-                for (map<int, const EncAnyGram *>::iterator kwiter = sortedkws.begin(); kwiter != sortedkws.end(); kwiter++) keywordfeatures.push_back("0");
+                for (map<int, const EncAnyGram *>::iterator kwiter = sortedkws.begin(); kwiter != sortedkws.end(); kwiter++) keywordfeatures.push_back("0="+kwiter->second->decode(*sourceclassdecoder));
                 if (exemplarweights) {
                     //add exemplar weight         
                     const double exemplarweight = iter3->second[0]; //first from score vector, conventionally corresponds to p(t|s) //TODO: Additional methods of weight computation?                    
