@@ -2900,7 +2900,9 @@ void AlignmentModel::load(const std::string & filename, ClassEncoder * sourceenc
 void AlignmentModel::save(const string & filename, const int bestnkeywords) {
 	const unsigned char check = 0xff;
 	const char czero = 0;
-    unordered_set<const EncAnyGram *> processedkws; //temporary map will store processed keywords, if context is presents, keywords will only be stored at the first occurrence of the focus
+
+    //unordered_map<const EncAnyGram *, unordered_set<const EncAnyGram *>> processedkws; 
+    t_contexts processedkws; //temporary map will store processed keywords, if context is presents, keywords will only be stored at the first occurrence of the focus
 
 
     ofstream f;
@@ -2985,11 +2987,11 @@ void AlignmentModel::save(const string & filename, const int bestnkeywords) {
                     
         	if ((sourcegramfocus != NULL) && (keywords.count(sourcegramfocus)) && (keywords[sourcegramfocus].count(targetgram))) {
 
-                if (processedkws.count(sourcegramfocus)) {
+                if (processedkws.count(sourcegramfocus) && (processedkws[sourcegramfocus].count(targetgram))) {
         	        const uint32_t keywordcount = 0;
                     f.write((char*) &keywordcount, sizeof(uint32_t));
                 } else {
-                    processedkws.insert(sourcegramfocus);
+                    processedkws[sourcegramfocus].insert(targetgram);
                     totalkws++;
 
                     uint32_t keywordcount = keywords[sourcegramfocus][targetgram].size();
