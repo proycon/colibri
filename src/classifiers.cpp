@@ -960,6 +960,12 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
         cerr << "Translation table has right context size: " << ttable->rightsourcecontext << ", not " << rightcontextsize << endl;
         exit(3);
     } 
+
+    if ((keywords) && ((flaggedkeywords == NULL) || (flaggedkeywords->empty()))) {
+        cerr << "WARNING: No keywords flagged!!!!" << endl;
+    }
+
+
     int count = 0;
     for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
         count++;
