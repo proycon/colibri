@@ -45,7 +45,8 @@ void usage() {
     cerr << " -a [float]   Accuracy threshold for Construction experts (-X), only experts with a leave-one-out accuracy higher than specified will be included. Value between 0 and 1. Defaults to 0 (no threshold)." << endl;
     cerr << " -i [int]     Instance threshold for Construction experts (-X), prune all classifiers with less instances than this threshhold." << endl;
     cerr << " -k           enable global context keywords (only for -X, required an alignment model loaded with keywords (-d), and pattern models (-s -E)" << endl;
-    cerr << " -K           probability threshold p(keyword|source,target) (default: 1e-99)" << endl; 
+    cerr << " -K           probability threshold p(keyword|source,target) (default: 1e-99)" << endl;
+    cerr << " -L [int]     best n keywords (default: 25)" << endl;
     cerr << " -s [file]    Source-side pattern model (needed for -k)" << endl;
     cerr << " -E [file]    Target-side pattern model (needed for -k)" << endl;
     cerr << " -x           disable exemplar weighting" << endl;
@@ -109,6 +110,7 @@ int main( int argc, char *argv[] ) {
     double accuracythreshold = 0;
     int instancethreshold = 0;
     double keywordprobthreshold = 1e-99;
+    int bestnkeywords = 25;
     
     bool timbloptionsset = false;
     double appendepsilon = 0.000001;
@@ -121,7 +123,7 @@ int main( int argc, char *argv[] ) {
     
     char c;    
     string s;
-    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:e:qo:i:kK:s:E:",long_options,&option_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "hd:S:T:C:xO:XNc:t:M1a:f:g:t:l:r:F:DH:m:Ip:e:qo:i:kK:s:E:L:",long_options,&option_index)) != -1) {
         switch (c) {
         case 0:
             if (long_options[option_index].flag != 0)
@@ -233,6 +235,9 @@ int main( int argc, char *argv[] ) {
             break;
         case 'K':
             keywordprobthreshold = atof(optarg);
+            break;
+        case 'L':
+            bestnkeywords = atoi(optarg);
             break;
         case 'H':
             s = optarg;
@@ -403,7 +408,7 @@ int main( int argc, char *argv[] ) {
             } else {
                 cerr << "without keywords" << endl;
             }
-            classifiers = new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature, DOKEYWORDS, keywordprobthreshold);    
+            classifiers = new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature, DOKEYWORDS, keywordprobthreshold, bestnkeywords); 
 		
 		} else if (mode == CLASSIFIERTYPE_MONO) {
 		
@@ -676,7 +681,7 @@ int main( int argc, char *argv[] ) {
                         classifiers = (ClassifierInterface*) new NClassifierArray(classifierid, leftcontextsize,rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature);
                         classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
                     } else if (classifiertype == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
-                        classifiers = (ClassifierInterface*) new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature);
+                        classifiers = (ClassifierInterface*) new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature, DOKEYWORDS, keywordprobthreshold, bestnkeywords);
                          classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);                    
                     } else if (classifiertype == CLASSIFIERTYPE_MONO) {
                         if (!singlefocusfeature) {

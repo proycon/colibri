@@ -153,9 +153,11 @@ class ConstructionExperts: public ClassifierInterface {
         int instancethreshold;
         bool keywords;
         double keywordprobthreshold;
+
+        int bestnkeywords;
         
         std::map<uint64_t, Classifier*> classifierarray;    
-        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, int ptsfield, double appendepsilon, bool exemplarweights, bool singlefocusfeature, bool keywords=false, double keywordprobthreshold=0): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature) { accuracythreshold = 0; instancethreshold = 0; this->keywords = keywords, this->keywordprobthreshold = keywordprobthreshold; }; 
+        ConstructionExperts(const std::string & id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, int ptsfield, double appendepsilon, bool exemplarweights, bool singlefocusfeature, bool keywords=false, double keywordprobthreshold=0, int bestnkeywords=25): ClassifierInterface(id, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature) { accuracythreshold = 0; instancethreshold = 0; this->keywords = keywords, this->keywordprobthreshold = keywordprobthreshold; this->bestnkeywords = bestnkeywords; }; 
         ~ConstructionExperts();
         void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder, t_keywordflags * flaggedkeywords);
         void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) { build(ttable, sourceclassdecoder, targetclassdecoder, NULL); };

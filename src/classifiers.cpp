@@ -1083,13 +1083,30 @@ void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withc
     }
 
 
+    //sort all keywords by score (intermediate step)
+    multimap<double, const EncAnyGram *> sortedkws_byscore;
+    {
+        unordered_set<const EncAnyGram*> processed; //(to quickly filter out duplicates)
+        if ((keywords) && (keywords_source != NULL)) {
+            for (t_keywords_source::iterator kwiter = keywords_source->begin(); kwiter != keywords_source->end(); kwiter++) {
+                for (unordered_map<const EncAnyGram *, double>::iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
+                    if ((!processed.count(kwiter2->first)) && (kwiter2->second >= keywordprobthreshold)) {
+                        sortedkws_byscore.insert(pair<double,const EncAnyGram*>(kwiter2->second*-1, kwiter2->first)); //will not insert duplicates due to nature of map
+                        processed.insert(kwiter2->first);
+                    }
+                }
+            }
+        }
+    }
+
     //sort all keywords (based on hash value), so order in feature vector is always deterministic
     map<int, const EncAnyGram *> sortedkws;
+    int count = 0;
     if ((keywords) && (keywords_source != NULL)) {
-        for (t_keywords_source::iterator kwiter = keywords_source->begin(); kwiter != keywords_source->end(); kwiter++) {
-            for (unordered_map<const EncAnyGram *, double>::iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
-                sortedkws.insert(pair<int,const EncAnyGram*>(kwiter2->first->hash(), kwiter2->first)); //will not insert duplicates due to nature of map
-            }
+        for (multimap<double, const EncAnyGram *>::iterator kwiter2 = sortedkws_byscore.begin(); kwiter2 != sortedkws_byscore.end(); kwiter2++) {\
+            count++;
+            if (count > bestnkeywords) break;
+            sortedkws.insert(pair<int,const EncAnyGram*>(kwiter2->second->hash(), kwiter2->second)); 
         }
     }
 
