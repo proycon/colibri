@@ -1007,8 +1007,8 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
 
                     //select flagged keywords given source
                     t_keywordflags_source * flaggedkeywords_source = NULL;
-                    if ((keywords) && (flaggedkeywords->count(focus))) {
-                        flaggedkeywords_source = &((*flaggedkeywords)[focus]);
+                    if ((keywords) && (flaggedkeywords->count(withcontext))) {
+                        flaggedkeywords_source = &((*flaggedkeywords)[withcontext]);
                     }
 
                     add(focus, withcontext, ttable->alignmatrix[withcontext], leftcontextsize, rightcontextsize, sourceclassdecoder, targetclassdecoder, keywords_source, flaggedkeywords_source);
