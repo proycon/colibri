@@ -472,9 +472,6 @@ int main( int argc, char *argv[] ) {
                 throw InternalError();
             }
 
-            if ((DOKEYWORDS) && (contextalignmodel->keywords.empty())) {
-                cerr << "WARNING: No keywords available in alignment model" << endl;
-            }
 
                                     
             if (linesize > 0) {
