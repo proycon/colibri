@@ -461,7 +461,16 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
         cerr << "Translation table has right context size: " << ttable->rightsourcecontext << ", not " << rightcontextsize << endl;
         exit(3);
     }
-    int count = 0; 
+    int count = 0;
+
+    if ((ttable->leftsourcecontext == 0) && (ttable->rightsourcecontext == 0)) {
+        for (t_alignmatrix::iterator iter = ttable->alignmatrix.begin(); iter != ttable->alignmatrix.end(); iter++) {
+            const EncAnyGram * sourcegram = iter->first;
+            ttable->sourcecontexts[sourcegram].insert(sourcegram);
+        }
+    }
+
+
     for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
         count++;
         if (count % 1000 == 0) {
@@ -505,6 +514,7 @@ void NClassifierArray::build(AlignmentModel * ttable, ClassDecoder * sourceclass
         iter->second->flush();
         iter->second->close();
     }*/
+    if ((ttable->leftsourcecontext == 0) && (ttable->rightsourcecontext == 0)) ttable->sourcecontexts.clear();
 }
 
 void NClassifierArray::add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) {
@@ -966,6 +976,14 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
     }
 
 
+
+    if ((ttable->leftsourcecontext == 0) && (ttable->rightsourcecontext == 0)) {
+        for (t_alignmatrix::iterator iter = ttable->alignmatrix.begin(); iter != ttable->alignmatrix.end(); iter++) {
+            const EncAnyGram * sourcegram = iter->first;
+            ttable->sourcecontexts[sourcegram].insert(sourcegram);
+        }
+    }
+
     int count = 0;
     for (t_contexts::const_iterator iter = ttable->sourcecontexts.begin(); iter != ttable->sourcecontexts.end(); iter++) {
         count++;
@@ -1029,6 +1047,7 @@ void ConstructionExperts::build(AlignmentModel * ttable, ClassDecoder * sourcecl
         iter->second->flush();
         iter->scond->close();
     }*/
+    if ((ttable->leftsourcecontext == 0) && (ttable->rightsourcecontext == 0)) ttable->sourcecontexts.clear();
 }
 
 
