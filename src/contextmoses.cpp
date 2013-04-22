@@ -577,7 +577,7 @@ int main( int argc, char *argv[] ) {
                             } 
                             
                             
-                            if (contextkey != NULL) { 
+                            if ((contextkey != NULL) && (contextkey != key)) { 
                                 delete incontext; 
                             }
                         } 
