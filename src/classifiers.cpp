@@ -1080,16 +1080,16 @@ void ConstructionExperts::add(const EncAnyGram * focus, const EncAnyGram * withc
 
         cerr << "Adding to classifier hash=" << hash << " |localcontext|=" << featurevector.size();
         if ((keywords) && (keywords_source != NULL)) cerr << " |globalkeywords|=" << sortedkws.size(); 
-        if ((keywords) && (keywordflags_source != NULL)) cerr << "|flagged|=" << keywordflags_source->size();
+        if ((keywords) && (keywordflags_source != NULL)) cerr << " |flagged|=" << keywordflags_source->size();
         cerr << "..." << endl;
 
-        if ((keywords) && (keywordflags_source != NULL)) {
+        if (keywords) {
            //loop over the sorted keywords and check whether each is flagged or
            //not, multiple instances may be passed, call addinstance for each
            //set of flags
 
           std::vector< std::unordered_set<const EncAnyGram * > > * kwinstances = NULL;
-          if (keywordflags_source->count(label)) kwinstances = &((*keywordflags_source)[label]);
+          if ((keywordflags_source != NULL) && (keywordflags_source->count(label))) kwinstances = &((*keywordflags_source)[label]);
 
           if (kwinstances != NULL) {
               //iterate over all keyword instances (each is a set of flagged
