@@ -312,16 +312,9 @@ int main( int argc, char *argv[] ) {
     }
 
     int maxn = 0;
-		
-    if (!  ((!TRAIN) && (TEST) && (testexists))) {
+	
+    if (!alignmodel.empty()) {
 
-        cerr << "Loading target class encoder " << targetclassfile << endl;
-        targetclassencoder = new ClassEncoder(targetclassfile);  
-
-        cerr << "Loading source class encoder " << sourceclassfile << endl;
-        sourceclassencoder = new ClassEncoder(sourceclassfile);
-
-        if (!alignmodelfile.empty()) {
             cerr << "Loading alignment model " << alignmodelfile << endl;
             alignmodel = new AlignmentModel(alignmodelfile,false,ptsfield, true,0, false); 
             cerr << "\tLoaded " << alignmodel->size() << " source patterns";
@@ -331,9 +324,18 @@ int main( int argc, char *argv[] ) {
                 cerr << "WARNING: Keywords are enabled but alignmodel model " << alignmodelfile << " contains no keywords!!!" << endl;
             }
             cerr << "." << endl;
+    }
 
 
-        } else if (!mosesphrasetable.empty()) {
+    if (!  ((!TRAIN) && (TEST) && (testexists))) {
+
+        cerr << "Loading target class encoder " << targetclassfile << endl;
+        targetclassencoder = new ClassEncoder(targetclassfile);  
+
+        cerr << "Loading source class encoder " << sourceclassfile << endl;
+        sourceclassencoder = new ClassEncoder(sourceclassfile);
+
+        if (!mosesphrasetable.empty()) {
             if (DOKEYWORDS) {
                 cerr << "ERROR: Global context features are enabled, need a colibri alignment model with keywords instead of a moses phrasetables" << endl;
                 exit(2);
