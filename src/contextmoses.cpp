@@ -360,7 +360,7 @@ int main( int argc, char *argv[] ) {
                 }
             }*/ 
             
-        } else {
+        } else if (alignmodelfile.empty()) {
             cerr << "ERROR: No moses phrasetable (-m) or colibri alignment model (-d) specified!" << endl;
             exit(2);
         }
@@ -645,7 +645,6 @@ int main( int argc, char *argv[] ) {
     if (TEST) {   
         if (!classifierid.empty()) {
             
-            //Debug: sanity check  //TODO: REMOVE
             
             int scorecount = 0;
             cerr << "Score handling: ";
