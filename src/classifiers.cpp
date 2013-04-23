@@ -643,7 +643,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                 vector<string> * extrafeatures = computeextrafeatures(input, translationtable, scorehandling,  anygram, withcontext, reftranslationoptions, translationtable->leftsourcecontext, translationtable->rightsourcecontext);  
                 translationoptions = classifyfragment(anygram, withcontext, reftranslationoptions, scorehandling, translationtable->leftsourcecontext, translationtable->rightsourcecontext, changecount, extrafeatures);
                 if (extrafeatures != NULL) delete extrafeatures;
-                delete withcontext;
+                //delete withcontext;
 
             } else {
                 if (DEBUG >= 2) cerr << "\t\t\t\tBypassing classifier... number of reference target options is less than set threshold: " << reftranslationoptions.size() << " < " << targetthreshold << endl;
