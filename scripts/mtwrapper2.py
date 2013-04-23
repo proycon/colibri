@@ -2008,7 +2008,10 @@ WordPenalty: -0.5\n""")
         if not os.path.exists('tmp.srilm'):
             os.symlink(self.gettargetfilename('srilm'), 'tmp.srilm')
         if self.COLIBRI_GLOBALKEYWORDS:
-            if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -d ' + self.gets2tfilename('withkeywords.alignmodel.colibri') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False
+            extra = ""
+            if self.COLIBRI_GLOBALKEYWORDS_OPTIONS:
+                extra = " -K " + self.COLIBRI_GLOBALKEYWORDS_OPTIONS.split(',')[-1] #keyword probability
+            if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -k ' + extra + ' -F input.txt -d ' + self.gets2tfilename('withkeywords.alignmodel.colibri') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False
         else:
             if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False
         return True
