@@ -803,7 +803,11 @@ int main( int argc, char *argv[] ) {
                                     
                                     found = true;
                                     if (debug) cerr << "found match (s=" << sentence << ",i=" << i << ",n=" << (int) n << "): " << ngram->decode(*sourceclassdecoder) << endl;
-                                    const EncAnyGram * incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);                                
+                                    
+                                    const EncAnyGram * incontext = key;
+                                    if ((leftcontextsize > 0) || (rightcontextsize > 0)) {
+                                        incontext = alignmodel->addcontext(line, (const EncAnyGram * ) ngram, (int) i, leftcontextsize, rightcontextsize);                                
+                                    }
 
                                     
                                     t_aligntargets * reftranslationoptions = &(alignmodel->alignmatrix[key]);
@@ -865,7 +869,7 @@ int main( int argc, char *argv[] ) {
                                         if (debug) cerr << endl;
                                     }
                                     
-                                    //delete incontext; //TODO: reenable? segfault
+                                    //if ((incontext != NULL) && (incontext != key)) delete incontext; //TODO: reenable? segfault
                                 }  
                                 delete ngram;                  
                                 n++;
