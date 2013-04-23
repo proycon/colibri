@@ -313,7 +313,7 @@ int main( int argc, char *argv[] ) {
 
     int maxn = 0;
 	
-    if (!alignmodel.empty()) {
+    if (!alignmodelfile.empty()) {
 
             cerr << "Loading alignment model " << alignmodelfile << endl;
             alignmodel = new AlignmentModel(alignmodelfile,false,ptsfield, true,0, false); 
