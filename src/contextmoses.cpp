@@ -831,18 +831,10 @@ int main( int argc, char *argv[] ) {
                                     } else {
                                         //are there enough targets for this source to warrant a classifier?
                                         if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
-
-                                            if (DOKEYWORDS) {
-                                                //flag keywords
-                                                if (alignmodel->keywords.count(key)) {
-                                                    //gather all keywords
-                                                }
-                                            }
-
-                                            
-                                            
                                             if (debug) cerr << "classifying" << endl;
-                                            translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize, changedcount);
+                                            vector<string> * extrafeatures = classifiers->computeextrafeatures(*line, alignmodel, scorehandling,  key, incontext, *reftranslationoptions, alignmodel->leftsourcecontext, alignmodel->rightsourcecontext);  
+                                            translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize, changedcount, extrafeatures);
+                                            if (extrafeatures != NULL) delete extrafeatures;
                                         } else {
                                             if (debug) cerr << "bypassing classifier, targetthreshold too low" << endl;
 

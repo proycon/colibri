@@ -640,9 +640,10 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
             
                 //extract anygram in context for classifier test input
                 const EncAnyGram * withcontext = translationtable->addcontext(&input,anygram, (int) ref.token);
-                vector<string> * extrafeatures = computeextrafeatures(input, translationtable, sourcefragments, scorehandling,  anygram, withcontext, reftranslationoptions, translationtable->leftsourcecontext, translationtable->rightsourcecontext);  
+                vector<string> * extrafeatures = computeextrafeatures(input, translationtable, scorehandling,  anygram, withcontext, reftranslationoptions, translationtable->leftsourcecontext, translationtable->rightsourcecontext);  
                 translationoptions = classifyfragment(anygram, withcontext, reftranslationoptions, scorehandling, translationtable->leftsourcecontext, translationtable->rightsourcecontext, changecount, extrafeatures);
                 if (extrafeatures != NULL) delete extrafeatures;
+                delete withcontext;
 
             } else {
                 if (DEBUG >= 2) cerr << "\t\t\t\tBypassing classifier... number of reference target options is less than set threshold: " << reftranslationoptions.size() << " < " << targetthreshold << endl;
@@ -1265,7 +1266,7 @@ void ConstructionExperts::load( const string & timbloptions, ClassDecoder * sour
 }
 
 
-std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncData & input, AlignmentModel * alignmodel, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, int leftcontextsize, int rightcontextsize) {
+std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncData & input, AlignmentModel * alignmodel, ScoreHandling scorehandling, const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, int leftcontextsize, int rightcontextsize) {
     //Compute extra keywords features
 
 
