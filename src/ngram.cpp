@@ -1255,7 +1255,7 @@ EncNGram * EncData::slice(const int begin,const int length) const {
     return getencngram(begin, length, data, _size);
 }
 
-bool EncData::contains(const EncNGram * ngram) {
+bool EncData::contains(const EncNGram * ngram) const {
     for (int i = 0; i < _size; i++) {
         bool match = true;
         const int s = ngram->size();

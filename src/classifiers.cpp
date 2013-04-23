@@ -640,7 +640,9 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
             
                 //extract anygram in context for classifier test input
                 const EncAnyGram * withcontext = translationtable->addcontext(&input,anygram, (int) ref.token);
-                translationoptions = classifyfragment(anygram, withcontext, reftranslationoptions, scorehandling, translationtable->leftsourcecontext, translationtable->rightsourcecontext, changecount);
+                vector<string> * extrafeatures = computeextrafeatures(input, translationtable, sourcefragments, scorehandling,  anygram, withcontext, reftranslationoptions, translationtable->leftsourcecontext, translationtable->rightsourcecontext);  
+                translationoptions = classifyfragment(anygram, withcontext, reftranslationoptions, scorehandling, translationtable->leftsourcecontext, translationtable->rightsourcecontext, changecount, extrafeatures);
+                if (extrafeatures != NULL) delete extrafeatures;
 
             } else {
                 if (DEBUG >= 2) cerr << "\t\t\t\tBypassing classifier... number of reference target options is less than set threshold: " << reftranslationoptions.size() << " < " << targetthreshold << endl;
@@ -1260,6 +1262,59 @@ void ConstructionExperts::load( const string & timbloptions, ClassDecoder * sour
         cerr << "   Preparing classifier hash=" << hash << " id=" << filenamenoext << endl;   
         classifierarray[hash] = new Classifier(filenamenoext, timbloptions,  sourceclassdecoder, targetclassencoder, ptsfield, appendepsilon, true, (DEBUG >= 3));
     }    
+}
+
+
+std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncData & input, AlignmentModel * alignmodel, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, int leftcontextsize, int rightcontextsize) {
+    //Compute extra keywords features
+
+
+    if ((!keywords) || (!alignmodel->keywords.count(focus))) return NULL;
+
+    //gather all relevant keywords
+    
+    t_keywords_source * keywords_source = &(alignmodel->keywords[focus]);
+
+    //sort all keywords by score (intermediate step)
+    multimap<double, const EncAnyGram *> sortedkws_byscore;
+    {
+        unordered_set<const EncAnyGram*> processed; //(to quickly filter out duplicates)
+        for (t_keywords_source::iterator kwiter = keywords_source->begin(); kwiter != keywords_source->end(); kwiter++) {
+            for (unordered_map<const EncAnyGram *, double>::iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
+                if ((!processed.count(kwiter2->first)) && (kwiter2->second >= keywordprobthreshold)) {
+                    sortedkws_byscore.insert(pair<double,const EncAnyGram*>(kwiter2->second*-1, kwiter2->first)); //will not insert duplicates due to nature of map
+                    processed.insert(kwiter2->first);
+                }
+            }
+        }
+    }
+
+    //sort all keywords (based on hash value), so order in feature vector is always deterministic
+    map<int, const EncAnyGram *> sortedkws;
+    int count = 0;
+    if ((keywords) && (keywords_source != NULL)) {
+        for (multimap<double, const EncAnyGram *>::iterator kwiter2 = sortedkws_byscore.begin(); kwiter2 != sortedkws_byscore.end(); kwiter2++) {
+            count++;
+            if (count > bestnkeywords) break;
+            sortedkws.insert(pair<int,const EncAnyGram*>(kwiter2->second->hash(), kwiter2->second)); 
+        }
+    }
+
+
+
+    vector<std::string> * kwfeatures = new vector<std::string>();
+    //for each keyword //check presence in input //set flag
+    for (map<int, const EncAnyGram *>::iterator iter = sortedkws.begin(); iter != sortedkws.end(); iter++) {
+        const EncNGram * keyword = (const EncNGram *) iter->second;
+        if (input.contains(keyword)) {
+            kwfeatures->push_back("1=" + keyword->decode(*sourceclassdecoder));
+        } else {
+            kwfeatures->push_back("0=" + keyword->decode(*sourceclassdecoder));
+        }
+    }    
+    
+    return kwfeatures;
+
 }
 
 void ConstructionExperts::reset() {
