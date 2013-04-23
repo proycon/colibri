@@ -268,7 +268,7 @@ int main( int argc, char *argv[] ) {
         exit(2);
     }
     
-    if ((DOKEYWORDS) && ((sourcepatternmodelfile.empty()) || (targetpatternmodelfile.empty()))) {
+    if ((DOKEYWORDS) && (TRAIN) && ((sourcepatternmodelfile.empty()) || (targetpatternmodelfile.empty()))) {
         cerr << "ERROR: source and target pattern model must be specified when using -k";
         usage();
         exit(2);
