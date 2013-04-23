@@ -314,7 +314,13 @@ int main( int argc, char *argv[] ) {
     int maxn = 0;
 		
     if (!  ((!TRAIN) && (TEST) && (testexists))) {
-        
+
+        cerr << "Loading target class encoder " << targetclassfile << endl;
+        targetclassencoder = new ClassEncoder(targetclassfile);  
+
+        cerr << "Loading source class encoder " << sourceclassfile << endl;
+        sourceclassencoder = new ClassEncoder(sourceclassfile);
+
         if (!alignmodelfile.empty()) {
             cerr << "Loading alignment model " << alignmodelfile << endl;
             alignmodel = new AlignmentModel(alignmodelfile,false,ptsfield, true,0, false); 
@@ -333,11 +339,6 @@ int main( int argc, char *argv[] ) {
                 exit(2);
             }
         
-	        cerr << "Loading target class encoder " << targetclassfile << endl;
-	        targetclassencoder = new ClassEncoder(targetclassfile);  
-
-            cerr << "Loading source class encoder " << sourceclassfile << endl;
-            sourceclassencoder = new ClassEncoder(sourceclassfile);
 
             cerr << "Loading moses phrasetable " << mosesphrasetable << endl;
             alignmodel = new AlignmentModel(mosesphrasetable, sourceclassencoder, targetclassencoder, true, ptsfield);
@@ -833,6 +834,9 @@ int main( int argc, char *argv[] ) {
 
                                             if (DOKEYWORDS) {
                                                 //flag keywords
+                                                if (alignmodel->keywords.count(key)) {
+                                                    //gather all keywords
+                                                }
                                             }
 
                                             
