@@ -645,6 +645,7 @@ int main( int argc, char *argv[] ) {
             
             //Debug: sanity check  //TODO: REMOVE
             cerr << "sanity check" << endl;
+            cerr << alignmodel->keywords.size() << endl;
             for (t_keywords::iterator kwiter0 = alignmodel->keywords.begin(); kwiter0 != alignmodel->keywords.end(); kwiter0++) {
                 for (t_keywords_source::iterator kwiter = kwiter0->second.begin(); kwiter != kwiter0->second.end(); kwiter++) {
                     for (unordered_map<const EncAnyGram *, double>::iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
