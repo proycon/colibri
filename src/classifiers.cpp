@@ -1269,7 +1269,12 @@ std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncDa
     //Compute extra keywords features
 
 
-    if ((!keywords) || (!alignmodel->keywords.count(focus))) return NULL;
+    if (!keywords) return NULL;
+    
+    if (!alignmodel->keywords.count(focus)) {
+        if (DEBUG >= 2) cerr << "   Source pattern has no associated keywords" << endl;
+        return NULL;
+    }
 
     //gather all relevant keywords
     
@@ -1300,7 +1305,7 @@ std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncDa
         }
     }
 
-
+    int flagged = 0;
 
     vector<std::string> * kwfeatures = new vector<std::string>();
     //for each keyword //check presence in input //set flag
@@ -1308,11 +1313,14 @@ std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncDa
         const EncNGram * keyword = (const EncNGram *) iter->second;
         if (input.contains(keyword)) {
             kwfeatures->push_back("1=" + keyword->decode(*sourceclassdecoder));
+            flagged++;
         } else {
             kwfeatures->push_back("0=" + keyword->decode(*sourceclassdecoder));
         }
     }    
     
+    if (DEBUG >= 2) cerr << "   " << sortedkws.size() << " keywords possible, of which " << flagged << " found in context" << endl;
+
     return kwfeatures;
 
 }
