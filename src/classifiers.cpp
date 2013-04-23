@@ -599,9 +599,8 @@ t_aligntargets NClassifierArray::classify(const EncAnyGram * focus, std::vector<
 }
 
 void ClassifierInterface::classifyfragments(const EncData & input, AlignmentModel * translationtable, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, int & changecount) {    
-     
-          
      //decoder will call this
+     
      t_sourcefragments newsourcefragments;
      
      const int maxn = 9; //TODO: make dynamic?
@@ -609,6 +608,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
 
      
      vector<pair<const EncAnyGram*, CorpusReference> > tmpsourcefragments = translationtable->getpatterns(input.data,input.size(), true, 0,1,maxn); //will work on context-informed alignment model, always returns patterns without context
+
      for (vector<pair<const EncAnyGram*, CorpusReference> >::iterator iter = tmpsourcefragments.begin(); iter != tmpsourcefragments.end(); iter++) {
         //returned anygram will be contextless:
         const EncAnyGram * anygram = iter->first;
@@ -673,33 +673,39 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
      }     
 }
 
-t_aligntargets ClassifierInterface::classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationoptions, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize, int & changecount) {
+t_aligntargets ClassifierInterface::classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationoptions, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize, int & changecount, vector<string> * extrafeatures) {
         const int nwithcontext = withcontext->n();
 
          
-        vector<const EncAnyGram *> featurevector;
+        vector<string> featurevector;
 
         if (singlefocusfeature) {                    
             //left context
             for (int i = 0; i < leftcontextsize; i++) {
                 const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                featurevector.push_back(unigram);                    
+                featurevector.push_back(unigram->decode(*sourceclassdecoder));                    
+                delete unigram;
             }         
             
-            featurevector.push_back(focus);
+            featurevector.push_back(focus->decode(*sourceclassdecoder));
             
             //right context
             for (int i = nwithcontext - rightcontextsize; i < nwithcontext; i++) {
                 const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                featurevector.push_back(unigram);                    
+                featurevector.push_back(unigram->decode(*sourceclassdecoder)); 
+                delete unigram;
             }         
         } else {
             for (int i = 0; i < nwithcontext; i++) {
                 const EncAnyGram * unigram = (const EncAnyGram *) withcontext->slice(i,1);
-                featurevector.push_back(unigram);                    
+                featurevector.push_back(unigram->decode(*sourceclassdecoder));                    
+                delete unigram;
             }                             
         }
         
+        if (extrafeatures != NULL) for (int i = 0; i < extrafeatures->size(); i++) featurevector.push_back((*extrafeatures)[i]);
+
+
         bool changed = false;        
         t_aligntargets translationoptions = classify(focus, featurevector, scorehandling, reftranslationoptions, changed);
         if (changed) changecount++;
@@ -739,10 +745,10 @@ t_aligntargets ClassifierInterface::classifyfragment(const EncAnyGram * focus, c
             cerr << endl;                
         }
         
-        //cleanup                
-        for (int i = 0; i < featurevector.size(); i++) {
-            if (featurevector[i] != focus) delete featurevector[i];
-        }
+        //cleanup                 (obsolete now)
+        //for (int i = 0; i < featurevector.size(); i++) {
+        //    if (featurevector[i] != focus) delete featurevector[i];
+        //}
                                         
         delete withcontext;
         return translationoptions;

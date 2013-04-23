@@ -830,6 +830,13 @@ int main( int argc, char *argv[] ) {
                                     } else {
                                         //are there enough targets for this source to warrant a classifier?
                                         if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
+
+                                            if (DOKEYWORDS) {
+                                                //flag keywords
+                                            }
+
+                                            
+                                            
                                             if (debug) cerr << "classifying" << endl;
                                             translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize, changedcount);
                                         } else {
