@@ -642,7 +642,19 @@ int main( int argc, char *argv[] ) {
     
     if (TEST) {   
         if (!classifierid.empty()) {
-
+            
+            //Debug: sanity check  //TODO: REMOVE
+            cerr << "sanity check" << endl;
+            for (t_keywords::iterator kwiter0 = alignmodel->keywords.begin(); kwiter0 != alignmodel->keywords.end(); kwiter0++) {
+                for (t_keywords_source::iterator kwiter = kwiter0->second.begin(); kwiter != kwiter0->second.end(); kwiter++) {
+                    for (unordered_map<const EncAnyGram *, double>::iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
+                        const EncAnyGram * keyword = kwiter2->first;
+                        keyword->decode(*sourceclassdecoder);
+                    }
+                }
+            }
+            cerr << "sanity check done" << endl;
+            
             int scorecount = 0;
             cerr << "Score handling: ";
             if (scorehandling == SCOREHANDLING_WEIGHED) {
@@ -658,7 +670,7 @@ int main( int argc, char *argv[] ) {
                 cerr << "ignore" << endl;
                 scorecount = 5;                
             }
-            
+           
             if (!testexists) {
             
                 //Load classifiers
