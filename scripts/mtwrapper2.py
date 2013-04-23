@@ -229,7 +229,7 @@ class MTWrapper(object):
             ('COLIBRI_RIGHTCONTEXTSIZE',1,'For use with BUILD_COLIBRI_CLASSIFIERS=True'),
             ('COLIBRI_CLASSIFIER_OPTIONS','-N','For use with BUILD_COLIBRI_CLASSIFIERS=True. Make sure to select at least a classifier here (-N, -X,-M). See trainclassifiers -h for all options'),
             ('COLIBRI_GLOBALKEYWORDS',False,'Enable global context keywords (also affects BUILD_MOSES_CLASSIFIERS)'),
-            ('COLIBRI_GLOBALKEYWORDS_OPTIONS','1,3,20,0.0000000009','Four comma-separated values: include_threshold,absolute_threshold,filter_threshold,probability_threshold'),
+            ('COLIBRI_GLOBALKEYWORDS_OPTIONS','1,3,20,0.0000000009','Four comma-separated values for computation of global context keywords: include_threshold,absolute_threshold,filter_threshold,probability_threshold'),
             ('MOSES_LEFTCONTEXTSIZE',1,'For use with BUILD_MOSES_CLASSIFIERS=True'),
             ('MOSES_RIGHTCONTEXTSIZE',1,'For use with BUILD_MOSES_CLASSIFIERS=True'),
             ('MOSES_CLASSIFIER_OPTIONS','-N','For use with BUILD_MOSES_CLASSIFIERS=True. Make sure to select at least a classifier (-N, -X,-M) here. See contextmoses -h for all options.'),
@@ -2007,7 +2007,10 @@ WordPenalty: -0.5\n""")
         #should work with MERT as well
         if not os.path.exists('tmp.srilm'):
             os.symlink(self.gettargetfilename('srilm'), 'tmp.srilm')
-        if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False
+        if self.COLIBRI_GLOBALKEYWORDS:
+            if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -d ' + self.gets2tfilename('withkeywords.alignmodel.colibri') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False
+        else:
+            if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False
         return True
 
     def run_phrasal(self):
