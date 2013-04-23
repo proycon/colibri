@@ -1284,6 +1284,7 @@ std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncDa
     //gather all relevant keywords
     
     t_keywords_source * keywords_source = &(alignmodel->keywords[focus]);
+    if (DEBUG >= 2) cerr << "   Source pattern has keywords for " << keywords_source->size() << " target patterns" << endl;
 
     //sort all keywords by score (intermediate step)
     multimap<double, const EncAnyGram *> sortedkws_byscore;
