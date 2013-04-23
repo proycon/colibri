@@ -1291,9 +1291,10 @@ std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncDa
         unordered_set<const EncAnyGram*> processed; //(to quickly filter out duplicates)
         for (t_keywords_source::iterator kwiter = keywords_source->begin(); kwiter != keywords_source->end(); kwiter++) {
             for (unordered_map<const EncAnyGram *, double>::iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
-                if ((!processed.count(kwiter2->first)) && (kwiter2->second >= keywordprobthreshold)) {
-                    sortedkws_byscore.insert(pair<double,const EncAnyGram*>(kwiter2->second*-1, kwiter2->first)); //will not insert duplicates due to nature of map
-                    processed.insert(kwiter2->first);
+                const EncAnyGram * keyword = kwiter2->first;
+                if ((!processed.count(keyword)) && (kwiter2->second >= keywordprobthreshold)) { //TODO: fix segfault here
+                    sortedkws_byscore.insert(pair<double,const EncAnyGram*>(kwiter2->second*-1, keyword)); //will not insert duplicates due to nature of map
+                    processed.insert(keyword);
                 }
             }
         }
