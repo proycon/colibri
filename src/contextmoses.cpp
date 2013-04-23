@@ -832,7 +832,7 @@ int main( int argc, char *argv[] ) {
                                         //are there enough targets for this source to warrant a classifier?
                                         if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
                                             if (debug) cerr << "classifying" << endl;
-                                            vector<string> * extrafeatures = classifiers->computeextrafeatures(*line, alignmodel, scorehandling,  key, incontext, *reftranslationoptions, alignmodel->leftsourcecontext, alignmodel->rightsourcecontext);  
+                                            vector<string> * extrafeatures = classifiers->computeextrafeatures(*line, alignmodel, scorehandling,  key, incontext, *reftranslationoptions, leftcontextsize, rightcontextsize);  
                                             translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize, changedcount, extrafeatures);
                                             if (extrafeatures != NULL) delete extrafeatures;
                                         } else {

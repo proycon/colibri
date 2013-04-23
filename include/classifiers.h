@@ -73,8 +73,6 @@ class Classifier {
 class ClassifierInterface {
     protected:
         std::string ID;
-        int leftcontextsize;
-        int rightcontextsize;
         int contextthreshold;
         int targetthreshold;  
         bool singlefocusfeature;
@@ -85,6 +83,8 @@ class ClassifierInterface {
         int ptsfield;
         double appendepsilon;
     public:
+        int leftcontextsize;
+        int rightcontextsize;
         ClassifierInterface(const std::string & _id, int leftcontextsize, int rightcontextsize, int contextthreshold, int targetthreshold, int ptsfield, double appendepsilon, bool exemplarweights, bool singlefocusfeature) {
             DEBUG = 0;
             sourceclassdecoder = NULL;
@@ -114,7 +114,7 @@ class ClassifierInterface {
         virtual t_aligntargets classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize, int & changecount, std::vector<std::string> * extrafeatures = NULL);
         virtual t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed) =0;
         virtual t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed) =0; 
-        virtual std::vector<std::string> * computeextrafeatures(const EncData & input, AlignmentModel * original, ScoreHandling scorehandling, const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, int leftcontextsize, int rightcontextsize) { return NULL; };
+        virtual std::vector<std::string> * computeextrafeatures(const EncData & input, AlignmentModel * original, ScoreHandling scorehandling, const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, int leftcontextsize, int rightcontextsize) { if (DEBUG) std::cerr << "computeextrafeatures(): nothing implemented here" << std::endl ; return NULL; };
         virtual void reset() {};         
 };
 

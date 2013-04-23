@@ -639,11 +639,15 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                 //yes
             
                 //extract anygram in context for classifier test input
-                const EncAnyGram * withcontext = translationtable->addcontext(&input,anygram, (int) ref.token);
-                vector<string> * extrafeatures = computeextrafeatures(input, translationtable, scorehandling,  anygram, withcontext, reftranslationoptions, translationtable->leftsourcecontext, translationtable->rightsourcecontext);  
+
+                const EncAnyGram * withcontext = anygram; 
+                if ((leftcontextsize > 0)  || (rightcontextsize > 0)) {
+                    withcontext = translationtable->addcontext(&input,anygram, (int) ref.token, leftcontextsize, rightcontextsize);
+                }
+                vector<string> * extrafeatures = computeextrafeatures(input, translationtable, scorehandling,  anygram, withcontext, reftranslationoptions, leftcontextsize, rightcontextsize);  
                 translationoptions = classifyfragment(anygram, withcontext, reftranslationoptions, scorehandling, translationtable->leftsourcecontext, translationtable->rightsourcecontext, changecount, extrafeatures);
                 if (extrafeatures != NULL) delete extrafeatures;
-                delete withcontext;
+                if ((withcontext != NULL) && (withcontext != anygram)) delete withcontext;
 
             } else {
                 if (DEBUG >= 2) cerr << "\t\t\t\tBypassing classifier... number of reference target options is less than set threshold: " << reftranslationoptions.size() << " < " << targetthreshold << endl;
