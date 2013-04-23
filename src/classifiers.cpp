@@ -1269,7 +1269,7 @@ void ConstructionExperts::load( const string & timbloptions, ClassDecoder * sour
 std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncData & input, AlignmentModel * alignmodel, ScoreHandling scorehandling, const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, int leftcontextsize, int rightcontextsize) {
     //Compute extra keywords features
 
-
+    if (DEBUG) cerr << "   computing extra features for construction experts" << endl ;
     if (!keywords) return NULL;
     
     if (!alignmodel->keywords.count(focus)) {
