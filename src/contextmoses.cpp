@@ -305,7 +305,7 @@ int main( int argc, char *argv[] ) {
 	cerr << "Loading target class decoder " << targetclassfile << endl;
 	targetclassdecoder = new ClassDecoder(targetclassfile);  
 
-    if (DOKEYWORDS) {
+    if ((DOKEYWORDS) && (TRAIN)) {
         GraphFilter graphfilter;
         sourcepatternmodel = new SelectivePatternModel(sourcepatternmodelfile, graphfilter, true,true);
         targetpatternmodel = new SelectivePatternModel(targetpatternmodelfile, graphfilter, true,true);
