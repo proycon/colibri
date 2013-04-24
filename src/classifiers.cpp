@@ -757,7 +757,6 @@ t_aligntargets ClassifierInterface::classifyfragment(const EncAnyGram * focus, c
         //    if (featurevector[i] != focus) delete featurevector[i];
         //}
                                         
-        delete withcontext;
         return translationoptions;
 }
 
