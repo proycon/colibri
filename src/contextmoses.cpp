@@ -645,18 +645,6 @@ int main( int argc, char *argv[] ) {
     if (TEST) {   
         if (!classifierid.empty()) {
             
-            //Debug: sanity check  //TODO: REMOVE
-            cerr << "sanity check" << endl;
-            cerr << alignmodel->keywords.size() << endl;
-            for (t_keywords::iterator kwiter0 = alignmodel->keywords.begin(); kwiter0 != alignmodel->keywords.end(); kwiter0++) {
-                for (t_keywords_source::iterator kwiter = kwiter0->second.begin(); kwiter != kwiter0->second.end(); kwiter++) {
-                    for (unordered_map<const EncAnyGram *, double>::iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
-                        const EncAnyGram * keyword = kwiter2->first;
-                        keyword->decode(*sourceclassdecoder);
-                    }
-                }
-            }
-            
             int scorecount = 0;
             cerr << "Score handling: ";
             if (scorehandling == SCOREHANDLING_WEIGHED) {
@@ -846,19 +834,6 @@ int main( int argc, char *argv[] ) {
                                         //are there enough targets for this source to warrant a classifier?
                                         if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
                                             if (debug) cerr << "classifying" << endl;
-
-                                            //Debug: sanity check 2 //TODO: REMOVE
-                                            cerr << "sanity check  2" << endl;
-                                            cerr << alignmodel->keywords[key].size() << endl;
-                                            for (t_keywords_source::iterator kwiter = alignmodel->keywords[key].begin(); kwiter != alignmodel->keywords[key].end(); kwiter++) {
-                                                for (unordered_map<const EncAnyGram *, double>::iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
-                                                    const EncAnyGram * keyword = kwiter2->first;
-                                                    keyword->decode(*sourceclassdecoder);
-                                                }
-                                            }
-
-
-
                                             vector<string> * extrafeatures = classifiers->computeextrafeatures(*line, alignmodel, scorehandling,  key, incontext, *reftranslationoptions, leftcontextsize, rightcontextsize);  
                                             translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize, changedcount, extrafeatures);
                                             if (extrafeatures != NULL) delete extrafeatures;
