@@ -685,7 +685,7 @@ int main( int argc, char *argv[] ) {
                         classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);
                     } else if (classifiertype == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
                         classifiers = (ClassifierInterface*) new ConstructionExperts(classifierid, leftcontextsize, rightcontextsize, contextthreshold, targetthreshold, ptsfield, appendepsilon, exemplarweights, singlefocusfeature, DOKEYWORDS, keywordprobthreshold, bestnkeywords);
-                         classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);                    
+                        classifiers->load(testtimbloptions, sourceclassdecoder, targetclassencoder, debug);                   
                     } else if (classifiertype == CLASSIFIERTYPE_MONO) {
                         if (!singlefocusfeature) {
                             cerr << "ERROR: Monolithic classifier only supported with single focus feature" << endl;
@@ -700,6 +700,7 @@ int main( int argc, char *argv[] ) {
                         throw InternalError();            
                     }
                     
+                    classifiers->setclassdecoders(sourceclassdecoder, targetclassdecoder);
                     if (debug && classifiers != NULL) classifiers->enabledebug(2,sourceclassdecoder, targetclassdecoder);
                 } 
                 

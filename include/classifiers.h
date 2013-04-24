@@ -105,6 +105,7 @@ class ClassifierInterface {
             this->targetclassdecoder = targetclassdecoder;
         
         }
+        void setclassdecoders(ClassDecoder * s, ClassDecoder * t) { this->sourceclassdecoder = s; this->targetclassdecoder = t; };
         const std::string id() { return ID; };
         virtual void build(AlignmentModel * ttable, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) =0;
         virtual void add(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & targets, int leftcontextsize, int rightcontextsize, ClassDecoder * sourceclassdecoder, ClassDecoder * targetclassdecoder) =0;

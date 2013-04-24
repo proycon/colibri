@@ -1313,6 +1313,11 @@ std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncDa
 
     int flagged = 0;
 
+    if (sourceclassdecoder == NULL) {
+        cerr << "ERROR: Classdecoder == NULL in computeextrafeatures()" << endl;
+        throw InternalError();
+    }
+
     vector<std::string> * kwfeatures = new vector<std::string>();
     //for each keyword //check presence in input //set flag
     for (map<int, const EncAnyGram *>::const_iterator iter = sortedkws.begin(); iter != sortedkws.end(); iter++) {
