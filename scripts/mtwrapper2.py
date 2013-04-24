@@ -898,7 +898,7 @@ class MTWrapper(object):
             self.log("Done")
         elif cmd == 'ls':
             for batch in self.batches:
-                print batch
+                print batch[0], "\t", batch[1]
         elif cmd == 'batchconf':
 
 
