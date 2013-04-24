@@ -1290,8 +1290,8 @@ std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncDa
     multimap<double, const EncAnyGram *> sortedkws_byscore;
     {
         unordered_set<const EncAnyGram*> processed; //(to quickly filter out duplicates)
-        for (t_keywords_source::iterator kwiter = keywords_source->begin(); kwiter != keywords_source->end(); kwiter++) {
-            for (unordered_map<const EncAnyGram *, double>::iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
+        for (t_keywords_source::const_iterator kwiter = keywords_source->begin(); kwiter != keywords_source->end(); kwiter++) {
+            for (unordered_map<const EncAnyGram *, double>::const_iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
                 const EncAnyGram * keyword = kwiter2->first;
                 if ((!processed.count(keyword)) && (kwiter2->second >= keywordprobthreshold)) { //TODO: fix segfault here
                     sortedkws_byscore.insert(pair<double,const EncAnyGram*>(kwiter2->second*-1, keyword)); //will not insert duplicates due to nature of map
@@ -1305,7 +1305,7 @@ std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncDa
     map<int, const EncAnyGram *> sortedkws;
     int count = 0;
     if ((keywords) && (keywords_source != NULL)) {
-        for (multimap<double, const EncAnyGram *>::iterator kwiter2 = sortedkws_byscore.begin(); kwiter2 != sortedkws_byscore.end(); kwiter2++) {
+        for (multimap<double, const EncAnyGram *>::const_iterator kwiter2 = sortedkws_byscore.begin(); kwiter2 != sortedkws_byscore.end(); kwiter2++) {
             count++;
             if (count > bestnkeywords) break;
             sortedkws.insert(pair<int,const EncAnyGram*>(kwiter2->second->hash(), kwiter2->second)); 
@@ -1316,7 +1316,7 @@ std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncDa
 
     vector<std::string> * kwfeatures = new vector<std::string>();
     //for each keyword //check presence in input //set flag
-    for (map<int, const EncAnyGram *>::iterator iter = sortedkws.begin(); iter != sortedkws.end(); iter++) {
+    for (map<int, const EncAnyGram *>::const_iterator iter = sortedkws.begin(); iter != sortedkws.end(); iter++) {
         const EncNGram * keyword = (const EncNGram *) iter->second;
         if (input.contains(keyword)) {
             kwfeatures->push_back("1=" + keyword->decode(*sourceclassdecoder));
