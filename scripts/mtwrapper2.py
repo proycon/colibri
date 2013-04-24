@@ -668,6 +668,7 @@ class MTWrapper(object):
         print >>sys.stderr,"\tclean [all|giza|moses|colibri|score|batch]    Clean generated files"
         print >>sys.stderr,"\tbranch <expname> [VARIABLE value]       Create a new branch based on this project (files are symlinked instead of copied)"
         print >>sys.stderr,"\tconf VARIABLE value [VARIABLE2 value2]  Change configuration"
+        print >>sys.stderr,"\tls    List all batches"
         print >>sys.stderr,"\tstartbatch [batchname] [batchname2]     Start batch (if none are specified, all specified batches will be started sequentially)"
         print >>sys.stderr,"\tbatchreport [batchname] [batchname2]    Write a batch report for the specified batched if none are specified, all specified batches will be included)"
         print >>sys.stderr,"\tbatchtest [batchname] [batchname2]      (Re-)score batches (if none are specified, all specified batches will be tested sequentially)"
@@ -895,7 +896,9 @@ class MTWrapper(object):
             for x in xpool.run(False):
                 pass
             self.log("Done")
-
+        elif cmd == 'ls':
+            for batch in self.batches:
+                print batch
         elif cmd == 'batchconf':
 
 
