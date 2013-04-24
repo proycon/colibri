@@ -831,7 +831,7 @@ int main( int argc, char *argv[] ) {
                                             cerr << "BEFORE CLASSIFICATION: " << encodedngram << " ||| " << iter->first->decode(*targetclassdecoder) << " ||| ";
                                             for (vector<double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
                                                 if (iter2 != iter->second.begin()) cerr << " ";
-                                               cerr << pow(exp(1), *iter2);
+                                                cerr << pow(exp(1), *iter2);
                                             }
                                             cerr << endl;
                                         }
@@ -846,6 +846,19 @@ int main( int argc, char *argv[] ) {
                                         //are there enough targets for this source to warrant a classifier?
                                         if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
                                             if (debug) cerr << "classifying" << endl;
+
+                                            //Debug: sanity check 2 //TODO: REMOVE
+                                            cerr << "sanity check  2" << endl;
+                                            cerr << alignmodel->keywords[key].size() << endl;
+                                            for (t_keywords_source::iterator kwiter = alignmodel->keywords[key].begin(); kwiter != alignmodel->keywords[key].end(); kwiter++) {
+                                                for (unordered_map<const EncAnyGram *, double>::iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
+                                                    const EncAnyGram * keyword = kwiter2->first;
+                                                    keyword->decode(*sourceclassdecoder);
+                                                }
+                                            }
+
+
+
                                             vector<string> * extrafeatures = classifiers->computeextrafeatures(*line, alignmodel, scorehandling,  key, incontext, *reftranslationoptions, leftcontextsize, rightcontextsize);  
                                             translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize, changedcount, extrafeatures);
                                             if (extrafeatures != NULL) delete extrafeatures;
