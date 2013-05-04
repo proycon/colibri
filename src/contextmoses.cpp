@@ -475,7 +475,10 @@ int main( int argc, char *argv[] ) {
 
             const int ltarget = countwords(targetlinebuffer,targetlinesize);
 
-            if (targetpatternmodel->reverseindex.empty()) {
+            if (targetpatternmodel == NULL) {
+                cerr << "No target pattern model loaded" << endl;
+                throw InternalError();
+            } else if (targetpatternmodel->reverseindex.empty())) {
                 cerr << "No reverse index loaded in target-side patternmodel" << endl;
                 throw InternalError();
             }
