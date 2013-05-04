@@ -577,12 +577,13 @@ int main( int argc, char *argv[] ) {
                                         flaggedkeywords[(contextkey != NULL) ? contextkey : incontext][targetgram].push_back(keywords);
                                     }
 
-                                    //add to context-aware alignment model (classifier training data will be constructed on the basis of this)
-                                    targetfound = true;
-                                    const double score = (exemplarweights) ?  (  (iter->second[0] < 0) ? pow(exp(1), iter->second[0]) : iter->second[0] ) : 1; //no logprob
-                                    contextalignmodel->addextractedpattern(key, targetgram, score, 1, (contextkey != NULL) ? contextkey : incontext );
                                 }
-                                
+ 
+                                //add to context-aware alignment model (classifier training data will be constructed on the basis of this)
+                                targetfound = true;
+                                const double score = (exemplarweights) ?  (  (iter->second[0] < 0) ? pow(exp(1), iter->second[0]) : iter->second[0] ) : 1; //no logprob
+                                contextalignmodel->addextractedpattern(key, targetgram, score, 1, (contextkey != NULL) ? contextkey : incontext );
+                            
                             }
                             
                             if (targetfound) {
@@ -615,7 +616,7 @@ int main( int argc, char *argv[] ) {
             cerr << "Building n-array classifier" << endl;                  
             ((NClassifierArray *) classifiers)->build(contextalignmodel, sourceclassdecoder, targetclassdecoder);                                                            
         } else if (mode == CLASSIFIERTYPE_CONSTRUCTIONEXPERTS) {
-            cerr << "Building expert classifier" << endl;
+            cerr << "Building expert classifiers" << endl;
             ((ConstructionExperts *) classifiers)->build(contextalignmodel, sourceclassdecoder, targetclassdecoder, &flaggedkeywords);
         } else if (mode == CLASSIFIERTYPE_MONO) {
             cerr << "Building monolithic classifier" << endl;
