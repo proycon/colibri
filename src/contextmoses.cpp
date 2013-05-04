@@ -475,14 +475,15 @@ int main( int argc, char *argv[] ) {
 
             const int ltarget = countwords(targetlinebuffer,targetlinesize);
 
-            if (targetpatternmodel == NULL) {
-                cerr << "No target pattern model loaded" << endl;
-                throw InternalError();
-            } else if (targetpatternmodel->reverseindex.empty()) {
-                cerr << "No reverse index loaded in target-side patternmodel" << endl;
-                throw InternalError();
+            if (DOKEYWORDS) {
+                if (targetpatternmodel == NULL) {
+                    cerr << "No target pattern model loaded" << endl;
+                    throw InternalError();
+                } else if (targetpatternmodel->reverseindex.empty()) {
+                    cerr << "No reverse index loaded in target-side patternmodel" << endl;
+                    throw InternalError();
+                }
             }
-
 
                                     
             if (linesize > 0) {
@@ -517,14 +518,16 @@ int main( int argc, char *argv[] ) {
                                 if (debug) cerr << "    processing target";
                                 const EncAnyGram * targetgram = iter->first;
 
-                                const EncAnyGram * targetkey = targetpatternmodel->getkey(targetgram);
-                                if (targetkey == NULL) {
-                                    if (debug) cerr << " ... not found in target pattern model" << endl;
-                                    continue;
-                                } else {                                    
-                                    if (debug) {
-                                        cerr << "... target found.. ";
-                                        if (DOKEYWORDS){
+                                
+                                const EncAnyGram * targetkey = NULL;
+                                if (DOKEYWORDS) {
+                                    targetkey = targetpatternmodel->getkey(targetgram);
+                                    if (targetkey == NULL) {
+                                        if (debug) cerr << " ... not found in target pattern model" << endl;
+                                        continue;
+                                    } else {                                    
+                                        if (debug) {
+                                            cerr << "... target found.. ";
                                             if (key == NULL) { //can't happen
                                                 cerr << "no keywords found for source " << ngram->decode(*sourceclassdecoder);
                                             } else {
@@ -534,11 +537,10 @@ int main( int argc, char *argv[] ) {
                                                     cerr << "no keywords found for target";
                                                 }
                                             }
-                                        }
-                                        cerr << endl;
-                                    } 
-                                }
-                                
+                                            cerr << endl;
+                                        } 
+                                    }
+                                }                                
 
                                 if ((DOKEYWORDS) && (targetpatternmodel->reverseindex[sentence].count(targetkey))) {  //line.contains((const EncNGram *) targetgram)) { //use targetpatternmodel and reverse index!!
                                     if (debug) cerr << "\t\tCounting keywords" << endl;
