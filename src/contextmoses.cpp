@@ -478,7 +478,7 @@ int main( int argc, char *argv[] ) {
             if (targetpatternmodel == NULL) {
                 cerr << "No target pattern model loaded" << endl;
                 throw InternalError();
-            } else if (targetpatternmodel->reverseindex.empty())) {
+            } else if (targetpatternmodel->reverseindex.empty()) {
                 cerr << "No reverse index loaded in target-side patternmodel" << endl;
                 throw InternalError();
             }
