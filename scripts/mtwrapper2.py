@@ -2010,14 +2010,45 @@ WordPenalty: -0.5\n""")
         return True
 
 
+    def mert_computeaveragescore(self):
+        bleu = []
+        meteor = []
+        nist = []
+        ter = []
+        wer = []
+        per = []
+        for i in range(1,self.MOSES_MERT_RUNS+1):
+            f = open('summary-mert' + str(i) +'.score')
+            f.readline()
+            scores = ( int(x) for x in f.readline().split() )
+            for i, x in enumerate((bleu,meteor,nist,ter,wer,per)):
+                x.append(scores[i])
+            f.close()
+        f = open('summary.score','w')
+        f.write("BLEU METEOR NIST TER WER PER\n")
+        f.write(str(sum(bleu)/float(len(bleu))) + " ")
+        f.write(str(sum(meteor)/float(len(meteor))) + " ")
+        f.write(str(sum(nist)/float(len(nist))) + " ")
+        f.write(str(sum(ter)/float(len(ter))) + " ")
+        f.write(str(sum(wer)/float(len(wer))) + " ")
+        f.write(str(sum(per)/float(len(per))) + " ")
+        f.close()
 
     def run_moses(self):
-        if self.BUILD_MOSES_MERT:
-            mosesini = self.WORKDIR + '/mert-work/moses.ini'
+        if self.BUILD_MOSES_MERT and self.MOSES_MERT_RUNS > 1:
+            for i in range(1,self.MOSES_MERT_RUNS+1):
+                mosesini = self.WORKDIR + '/mert-work' + str(i) + '/moses.ini'
+                if not self.runcmd(self.EXEC_MOSES + ' -f ' + mosesini + ' < input.txt > output.txt 2> moses.log','Moses Decoder (logged in moses.log)'): return False
+                os.rename('summary.score','summary-mert'+str(i)+'.score')
+            self.mert_computeaveragescore()
+            return True
         else:
-            mosesini = self.WORKDIR + '/model/moses.ini'
-        if not self.runcmd(self.EXEC_MOSES + ' -f ' + mosesini + ' < input.txt > output.txt 2> moses.log','Moses Decoder (logged in moses.log)'): return False
-        return True
+            if self.BUILD_MOSES_MERT:
+                mosesini = self.WORKDIR + '/mert-work/moses.ini'
+            else:
+                mosesini = self.WORKDIR + '/model/moses.ini'
+            if not self.runcmd(self.EXEC_MOSES + ' -f ' + mosesini + ' < input.txt > output.txt 2> moses.log','Moses Decoder (logged in moses.log)'): return False
+            return True
 
     def run_moses_classifiers(self):
         #should work with MERT as well
