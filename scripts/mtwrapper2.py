@@ -209,6 +209,7 @@ class MTWrapper(object):
             ('UCTO_OPTIONS','-m -n',''),
             ('SYMAL_OPTIONS','-alignment=grow -diagonal=yes -final=yes -both=no',''), #-hmmiterations 5 -hmmdumpfrequency -5'
             ('MOSES_MERT_OPTIONS','','See http://www.statmt.org/moses/?n=FactoredTraining.Tuning'),
+            ('MOSES_MERT_RUNS',1,'Number of MERT runs to perform (results will be averaged)')
             ('MOSES_MEMSCORE_METHOD','ml','Memscore scoring method:  ml: maximum likelihood, wittenbell: Witten-Bell smoothing, absdiscount: Absolute discounting'),
             ('PHRASEEXTRACT_MAX_PHRASE_LENGTH',7,''),
             ('PHRASEEXTRACT_REORDERING_FLAGS','',''), #" --model wbe-mslr --model phrase-mslr --model hier-mslr" #Maximum lexical reordering
@@ -1758,18 +1759,30 @@ class MTWrapper(object):
 
         return True
 
+
     def build_moses_mert(self):
         if self.BUILD_MOSES_CLASSIFIERS:
 
             if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F ' + self.DEVSOURCECORPUS + ' -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' -q -o devtmp 2> contextmoses-dev.log', "Preparing context-aware moses on development set (logged in contextmoses-dev.log)"): return False
 
-            if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.WORKDIR + '/devtmp.txt ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/contextmoses.devtmp.ini 2> mert.log', 'Parameter tuning for Moses (+context) using MERT (logged in mert.log)'): return False
+            if self.MOSES_MERT_RUNS == 1:
+                if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.WORKDIR + '/devtmp.txt ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/contextmoses.devtmp.ini 2> mert.log', 'Parameter tuning for Moses (+context) using MERT (logged in mert.log)'): return False
+                shutil.copyfile(self.WORKDIR + '/mert-work/moses.ini', self.WORKDIR + '/model/contextmoses.tmp.ini')
+                os.system("sed -i s/devtmp\.phrasetable/tmp.phrasetable/ model/contextmoses.tmp.ini")
+            else:
+                for i in range(1, self.MOSES_MERT_RUNS+1):
+                    if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' --working-dir=mert-dir' + str(i) + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.WORKDIR + '/devtmp.txt ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/contextmoses.devtmp.ini 2> mert.log', 'Parameter tuning for Moses (+context) using MERT (logged in mert.log)'): return False
 
-            shutil.copyfile(self.WORKDIR + '/mert-work/moses.ini', self.WORKDIR + '/model/contextmoses.tmp.ini')
-            os.system("sed -i s/devtmp\.phrasetable/tmp.phrasetable/ model/contextmoses.tmp.ini")
+                shutil.copyfile(self.WORKDIR + '/mert-work' + str(i) + '/moses.ini', self.WORKDIR + '/mert-work' + str(i) + '/contextmoses.tmp.ini')
+                os.system("sed -i s/devtmp\.phrasetable/tmp.phrasetable/ mert-work" + str(i) + "/contextmoses.tmp.ini")
+
 
         else:
-            if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/moses.ini 2> mert.log', 'Parameter tuning for Moses using MERT (logged in mert.log)'): return False
+            if self.MOSES_MERT_RUNS == 1:
+                if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/moses.ini 2> mert.log', 'Parameter tuning for Moses using MERT (logged in mert.log)'): return False
+            else:
+                for i in range(1, self.MOSES_MERT_RUNS+1):
+                    if not self.runcmd(self.EXEC_MOSES_MERT + ' --mertdir=' + self.PATH_MOSES_MERT + ' --working-dir=mert-dir' + str(i) + ' ' + self.MOSES_MERT_OPTIONS + ' ' + self.DEVSOURCECORPUS + ' ' + self.DEVTARGETCORPUS + ' ' + self.EXEC_MOSES  + ' ' + self.WORKDIR + '/model/moses.ini 2> mert.log', 'Parameter tuning for Moses using MERT (logged in mert.log)'): return False
         return True
 
     def build_pbmbmt(self):
