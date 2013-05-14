@@ -209,7 +209,7 @@ class MTWrapper(object):
             ('UCTO_OPTIONS','-m -n',''),
             ('SYMAL_OPTIONS','-alignment=grow -diagonal=yes -final=yes -both=no',''), #-hmmiterations 5 -hmmdumpfrequency -5'
             ('MOSES_MERT_OPTIONS','','See http://www.statmt.org/moses/?n=FactoredTraining.Tuning'),
-            ('MOSES_MERT_RUNS',1,'Number of MERT runs to perform (results will be averaged)')
+            ('MOSES_MERT_RUNS',1,'Number of MERT runs to perform (results will be averaged)'),
             ('MOSES_MEMSCORE_METHOD','ml','Memscore scoring method:  ml: maximum likelihood, wittenbell: Witten-Bell smoothing, absdiscount: Absolute discounting'),
             ('PHRASEEXTRACT_MAX_PHRASE_LENGTH',7,''),
             ('PHRASEEXTRACT_REORDERING_FLAGS','',''), #" --model wbe-mslr --model phrase-mslr --model hier-mslr" #Maximum lexical reordering
