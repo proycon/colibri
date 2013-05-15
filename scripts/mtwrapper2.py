@@ -1735,6 +1735,7 @@ class MTWrapper(object):
         return True
 
     def build_moses_classifiers(self):
+
         if not self.runcmd(self.EXEC_COLIBRI_CLASSENCODE + ' -f ' + self.getsourcefilename('txt'), "Encoding source corpus for Colibri",self.getsourcefilename('cls'), self.getsourcefilename('clsenc') ): return False
 
         if not self.runcmd(self.EXEC_COLIBRI_CLASSENCODE + ' -f ' + self.gettargetfilename('txt'), "Encoding target corpus for Colibri",self.gettargetfilename('cls'), self.gettargetfilename('clsenc') ): return False
@@ -1746,12 +1747,18 @@ class MTWrapper(object):
 
             if not self.runcmd(self.EXEC_COLIBRI_ALIGNER + ' -m model/phrase-table' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') +' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' -k -K ' + str(self.COLIBRI_GLOBALKEYWORDS_OPTIONS) + ' -o ' + self.gets2tfilename('withkeywords.alignmodel.colibri') + ' -s ' + self.getsourcefilename('indexedpatternmodel.colibri') + ' -t ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' 2> contextmoses-globalkeywords.log', "Extracting global keywords (logged in contextmoses-globalkeywords.log)",self.gets2tfilename("withkeywords.alignmodel.colibri")): return False
             if not ('-I' in self.MOSES_CLASSIFIER_OPTIONS):
-                if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('clsenc') + ' -g ' + self.gettargetfilename('clsenc') + ' -d ' +  self.gets2tfilename('withkeywords.alignmodel.colibri') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' -s ' + self.getsourcefilename('indexedpatternmodel.colibri') + ' -E ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' -k ' + self.MOSES_CLASSIFIER_OPTIONS + ' 2> contextmoses-train.log', "Training classifiers for context-aware moses (logged in contextmoses-train.log)"): return False
+                if (list(glob.glob(self.wORKDIR + '/classifier.*.ibase')) == 0):
+                    if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('clsenc') + ' -g ' + self.gettargetfilename('clsenc') + ' -d ' +  self.gets2tfilename('withkeywords.alignmodel.colibri') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' -s ' + self.getsourcefilename('indexedpatternmodel.colibri') + ' -E ' + self.gettargetfilename('indexedpatternmodel.colibri') + ' -k ' + self.MOSES_CLASSIFIER_OPTIONS + ' 2> contextmoses-train.log', "Training classifiers for context-aware moses (logged in contextmoses-train.log)"): return False
+                else:
+                    self.log("Skipping classifier generation and training (output already exists)",yellow, True)
             else:
                 print >>sys.stderr, bold(yellow("Not training classifiers because -I (ignore) is set in options"))
         else:
             if not ('-I' in self.MOSES_CLASSIFIER_OPTIONS):
-                if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('clsenc') + ' -g ' + self.gettargetfilename('clsenc') + ' -m ' +  'model/phrase-table' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' 2> contextmoses-train.log', "Training classifiers for context-aware moses (logged in contextmoses-train.log)"): return False
+                if (list(glob.glob(self.wORKDIR + '/classifier.*.ibase')) == 0):
+                    if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('clsenc') + ' -g ' + self.gettargetfilename('clsenc') + ' -m ' +  'model/phrase-table' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' 2> contextmoses-train.log', "Training classifiers for context-aware moses (logged in contextmoses-train.log)"): return False
+                else:
+                    self.log("Skipping classifier generation and training (output already exists)",yellow, True)
             else:
                 print >>sys.stderr, bold(yellow("Not training classifiers because -I (ignore) is set in options"))
 
