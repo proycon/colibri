@@ -2054,7 +2054,7 @@ WordPenalty: -0.5\n""")
                 mosesini = self.WORKDIR + '/mert-work' + str(i) + '/moses.ini'
                 if not self.runcmd(self.EXEC_MOSES + ' -f ' + mosesini + ' < input.txt > output.txt 2> moses.log','Moses Decoder (logged in moses.log)'): return False
                 self.score(inputfile,reffile, outputfile)
-                os.rename('summary.score','summary-mert'+str(i)+'.score')
+                os.rename(self.WORKDIR + '/summary.score',self.WORKDIR +'/summary-mert'+str(i)+'.score')
             self.mert_computeaveragescore()
             return True
         else:
@@ -2069,13 +2069,27 @@ WordPenalty: -0.5\n""")
         #should work with MERT as well
         if not os.path.exists('tmp.srilm'):
             os.symlink(self.gettargetfilename('srilm'), 'tmp.srilm')
-        if self.COLIBRI_GLOBALKEYWORDS:
-            extra = ""
-            if self.COLIBRI_GLOBALKEYWORDS_OPTIONS:
-                extra = " -K " + self.COLIBRI_GLOBALKEYWORDS_OPTIONS.split(',')[-1] #keyword probability
-            if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -k ' + extra + ' -F input.txt -d ' + self.gets2tfilename('withkeywords.alignmodel.colibri') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False
+        if self.BUILD_MOSES_MERT and self.MOSES_MERT_RUNS > 1:
+            for i in range(1,self.MOSES_MERT_RUNS+1):
+                shutil.copyfile(self.WORKDIR + '/mert-work' + str(i) + '/contextmoses.tmp.ini', self.WORKDIR + '/model/contextmoses.tmp.ini')
+                if self.COLIBRI_GLOBALKEYWORDS:
+                    extra = ""
+                    if self.COLIBRI_GLOBALKEYWORDS_OPTIONS:
+                        extra = " -K " + self.COLIBRI_GLOBALKEYWORDS_OPTIONS.split(',')[-1] #keyword probability
+                    if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -k ' + extra + ' -F input.txt -d ' + self.gets2tfilename('withkeywords.alignmodel.colibri') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False
+                else:
+                    if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False
+                self.score(inputfile,reffile, outputfile)
+                os.rename(self.WORKDIR +'/summary.score',self.WORKDIR + '/summary-mert'+str(i)+'.score')
+            self.mert_computeaveragescore()
         else:
-            if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False
+            if self.COLIBRI_GLOBALKEYWORDS:
+                extra = ""
+                if self.COLIBRI_GLOBALKEYWORDS_OPTIONS:
+                    extra = " -K " + self.COLIBRI_GLOBALKEYWORDS_OPTIONS.split(',')[-1] #keyword probability
+                if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -k ' + extra + ' -F input.txt -d ' + self.gets2tfilename('withkeywords.alignmodel.colibri') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False
+            else:
+                if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder (logged in contextmoses-test.log)"): return False
         return True
 
     def run_phrasal(self):
