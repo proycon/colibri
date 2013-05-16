@@ -2306,7 +2306,7 @@ WordPenalty: -0.5\n""")
         s = "BLEU METEOR NIST TER WER PER"
         f.write(s+ "\n")
         print >>sys.stderr, s
-        s = str(round(self.bleu,4)) + " " + str(round(self.meteor,4)) + " " + str(round(self.nist,4))  + " " + str(round(self.ter,2)) + " " + str(round(self.wer,2))  + " " + str(round(self.per,2))
+        s = str(self.bleu) + " " + str(self.meteor) + " " + str(self.nist)  + " " + str(self.ter) + " " + str(self.wer)  + " " + str(self.per)
         f.write(s + "\n")
         print >>sys.stderr, s
         f.close()
