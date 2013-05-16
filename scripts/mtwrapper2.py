@@ -2034,7 +2034,7 @@ WordPenalty: -0.5\n""")
         for i in range(1,self.MOSES_MERT_RUNS+1):
             f = open('summary-mert' + str(i) +'.score')
             f.readline()
-            scores = ( int(x) for x in f.readline().split() )
+            scores = [ int(x) for x in f.readline().split() ]
             for i, x in enumerate((bleu,meteor,nist,ter,wer,per)):
                 x.append(scores[i])
             f.close()
