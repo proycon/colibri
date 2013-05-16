@@ -2160,6 +2160,10 @@ WordPenalty: -0.5\n""")
         if not os.path.isfile(targetfile):
             self.log("Error: Output file " + targetfile + " not found! Did you forget to test the system?" ,red)
             return False
+        elif self.BUILD_MOSES and self.BUILD_MOSES_CLASSIFIERS and self.BUILD_MOSES_MERT and self.MOSES_MERT_RUNS > 1:
+            self.log("Computing average score over all MERT runs")
+            self.mert_computeaveragescore()
+            return True
 
         self.header('Converting source to XML for evaluation')
         r = self.xmlize(sourcefile,'src')
