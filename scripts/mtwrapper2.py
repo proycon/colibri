@@ -762,7 +762,7 @@ class MTWrapper(object):
                 else:
                     assert False, "unhandled option"
 
-            if self.run(inputfile, outputfile, tokenise):
+            if self.run(inputfile, None, outputfile, tokenise):
                 os.system('cat ' + outputfile)
             else:
                 print >>sys.stderr, "An error occurred whilst trying to run the system"
@@ -1991,7 +1991,7 @@ WordPenalty: -0.5\n""")
 
 
 
-    def run(self, inputfile, outputfile='output.txt', tokenise=False):
+    def run(self, inputfile, reffile=None, outputfile='output.txt', tokenise=False):
         if tokenise and (not self.EXEC_UCTO or not os.path.isfile(self.EXEC_UCTO)):
             self.log("Error: Ucto not found! Unable to tokenise!" ,red)
             return False
@@ -2013,8 +2013,8 @@ WordPenalty: -0.5\n""")
                 os.unlink( self.WORKDIR + '/input.txt' )
             os.symlink(inputfile, self.WORKDIR + '/input.txt' )
 
-        if self.BUILD_MOSES_CLASSIFIERS and not self.run_moses_classifiers(): return False
-        if self.BUILD_MOSES and not self.BUILD_MOSES_CLASSIFIERS and not self.run_moses(): return False
+        if self.BUILD_MOSES_CLASSIFIERS and not self.run_moses_classifiers(inputfile,reffile,outputfile): return False
+        if self.BUILD_MOSES and not self.BUILD_MOSES_CLASSIFIERS and not self.run_moses(inputfile,reffile,outputfile): return False
         if self.BUILD_PBMBMT and not self.run_pbmbmt(): return False
         if self.BUILD_PHRASAL and not self.run_phrasal(): return False
         if self.BUILD_COLIBRI and not self.run_colibri(): return False
@@ -2048,11 +2048,12 @@ WordPenalty: -0.5\n""")
         f.write(str(sum(per)/float(len(per))) + " ")
         f.close()
 
-    def run_moses(self):
+    def run_moses(self, inputfile, reffile, outputfile='output.txt'):
         if self.BUILD_MOSES_MERT and self.MOSES_MERT_RUNS > 1:
             for i in range(1,self.MOSES_MERT_RUNS+1):
                 mosesini = self.WORKDIR + '/mert-work' + str(i) + '/moses.ini'
                 if not self.runcmd(self.EXEC_MOSES + ' -f ' + mosesini + ' < input.txt > output.txt 2> moses.log','Moses Decoder (logged in moses.log)'): return False
+                self.score(inputfile,reffile, outputfile)
                 os.rename('summary.score','summary-mert'+str(i)+'.score')
             self.mert_computeaveragescore()
             return True
@@ -2064,7 +2065,7 @@ WordPenalty: -0.5\n""")
             if not self.runcmd(self.EXEC_MOSES + ' -f ' + mosesini + ' < input.txt > output.txt 2> moses.log','Moses Decoder (logged in moses.log)'): return False
             return True
 
-    def run_moses_classifiers(self):
+    def run_moses_classifiers(self, inputfile, reffile, outputfile='output.txt' ):
         #should work with MERT as well
         if not os.path.exists('tmp.srilm'):
             os.symlink(self.gettargetfilename('srilm'), 'tmp.srilm')
@@ -2296,6 +2297,7 @@ WordPenalty: -0.5\n""")
         return not errors
 
     def test(self, sourcefile, reffile):
+        targetfile = 'output.txt'
         if not self.check_common(): return False
         if not self.check_run(): return False
         if not self.check_test(): return False
@@ -2308,10 +2310,9 @@ WordPenalty: -0.5\n""")
             self.log("Error: Reference file " + reffile + " not found!" ,red)
             return False
 
-        if not self.run(sourcefile):
+        if not self.run(sourcefile, reffile, targetfile):
             return False
 
-        targetfile = 'output.txt'
         if not self.score(sourcefile,reffile,targetfile):
             return False
 
