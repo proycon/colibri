@@ -1755,7 +1755,7 @@ class MTWrapper(object):
                 print >>sys.stderr, bold(yellow("Not training classifiers because -I (ignore) is set in options"))
         else:
             if not ('-I' in self.MOSES_CLASSIFIER_OPTIONS):
-                if (list(glob.glob(self.wORKDIR + '/classifier.*.ibase')) == 0):
+                if (list(glob.glob(self.WORKDIR + '/classifier.*.ibase')) == 0):
                     if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -f ' + self.getsourcefilename('clsenc') + ' -g ' + self.gettargetfilename('clsenc') + ' -m ' +  'model/phrase-table' + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' 2> contextmoses-train.log', "Training classifiers for context-aware moses (logged in contextmoses-train.log)"): return False
                 else:
                     self.log("Skipping classifier generation and training (output already exists)",yellow, True)
