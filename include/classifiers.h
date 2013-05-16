@@ -11,7 +11,8 @@ enum ScoreHandling { //C = set of distributions from classifier, S = set of dist
     SCOREHANDLING_WEIGHED = 1, //add classifier output as weight to original translation model scores: (C ∩ S) ∪ S
     SCOREHANDLING_APPEND = 2, //append additional score to score vector.  (C ∩ S) ∪ S
     SCOREHANDLING_REPLACE = 3, //completely replace translation score with classifier score: C
-    SCOREHANDLING_FILTEREDWEIGHED = 4 //completely replace translation score with classifier score: (C ∩ S)
+    SCOREHANDLING_FILTEREDWEIGHED = 4, //completely replace translation score with classifier score: (C ∩ S)
+    SCOREHANDLING_KWPROB = 5 //like weighed, but add an extra score with sum of all flagged keyword probabilities: (C ∩ S) ∪ S
 };
 
 
@@ -112,10 +113,10 @@ class ClassifierInterface {
         virtual void train(const std::string & timbloptions) =0;
         virtual void load( const std::string & timbloptions, ClassDecoder * sourceclassdecoder, ClassEncoder * targetclassencoder, int DEBUG =0) =0;
         virtual void classifyfragments(const EncData & input, AlignmentModel * original, t_sourcefragments & sourcefragments, ScoreHandling scorehandling, int & changecount); //decoder will call this
-        virtual t_aligntargets classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize, int & changecount, std::vector<std::string> * extrafeatures = NULL);
+        virtual t_aligntargets classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize, int & changecount, std::vector<std::string> * extrafeatures = NULL, std::vector<double> * extrascores = NULL);
         virtual t_aligntargets classify(const EncAnyGram * focus,  std::vector<const EncAnyGram *> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed) =0;
         virtual t_aligntargets classify(const EncAnyGram * focus, std::vector<std::string> & featurevector, ScoreHandling scorehandling, t_aligntargets & originaltranslationoptions, bool & changed) =0; 
-        virtual std::vector<std::string> * computeextrafeatures(const EncData & input, AlignmentModel * original, ScoreHandling scorehandling, const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, int leftcontextsize, int rightcontextsize) { if (DEBUG) std::cerr << "computeextrafeatures(): nothing implemented here" << std::endl ; return NULL; };
+        virtual std::vector<std::string> * computeextrafeatures(const EncData & input, AlignmentModel * original, ScoreHandling scorehandling, const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, int leftcontextsize, int rightcontextsize, std::vector<double> & extrascores) { if (DEBUG) std::cerr << "computeextrafeatures(): nothing implemented here" << std::endl ; return NULL; };
         virtual void reset() {};         
 };
 
@@ -173,7 +174,7 @@ class ConstructionExperts: public ClassifierInterface {
         void reset();
        
 
-        std::vector<std::string> * computeextrafeatures(const EncData & input, AlignmentModel * original, ScoreHandling scorehandling, const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, int leftcontextsize, int rightcontextsize);
+        std::vector<std::string> * computeextrafeatures(const EncData & input, AlignmentModel * original, ScoreHandling scorehandling, const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, int leftcontextsize, int rightcontextsize, std::vector<double> & extrascores);
 };
 
 /*class ConstructionExperts: public ClassifierInterface {

@@ -221,7 +221,7 @@ concerning p(t|s) only
         C - Set of translation options from classifier
         S - Set of translation options from statistical phrase table
 
-        WEIGHTED, APPEND, IGNORE METHODS:
+        WEIGHTED, APPEND, IGNORE, KWPROB, METHODS:
 
         |--0--|-------x--------|---(1-x)--|
           C        C ∩ S           S
@@ -296,7 +296,7 @@ concerning p(t|s) only
         const double weight = log(iter->second->Weight()); //convert into logprob
         if (DEBUG) cerr << "\t\t\tGot solution \"" << data << "\" with weight " << iter->second->Weight() << " (log=" << weight << ") ";
         const EncAnyGram * target = targetclassencoder->input2anygram(data, false);
-        if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_IGNORE)) {
+        if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_IGNORE) || (scorehandling == SCOREHANDLING_KWPROB)) {
             if (originaltranslationoptions.count(target)) {
                 //this target occurs in the original statistical model
                 if (DEBUG) cerr << " (found) ";        
@@ -337,7 +337,7 @@ concerning p(t|s) only
             const EncAnyGram * target = iter->first;
             if ((result.count(target) == 0) && (scorehandling != SCOREHANDLING_FILTEREDWEIGHED)) {
                 //translation option is not in classifier: S only, add to results
-                if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_IGNORE) || (scorehandling == SCOREHANDLING_APPEND)) {        
+                if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling == SCOREHANDLING_IGNORE) || (scorehandling == SCOREHANDLING_APPEND) || (scorehandling == SCOREHANDLING_KWPROB)) {        
                     result[target] = originaltranslationoptions[target];
                     //s_total += pow(exp(1), iter->second[0]);
                 }                 
@@ -346,7 +346,7 @@ concerning p(t|s) only
                 }
             } else {
                 //translation option is in classifier as well: C | S
-                if (scorehandling == SCOREHANDLING_WEIGHED) {
+                if ((scorehandling == SCOREHANDLING_WEIGHED) || (scorehandling = SCOREHANDLING_KWPROB)) {
                     //renormalise within C | S only, S remains as is
                     const double newprob = log( pow(exp(1), result[target][ptsfield-1]) * ((float) cis_oldtotal/cis_total) );
                     if (result[target][ptsfield-1] != newprob) {                    
@@ -644,8 +644,9 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
                 if ((leftcontextsize > 0)  || (rightcontextsize > 0)) {
                     withcontext = translationtable->addcontext(&input,anygram, (int) ref.token, leftcontextsize, rightcontextsize);
                 }
-                vector<string> * extrafeatures = computeextrafeatures(input, translationtable, scorehandling,  anygram, withcontext, reftranslationoptions, leftcontextsize, rightcontextsize);  
-                translationoptions = classifyfragment(anygram, withcontext, reftranslationoptions, scorehandling, translationtable->leftsourcecontext, translationtable->rightsourcecontext, changecount, extrafeatures);
+                vector<double> extrascores;
+                vector<string> * extrafeatures = computeextrafeatures(input, translationtable, scorehandling,  anygram, withcontext, reftranslationoptions, leftcontextsize, rightcontextsize, extrascores);  
+                translationoptions = classifyfragment(anygram, withcontext, reftranslationoptions, scorehandling, translationtable->leftsourcecontext, translationtable->rightsourcecontext, changecount, extrafeatures, &extrascores);
                 if (extrafeatures != NULL) delete extrafeatures;
                 if ((withcontext != NULL) && (withcontext != anygram)) delete withcontext;
 
@@ -680,7 +681,7 @@ void ClassifierInterface::classifyfragments(const EncData & input, AlignmentMode
      }     
 }
 
-t_aligntargets ClassifierInterface::classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationoptions, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize, int & changecount, vector<string> * extrafeatures) {
+t_aligntargets ClassifierInterface::classifyfragment(const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationoptions, ScoreHandling scorehandling, int leftcontextsize, int rightcontextsize, int & changecount, vector<string> * extrafeatures, std::vector<double> * extrascores) {
         const int nwithcontext = withcontext->n();
 
          
@@ -715,6 +716,14 @@ t_aligntargets ClassifierInterface::classifyfragment(const EncAnyGram * focus, c
 
         bool changed = false;        
         t_aligntargets translationoptions = classify(focus, featurevector, scorehandling, reftranslationoptions, changed);
+        if (extrascores != NULL) {
+            for (t_aligntargets::iterator iter = translationoptions.begin(); iter != translationoptions.end(); iter++) {
+                const EncAnyGram * targetkey = iter->first;                       
+                for (vector<double>::iterator iter2 = extrascores->begin(); iter2 != extrascores->end(); iter2++) {
+                    translationoptions[targetkey].push_back(*iter2);
+                }
+            }
+        }
         if (changed) changecount++;
         
         if (DEBUG >= 2) {
@@ -1269,7 +1278,7 @@ void ConstructionExperts::load( const string & timbloptions, ClassDecoder * sour
 }
 
 
-std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncData & input, AlignmentModel * alignmodel, ScoreHandling scorehandling, const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, int leftcontextsize, int rightcontextsize) {
+std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncData & input, AlignmentModel * alignmodel, ScoreHandling scorehandling, const EncAnyGram * focus, const EncAnyGram * withcontext, t_aligntargets & reftranslationfragments, int leftcontextsize, int rightcontextsize,vector<double> & extrascores) {
     //Compute extra keywords features
 
     if (DEBUG) cerr << "   computing extra features for construction experts" << endl ;
@@ -1285,16 +1294,24 @@ std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncDa
     t_keywords_source * keywords_source = &(alignmodel->keywords[focus]);
     if (DEBUG >= 2) cerr << "   Source pattern has keywords for " << keywords_source->size() << " target patterns" << endl;
 
+
+    map<const EncAnyGram *, double> max_kwprob; //max kwprob for a given keywords (over all targets), will be used in determining extra score if scorehandling == SCOREHANDLING_KWPROB
+
     //sort all keywords by score (intermediate step)
     multimap<double, const EncAnyGram *> sortedkws_byscore;
     {
         unordered_set<const EncAnyGram*> processed; //(to quickly filter out duplicates)
-        for (t_keywords_source::const_iterator kwiter = keywords_source->begin(); kwiter != keywords_source->end(); kwiter++) {
-            for (unordered_map<const EncAnyGram *, double>::const_iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) {
+        for (t_keywords_source::const_iterator kwiter = keywords_source->begin(); kwiter != keywords_source->end(); kwiter++) { //iterate over all target patterns for source
+            for (unordered_map<const EncAnyGram *, double>::const_iterator kwiter2 = kwiter->second.begin(); kwiter2 != kwiter->second.end(); kwiter2++) { //iterate over all keywords
                 const EncAnyGram * keyword = kwiter2->first;
-                if ((!processed.count(keyword)) && (kwiter2->second >= keywordprobthreshold)) { //TODO: fix segfault here
+                if ((!processed.count(keyword)) && (kwiter2->second >= keywordprobthreshold)) { 
                     sortedkws_byscore.insert(pair<double,const EncAnyGram*>(kwiter2->second*-1, keyword)); //will not insert duplicates due to nature of map
                     processed.insert(keyword);
+                    if (scorehandling = SCOREHANDLING_KWPROB) {
+                        if ( (!max_kwprob.count(keyword)) || (max_kwprob[keyword] < kwiter2->second)) {
+                            max_kwprob[keyword] = kwiter2->second;
+                        }
+                    }
                 }
             }
         }
@@ -1318,6 +1335,9 @@ std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncDa
         throw InternalError();
     }
 
+    double extrascore = 0.0000000001; //epsilon
+
+
     vector<std::string> * kwfeatures = new vector<std::string>();
     //for each keyword //check presence in input //set flag
     for (map<int, const EncAnyGram *>::const_iterator iter = sortedkws.begin(); iter != sortedkws.end(); iter++) {
@@ -1325,12 +1345,20 @@ std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncDa
         if (input.contains(keyword)) {
             kwfeatures->push_back("1=" + keyword->decode(*sourceclassdecoder));
             flagged++;
+            if (scorehandling == SCOREHANDLING_KWPROB) extrascore += max_kwprob[keyword];
         } else {
             kwfeatures->push_back("0=" + keyword->decode(*sourceclassdecoder));
         }
     }    
     
-    if (DEBUG >= 2) cerr << "   " << sortedkws.size() << " keywords possible, of which " << flagged << " found in context" << endl;
+
+    if (DEBUG >= 2) cerr << "   " << sortedkws.size() << " keywords possible, of which " << flagged << " found in context";
+    if (scorehandling == SCOREHANDLING_KWPROB) {
+        extrascores.push_back(extrascore);
+        if (DEBUG >= 2) cerr << ", with summed max kwprob = " << extrascore << endl;
+    }
+    if (DEBUG >= 2) cerr << endl;
+
 
     return kwfeatures;
 

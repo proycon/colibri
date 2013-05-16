@@ -34,6 +34,7 @@ void usage() {
 	cerr << "       weighed            Apply classifier score as weight to original scores (default)" << endl;
     cerr << "       append             Append classifier score to translation score vector (make sure to specify an extra weight using -W)" << endl;
     cerr << "       replace            Use only classifier score, replacing translation table scores (make to specify only one weight using -W)" << endl;
+	cerr << "       kwprob             Use weighed + add an extra keyword probability score to score vector, the sum of all keyword probabilities that are found (make sure to specify an extra weight using -W)" << endl;
     cerr << "       ignore             Ignore, do not use classifiers" << endl;
     cerr << "Options:" << endl;
     cerr << " -l [size]    Left context size" << endl;
@@ -249,6 +250,10 @@ int main( int argc, char *argv[] ) {
                 scorehandling = SCOREHANDLING_REPLACE;
             } else if (s == "ignore") {
                 scorehandling = SCOREHANDLING_IGNORE;                
+            } else if (s == "filteredweighed") {
+                scorehandling = SCOREHANDLING_FILTEREDWEIGHED;                
+            } else if (s == "kwprob") {
+                scorehandling = SCOREHANDLING_KWPROB;                
             } else {
                 cerr << "Invalid value for -x: '" << s << "'" << endl;
                 exit(2);    
@@ -850,8 +855,9 @@ int main( int argc, char *argv[] ) {
                                         //are there enough targets for this source to warrant a classifier?
                                         if (alignmodel->alignmatrix[key].size() >= targetthreshold) {
                                             if (debug) cerr << "classifying" << endl;
-                                            vector<string> * extrafeatures = classifiers->computeextrafeatures(*line, alignmodel, scorehandling,  key, incontext, *reftranslationoptions, leftcontextsize, rightcontextsize);  
-                                            translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize, changedcount, extrafeatures);
+                                            vector<double> extrascores;
+                                            vector<string> * extrafeatures = classifiers->computeextrafeatures(*line, alignmodel, scorehandling,  key, incontext, *reftranslationoptions, leftcontextsize, rightcontextsize, extrascores);  
+                                            translationoptions = classifiers->classifyfragment(key, incontext, *reftranslationoptions, scorehandling, leftcontextsize, rightcontextsize, changedcount, extrafeatures, &extrascores);
                                             if (extrafeatures != NULL) delete extrafeatures;
                                         } else {
                                             if (debug) cerr << "bypassing classifier, targetthreshold too low" << endl;
@@ -864,6 +870,9 @@ int main( int argc, char *argv[] ) {
                                                 } else if (scorehandling == SCOREHANDLING_APPEND) {
                                                     translationoptions[target] = (*reftranslationoptions)[target];
                                                     translationoptions[target].push_back((*reftranslationoptions)[target][0]); //fall back to first statistical value
+                                                } else if (scorehandling == SCOREHANDLING_KWPROB) {
+                                                    translationoptions[target] = (*reftranslationoptions)[target];
+                                                    translationoptions[target].push_back(0.0000000009); 
                                                 } else {
                                                     translationoptions[target] = (*reftranslationoptions)[target];
                                                 }
