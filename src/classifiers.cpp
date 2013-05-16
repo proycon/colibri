@@ -1295,7 +1295,7 @@ std::vector<std::string> * ConstructionExperts::computeextrafeatures(const EncDa
     if (DEBUG >= 2) cerr << "   Source pattern has keywords for " << keywords_source->size() << " target patterns" << endl;
 
 
-    map<const EncAnyGram *, double> max_kwprob; //max kwprob for a given keywords (over all targets), will be used in determining extra score if scorehandling == SCOREHANDLING_KWPROB
+    unordered_map<const EncAnyGram *, double> max_kwprob; //max kwprob for a given keywords (over all targets), will be used in determining extra score if scorehandling == SCOREHANDLING_KWPROB
 
     //sort all keywords by score (intermediate step)
     multimap<double, const EncAnyGram *> sortedkws_byscore;
