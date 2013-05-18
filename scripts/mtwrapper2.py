@@ -2032,13 +2032,13 @@ WordPenalty: -0.5\n""")
         wer = []
         per = []
         for i in range(1,self.MOSES_MERT_RUNS+1):
-            f = open('summary-mert' + str(i) +'.score')
+            f = open(self.WORKDIR + '/summary-mert' + str(i) +'.score')
             f.readline()
             scores = [ float(x) for x in f.readline().split() ]
             for i, x in enumerate((bleu,meteor,nist,ter,wer,per)):
                 x.append(scores[i])
             f.close()
-        f = open('summary.score','w')
+        f = open(self.WORKDIR + '/summary.score','w')
         f.write("BLEU METEOR NIST TER WER PER\n")
         f.write(str(sum(bleu)/float(len(bleu))) + " ")
         f.write(str(sum(meteor)/float(len(meteor))) + " ")
