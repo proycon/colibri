@@ -2080,7 +2080,7 @@ WordPenalty: -0.5\n""")
                 else:
                     if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder for MERT run "  + str(i) + " of " + str(self.MOSES_MERT_RUNS)  + " (logged in contextmoses-test.log)"): return False
                 self.log("Scoring for MERT run " + str(i) + " of " + str(self.MOSES_MERT_RUNS))
-                r = self.score(inputfile,reffile, outputfile)
+                r = self.score(inputfile,reffile, outputfile, True)
                 if r:
                     self.log("Scoring successful")
                 else:
@@ -2163,11 +2163,11 @@ WordPenalty: -0.5\n""")
 
 
 
-    def score(self, sourcefile, reffile, targetfile):
+    def score(self, sourcefile, reffile, targetfile, inmertrun=False):
         if not os.path.isfile(targetfile):
             self.log("Error: Output file " + targetfile + " not found! Did you forget to test the system?" ,red)
             return False
-        elif self.BUILD_MOSES and self.BUILD_MOSES_MERT and self.MOSES_MERT_RUNS > 1:
+        elif not inmertrun and self.BUILD_MOSES and self.BUILD_MOSES_MERT and self.MOSES_MERT_RUNS > 1:
             self.log("Computing average score over all MERT runs")
             self.mert_computeaveragescore()
             return True
