@@ -2079,8 +2079,12 @@ WordPenalty: -0.5\n""")
                     if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -k ' + extra + ' -F input.txt -d ' + self.gets2tfilename('withkeywords.alignmodel.colibri') + ' -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder for MERT run " + str(i) + " (logged in contextmoses-test.log)"): return False
                 else:
                     if not self.runcmd(self.EXEC_COLIBRI_CONTEXTMOSES + ' -F input.txt -m model/phrase-table -S ' +  self.getsourcefilename('cls') + ' -T ' + self.gettargetfilename('cls') + ' -l ' + str(self.MOSES_LEFTCONTEXTSIZE) + ' -r ' + str(self.MOSES_RIGHTCONTEXTSIZE) + ' ' + self.MOSES_CLASSIFIER_OPTIONS + ' > output.txt 2> contextmoses-test.log', "Testing classifiers and running context-aware moses decoder for MERT run "  + str(i) + " (logged in contextmoses-test.log)"): return False
-                self.log("Scoring for MERT run " + str(i))
-                self.score(inputfile,reffile, outputfile)
+                self.log("Scoring for MERT run " + str(i) + " of " + str(self.MOSES_MERT_RUNS))
+                r = self.score(inputfile,reffile, outputfile)
+                if r:
+                    self.log("Scoring successful")
+                else:
+                    self.log("Scoring produces errors (need not be fatal)")
                 os.rename(self.WORKDIR +'/summary.score',self.WORKDIR + '/summary-mert'+str(i)+'.score')
                 self.log("Wrote " + self.WORKDIR + '/summary-mert'+str(i)+'.score')
             self.log("Computing average MERT score over all " + str(self.MOSES_MERT_RUNS) + " runs")
