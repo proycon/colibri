@@ -83,6 +83,7 @@ class ClassifierInterface {
         ClassDecoder * targetclassdecoder;
         int ptsfield;
         double appendepsilon;
+        bool nodups;
     public:
         int leftcontextsize;
         int rightcontextsize;
@@ -90,6 +91,7 @@ class ClassifierInterface {
             DEBUG = 0;
             sourceclassdecoder = NULL;
             targetclassdecoder = NULL;
+            nodups = true; //prune duplicate entries in training files
             ID = _id;
             this->leftcontextsize = leftcontextsize;
             this->rightcontextsize = rightcontextsize;
