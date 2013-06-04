@@ -773,7 +773,8 @@ t_aligntargets ClassifierInterface::classifyfragment(const EncAnyGram * focus, c
 
 void NClassifierArray::train(const string & timbloptions) {
     cerr << "Removing duplicate instances" << endl;
-    system("for f in ./*.train; do; cat $f | sort | uniq > $f.tmp; mv -f $f.tmp $f; done");
+    int r = system("for f in ./*.train; do; cat $f | sort | uniq > $f.tmp; mv -f $f.tmp $f; done");
+    if (r != 0) cerr << "ERROR removing duplicates";
     for (map<int,Classifier*>::iterator iter = classifierarray.begin(); iter != classifierarray.end(); iter++) {
         cerr << "Training classifier n=" << iter->first << "..." << endl;
         iter->second->train(timbloptions);
@@ -944,7 +945,8 @@ t_aligntargets MonoClassifier::classify(const EncAnyGram * focus, std::vector<st
 
 void MonoClassifier::train(const string & timbloptions) {
     cerr << "Removing duplicate instances" << endl;
-    system("for f in ./*.train; do; cat $f | sort | uniq > $f.tmp; mv -f $f.tmp $f; done");
+    int r = system("for f in ./*.train; do; cat $f | sort | uniq > $f.tmp; mv -f $f.tmp $f; done");
+    if (r != 0) cerr << "ERROR removing duplicates";
     classifier->train(timbloptions);
 }
 
@@ -963,7 +965,8 @@ void ConstructionExperts::train(const string & timbloptions) {
             cerr << "Removing duplicate instances" << endl;
             const string filename = iter->second->id() + ".train";
             const string cmd = "cat " + filename + " | sort | uniq > " + filename + ".tmp; mv -f " + filename+".tmp " + filename;
-            system(cmd.c_str());
+            int r = system(cmd.c_str());
+            if (r != 0) cerr << "ERROR removing duplicates";
         }
         if (accuracythreshold > 0) {
             cerr << "Cross-validating classifier #" << count << "/" << total << " -- " << p << "% hash=" << iter->first << ": ";
