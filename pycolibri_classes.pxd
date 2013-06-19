@@ -17,7 +17,10 @@ cdef extern from "patternmodel.h":
         uint8_t token
         uint32_t sentence
 
-    cdef cppclass NGramData:
+    cdef cppclass AnyGramData:
+        pass
+
+    cdef cppclass NGramData(AnyGramData):
         cppset[CorpusReference] refs
         int count()
 
@@ -27,7 +30,8 @@ cdef extern from "patternmodel.h":
         unordered_map[EncNGram,NGramData] ngrams
         int types()
         int tokens()
-        int occurrencecount(EncAnyGram*)
+        int occurrencecount(EncAnyGram*) except +
+        AnyGramData * getdata(EncAnyGram*)
 
 cdef extern from "classdecoder.h":
     cdef cppclass ClassDecoder:

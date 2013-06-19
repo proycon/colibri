@@ -25,6 +25,12 @@ cdef class IndexedPatternModel:
     def tokens(self):
         return self.thisptr.tokens()
 
+    def sentences(self, key):
+        cdef Pattern pattern = self.encoder.encode(key)
+        cdef pycolibri_classes.NGramData * data = <pycolibri_classes.NGramData*> self.thisptr.getdata(pattern.thisptr)
+        for ref in data.refs:
+            yield (ref.sentence, ref.token)
+
     def __getitem__(self, key):
         cdef Pattern pattern = self.encoder.encode(key)
         try:
