@@ -1,4 +1,3 @@
-# cython: c_string_type=unicode, c_string_encoding=utf8
 from libcpp.string cimport string
 from libcpp cimport bool
 from cython.operator cimport dereference as deref, preincrement as inc
@@ -9,7 +8,7 @@ from unordered_map cimport unordered_map
 cdef class IndexedPatternModel:
     cdef pycolibri_classes.IndexedPatternModel *thisptr
     def __cinit__(self, str filename, ClassEncoder encoder, ClassDecoder decoder):
-          self.thisptr = new pycolibri_classes.IndexedPatternModel(filename, False)
+          self.thisptr = new pycolibri_classes.IndexedPatternModel(filename.encode('utf-8'), False)
           self.encoder = encoder
           self.decoder = decoder
 
@@ -49,7 +48,7 @@ cdef class IndexedPatternModel:
 cdef class ClassEncoder:
     cdef pycolibri_classes.ClassEncoder *thisptr
     def __cinit__(self, str filename):
-        self.thisptr = new pycolibri_classes.ClassEncoder(filename)
+        self.thisptr = new pycolibri_classes.ClassEncoder(filename.encode('utf-8'))
 
     def __dealloc__(self):
         del self.thisptr
@@ -67,7 +66,7 @@ cdef class ClassEncoder:
 cdef class ClassDecoder:
     cdef pycolibri_classes.ClassDecoder *thisptr
     def __cinit__(self, str filename):
-        self.thisptr = new pycolibri_classes.ClassDecoder(filename)
+        self.thisptr = new pycolibri_classes.ClassDecoder(filename.encode('utf-8'))
 
     def __dealloc__(self):
         del self.thisptr

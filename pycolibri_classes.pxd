@@ -1,4 +1,3 @@
-# cython: c_string_type=unicode, c_string_encoding=utf8
 from libcpp.string cimport string
 from libcpp.set cimport set as cppset
 from libcpp cimport bool
