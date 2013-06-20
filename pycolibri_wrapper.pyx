@@ -1,5 +1,6 @@
 from libcpp.string cimport string
 from libcpp cimport bool
+from libcpp.vector cimport vector
 from cython.operator cimport dereference as deref, preincrement as inc
 from cython import address
 cimport pycolibri_classes
@@ -25,11 +26,19 @@ cdef class IndexedPatternModel:
     def tokens(self):
         return self.thisptr.tokens()
 
-    def sentences(self, key):
+
+
+    def indices(self, key):
         cdef Pattern pattern = self.encoder.encode(key)
         cdef pycolibri_classes.NGramData * data = <pycolibri_classes.NGramData*> self.thisptr.getdata(pattern.thisptr)
         for ref in data.refs:
             yield (ref.sentence, ref.token)
+
+    def sentences(self, key):
+        cdef Pattern pattern = self.encoder.encode(key)
+        cdef pycolibri_classes.NGramData * data = <pycolibri_classes.NGramData*> self.thisptr.getdata(pattern.thisptr)
+        for ref in data.refs:
+            yield ref.sentence
 
     def __getitem__(self, key):
         cdef Pattern pattern = self.encoder.encode(key)
@@ -50,6 +59,15 @@ cdef class IndexedPatternModel:
 
         #TODO: skipgrams
 
+    def reverseindex(self, int index):
+        cdef vector[pycolibri_classes.EncAnyGram*] v = self.thisptr.reverse_index(index)
+        cdef vector[pycolibri_classes.EncAnyGram*].iterator it = v.begin()
+        while it != v.end():
+            anygram  = <pycolibri_classes.EncAnyGram*> address(deref(it))
+            pattern = Pattern()
+            pattern.bind(anygram)
+            yield pattern
+            inc(it)
 
 cdef class ClassEncoder:
     cdef pycolibri_classes.ClassEncoder *thisptr

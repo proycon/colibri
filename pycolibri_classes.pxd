@@ -1,5 +1,6 @@
 from libcpp.string cimport string
 from libcpp.set cimport set as cppset
+from libcpp.vector cimport vector
 from libcpp cimport bool
 from unordered_map cimport unordered_map
 from libc.stdint cimport *
@@ -32,6 +33,7 @@ cdef extern from "patternmodel.h":
         int tokens()
         int occurrencecount(EncAnyGram*) except +
         AnyGramData * getdata(EncAnyGram*)
+        vector[EncAnyGram*] reverse_index(int i)
 
 cdef extern from "classdecoder.h":
     cdef cppclass ClassDecoder:
