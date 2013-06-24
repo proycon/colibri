@@ -5,8 +5,8 @@ from libcpp cimport bool
 from unordered_map cimport unordered_map
 from libc.stdint cimport *
 
-cdef extern from *:
-    ctypedef char* const_EncAnyGram "const EncAnyGram"
+#cdef extern from *:
+#    ctypedef char* const_EncAnyGram "const EncAnyGram"
 
 cdef extern from "ngram.h":
     cdef cppclass EncAnyGram:
@@ -36,7 +36,8 @@ cdef extern from "patternmodel.h":
         int tokens()
         int occurrencecount(EncAnyGram*) except +
         AnyGramData * getdata(EncAnyGram*)
-        vector[const_EncAnyGram*] get_reverse_index(int i)
+        vector[const EncAnyGram*] get_reverse_index(int i)
+        #unordered_map[int, vector[EncAnyGram*]] reverse_index
 
 cdef extern from "classdecoder.h":
     cdef cppclass ClassDecoder:
