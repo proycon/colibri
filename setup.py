@@ -8,6 +8,7 @@ extensions = [ Extension("pycolibri",
                 library_dirs=['/home/proycon/local/lib/','/usr/include/lib'],
                 libraries=['colibri'],
                 extra_compile_args=['--std=c++0x'],
+                pyrex_gdb=True
                 ) ]
 
 setup(

@@ -67,6 +67,7 @@ cdef class IndexedPatternModel:
         cdef vector[pycolibri_classes.EncAnyGram*].iterator it = v.begin()
         while it != v.end():
             anygram  = <pycolibri_classes.EncAnyGram*> address(deref(it))
+            anygram.decode(deref(self.decoder.thisptr))
             pattern = Pattern()
             pattern.bind(anygram)
             yield pattern
