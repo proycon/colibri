@@ -697,11 +697,12 @@ void IndexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram
     for (unsigned int j = 0; j < count; j++) {
         CorpusReference ref = CorpusReference(f); //read from file
         if (!ignore) ngrams[ngram].refs.insert(ref);
-        if (DOREVERSEINDEX) {
+        if( (DOREVERSEINDEX) && (!ignore)) {
             const int index = ref.sentence;
+            const EncAnyGram * key = (const EncAnyGram *) &(ngrams[ngram]);
             bool found = false;
-            for (int k = 0; k < ngram_reverse_index[index].size(); k++) if (ngram_reverse_index[index][k] == ngram) { found = true; break; };
-            if (!found) ngram_reverse_index[index].push_back(ngram);
+            for (int k = 0; k < reverse_index[index].size(); k++) if (reverse_index[index][k] == key) { found = true; break; };
+            if (!found) reverse_index[index].push_back(key);
         }
                
     }
@@ -736,11 +737,12 @@ void IndexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram &
         for (unsigned int k = 0; k < count; k++) {
             CorpusReference ref = CorpusReference(f); //read from file
             if (!ignore) skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
-            if (DOREVERSEINDEX) {
+            if( (DOREVERSEINDEX) && (!ignore)) {
                 const int index = ref.sentence;
+                const EncAnyGram * key = (const EncAnyGram *) &(skipgrams[skipgram]);
                 bool found = false;
-                for (int k = 0; k < skipgram_reverse_index[index].size(); k++) if (skipgram_reverse_index[index][k] == skipgram) { found = true; break; };
-                if (!found) skipgram_reverse_index[index].push_back(skipgram);
+                for (int k = 0; k < reverse_index[index].size(); k++) if (reverse_index[index][k] == key) { found = true; break; };
+                if (!found) reverse_index[index].push_back(key);
             }
         }        
     }    
@@ -1310,56 +1312,45 @@ void IndexedPatternModel::outputinstance(const EncAnyGram * anygram, CorpusRefer
 
 std::set<int> IndexedPatternModel::reverse_index_keys() {
     set<int> keys;
-    for (unordered_map<int,vector<EncNGram> >::iterator iter = ngram_reverse_index.begin(); iter != ngram_reverse_index.end(); iter++) {
+    for (unordered_map<int,vector<const EncAnyGram*> >::iterator iter = reverse_index.begin(); iter != reverse_index.end(); iter++) {
         keys.insert(iter->first);
     }   
-    for (unordered_map<int,vector<EncSkipGram> >::iterator iter = skipgram_reverse_index.begin(); iter != skipgram_reverse_index.end(); iter++) {
-        keys.insert(iter->first);
-    }    
     return keys;
 }
 
 
 int IndexedPatternModel::reverse_index_size(const int i) {
     int s = 0;
-    if (ngram_reverse_index.count(i)) s += ngram_reverse_index[i].size();
-    if (skipgram_reverse_index.count(i)) s += skipgram_reverse_index[i].size();
+    if (reverse_index.count(i)) s += reverse_index[i].size();
     return s;
     
 }
 
 int IndexedPatternModel::reverse_index_size() {
-    return ngram_reverse_index.size() + skipgram_reverse_index.size();
+    return reverse_index.size();
 }
 
 bool IndexedPatternModel::reverse_index_haskey(const int i) const {
-    return ((ngram_reverse_index.count(i) > 0) || (skipgram_reverse_index.count(i) > 0));
+    return (reverse_index.count(i) > 0);
 }
 
 
-vector<EncAnyGram*> IndexedPatternModel::reverse_index(const int i) {
-    vector<EncAnyGram*> revindex;
-    if (ngram_reverse_index.count(i) > 0)
-        for (vector<EncNGram>::iterator iter = ngram_reverse_index[i].begin(); iter != ngram_reverse_index[i].end(); iter++) {
-            revindex.push_back(&(*iter));
-        }   
-    if (skipgram_reverse_index.count(i) > 0)        
-        for (vector<EncSkipGram>::iterator iter = skipgram_reverse_index[i].begin(); iter != skipgram_reverse_index[i].begin(); iter++) {
-            revindex.push_back(&(*iter));
-        }   
-    return revindex;
-}
-
-
-EncAnyGram* IndexedPatternModel::get_reverse_index_item(const int key, const int i) {
-    const int s = ngram_reverse_index[key].size();
-    if (i < s) {                
-        vector<EncNGram>::iterator iter = ngram_reverse_index[key].begin() + i;
-        return &(*iter);
+vector<const EncAnyGram*> IndexedPatternModel::get_reverse_index(const int i) {
+    if (reverse_index.count(i) > 0) {
+        return reverse_index[i];
     } else {
-        vector<EncSkipGram>::iterator iter = skipgram_reverse_index[key].begin() + (i - s);
-        return &(*iter);
-    }    
+        vector<const EncAnyGram*> revindex;
+        return revindex;
+    }
+}
+
+
+const EncAnyGram* IndexedPatternModel::get_reverse_index_item(const int key, const int i) {
+    const int s = reverse_index[key].size();
+    if (i < s) {                
+        vector<const EncAnyGram *>::iterator iter = reverse_index[key].begin() + i;
+        return *iter;
+    } else return NULL; 
 }
 
 
@@ -1575,9 +1566,9 @@ unordered_map<const EncAnyGram*, int> IndexedPatternModel::getcooccurrences(cons
     unordered_map<const EncAnyGram *,int> coocgrams;
     for (set<int>::iterator iter = sentences.begin(); iter != sentences.end(); iter++) {
         if ((sentenceconstraints == NULL) || (sentenceconstraints->count(*iter))) {
-            vector<EncAnyGram*> tmp = targetmodel->reverse_index(*iter);
+            vector<const EncAnyGram*> tmp = targetmodel->get_reverse_index(*iter);
             //find keys
-            for (vector<EncAnyGram*>::iterator iter2 = tmp.begin(); iter2 != tmp.end(); iter2++) coocgrams[*iter2]++;
+            for (vector<const EncAnyGram*>::iterator iter2 = tmp.begin(); iter2 != tmp.end(); iter2++) coocgrams[*iter2]++;
         }
     }
     

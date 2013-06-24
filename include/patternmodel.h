@@ -200,8 +200,9 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     std::unordered_map<const EncNGram,NGramData > ngrams;
     std::unordered_map<const EncSkipGram,SkipGramData > skipgrams;    
     
-    std::unordered_map< int,std::vector<EncNGram> > ngram_reverse_index;
-    std::unordered_map< int,std::vector<EncSkipGram> > skipgram_reverse_index;
+    //std::unordered_map< int,std::vector<EncNGram> > ngram_reverse_index;
+    //std::unordered_map< int,std::vector<EncSkipGram> > skipgram_reverse_index;
+    std::unordered_map< int,std::vector<const EncAnyGram *> > reverse_index;
            
     IndexedPatternModel(const std::string & filename = "", bool DOREVERSEINDEX = false, const bool DEBUG=false);
     IndexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true, bool DOREVERSEINDEX = false);
@@ -235,8 +236,8 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     bool reverse_index_haskey(const int i) const;    
     int reverse_index_size(const int i);
     int reverse_index_size();
-    std::vector<EncAnyGram*> reverse_index(const int i);
-    EncAnyGram* get_reverse_index_item(const int, const int);
+    std::vector<const EncAnyGram*> get_reverse_index(const int i);
+    const EncAnyGram* get_reverse_index_item(const int, const int);
     
     std::set<int> getsentences(const EncAnyGram * anygram);
     std::unordered_map<const EncAnyGram*, int>  getcooccurrences(const EncAnyGram * anygram, IndexedPatternModel * targetmodel = NULL, std::set<int> * sentenceconstraints = NULL);
