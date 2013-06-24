@@ -66,13 +66,9 @@ cdef class IndexedPatternModel:
     def reverseindex(self, int index):
         #cdef vector[const pycolibri_classes.EncAnyGram *] v = self.thisptr.reverse_index[index]
         cdef vector[const pycolibri_classes.EncAnyGram*] v = self.thisptr.get_reverse_index(index)
-        print("got v")
         cdef vector[const pycolibri_classes.EncAnyGram *].iterator it = v.begin()
         while it != v.end():
             anygram  = <pycolibri_classes.EncAnyGram*> deref(it)
-            print("got anygram")
-            anygram.decode(deref(self.decoder.thisptr))
-            print("decoded")
             pattern = Pattern()
             pattern.bind(anygram)
             yield pattern
