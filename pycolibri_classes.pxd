@@ -28,16 +28,18 @@ cdef extern from "patternmodel.h":
         cppset[CorpusReference] refs
         int count()
 
+    ctypedef vector[const EncAnyGram*] anygramvector
+
     cdef cppclass IndexedPatternModel:
         IndexedPatternModel(string, bool, bool) except +
         bool exists(EncAnyGram*)
         unordered_map[EncNGram,NGramData] ngrams
+        unordered_map[int, anygramvector] reverse_index
         int types()
         int tokens()
         int occurrencecount(EncAnyGram*) except +
         AnyGramData * getdata(EncAnyGram*)
-        vector[const EncAnyGram*] get_reverse_index(int i)
-        #unordered_map[int, vector[EncAnyGram*]] reverse_index
+        anygramvector get_reverse_index(int i)
 
 cdef extern from "classdecoder.h":
     cdef cppclass ClassDecoder:
