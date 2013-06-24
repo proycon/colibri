@@ -123,7 +123,7 @@ cdef class Pattern:
 
     def decode(self, ClassDecoder decoder):
         if self.thisptr != NULL:
-            return self.thisptr.decode(deref(decoder.thisptr))
+            return str(self.thisptr.decode(deref(decoder.thisptr)),'utf-8')
         else:
             raise KeyError
 
