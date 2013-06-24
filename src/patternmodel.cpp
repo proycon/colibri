@@ -700,7 +700,6 @@ void IndexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram
         if( (DOREVERSEINDEX) && (!ignore)) {
             const int index = ref.sentence;
             const EncAnyGram * key = getkey((const EncAnyGram *) &ngram);
-            key->n(); //DEBUG
             bool found = false;
             for (int k = 0; k < reverse_index[index].size(); k++) if (reverse_index[index][k] == key) { found = true; break; };
             if (!found) reverse_index[index].push_back(key);
@@ -1335,6 +1334,15 @@ bool IndexedPatternModel::reverse_index_haskey(const int i) const {
     return (reverse_index.count(i) > 0);
 }
 
+void IndexedPatternModel::testreverseindex() {
+    //DEBUG
+    for (unordered_map<int, vector<const EncAnyGram *> >::iterator iter = reverse_index.begin(); iter != reverse_index.end(); iter++) {
+        for (vector<const EncAnyGram *>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+            const EncAnyGram * anygram = *iter2;
+            anygram->n();
+        }
+    }
+}
 
 vector<const EncAnyGram*> IndexedPatternModel::get_reverse_index(const int i) {
     if (reverse_index.count(i) > 0) {

@@ -238,6 +238,7 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     int reverse_index_size();
     std::vector<const EncAnyGram*> get_reverse_index(const int i);
     const EncAnyGram* get_reverse_index_item(const int, const int);
+    void testreverseindex(); //debug
     
     std::set<int> getsentences(const EncAnyGram * anygram);
     std::unordered_map<const EncAnyGram*, int>  getcooccurrences(const EncAnyGram * anygram, IndexedPatternModel * targetmodel = NULL, std::set<int> * sentenceconstraints = NULL);

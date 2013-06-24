@@ -15,6 +15,7 @@ cdef class IndexedPatternModel:
           self.thisptr = new pycolibri_classes.IndexedPatternModel(filename.encode('utf-8'),True, False)
           self.encoder = encoder
           self.decoder = decoder
+          self.thisptr.testreverseindex() #debug
 
     def __dealloc__(self):
         del self.thisptr
