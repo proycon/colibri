@@ -12,7 +12,7 @@ cdef class IndexedPatternModel:
     cdef ClassDecoder decoder
 
     def __cinit__(self, str filename, ClassEncoder encoder, ClassDecoder decoder):
-          self.thisptr = new pycolibri_classes.IndexedPatternModel(filename.encode('utf-8'), False)
+          self.thisptr = new pycolibri_classes.IndexedPatternModel(filename.encode('utf-8'),True, False)
           self.encoder = encoder
           self.decoder = decoder
 

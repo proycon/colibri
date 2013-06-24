@@ -26,7 +26,7 @@ cdef extern from "patternmodel.h":
         int count()
 
     cdef cppclass IndexedPatternModel:
-        IndexedPatternModel(string, bool) except +
+        IndexedPatternModel(string, bool, bool) except +
         bool exists(EncAnyGram*)
         unordered_map[EncNGram,NGramData] ngrams
         int types()

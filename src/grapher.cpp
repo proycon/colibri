@@ -188,7 +188,7 @@ int main( int argc, char *argv[] ) {
         }
         
         cerr << "Loading pattern model " << patternmodelfile << endl;
-        IndexedPatternModel patternmodel = IndexedPatternModel(patternmodelfile, DEBUG);
+        IndexedPatternModel patternmodel = IndexedPatternModel(patternmodelfile, false, DEBUG);
     
         cerr << "Loaded " << patternmodel.types() << " types, " << patternmodel.tokens() << " tokens" << endl;
             

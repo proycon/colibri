@@ -285,7 +285,7 @@ void ModelQuerier::querier(ClassEncoder & encoder, ClassDecoder & decoder, bool 
 }
 
 
-IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {
+IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP, bool DOREVERSEINDEX) {
     
     this->MAXLENGTH = MAXLENGTH;
     this->MINTOKENS = MINTOKENS;
@@ -293,6 +293,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
     this->MINSKIPTOKENS = MINSKIPTOKENS;
     this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
     this->DOFINALONLYSKIP = DOFINALONLYSKIP;
+    this->DOREVERSEINDEX = DOREVERSEINDEX;
     
     totaltokens = 0; //includes tokens not covered by the model!
 
@@ -581,8 +582,8 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, int MAXLENGT
 
 
 
-IndexedPatternModel::IndexedPatternModel(const string & filename, const bool DEBUG) {    
-   
+IndexedPatternModel::IndexedPatternModel(const string & filename, bool DOREVERSEINDEX, const bool DEBUG) {    
+    this->DOREVERSEINDEX = DOREVERSEINDEX;
     totaltokens = 0;  
     
     MAXLENGTH = 0;
@@ -603,7 +604,7 @@ IndexedPatternModel::IndexedPatternModel(const string & filename, const bool DEB
     }
 }
 
-IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatternModel & refmodel, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP) {    
+IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatternModel & refmodel, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS,  int MINSKIPTYPES, bool DOINITIALONLYSKIP, bool DOFINALONLYSKIP, bool DOREVERSEINDEX) {    
     if (MAXLENGTH > refmodel.getmaxn()) MAXLENGTH = refmodel.getmaxn();
     if (MINTOKENS < refmodel.getminn()) MINTOKENS = refmodel.getminn(); 
 
@@ -613,6 +614,7 @@ IndexedPatternModel::IndexedPatternModel(const string & corpusfile, IndexedPatte
     this->MINSKIPTOKENS = MINSKIPTOKENS;
     this->DOINITIALONLYSKIP = DOINITIALONLYSKIP;
     this->DOFINALONLYSKIP = DOFINALONLYSKIP;
+    this->DOREVERSEINDEX = DOREVERSEINDEX;
     
     
     totaltokens = 0;
@@ -695,11 +697,12 @@ void IndexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram
     for (unsigned int j = 0; j < count; j++) {
         CorpusReference ref = CorpusReference(f); //read from file
         if (!ignore) ngrams[ngram].refs.insert(ref);
-        /*if (DOREVERSEINDEX) {
+        if (DOREVERSEINDEX) {
+            const int index = ref.sentence;
             bool found = false;
             for (int k = 0; k < ngram_reverse_index[index].size(); k++) if (ngram_reverse_index[index][k] == ngram) { found = true; break; };
             if (!found) ngram_reverse_index[index].push_back(ngram);
-        }*/
+        }
                
     }
     if (!ignore)  {    
@@ -733,6 +736,12 @@ void IndexedPatternModel::readskipgramdata(std::istream * f, const EncSkipGram &
         for (unsigned int k = 0; k < count; k++) {
             CorpusReference ref = CorpusReference(f); //read from file
             if (!ignore) skipgrams[skipgram].skipcontent[skipcontent].refs.insert(ref);
+            if (DOREVERSEINDEX) {
+                const int index = ref.sentence;
+                bool found = false;
+                for (int k = 0; k < skipgram_reverse_index[index].size(); k++) if (skipgram_reverse_index[index][k] == skipgram) { found = true; break; };
+                if (!found) skipgram_reverse_index[index].push_back(skipgram);
+            }
         }        
     }    
 }
