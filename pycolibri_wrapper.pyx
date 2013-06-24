@@ -63,7 +63,7 @@ cdef class IndexedPatternModel:
         #TODO: skipgrams
 
     def reverseindex(self, int index):
-        cdef vector[pycolibri_classes.EncAnyGram*] v = self.thisptr.reverse_index(index)
+        cdef vector[pycolibri_classes.EncAnyGram*] v = self.thisptr.get_reverse_index(index)
         cdef vector[pycolibri_classes.EncAnyGram*].iterator it = v.begin()
         while it != v.end():
             anygram  = <pycolibri_classes.EncAnyGram*> address(deref(it))

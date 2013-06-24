@@ -33,7 +33,7 @@ cdef extern from "patternmodel.h":
         int tokens()
         int occurrencecount(EncAnyGram*) except +
         AnyGramData * getdata(EncAnyGram*)
-        vector[EncAnyGram*] reverse_index(int i)
+        vector[EncAnyGram*] get_reverse_index(int i)
 
 cdef extern from "classdecoder.h":
     cdef cppclass ClassDecoder:
