@@ -699,7 +699,7 @@ void IndexedPatternModel::readngramdata(std::istream * f, const EncNGram & ngram
         if (!ignore) ngrams[ngram].refs.insert(ref);
         if( (DOREVERSEINDEX) && (!ignore)) {
             const int index = ref.sentence;
-            const EncAnyGram * key = (const EncAnyGram *) &(ngrams[ngram]);
+            const EncAnyGram * key = (const EncAnyGram *) &(ngrams.find(ngram));
             key->n(); //DEBUG
             bool found = false;
             for (int k = 0; k < reverse_index[index].size(); k++) if (reverse_index[index][k] == key) { found = true; break; };
