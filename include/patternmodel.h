@@ -204,7 +204,7 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     std::unordered_map< int,std::vector<EncSkipGram> > skipgram_reverse_index;
            
     IndexedPatternModel(const std::string & filename = "", bool DOREVERSEINDEX = false, const bool DEBUG=false);
-    IndexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true, bool DOREVERSEINDEX = false);
+    IndexedPatternModel(const std::string & corpusfile, int MAXLENGTH, int MINTOKENS, bool DOSKIPGRAMS, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true, bool DOREVERSEINDEX = false);
     IndexedPatternModel(const std::string & corpusfile, IndexedPatternModel & refmodel, int MAXLENGTH, int MINTOKENS = 2, bool DOSKIPGRAMS = true, int MINSKIPTOKENS = 2, int MINSKIPTYPES = 2,  bool DOINITIALONLYSKIP= true, bool DOFINALONLYSKIP = true, bool DOREVERSEINDEX = false);
     
     int maxlength() const { return MAXLENGTH; }
