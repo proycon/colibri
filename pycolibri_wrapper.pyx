@@ -8,6 +8,9 @@ from unordered_map cimport unordered_map
 
 cdef class IndexedPatternModel:
     cdef pycolibri_classes.IndexedPatternModel *thisptr
+    cdef ClassEncoder encoder
+    cdef ClassDecoder decoder
+
     def __cinit__(self, str filename, ClassEncoder encoder, ClassDecoder decoder):
           self.thisptr = new pycolibri_classes.IndexedPatternModel(filename.encode('utf-8'), False)
           self.encoder = encoder
@@ -71,6 +74,10 @@ cdef class IndexedPatternModel:
 
 cdef class ClassEncoder:
     cdef pycolibri_classes.ClassEncoder *thisptr
+
+    def __cinit__(self):
+        self.thisptr = NULL
+
     def __cinit__(self, str filename):
         self.thisptr = new pycolibri_classes.ClassEncoder(filename.encode('utf-8'))
 
@@ -89,6 +96,10 @@ cdef class ClassEncoder:
 
 cdef class ClassDecoder:
     cdef pycolibri_classes.ClassDecoder *thisptr
+
+    def __cinit__(self):
+        self.thisptr = NULL
+
     def __cinit__(self, str filename):
         self.thisptr = new pycolibri_classes.ClassDecoder(filename.encode('utf-8'))
 
