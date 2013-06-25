@@ -33,11 +33,8 @@ cdef class IndexedPatternModel:
 
 
     def indices(self, key):
-        print("debug0")
         cdef Pattern pattern = self.encoder.encode(key)
-        print("debug1")
         cdef pycolibri_classes.NGramData * data = <pycolibri_classes.NGramData*> self.thisptr.getdata(pattern.thisptr)
-        print("debug2")
         for ref in data.refs:
             yield (ref.sentence, ref.token)
 
@@ -93,12 +90,9 @@ cdef class ClassEncoder:
         return self.thisptr.size()
 
     def encode(self, str text, bool allowunknown=True, bool autoaddunknown=False):
-        print("Encoding anygram")
         anygram = self.thisptr.input2anygram(text.encode('utf-8'), allowunknown, autoaddunknown)
-        print("Encoded anygram")
         pattern = Pattern()
         pattern.bind(anygram)
-        print("Returning pattern")
         return pattern
 
 
