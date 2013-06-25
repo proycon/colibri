@@ -93,7 +93,7 @@ cdef class ClassEncoder:
         return self.thisptr.size()
 
     def encode(self, str text, bool allowunknown=True, bool autoaddunknown=False):
-        print("Encoding anygram")i
+        print("Encoding anygram")
         anygram = self.thisptr.input2anygram(text.encode('utf-8'), allowunknown, autoaddunknown)
         print("Encoded anygram")
         pattern = Pattern()
