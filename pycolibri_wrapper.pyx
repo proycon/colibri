@@ -34,7 +34,9 @@ cdef class IndexedPatternModel:
 
     def indices(self, key):
         cdef Pattern pattern = self.encoder.encode(key)
+        print("debug1")
         cdef pycolibri_classes.NGramData * data = <pycolibri_classes.NGramData*> self.thisptr.getdata(pattern.thisptr)
+        print("debug2")
         for ref in data.refs:
             yield (ref.sentence, ref.token)
 
