@@ -379,6 +379,7 @@ class GraphFilter {
     bool DOSUCCESSORS;
     bool DOPREDECESSORS;
     bool DOCOOCCURRENCE;  
+    bool BIDIRECTIONALCOOC;
     CoocStyle COOCSTYLE; 
   
   GraphFilter() {
@@ -392,6 +393,7 @@ class GraphFilter {
     DOSUCCESSORS = false;
     DOPREDECESSORS = false;
     DOCOOCCURRENCE = false;
+    BIDIRECTIONALCOOC = true;
     CoocStyle COOCSTYLE = COOCSTYLE_COUNT;
   }
 };    
@@ -413,6 +415,7 @@ class GraphRelations {
     bool DOSUCCESSORS;
     bool DOPREDECESSORS;
     bool DOCOOCCURRENCE;
+    bool BIDIRECTIONALCOOC;
     CoocStyle COOCSTYLE; //cooc style for outputrelations
     
     bool HASPARENTS;
@@ -476,6 +479,7 @@ class GraphRelations {
     DOPREDECESSORS = model.DOPREDECESSORS;
     DOSUCCESSORS = model.DOSUCCESSORS;
     DOCOOCCURRENCE = model.DOCOOCCURRENCE;
+    BIDIRECTIONALCOOC = model.BIDIRECTIONALCOOC;
     COOCSTYLE = model.COOCSTYLE;  
   }
     

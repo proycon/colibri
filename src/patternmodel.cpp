@@ -2457,7 +2457,9 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
                         multimap<unsigned char, EncAnyGram*> * reverseindex_tokens =  &reverseindex[ref.sentence];                    
                         for (multimap<unsigned char, EncAnyGram*>::iterator iter2 = reverseindex_tokens->begin(); iter2 != reverseindex_tokens->end(); iter2++) {
                             const EncAnyGram * neighbour = iter2->second;
-                            if (neighbour != (const EncAnyGram *) ngram) rel_cooccurrences[(const EncAnyGram *) ngram][(const EncAnyGram *) neighbour] += 1;
+                            if ((neighbour != (const EncAnyGram *) ngram) && ( (BIDIRECTIONALCOOC) || ((!BIDIRECTIONALCOOC) && (ref.token < iter2->first) )))  {
+                                 rel_cooccurrences[(const EncAnyGram *) ngram][(const EncAnyGram *) neighbour] += 1;
+                            }
                         }
                     }                                                                                 
                 }
@@ -4279,6 +4281,9 @@ void GraphPatternModel::extractbiskipgrams(ClassDecoder & classdecoder, std::ost
             const EncAnyGram * part2 = model->getkey(iter2->first);
             const AnyGramData * data1 = model->getdata(part1);
             const AnyGramData * data2 = model->getdata(part2);
+            set<CorpusReference> refs1 = data1->get_refs();
+            set<CorpusReference> refs2 = data2->get_refs();
+
         }
     }
 }
