@@ -444,7 +444,7 @@ class GraphRelations {
     t_weightedrelations  rel_successors;  
     t_weightedrelations  rel_predecessors;
     
-    t_weightedrelations  rel_cooccurences;    
+    t_weightedrelations  rel_cooccurrences;    
     
     void readrelations(std::istream * in,const EncAnyGram* = NULL, t_relations * = NULL, int ngramversion=1,bool ignore = false);
     void readweightedrelations(std::istream * in,const EncAnyGram* = NULL, t_weightedrelations * = NULL, int ngramversion=1,bool ignore = false);
@@ -584,6 +584,8 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
     
     double pmi(const EncAnyGram * key1, const EncAnyGram * key2);
     double npmi(const EncAnyGram * key1, const EncAnyGram * key2);
+
+    void extractbiskipgrams(ClassDecoder & classdecoder, std::ostream *OUT);
 };
 
 
