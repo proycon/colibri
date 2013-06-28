@@ -29,6 +29,7 @@ void usage() {
     cerr << "\t-X               Compute/load exclusive count" << endl;
     cerr << "\t------------------------------------------------------------------------------" << endl;
     cerr << "\t-r               Keep only transitive reduction (sizes down the model)" << endl;
+    cerr << "\t-U               compute co-occurrence relations uni-directionally" << endl;
     cerr << "\t-d filename.graphpatternmodel.colibri		Graph pattern model to load (for decoding an existing model, use with -c)" << endl;
     cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced (use with -d)" << endl;
 	cerr << "\t-g               Output relations" << endl;    
