@@ -217,6 +217,7 @@ int main( int argc, char *argv[] ) {
         filter.DOPREDECESSORS = DOPREDECESSORS;
         filter.DOCOOCCURRENCE = DOCOOCCURRENCE;
         filter.BIDIRECTIONALCOOC = bidirectionalcooc;
+        filter.COOCSTYLE = COOCSTYLE_COUNT; 
         if (DOPMI)  filter.COOCSTYLE = COOCSTYLE_PMI;
         if (DONPMI)  filter.COOCSTYLE = COOCSTYLE_NPMI;
         if (DOJACCARD)  filter.COOCSTYLE = COOCSTYLE_JACCARD;
@@ -263,6 +264,7 @@ int main( int argc, char *argv[] ) {
             filter.DOPREDECESSORS = DOPREDECESSORS;   
             filter.DOCOOCCURRENCE = DOCOOCCURRENCE;
             filter.BIDIRECTIONALCOOC = bidirectionalcooc;
+            filter.COOCSTYLE = COOCSTYLE_COUNT; 
             if (DOPMI)  filter.COOCSTYLE = COOCSTYLE_PMI;
             if (DONPMI)  filter.COOCSTYLE = COOCSTYLE_NPMI;
             if (DOJACCARD)  filter.COOCSTYLE = COOCSTYLE_JACCARD;            
