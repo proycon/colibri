@@ -85,6 +85,9 @@ int main( int argc, char *argv[] ) {
     while ((c = getopt_long(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgITDJU",long_options,&option_index)) != -1)
         switch (c)
         {
+        case 0:
+            if (long_options[option_index].flag != 0)
+               break;
         case 'a':
         	DOTEMPLATES = true;
         	DOINSTANCES = true;
