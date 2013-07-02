@@ -3518,6 +3518,7 @@ void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OU
 
 
 void GraphPatternModel::outputcoocrelations(const EncAnyGram * pivot, ClassDecoder & classdecoder, ostream *OUT, unordered_map<const EncAnyGram*, double>   & relations ) {
+    multimap<double, const EncAnyGram *> sorted;
 	for (std::unordered_map<const EncAnyGram*, double>::iterator iter = relations.begin(); iter != relations.end(); iter++) {
 		const EncAnyGram * anygram = iter->first;
 		
@@ -3532,6 +3533,12 @@ void GraphPatternModel::outputcoocrelations(const EncAnyGram * pivot, ClassDecod
 		    cerr << "Invalid COOCSTYLE in GraphPatternModel::outputcoocrelations" << endl;
 		    throw InternalError();
 		}	
+        sorted.insert( pair<double, const EncAnyGram*>( iter->second * -1 , anygram )); 
+    }
+    
+    for (multimap<double,const EncAnyGram *>::iterator iter = sorted.begin(); iter != sorted.end(); iter++) {
+        const EncAnyGram * anygram = iter->second;
+        const double coocvalue = iter->first * -1;
 		*OUT << "\t" << anygram->decode(classdecoder) << "\t" << coocvalue << "\t" << model->occurrencecount(anygram) << "\t" << model->coveragecount(anygram) << "\t" << model->coverage(anygram);
 		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[anygram] << "\t" << (double) data_xcount[anygram] / model->occurrencecount(anygram);
 		*OUT << endl;		
