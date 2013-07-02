@@ -160,6 +160,9 @@ int main( int argc, char *argv[] ) {
         case 'U':
             bidirectionalcooc = false;
             break;
+        case '?':
+            cerr << "Error parsing option: -" <<  c << endl;
+            break;
         default:
             cerr << "Unknown option: -" <<  c << endl;
             usage();
