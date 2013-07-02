@@ -80,7 +80,7 @@ int main( int argc, char *argv[] ) {
             
     
     char c;    
-    while ((c = getopt_long(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgITDJ",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgITDJU",long_options,&option_index)) != -1)
         switch (c)
         {
         case 'a':
