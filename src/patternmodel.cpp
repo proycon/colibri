@@ -2914,7 +2914,7 @@ void GraphPatternModel::readngramdata(std::istream * in, const EncNGram & ngram,
     if (HASSKIPCONTENT) readweightedrelations(in, (const EncAnyGram*) &ngram, &rel_skipcontent, ngramversion, (ignore || !secondpass || !DOSKIPCONTENT));
     if (HASSUCCESSORS) readweightedrelations(in, (const EncAnyGram*) &ngram, &rel_successors, ngramversion, (ignore || !secondpass || !DOSUCCESSORS));
     if (HASPREDECESSORS) readweightedrelations(in, (const EncAnyGram*) &ngram, &rel_predecessors, ngramversion, (ignore || !secondpass || !DOPREDECESSORS));
-    if (HASCOOCCURRENCE) readweightedrelations(in, (const EncAnyGram*) &ngram, &rel_cooccurrences, ngramversion, (ignore || !secondpass || !DOPREDECESSORS));        
+    if (HASCOOCCURRENCE) readweightedrelations(in, (const EncAnyGram*) &ngram, &rel_cooccurrences, ngramversion, (ignore || !secondpass || !DOCOOCCURRENCE));        
 }
 
 void GraphPatternModel::readskipgramdata(std::istream * in, const EncSkipGram & skipgram, int ngramversion, bool ignore) {
@@ -2941,7 +2941,7 @@ void GraphPatternModel::readskipgramdata(std::istream * in, const EncSkipGram & 
     if (HASSKIPCONTENT) readweightedrelations(in, (const EncAnyGram*) &skipgram, &rel_skipcontent, (ignore || !secondpass || !DOSKIPCONTENT));
     if (HASSUCCESSORS) readweightedrelations(in, (const EncAnyGram*) &skipgram, &rel_successors, (ignore || !secondpass || !DOSUCCESSORS));
     if (HASPREDECESSORS) readweightedrelations(in, (const EncAnyGram*) &skipgram, &rel_predecessors, (ignore || !secondpass || !DOPREDECESSORS));
-    if (HASCOOCCURRENCE) readweightedrelations(in, (const EncAnyGram*) &skipgram, &rel_cooccurrences, (ignore || !secondpass || !DOPREDECESSORS));        
+    if (HASCOOCCURRENCE) readweightedrelations(in, (const EncAnyGram*) &skipgram, &rel_cooccurrences, (ignore || !secondpass || !DOCOOCCURRENCE));        
 }
 
 
