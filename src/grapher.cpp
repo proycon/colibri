@@ -68,6 +68,8 @@ int main( int argc, char *argv[] ) {
     int DONPMI = 0;
     int DOJACCARD = 0;
     
+    bool bidirectionalcooc = true;
+
     
     static struct option long_options[] = {      
        {"pmi", no_argument,             &DOPMI, 1},
@@ -155,8 +157,11 @@ int main( int argc, char *argv[] ) {
         case 'q':
         	querystring = optarg;
         	break; 
+        case 'U':
+            bidirectionalcooc = false;
+            break;
         default:
-            cerr << "Unknown option: -" <<  optopt << endl;
+            cerr << "Unknown option: -" <<  c << endl;
             usage();
             exit(2);
         }
@@ -205,6 +210,7 @@ int main( int argc, char *argv[] ) {
         filter.DOSUCCESSORS = DOSUCCESSORS;
         filter.DOPREDECESSORS = DOPREDECESSORS;
         filter.DOCOOCCURRENCE = DOCOOCCURRENCE;
+        filter.BIDIRECTIONALCOOC = bidirectionalcooc;
         if (DOPMI)  filter.COOCSTYLE = COOCSTYLE_PMI;
         if (DONPMI)  filter.COOCSTYLE = COOCSTYLE_NPMI;
         if (DOJACCARD)  filter.COOCSTYLE = COOCSTYLE_JACCARD;
@@ -250,6 +256,7 @@ int main( int argc, char *argv[] ) {
             filter.DOSUCCESSORS = DOSUCCESSORS;
             filter.DOPREDECESSORS = DOPREDECESSORS;   
             filter.DOCOOCCURRENCE = DOCOOCCURRENCE;
+            filter.BIDIRECTIONALCOOC = bidirectionalcooc;
             if (DOPMI)  filter.COOCSTYLE = COOCSTYLE_PMI;
             if (DONPMI)  filter.COOCSTYLE = COOCSTYLE_NPMI;
             if (DOJACCARD)  filter.COOCSTYLE = COOCSTYLE_JACCARD;            
