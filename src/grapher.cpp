@@ -56,7 +56,7 @@ int main( int argc, char *argv[] ) {
     bool DOSKIPUSAGE = false;
     bool DOOUTPUTRELATIONS = false;
     bool TRANSITIVEREDUCTION = false;
-    bool DOCOOCCURRENCE = true;
+    bool DOCOOCCURRENCE = false;
     
     bool DOTEMPLATES = false; 
     bool DOINSTANCES = false;
