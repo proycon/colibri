@@ -972,7 +972,7 @@ double IndexedPatternModel::npmi(const EncAnyGram * key1, const EncAnyGram * key
         }
     }
     
-    return  log( (double) jointcount / (occurrencecount(key1) * occurrencecount(key2)) )  / -log(jointcount);    
+    return  log( (double) jointcount / (occurrencecount(key1) * occurrencecount(key2)) )  / -log(jointcount/occurrences());    
 }
 
 
@@ -3557,7 +3557,7 @@ double GraphPatternModel::pmi(const EncAnyGram * key1, const EncAnyGram * key2) 
 double GraphPatternModel::npmi(const EncAnyGram * key1, const EncAnyGram * key2) {
     if ((rel_cooccurrences.count(key1)) && (rel_cooccurrences[key1].count(key2))) {
         const int jointcount = rel_cooccurrences[key1][key2];
-        return  log( (double) jointcount / (model->occurrencecount(key1) * model->occurrencecount(key2)) ) / -log(jointcount);    
+        return  log( (double) jointcount / (model->occurrencecount(key1) * model->occurrencecount(key2)) ) / -log(jointcount/model->occurrences());    
     } else {
         return 0;
     }
