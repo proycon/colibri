@@ -160,17 +160,10 @@ int main( int argc, char *argv[] ) {
         case 'U':
             bidirectionalcooc = false;
             break;
-        case '?':
-            if (optopt == 'c') {
-                cerr <<  "Option -" << optopt << " requires an argument." << endl;
-            } else {
-                cerr << "Unknown option: -" <<  optopt << endl;
-            }
-            
-            return 1;
         default:
-            cerr << "Unknown option: -" <<  optopt << endl;
-            abort ();
+            cerr << "Unknown option: -" <<  c << endl;
+            usage();
+            exit(2);
         }
     
 
