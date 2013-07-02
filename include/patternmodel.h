@@ -401,7 +401,7 @@ class GraphFilter {
 
 
 typedef std::unordered_map<const EncAnyGram*,std::unordered_set<const EncAnyGram*> > t_relations;
-typedef std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, uint64_t> > t_weightedrelations;
+typedef std::unordered_map<const EncAnyGram*,std::unordered_map<const EncAnyGram*, double> > t_weightedrelations;
 
 class GraphRelations {
    public:
@@ -577,8 +577,8 @@ class GraphPatternModel: public ModelReader, public ModelWriter, public GraphRel
   
     void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, const EncAnyGram * focusinput, bool outputquery=false);
     void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, std::unordered_set<const EncAnyGram*>   & relations );
-    void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, std::unordered_map<const EncAnyGram*,uint64_t>   & relations ); //weighted
-    void outputcoocrelations(const EncAnyGram * pivot, ClassDecoder & classdecoder, std::ostream *OUT, std::unordered_map<const EncAnyGram*,uint64_t>   & relations ); //weighted
+    void outputrelations(ClassDecoder & classdecoder, std::ostream *OUT, std::unordered_map<const EncAnyGram*,double>   & relations ); //weighted
+    void outputcoocrelations(const EncAnyGram * pivot, ClassDecoder & classdecoder, std::ostream *OUT, std::unordered_map<const EncAnyGram*,double>   & relations ); //weighted
 
     void outputcoverage(ClassDecoder & classdecoder, std::ostream *OUT);
     

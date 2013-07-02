@@ -2825,16 +2825,16 @@ void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * any
 
 
 void GraphPatternModel::writerelations(std::ostream * out,const EncAnyGram * anygram, t_weightedrelations & relationhash) {
-	unordered_map<const EncAnyGram*, uint64_t> * relations = &relationhash[model->getkey(anygram)];
+	unordered_map<const EncAnyGram*, double> * relations = &relationhash[model->getkey(anygram)];
 		
     uint32_t count = (uint32_t) relations->size();
     out->write((char*) &count, sizeof(uint32_t));
     unsigned int i = 0;                           
-    for (unordered_map<const EncAnyGram*, uint64_t>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
+    for (unordered_map<const EncAnyGram*, double>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
     	i++;
 		model->writeanygram(iter->first, out);
-		const uint64_t weight = iter->second;
-		out->write((char*) &weight, sizeof(uint64_t));		
+		const double weight = iter->second;
+		out->write((char*) &weight, sizeof(double));		
     }
     //sanity check:
     if (i != count) {
@@ -3436,8 +3436,8 @@ void GraphPatternModel::findincomingnodes(const EncAnyGram * focus, const EncAny
 }
 
 void GraphPatternModel::findincomingnodes(const EncAnyGram * focus, const EncAnyGram * anygram, unordered_set<const EncAnyGram *> & relatednodes, t_weightedrelations  & relationhash ) {
-	unordered_map<const EncAnyGram*, uint64_t> * relations = &relationhash[anygram];
-	for (unordered_map<const EncAnyGram*, uint64_t>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
+	unordered_map<const EncAnyGram*, double> * relations = &relationhash[anygram];
+	for (unordered_map<const EncAnyGram*, double>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
 		const EncAnyGram * anygram2  = model->getkey(iter->first);
 		if (focus == anygram2) {
 			relatednodes.insert(anygram);
@@ -3507,8 +3507,8 @@ void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OU
 
 
 
-void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OUT, unordered_map<const EncAnyGram*, uint64_t>   & relations ) {
-	for (std::unordered_map<const EncAnyGram*, uint64_t>::iterator iter = relations.begin(); iter != relations.end(); iter++) {
+void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OUT, unordered_map<const EncAnyGram*, double>   & relations ) {
+	for (std::unordered_map<const EncAnyGram*, double>::iterator iter = relations.begin(); iter != relations.end(); iter++) {
 		const EncAnyGram * anygram = iter->first;
 		*OUT << "\t" << anygram->decode(classdecoder) << "\t" << iter->second << "\t" << model->occurrencecount(anygram) << "\t" << model->coveragecount(anygram) << "\t" << model->coverage(anygram);
 		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[anygram] << "\t" << (double) data_xcount[anygram] / model->occurrencecount(anygram);
@@ -3517,8 +3517,8 @@ void GraphPatternModel::outputrelations(ClassDecoder & classdecoder, ostream *OU
 }
 
 
-void GraphPatternModel::outputcoocrelations(const EncAnyGram * pivot, ClassDecoder & classdecoder, ostream *OUT, unordered_map<const EncAnyGram*, uint64_t>   & relations ) {
-	for (std::unordered_map<const EncAnyGram*, uint64_t>::iterator iter = relations.begin(); iter != relations.end(); iter++) {
+void GraphPatternModel::outputcoocrelations(const EncAnyGram * pivot, ClassDecoder & classdecoder, ostream *OUT, unordered_map<const EncAnyGram*, double>   & relations ) {
+	for (std::unordered_map<const EncAnyGram*, double>::iterator iter = relations.begin(); iter != relations.end(); iter++) {
 		const EncAnyGram * anygram = iter->first;
 		
 		double coocvalue = 0;
@@ -3574,11 +3574,11 @@ void GraphPatternModel::outputgraph(ClassDecoder & classdecoder, ostream *OUT, c
 	relatednodes.insert( rel_templates[focus].begin(), rel_templates[focus].end() );
 	relatednodes.insert( rel_instances[focus].begin(), rel_instances[focus].end() );
 	
-	for (unordered_map<const EncAnyGram *, uint64_t>::iterator iter = rel_predecessors[focus].begin(); iter != rel_predecessors[focus].end(); iter++) relatednodes.insert(iter->first);  
-	for (unordered_map<const EncAnyGram *, uint64_t>::iterator iter = rel_successors[focus].begin(); iter != rel_successors[focus].end(); iter++) relatednodes.insert(iter->first);
-	for (unordered_map<const EncAnyGram *, uint64_t>::iterator iter = rel_skipcontent[focus].begin(); iter != rel_skipcontent[focus].end(); iter++) relatednodes.insert(iter->first);
-	for (unordered_map<const EncAnyGram *, uint64_t>::iterator iter = rel_skipusage[focus].begin(); iter != rel_skipusage[focus].end(); iter++) relatednodes.insert(iter->first);
-	for (unordered_map<const EncAnyGram *, uint64_t>::iterator iter = rel_cooccurrences[focus].begin(); iter != rel_cooccurrences[focus].end(); iter++) relatednodes.insert(iter->first);  
+	for (unordered_map<const EncAnyGram *, double>::iterator iter = rel_predecessors[focus].begin(); iter != rel_predecessors[focus].end(); iter++) relatednodes.insert(iter->first);  
+	for (unordered_map<const EncAnyGram *, double>::iterator iter = rel_successors[focus].begin(); iter != rel_successors[focus].end(); iter++) relatednodes.insert(iter->first);
+	for (unordered_map<const EncAnyGram *, double>::iterator iter = rel_skipcontent[focus].begin(); iter != rel_skipcontent[focus].end(); iter++) relatednodes.insert(iter->first);
+	for (unordered_map<const EncAnyGram *, double>::iterator iter = rel_skipusage[focus].begin(); iter != rel_skipusage[focus].end(); iter++) relatednodes.insert(iter->first);
+	for (unordered_map<const EncAnyGram *, double>::iterator iter = rel_cooccurrences[focus].begin(); iter != rel_cooccurrences[focus].end(); iter++) relatednodes.insert(iter->first);  
 
 	
 	cerr << "  Found " << relatednodes.size() << " nodes (direct relations)" << endl;
@@ -3641,8 +3641,8 @@ void GraphPatternModel::outputgraphvizrelations( const EncAnyGram * anygram, ost
 }
 
 void GraphPatternModel::outputgraphvizrelations( const EncAnyGram * anygram, ostream *OUT, t_weightedrelations & relationhash, const std::string & colour) {
-		unordered_map<const EncAnyGram*, uint64_t> * relations = &relationhash[anygram];
-	    for (unordered_map<const EncAnyGram*, uint64_t>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
+		unordered_map<const EncAnyGram*, double> * relations = &relationhash[anygram];
+	    for (unordered_map<const EncAnyGram*, double>::iterator iter = relations->begin(); iter != relations->end(); iter++) {
 	    	const EncAnyGram * anygram2  = model->getkey(iter->first);
 	    	*OUT << "c" << anygram->hash() << " -> " << "c" << anygram2->hash() << " [ color=" << colour << ",label=\"" << iter->second << "\" ];" << endl; 
 	    }				
@@ -3668,8 +3668,8 @@ void GraphPatternModel::outputgraphvizrelations( const unordered_set<const EncAn
 	for (unordered_set<const EncAnyGram*>::const_iterator iter = nodes.begin(); iter != nodes.end(); iter++) {
 		const EncAnyGram * anygram = model->getkey(*iter);
 		if (relationhash.count(anygram) > 0) { 
-			unordered_map<const EncAnyGram*, uint64_t> * relations = &relationhash[anygram];
-			for (unordered_map<const EncAnyGram*,uint64_t>::iterator iter2 = relations->begin(); iter2 != relations->end(); iter2++) {
+			unordered_map<const EncAnyGram*, double> * relations = &relationhash[anygram];
+			for (unordered_map<const EncAnyGram*,double>::iterator iter2 = relations->begin(); iter2 != relations->end(); iter2++) {
 				const EncAnyGram * anygram2  = model->getkey(iter2->first);
 				if (nodes.count(anygram2) > 0) {
 					*OUT << "c" << anygram->hash() << " -> " << "c" << anygram2->hash() << " [ color=" << colour << ",label=\"" << iter2->second << "\" ];" << endl;
@@ -4213,7 +4213,7 @@ void GraphRelations::readrelations(std::istream * in, const EncAnyGram * anygram
 
 void GraphRelations::readweightedrelations(std::istream * in, const EncAnyGram * anygram, t_weightedrelations * relationhash, int ngramversion, bool ignore) {
     uint32_t count;
-    uint64_t weight = 0;
+    double weight = 0;
     in->read((char*) &count,  sizeof(uint32_t));
     char gapcount;        
     for (unsigned int i = 0; i < count; i++) {                        
@@ -4221,7 +4221,7 @@ void GraphRelations::readweightedrelations(std::istream * in, const EncAnyGram *
        if (gapcount == 0) {
         EncNGram ngram = EncNGram(in, ngramversion);
         if (id() >= GRAPHPATTERNMODEL + 3) {
-            in->read((char*) &weight,  sizeof(uint64_t));
+            in->read((char*) &weight,  sizeof(double));
         } else {
             weight = 0; //no weights supported in older versions
         }
@@ -4240,7 +4240,7 @@ void GraphRelations::readweightedrelations(std::istream * in, const EncAnyGram *
        } else {
         EncSkipGram skipgram = EncSkipGram( in, gapcount, ngramversion);
         if (id() >= GRAPHPATTERNMODEL + 3) {
-            in->read((char*) &weight,  sizeof(uint64_t));
+            in->read((char*) &weight,  sizeof(double));
         } else {
             weight = 0; //no weights supported in older versions
         }
@@ -4274,16 +4274,16 @@ void GraphRelations::getrelations(unordered_map<const EncAnyGram*,std::unordered
 
 void GraphPatternModel::extractbiskipgrams(ClassDecoder & classdecoder, std::ostream *OUT) {
     //extract loose bi-skipgrams based on co-occurrence information in the
-    //graph
+    //graph, this assumes DOBIDIRECTIONALCOOC == false!
     for (t_weightedrelations::iterator iter = rel_cooccurrences.begin(); iter != rel_cooccurrences.end(); iter++) {
-        for (unordered_map<const EncAnyGram*, uint64_t>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
+        for (unordered_map<const EncAnyGram*, double>::iterator iter2 = iter->second.begin(); iter2 != iter->second.end(); iter2++) {
             const EncAnyGram * part1 = model->getkey(iter->first);
             const EncAnyGram * part2 = model->getkey(iter2->first);
             const AnyGramData * data1 = model->getdata(part1);
             const AnyGramData * data2 = model->getdata(part2);
             set<CorpusReference> refs1 = data1->get_refs();
             set<CorpusReference> refs2 = data2->get_refs();
-
+            //TODO
         }
     }
 }
