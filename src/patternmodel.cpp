@@ -3533,7 +3533,7 @@ void GraphPatternModel::outputcoocrelations(const EncAnyGram * pivot, ClassDecod
 		    cerr << "Invalid COOCSTYLE in GraphPatternModel::outputcoocrelations" << endl;
 		    throw InternalError();
 		}	
-        sorted.insert( pair<double, const EncAnyGram*>( iter->second * -1 , anygram )); 
+        sorted.insert( pair<double, const EncAnyGram*>( coocvalue * -1 , anygram )); 
     }
     
     for (multimap<double,const EncAnyGram *>::iterator iter = sorted.begin(); iter != sorted.end(); iter++) {
