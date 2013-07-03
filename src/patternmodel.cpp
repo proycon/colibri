@@ -2442,27 +2442,20 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
 
                     multimap<unsigned char, EncAnyGram*> * reverseindex_tokens =  &reverseindex[(uint32_t) sentence];       
 
-                    vector<const EncAnyGram*> neighbours;
+                    unordered_set<const EncAnyGram*> neighbours;
 
                     for (multimap<unsigned char, EncAnyGram*>::iterator iter2 = reverseindex_tokens->begin(); iter2 != reverseindex_tokens->end(); iter2++) {
                         const EncAnyGram * neighbour = iter2->second;
 
+                        if (neighbours.count(neighbour)) continue; //already counted (occurs multiple times in same sentence)
 
-                        bool exists = false;
-                        for (vector<const EncAnyGram*>::iterator iter3 = neighbours.begin(); iter3 != neighbours.end(); iter3++) {
-                            if (*iter3 == neighbour) {
-                                exists = true;
-                                break;
-                            }
-                        }
-                        if (exists) continue; //already counted (occurs multiple times in same sentence)
 
                         int maxtoken = 999;
                         if ((!BIDIRECTIONALCOOC) || (COOCTHRESHOLD > 0)) {
-                            set<CorpusReference> targetrefs = model->getdata(neighbour)->get_refs();
+                            const set<CorpusReference> * targetrefs = &(((const NGramData *) model->getdata(neighbour))->refs);
                             maxtoken = 0;
                             set<int> targetsentences;
-                            for (set<CorpusReference>::iterator tokiter = targetrefs.begin(); tokiter != targetrefs.end(); tokiter++) {
+                            for (set<CorpusReference>::iterator tokiter = targetrefs->begin(); tokiter != targetrefs->end(); tokiter++) {
                                 if ((tokiter->sentence == sentence) && (tokiter->token > maxtoken)) maxtoken = tokiter->token;
                                 if (COOCTHRESHOLD > 0) targetsentences.insert(tokiter->sentence);
                             }
@@ -2470,10 +2463,10 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
                         }
 
 
-                        if (mintoken < maxtoken) neighbours.push_back(neighbour);
+                        if (mintoken < maxtoken) neighbours.insert(neighbour);
                     }
 
-                    for (vector<const EncAnyGram*>::iterator iter2 = neighbours.begin(); iter2 != neighbours.end(); iter2++) {
+                    for (unordered_set<const EncAnyGram*>::iterator iter2 = neighbours.begin(); iter2 != neighbours.end(); iter2++) {
                         const EncAnyGram * neighbour = *iter2;
                         rel_cooccurrences[(const EncAnyGram *) ngram][(const EncAnyGram *) neighbour] += 1;
                     }
