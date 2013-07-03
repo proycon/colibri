@@ -2407,7 +2407,6 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
     for(std::unordered_map<EncNGram,NGramData >::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
 
         const EncNGram * ngram = &(iter->first);
-    	cerr << "DEBUG: Processing " << ngram->hash() << endl; 
         vector<EncNGram*> subngrams;
         ngram->subngrams(subngrams);
         //cerr << "DEBUG: n2" << endl;
