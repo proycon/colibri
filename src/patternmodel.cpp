@@ -2405,8 +2405,9 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
     cerr << "Computing relations on n-grams" << endl;
     if ((DOCOOCCURRENCE) && (COOCTHRESHOLD > 0)) cerr << " (including co-occurrence above threshold " << COOCTHRESHOLD << ")"<< endl;
     for(std::unordered_map<EncNGram,NGramData >::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
-    	//cerr << "DEBUG: n1" << endl;        
+
         const EncNGram * ngram = &(iter->first);
+    	cerr << "DEBUG: Processing " << ngram->hash() << endl; 
         vector<EncNGram*> subngrams;
         ngram->subngrams(subngrams);
         //cerr << "DEBUG: n2" << endl;
@@ -2468,6 +2469,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
                                 if ((COOCTHRESHOLD > 0) && (model->occurrencecount((const EncAnyGram *) neighbour) < COOCTHRESHOLD)) continue;
                                 if ((neighbour != (const EncAnyGram *) ngram) && ( (BIDIRECTIONALCOOC) || ((!BIDIRECTIONALCOOC) && (ref.token < iter2->first) )))  {
                                     rel_cooccurrences[(const EncAnyGram *) ngram][(const EncAnyGram *) neighbour] += 1;
+                                    cerr << "DEBUG: counting " << ngram->hash() << " with " << neighbour->hash() << endl;
                                 }
                             }
                         }
