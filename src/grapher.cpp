@@ -37,7 +37,9 @@ void usage() {
     cerr << "\t-G               Output graphviz graph for visualisation" << endl;
     cerr << "\t-q word          Query word (use with -G to output a selected graph)" << endl;
     cerr << "\t--pmi            Output co-occurrence relations as pointwise mutual information" << endl;
-    cerr << "\t--npmi           Output co-occurrence relations as normalised pointwise mutual information" << endl;
+    //cerr << "\t--npmi           Output co-occurrence relations as normalised pointwise mutual information" << endl;
+    cerr << "\t--collocations   In co-occurrence output, output collocations only (make sure model is computed with -U)" << endl;
+    cerr << "\t--coocskip       In co-occurrence output, output disjoint constructions only (i.e, skipgrams) (make sure model is computed with -U)" << endl;
     //cerr << "\t--jaccard        Output co-occurrence relations as jaccard coefficient" << endl;
 }
 

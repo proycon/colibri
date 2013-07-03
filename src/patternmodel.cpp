@@ -2380,11 +2380,13 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
     
     if (DOSUCCESSORS || DOPREDECESSORS || DOCOOCCURRENCE) {
         cerr << "Computing reverse index" << endl;
+        int rindex_added = 0;
         for(unordered_map<EncNGram,NGramData >::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
             EncAnyGram * ngram = ( EncAnyGram * ) &(iter->first);
             for (set<CorpusReference>::iterator iter2 = iter->second.refs.begin(); iter2 != iter->second.refs.end(); iter2++) {
                 CorpusReference ref = *iter2;                                
                 reverseindex[ref.sentence].insert(pair<unsigned char, EncAnyGram*>(ref.token, ngram) );
+                rindex_added++;
             }
         }
         for(unordered_map<EncSkipGram,SkipGramData >::iterator iter = model->skipgrams.begin(); iter != model->skipgrams.end(); iter++ ) {
@@ -2393,12 +2395,15 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
             for (set<CorpusReference>::iterator iter2 = refs.begin(); iter2 != refs.end(); iter2++) {
                 CorpusReference ref = *iter2;                                
                 reverseindex[ref.sentence].insert(pair<unsigned char, EncAnyGram*>(ref.token, skipgram) );
+                rindex_added++;
             }
         }        
+        cerr << "Reverse index contains " << rindex_added << " patterns in " << reverseindex.size() << " sentences" << endl;
     }
     
     
     cerr << "Computing relations on n-grams" << endl;
+    if ((DOCOOCCURRENCE) && (COOCTHRESHOLD > 0)) cerr << " (including co-occurrence above threshold " << COOCTHRESHOLD << ")"<< endl;
     for(std::unordered_map<EncNGram,NGramData >::iterator iter = model->ngrams.begin(); iter != model->ngrams.end(); iter++ ) {
     	//cerr << "DEBUG: n1" << endl;        
         const EncNGram * ngram = &(iter->first);
@@ -2456,7 +2461,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
                     if ((reverseindex.count(ref.sentence) > 0)) {
                         multimap<unsigned char, EncAnyGram*> * reverseindex_tokens =  &reverseindex[ref.sentence];                    
                         bool thresholdmet = true;
-                        if ((COOCTHRESHOLD > 0) && (model->occurrencecount((const EncAnyGram *) ngram) < COOCTHRESHOLD)) thresholdmet = false;
+                        if ((COOCTHRESHOLD > 0) && (iter->second.count() < COOCTHRESHOLD)) thresholdmet = false;
                         if (thresholdmet) {
                             for (multimap<unsigned char, EncAnyGram*>::iterator iter2 = reverseindex_tokens->begin(); iter2 != reverseindex_tokens->end(); iter2++) {
                                 const EncAnyGram * neighbour = iter2->second;
@@ -2606,12 +2611,14 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
 
     if (COOCTHRESHOLD > 0) {
         cerr << "Pruning cooccurrence relations below threshold" << endl;
+        int coocpruned = 0;
         t_weightedrelations::iterator iter2 = rel_cooccurrences.begin();
         while (iter2 != rel_cooccurrences.end()) {
             unordered_map<const EncAnyGram *,double>::iterator iter3 = iter2->second.begin();
             while (iter3 != iter2->second.end()) {
                 if (iter3->second < COOCTHRESHOLD) { 
                     iter3 = iter2->second.erase(iter3);
+                    coocpruned++;
                 } else {
                     iter3++;
                 }
@@ -2622,6 +2629,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
                 iter2++;
             }
         }
+        cerr << "Pruned " << coocpruned << endl;
     }
 
 
