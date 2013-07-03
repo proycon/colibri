@@ -3539,7 +3539,7 @@ void GraphPatternModel::outputcoocrelations(const EncAnyGram * pivot, ClassDecod
     for (multimap<double,const EncAnyGram *>::iterator iter = sorted.begin(); iter != sorted.end(); iter++) {
         const EncAnyGram * anygram = iter->second;
         const double coocvalue = iter->first * -1;
-		*OUT << "\t" << anygram->decode(classdecoder) << "\t" << coocvalue << "\t" << model->occurrencecount(anygram) << "\t" << model->coveragecount(anygram) << "\t" << model->coverage(anygram);
+		*OUT << "\tCOOC\t" << pivot->decode(classdecoder) << "\t" << anygram->decode(classdecoder) << "\t" << coocvalue << "\t" << model->occurrencecount(anygram) << "\t" << model->coveragecount(anygram) << "\t" << model->coverage(anygram);
 		if ((DOXCOUNT) && (HASXCOUNT)) *OUT << "\t" << data_xcount[anygram] << "\t" << (double) data_xcount[anygram] / model->occurrencecount(anygram);
 		*OUT << endl;		
 	}
