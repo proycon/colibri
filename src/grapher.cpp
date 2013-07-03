@@ -30,6 +30,7 @@ void usage() {
     cerr << "\t------------------------------------------------------------------------------" << endl;
     cerr << "\t-r               Keep only transitive reduction (sizes down the model)" << endl;
     cerr << "\t-U               compute co-occurrence relations uni-directionally" << endl;
+    cerr << "\t-t count         Co-occurrence threshold (absolute number), prunes pairs that occur less" << endl;
     cerr << "\t-d filename.graphpatternmodel.colibri		Graph pattern model to load (for decoding an existing model, use with -c)" << endl;
     cerr << "\t-c classfile     The classfile to use for decoding. If specified, decoded output will be produced (use with -d)" << endl;
 	cerr << "\t-g               Output relations" << endl;    
@@ -69,6 +70,7 @@ int main( int argc, char *argv[] ) {
     int DOJACCARD = 0;
     
     bool bidirectionalcooc = true;
+    int coocthreshold = 0;
 
     
     static struct option long_options[] = {      
@@ -82,7 +84,7 @@ int main( int argc, char *argv[] ) {
             
     
     char c;    
-    while ((c = getopt_long(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgITDJU",long_options,&option_index)) != -1)
+    while ((c = getopt_long(argc, argv, "ad:c:f:ho:PCXrGq:LRSsgITDJUt:",long_options,&option_index)) != -1)
         switch (c)
         {
         case 0:
@@ -163,6 +165,9 @@ int main( int argc, char *argv[] ) {
         case 'U':
             bidirectionalcooc = false;
             break;
+        case 't':
+            coocthreshold = atoi(optarg);
+            break;
         case '?':
             cerr << "Error parsing option: -" <<  c << endl;
             break;
@@ -218,6 +223,7 @@ int main( int argc, char *argv[] ) {
         filter.DOCOOCCURRENCE = DOCOOCCURRENCE;
         filter.BIDIRECTIONALCOOC = bidirectionalcooc;
         filter.COOCSTYLE = COOCSTYLE_COUNT; 
+        filter.COOCTHRESHOLD = coocthreshold;
         if (DOPMI)  filter.COOCSTYLE = COOCSTYLE_PMI;
         if (DONPMI)  filter.COOCSTYLE = COOCSTYLE_NPMI;
         if (DOJACCARD)  filter.COOCSTYLE = COOCSTYLE_JACCARD;
@@ -265,6 +271,7 @@ int main( int argc, char *argv[] ) {
             filter.DOCOOCCURRENCE = DOCOOCCURRENCE;
             filter.BIDIRECTIONALCOOC = bidirectionalcooc;
             filter.COOCSTYLE = COOCSTYLE_COUNT; 
+            filter.COOCTHRESHOLD = coocthreshold;
             if (DOPMI)  filter.COOCSTYLE = COOCSTYLE_PMI;
             if (DONPMI)  filter.COOCSTYLE = COOCSTYLE_NPMI;
             if (DOJACCARD)  filter.COOCSTYLE = COOCSTYLE_JACCARD;            

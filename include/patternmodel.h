@@ -381,6 +381,7 @@ class GraphFilter {
     bool DOCOOCCURRENCE;  
     bool BIDIRECTIONALCOOC;
     CoocStyle COOCSTYLE; 
+    int COOCTHRESHOLD;
   
   GraphFilter() {
     DOPARENTS = false;
@@ -395,6 +396,7 @@ class GraphFilter {
     DOCOOCCURRENCE = false;
     BIDIRECTIONALCOOC = true;
     CoocStyle COOCSTYLE = COOCSTYLE_COUNT;
+    COOCTHRESHOLD =0;
   }
 };    
 
@@ -416,7 +418,7 @@ class GraphRelations {
     bool DOPREDECESSORS;
     bool DOCOOCCURRENCE;
     bool BIDIRECTIONALCOOC;
-    CoocStyle COOCSTYLE; //cooc style for outputrelations
+    CoocStyle COOCSTYLE; //cooc style for outputrelations, only for decoding
     
     bool HASPARENTS;
     bool HASCHILDREN;
@@ -431,6 +433,7 @@ class GraphRelations {
     
     bool TRANSITIVE;
     bool secondpass;          
+    int COOCTHRESHOLD;
   
     t_relations rel_subsumption_parents;
     t_relations rel_subsumption_children;        
@@ -481,6 +484,7 @@ class GraphRelations {
     DOCOOCCURRENCE = model.DOCOOCCURRENCE;
     BIDIRECTIONALCOOC = model.BIDIRECTIONALCOOC;
     COOCSTYLE = model.COOCSTYLE;  
+    COOCTHRESHOLD = model.COOCTHRESHOLD;
   }
     
    virtual const EncAnyGram* getkey(const EncAnyGram* key) =0;

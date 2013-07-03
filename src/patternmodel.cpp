@@ -2455,10 +2455,15 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
                 if (DOCOOCCURRENCE) {                        
                     if ((reverseindex.count(ref.sentence) > 0)) {
                         multimap<unsigned char, EncAnyGram*> * reverseindex_tokens =  &reverseindex[ref.sentence];                    
-                        for (multimap<unsigned char, EncAnyGram*>::iterator iter2 = reverseindex_tokens->begin(); iter2 != reverseindex_tokens->end(); iter2++) {
-                            const EncAnyGram * neighbour = iter2->second;
-                            if ((neighbour != (const EncAnyGram *) ngram) && ( (BIDIRECTIONALCOOC) || ((!BIDIRECTIONALCOOC) && (ref.token < iter2->first) )))  {
-                                 rel_cooccurrences[(const EncAnyGram *) ngram][(const EncAnyGram *) neighbour] += 1;
+                        bool thresholdmet = true;
+                        if ((COOCTHRESHOLD > 0) && (model->occurrencecount((const EncAnyGram *) ngram) < COOCTHRESHOLD)) thresholdmet = false;
+                        if (thresholdmet) {
+                            for (multimap<unsigned char, EncAnyGram*>::iterator iter2 = reverseindex_tokens->begin(); iter2 != reverseindex_tokens->end(); iter2++) {
+                                const EncAnyGram * neighbour = iter2->second;
+                                if ((COOCTHRESHOLD > 0) && (model->occurrencecount((const EncAnyGram *) neighbour) < COOCTHRESHOLD)) continue;
+                                if ((neighbour != (const EncAnyGram *) ngram) && ( (BIDIRECTIONALCOOC) || ((!BIDIRECTIONALCOOC) && (ref.token < iter2->first) )))  {
+                                    rel_cooccurrences[(const EncAnyGram *) ngram][(const EncAnyGram *) neighbour] += 1;
+                                }
                             }
                         }
                     }                                                                                 
@@ -2472,7 +2477,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
     }
     
     
-    
+   
     
 
     cerr << "Computing relations on skip-grams" << endl;
@@ -2596,6 +2601,27 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
 		}
 		//cerr << "DEBUG: s3" <<endl;
         
+    }
+
+
+    if (COOCTHRESHOLD > 0) {
+        cerr << "Pruning cooccurrence relations below threshold" << endl;
+        t_weightedrelations::iterator iter2 = rel_cooccurrences.begin();
+        while (iter2 != rel_cooccurrences.end()) {
+            unordered_map<const EncAnyGram *,double>::iterator iter3 = iter2->second.begin();
+            while (iter3 != iter2->second.end()) {
+                if (iter3->second < COOCTHRESHOLD) { 
+                    iter3 = iter2->second.erase(iter3);
+                } else {
+                    iter3++;
+                }
+            }
+            if (iter2->second.size() == 0) {
+                iter2 = rel_cooccurrences.erase(iter2);
+            } else {
+                iter2++;
+            }
+        }
     }
 
 
@@ -3522,6 +3548,8 @@ void GraphPatternModel::outputcoocrelations(const EncAnyGram * pivot, ClassDecod
 	for (std::unordered_map<const EncAnyGram*, double>::iterator iter = relations.begin(); iter != relations.end(); iter++) {
 		const EncAnyGram * anygram = iter->first;
 		
+        if ((COOCTHRESHOLD > 0) && (iter->second < COOCTHRESHOLD)) continue;
+
 		double coocvalue = 0;
 		if (COOCSTYLE == COOCSTYLE_COUNT) {
 		    coocvalue = iter->second;
@@ -3550,7 +3578,7 @@ double GraphPatternModel::pmi(const EncAnyGram * key1, const EncAnyGram * key2) 
         const double jointcount = rel_cooccurrences[key1][key2];
         return  log( (double) jointcount / (model->occurrencecount(key1) * model->occurrencecount(key2)) );    
     } else {
-        cerr << "Unable to compute NPMI, one of the operands does not exist" << endl;
+        cerr << "Unable to compute PMI, one of the operands does not exist" << endl;
         throw InternalError();
     }
 }
