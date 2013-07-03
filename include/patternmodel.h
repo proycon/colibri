@@ -223,6 +223,7 @@ class IndexedPatternModel: public ModelReader, public ModelWriter, public ModelQ
     
     int occurrencecount(const EncAnyGram* key);
     int coveragecount(const EncAnyGram* key);    
+    int sentencecount(const EncAnyGram* key);
     double coverage(const EncAnyGram* key);    
     double pmi(const EncAnyGram *, const EncAnyGram *);
     double npmi(const EncAnyGram *, const EncAnyGram *); 
