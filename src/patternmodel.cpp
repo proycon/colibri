@@ -3547,19 +3547,21 @@ void GraphPatternModel::outputcoocrelations(const EncAnyGram * pivot, ClassDecod
 
 double GraphPatternModel::pmi(const EncAnyGram * key1, const EncAnyGram * key2) {
     if ((rel_cooccurrences.count(key1)) && (rel_cooccurrences[key1].count(key2))) {
-        const int jointcount = rel_cooccurrences[key1][key2];
+        const double jointcount = rel_cooccurrences[key1][key2];
         return  log( (double) jointcount / (model->occurrencecount(key1) * model->occurrencecount(key2)) );    
     } else {
-        return 0;
+        cerr << "Unable to compute NPMI, one of the operands does not exist" << endl;
+        throw InternalError();
     }
 }
 
 double GraphPatternModel::npmi(const EncAnyGram * key1, const EncAnyGram * key2) {
     if ((rel_cooccurrences.count(key1)) && (rel_cooccurrences[key1].count(key2))) {
-        const int jointcount = rel_cooccurrences[key1][key2];
-        return  log( (double) jointcount / (model->occurrencecount(key1) * model->occurrencecount(key2)) ) / -log((double) jointcount/(double)model->occurrences());    
+        const double jointcount = rel_cooccurrences[key1][key2];
+        return  log( (double) jointcount / (model->occurrencecount(key1) * model->occurrencecount(key2)) ) / -log((double)jointcount/(double)model->occurrences());    
     } else {
-        return 0;
+        cerr << "Unable to compute NPMI, one of the operands does not exist" << endl;
+        throw InternalError();
     }
 }
 
