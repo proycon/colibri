@@ -2423,6 +2423,65 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
             delete *iter2;
         }   
         //cerr << "DEBUG: n3" << endl;
+        //
+        //
+
+        if (DOCOOCCURRENCE) {
+            set<CorpusReference> * refs = &(iter->second.refs);
+            set<int> sentences = model->getsentences((const EncAnyGram *) ngram);
+            if (sentences.size() >= COOCTHRESHOLD) {
+
+                for (set<int>::iterator seniter = sentences.begin(); seniter != sentences.end(); seniter++) {
+                    int sentence = *seniter;
+                    int mintoken = 0;
+                    if (!BIDIRECTIONALCOOC) {
+                        mintoken = 999;
+                        for (set<CorpusReference>::iterator tokiter = refs->begin(); tokiter != refs->end(); tokiter++) {
+                            if ((tokiter->sentence == sentence) && (tokiter->token < mintoken)) mintoken = tokiter->token;
+                        }
+                    }
+
+                    multimap<unsigned char, EncAnyGram*> * reverseindex_tokens =  &reverseindex[(uint32_t) sentence];       
+
+                    vector<const EncAnyGram*> neighbours;
+
+                    for (multimap<unsigned char, EncAnyGram*>::iterator iter2 = reverseindex_tokens->begin(); iter2 != reverseindex_tokens->end(); iter2++) {
+                        const EncAnyGram * neighbour = iter2->second;
+
+
+                        bool exists = false;
+                        for (vector<const EncAnyGram*>::iterator iter3 = neighbours.begin(); iter3 != neighbours.end(); iter3++) {
+                            if (*iter3 == neighbour) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (exists) continue; //already counted (occurs multiple times in same sentence)
+
+                        int maxtoken = 999;
+                        if ((!BIDIRECTIONALCOOC) || (COOCTHRESHOLD > 0)) {
+                            set<CorpusReference> targetrefs = model->getdata(neighbour)->get_refs();
+                            maxtoken = 0;
+                            set<int> targetsentences;
+                            for (set<CorpusReference>::iterator tokiter = targetrefs.begin(); tokiter != targetrefs.end(); tokiter++) {
+                                if ((tokiter->sentence == sentence) && (tokiter->token > maxtoken)) maxtoken = tokiter->token;
+                                if (COOCTHRESHOLD > 0) targetsentences.insert(tokiter->sentence);
+                            }
+                            if (targetsentences.size() < COOCTHRESHOLD) continue; 
+                        }
+
+
+                        if (mintoken < maxtoken) neighbours.push_back(neighbour);
+                    }
+
+                    for (vector<const EncAnyGram*>::iterator iter2 = neighbours.begin(); iter2 != neighbours.end(); iter2++) {
+                        const EncAnyGram * neighbour = *iter2;
+                        rel_cooccurrences[(const EncAnyGram *) ngram][(const EncAnyGram *) neighbour] += 1;
+                    }
+
+                }
+            }
+        }
         
         if ((DOSUCCESSORS) || (DOPREDECESSORS) || (DOCOOCCURRENCE)) {
     
@@ -2458,23 +2517,6 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
                      }        
                 }
                 
-                if (DOCOOCCURRENCE) {                        
-                    if ((reverseindex.count(ref.sentence) > 0)) {
-                        multimap<unsigned char, EncAnyGram*> * reverseindex_tokens =  &reverseindex[ref.sentence];                    
-                        bool thresholdmet = true;
-                        if ((COOCTHRESHOLD > 0) && (iter->second.count() < COOCTHRESHOLD)) thresholdmet = false;
-                        if (thresholdmet) {
-                            for (multimap<unsigned char, EncAnyGram*>::iterator iter2 = reverseindex_tokens->begin(); iter2 != reverseindex_tokens->end(); iter2++) {
-                                const EncAnyGram * neighbour = iter2->second;
-                                if ((COOCTHRESHOLD > 0) && (model->occurrencecount((const EncAnyGram *) neighbour) < COOCTHRESHOLD)) continue;
-                                if ((neighbour != (const EncAnyGram *) ngram) && ( (BIDIRECTIONALCOOC) || ((!BIDIRECTIONALCOOC) && (ref.token < iter2->first) )))  {
-                                    rel_cooccurrences[(const EncAnyGram *) ngram][(const EncAnyGram *) neighbour] += 1;
-                                    cerr << "DEBUG: counting " << ngram->hash() << " with " << neighbour->hash() << endl;
-                                }
-                            }
-                        }
-                    }                                                                                 
-                }
                 
             }
         
@@ -2551,16 +2593,6 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
                         }
                      }        
                 }
-                if (DOCOOCCURRENCE) {                        
-                    if ((reverseindex.count(ref.sentence) > 0)) {
-                        multimap<unsigned char, EncAnyGram*> * reverseindex_tokens =  &reverseindex[ref.sentence];                    
-                        for (multimap<unsigned char, EncAnyGram*>::iterator iter2 = reverseindex_tokens->begin(); iter2 != reverseindex_tokens->end(); iter2++) {
-                            const EncAnyGram * neighbour = iter2->second;
-                            if (neighbour != (const EncAnyGram *) skipgram) rel_cooccurrences[(const EncAnyGram *) skipgram][(const EncAnyGram *) neighbour] += 1;
-                        }
-                    }                                                                                 
-                }
-                
           }
       
         }
