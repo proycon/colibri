@@ -2432,6 +2432,7 @@ GraphPatternModel::GraphPatternModel(IndexedPatternModel * model, const GraphFil
 
                 for (set<int>::iterator seniter = sentences.begin(); seniter != sentences.end(); seniter++) {
                     int sentence = *seniter;
+                    cerr << ngram->hash() << " sentence " << sentence << "/" << sentences.size() << endl;
                     int mintoken = 0;
                     if (!BIDIRECTIONALCOOC) {
                         mintoken = 999;
