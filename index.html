@@ -12,35 +12,7 @@ documentationlabel: Documentation
 
 <div class="leftbox">
 
+    <p>This software is obsoleted by Colibri Core, see <a href="http://proycon.github.io/colibri-core/">here</a>.</p>
 
-<p><strong>Colibri</strong> is a collection of software developed for the Ph.D. research project <strong>Constructions as Linguistic Bridges</strong>. This research examines the identification and extraction of aligned constructions or patterns across natural languages, and the usage of such constructions in Machine Translation. The aligned constructions are not identified on the basis of an extensive and explicitly defined grammar or expert database of linguistic knowledge, but rather are implicitly distilled from large amounts of example data. Our notion of constructions is broad and transcends the idea of words or variable-length phrases. We also consider constructions with one or more gaps, as well as context-sensitive machine learning techniques. Our aim is to find new methods that prove beneficial in a Machine Translation setting.</p>
-
-<p>The software consists out of various tools, each of which will be discussed in the <a href="doc/">documentation</a>. Because of the computational complexity and need to have the software deal as efficiently as possible with time and space constraints, almost everything is written in C++. The exception is the experiment framework surrounding the actual core software; this is written in Python. Depending on the size of your input corpus, certain tasks may take considerable memory. We recommend a Linux machine with at least 8GB RAM.</p>
-
-<p>
-<strong>Colibri</strong> has the following facilities:
-<ul>
-<li><strong>Pattern extraction</strong> - N-gram and skipgram (n-grams with gaps) extraction from corpora </li>
-<li><strong>Pattern querying</strong> - Interactively query generated models for specific patterns.</li>
-<li><strong>Pattern/corpus comparison</strong> - Match patterns generated from one corpus to another corpus.</li>
-<li><strong>Graph computation &amp; visualisation</strong> - Compute graph-relations between pattern models and visualise graphs</li>
-<li><strong>Alignment algorithms</strong> - Algorithms to extract and align patterns accross languages; resulting in translation pairs for constructions.</li>
-<li><strong>Machine Translation Decoding</strong> - Reassembles translated fragments into one coherent sentence in the target-language; seeking the best (statistically most probably) solution in a vast search space of possible search hypotheses.</li>
-<li><strong>Memory-based Machine Translation</strong> - Machine learning algorithms can be used to consider source-side context in translations. Classifiers can be built and directly used by the decoder.</li>
-<li><strong>Experiment Framework</strong> - Colibri comes with an extensive experiment framework for conducting Machine Translation experiments.</li>
-</ul>
-</p>
-
-</div>
-
-<div class="rightbox">
-<h2>Resources</h2>
-
-<ul>
-<li><a href="http://github.com/proycon/colibri">Source code</a></li>
-<li><a href="doc/">Documentation</a></li>
-</ul>
-
-<p>Colibri was developed by Maarten van Gompel, under supervision of Antal van den Bosch.</p>
 
 </div>
